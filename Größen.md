@@ -1,18 +1,10 @@
 # tomsticks
 
-Linux Boot Sticks
+## Linux Boot Sticks
 
-qemu-system-x86_64 -hda /path/to/hard_disk.img -usb -drive file=/path/to/usb_stick.img,if=none,id=usbdrive -device usb-storage,drive=usbdrive
+### Kingston Rot Tom (128G)
 
-qemu-system-x86_64 -hda /path/to/hard_disk.img -usb -drive file=/path/to/usb_stick.img,if=none,id=usbdrive -device usb-storage,drive=usbdrive -netdev user,id=net0 -device e1000,netdev=net0
-
-qemu-system-x86_64 -drive file=./silberstick,format=raw,if=none,id=hd0 -device ide-hd,drive=hd0 -usb -drive file=Downloads/ubuntu-24.04.1-desktop-amd64.iso,if=none,id=usbdrive,format=raw -device usb-storage,drive=usbdrive -netdev user,id=net0 -device e1000,netdev=net0
-
-## Größen real
-
-### Kingston Rot Tom
-
-dmesg:
+dmesg freebsd:
 
 ```text
 da0 at umass-sim0 bus 0 scbus3 target 0 lun 0
@@ -33,7 +25,7 @@ GEOM: da0: the secondary GPT header is not in the last LBA.
   109158400  133259224       - free -  (64G)
 ```
 
-### Kingston silber Georg
+### Kingston silber Georg (64G)
 
 ```text
 da0 at umass-sim0 bus 0 scbus3 target 0 lun 0
@@ -44,9 +36,9 @@ da0: 59136MB (121110528 512 byte sectors)
 da0: quirks=0x2<NO_6_BYTE>
 ```
 
-### Sandisk Rot Tom
+### Sandisk Grün Tom
 
-dmesg:
+Ist ein Eitzerl kleiner als der rote .. dmesg FreeBSD:
 
 ```text
 da0 at umass-sim0 bus 0 scbus3 target 0 lun 0
