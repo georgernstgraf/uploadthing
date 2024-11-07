@@ -25,6 +25,12 @@ GEOM: da0: the secondary GPT header is not in the last LBA.
   109158400  133259224       - free -  (64G)
 ```
 
+```text
+$ file xubuntu-128g.qcow2
+xubuntu-128g.qcow2: QEMU QCOW Image (v3), 124117843968 bytes (v3), 124117843968 bytes
+                                                 242417664 * 512 = 124117843968
+```
+
 ### Kingston silber Georg (64G)
 
 ```text
