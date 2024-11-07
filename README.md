@@ -1,5 +1,15 @@
 # tomsticks
 
+## Know Hows
+
+### Umgang mit sparse files
+
+Files mit bestimmter Größe anlegen, die keinen Platz brauchen: `truncate -s <bytes> <file>`
+
+"Brennen" eines Sticks: `dd if=<file> of=</dev/sdX> status=progress conv=sparse`
+
+Kopieren übers Netz: Vorher einen tarball erzeugen, der die Löcher nicht mitkopiert mit `tar -S`
+
 ## Get started
 
 ### Image-File auf Platte anlegen
