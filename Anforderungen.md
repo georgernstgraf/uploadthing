@@ -6,3 +6,5 @@
 - Zugriff interne Platte disablen
 - Tastatur Layout
 - Netzwerk disable
+
+- ein start / stop skript
