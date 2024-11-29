@@ -33,6 +33,8 @@ xubuntu-128g.qcow2: QEMU QCOW Image (v3), 124117843968 bytes (v3), 124117843968 
 
 ### Kingston silber Georg (64G)
 
+61740154880 Bytes (s.u.) Image Größe: Halbes Prozent weniger als die meisten silbernen Sticks.
+
 ```text
 da0 at umass-sim0 bus 0 scbus3 target 0 lun 0
 da0: <Kingston DataTraveler 3.0 PMAP> Removable Direct Access SPC-4 SCSI device
@@ -40,6 +42,16 @@ da0: Serial Number 1C1B0DDF5BB7E820698D0795
 da0: 400.000MB/s transfers
 da0: 59136MB (121110528 512 byte sectors)
 da0: quirks=0x2<NO_6_BYTE>
+```
+
+Rechnung:
+
+```text
+121110528*512 = 51262008590336
+121110528/(2^19) = 231.0
+Halbes Prozent von 231 = 1
+230*(2^19) = 120586240
+230*(2^19)*512 = 61740154880
 ```
 
 ### Sandisk Grün Tom
