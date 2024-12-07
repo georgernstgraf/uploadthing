@@ -1,0 +1,6 @@
+   58  gpart destroy -F da0
+   60  gpart create -s mbr da0
+   94  gpart add -t fat32 da0
+   97  newfs_msdos -L GRG /dev/da0s1 
+   98  mount_msdosfs /dev/da0s1 /mnt/
+  100  rsync -rv tomsticks/GRG/ /mnt/
