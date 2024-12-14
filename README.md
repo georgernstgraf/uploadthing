@@ -10,6 +10,11 @@ Files mit bestimmter Größe anlegen, die keinen Platz brauchen: `truncate -s <b
 
 Kopieren übers Netz: Vorher einen tarball erzeugen, der die Löcher nicht mitkopiert mit `tar -S`
 
+### phyische Hardware in der Virtualbox verfügbar machen
+
+Geht über den "Umweg" eines `.vmdk` Files. Befehl:
+- `VBoxManage internalcommands createrawvmdk -filename loop18.vmdk -rawdisk /dev/loop18`
+
 ## Get started
 
 ### Image-File auf Platte anlegen
