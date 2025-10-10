@@ -45,8 +45,8 @@ If rc <> 0 Then
   )
 End If
 
-' 30 seconds in milliseconds
-intervalMs = 30000
+' 5 minutes in milliseconds
+intervalMs = 300000
 
 Do
   ' Stage changes
