@@ -1,4 +1,4 @@
 [InternetShortcut]
-URL=file:///%LOCALAPPDATA%/autocommit
+URL=file:%LOCALAPPDATA%
 IconFile=explorer.exe
 IconIndex=0
