@@ -78,4 +78,10 @@ app.post(UPLOAD_DIR, async (c) => {
   return c.html(successTemplate({ remote_ip, filename: file.name }));
 });
 app.use(`${UNTERLAGEN_DIR}/*`, serveStatic({ root: "./" }));
-Deno.serve((req, info) => app.fetch(req, { info }));
+Deno.serve(
+  {
+    hostname: "0.0.0.0",
+    port: 8000, // Optionally specify a port
+  },
+  (req, info) => app.fetch(req, { info }),
+);
