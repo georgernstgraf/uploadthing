@@ -2,6 +2,19 @@ body {
     margin: 0 max(1rem, 45vw - 10rem);
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    text-align: center;
+}
+
+ul {
+    list-style-type: none;
+}
+
 nav {
     margin-bottom: 2rem;
     display: flex;
