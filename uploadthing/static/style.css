@@ -1,0 +1,10 @@
+body {
+    margin: 0 max(1rem, 45vw - 10rem);
+}
+
+nav {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+}

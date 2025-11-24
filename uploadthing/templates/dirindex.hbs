@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Unterlagen</title>
+    <link rel="stylesheet"
+          href="static/style.css">
+</head>
+
+<body>
+    {{> top}}
+    <h1>Index of {{UNTERLAGEN_DIR}}</h1>
+    <ul>
+        {{#each files}}
+            <li><a href="{{../UNTERLAGEN_DIR}}/{{this}}">{{this}}</a></li>
+        {{/each}}
+    </ul>
+</body>
+
+</html>
