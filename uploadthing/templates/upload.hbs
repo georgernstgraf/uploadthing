@@ -13,17 +13,14 @@
 <body>
     {{> top}}
     <h2>Zipfile Upload</h2>
-    <p>Ihre IP-Adresse: {{remote_ip}}</p>
     <form action="/upload"
           method="POST"
           enctype="multipart/form-data">
-        <label for="fileInput">Choose a file:</label>
         <input type="file"
-               id="fileInput"
                name="file"
                accept="*" />
-        <br /><br />
         <button type="submit">Upload</button>
+        <p>IP-Adresse: {{remote_ip}}</p>
     </form>
 </body>
 
