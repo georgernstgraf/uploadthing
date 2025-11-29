@@ -12,7 +12,6 @@ type Bindings = {
 
 type Variables = {
   remoteip: string;
-  ipuser: string;
 };
 
 const dirIndexTemplate = Handlebars.compile(
