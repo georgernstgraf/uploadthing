@@ -7,6 +7,7 @@
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
+  runtime  = "deno"
 }
 
 datasource db {
@@ -15,7 +16,7 @@ datasource db {
 
 model ip {
   id      String   @id @default(uuid())
-  ip      String
+  ip      String   @unique
   name    String?
   updated DateTime @updatedAt
 }

@@ -8,6 +8,7 @@
     <title>PLF</title>
     <link rel="stylesheet"
           href="static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 
 <body>
@@ -16,3 +17,17 @@
         <a href="/">Unterlagen</a>
         <a href="/upload">Zipfile Upload</a>
     </nav>
+    <div id="whoami">
+        {{#if remoteuser}}
+            <h2>User: {{remoteuser}}</h2>
+        {{else}}
+            <form hx-post="/whoami"
+                  hx-target="#whoami">
+                <label>Username: <input type="text"
+                           name="username"
+                           required>
+                    <button type="submit">Login</button>
+                </label>
+            </form>
+        {{/if}}
+    </div>
