@@ -1,19 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-    <title>Success</title>
-    <link rel="stylesheet"
-          href="static/style.css">
-</head>
-
-<body>
-    {{> top}}
-    <h2>Abgabe Erfolgreich!</h2>
-    <p>Sie haben soeben <strong>{{filename}}</strong> mit der IP <strong>{{remote_ip}}</strong> hochgeladen.</p>
-</body>
+{{> top}}
+<h2>Abgabe Erfolgreich!</h2>
+<ul>
+    <li>Datei: {{filename}}</li>
+    <li>IP: {{remote_ip}}</li>
+    <li>Größe: {{filesize}}</li>
+    <li>MD5 Prüfsumme: {{ md5sum}}</li>
+</ul>
 
 </html>

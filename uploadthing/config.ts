@@ -1,5 +1,5 @@
 const config = {
-  ABGABEN_DIR: "/tmp/abgaben",
+  ABGABEN_DIR: "/home/georg/abgaben",
   UNTERLAGEN_DIR: "unterlagen",
   UPLOAD_DIR: "upload",
 };

@@ -1,23 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-    <title>Unterlagen</title>
-    <link rel="stylesheet"
-          href="static/style.css">
-</head>
-
-<body>
-    {{> top}}
-    <h2>Unterlagen:</h2>
-    <ul>
-        {{#each files}}
-            <li><a href="{{../UNTERLAGEN_DIR}}/{{this}}">{{this}}</a></li>
-        {{/each}}
-    </ul>
+{{> top}}
+<h2>Unterlagen:</h2>
+<ul>
+    {{#each files}}
+    <li><a href="{{../UNTERLAGEN_DIR}}/{{this}}">{{this}}</a></li>
+    {{/each}}
+</ul>
+<h2>Dokumentation online:</h2>
+<ul>
+    <li><a href="https://getbootstrap.com/">Bootstrap</a></li>
+    <li><a href="https://developer.mozilla.org/">Developer.mozilla.org</a></li>
+    <li><a href="https://docs.oracle.com/en/java/javase/21/docs/api/index.html">Javadoc</a></li>
+    <li><a href="https://www.prisma.io/docs/orm">Prisma</a></li>
+</ul>
 </body>
 
 </html>

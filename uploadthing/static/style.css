@@ -26,9 +26,14 @@ button {
     transition: 0.5s;
 }
 
+button:focus {
+    animation: subtle-pulse 2s infinite;
+    cursor: wait;
+}
+
 input:hover,
 button:hover {
-    background-color: rgb(255, 27, 73);
+    background-color: #faa;
     color: white;
     cursor: pointer;
 }
@@ -50,4 +55,21 @@ nav {
 
 .right {
     text-align: right;
+}
+
+@keyframes subtle-pulse {
+    0% {
+        background-color: #eee;
+        transform: scale(1);
+    }
+
+    50% {
+        background-color: #bbb;
+        transform: scale(0.97);
+    }
+
+    100% {
+        background-color: #eee;
+        transform: scale(1);
+    }
 }
