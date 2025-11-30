@@ -69,7 +69,7 @@ app.post(cf.UPLOAD_DIR, async (c) => {
     data,
   );
   const endTime = Date.now();
-  const durationSeconds = (endTime - beginTime) / 1000;
+  const durationSeconds = ((endTime - beginTime) / 1000).toFixed(1);
   return c.html(
     successTemplate({
       remote_ip,
