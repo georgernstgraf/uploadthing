@@ -51,6 +51,7 @@ app.get(cf.UPLOAD_DIR, (c) => {
   return c.html(uploadTemplate({ remote_ip }));
 });
 app.post(cf.UPLOAD_DIR, async (c) => {
+  const beginTime = Date.now();
   const remote_ip = c.get("remoteip");
   const formData = await c.req.formData();
   const file = formData.get("file") as File;
@@ -67,8 +68,16 @@ app.post(cf.UPLOAD_DIR, async (c) => {
     `${cf.ABGABEN_DIR}/${remote_ip}-${file.name}`,
     data,
   );
+  const endTime = Date.now();
+  const durationSeconds = (endTime - beginTime) / 1000;
   return c.html(
-    successTemplate({ remote_ip, filename: file.name, filesize, md5sum }),
+    successTemplate({
+      remote_ip,
+      filename: file.name,
+      filesize: (filesize / 1024).toFixed(0),
+      md5sum,
+      durationSeconds,
+    }),
   );
 });
 app.use(`${cf.UNTERLAGEN_DIR}/*`, serveStatic({ root: "./" }));
