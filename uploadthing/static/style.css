@@ -1,3 +1,13 @@
+:root {
+    --spenger-color: #ed1944;
+    --spenger-color-light-1: #f15373;
+    --spenger-color-light-2: #f68c9f;
+    --spenger-color-light-3: #fac6cf;
+    --spenger-color-dark-1: #bd1436;
+    --spenger-color-dark-2: #8e0f29;
+    --spenger-color-dark-3: #5f0a1b;
+}
+
 body {
     margin: 0 max(1rem, 45vw - 10rem);
 }
@@ -13,6 +23,7 @@ h6 {
 
 ul {
     list-style-type: none;
+    line-height: 1.4;
 }
 
 input,
@@ -20,22 +31,27 @@ button {
     font-size: 1.1rem;
     /* background-color: #ed1944;
     */
-    border: 2px solid black;
+    border: 2px solid var(--spenger-color-dark-3);
     padding: 1rem;
     border-radius: 1rem;
     transition: 0.5s;
 }
 
-button:focus {
-    animation: subtle-pulse 2s infinite;
-    cursor: wait;
-}
-
 input:hover,
 button:hover {
-    background-color: #faa;
-    color: white;
+    background-color: var(--spenger-color-light-2);
+    color: var(--spenger-color-dark-3);
     cursor: pointer;
+}
+
+button[type="submit"] {
+    background: linear-gradient(-45deg, var(--spenger-color), var(--spenger-color-light-1), var(--spenger-color-light-2), var(--spenger-color-light-3));
+    background-size: 400% 400%;
+}
+
+button[type="submit"]:focus {
+    animation: gradientMove 2s ease infinite;
+    cursor: wait;
 }
 
 form {
@@ -53,23 +69,26 @@ nav {
     gap: 3rem;
 }
 
+.success {
+    background: var(--spenger-color-light-2);
+    padding: 0.5em;
+    border-radius: 0.3em;
+}
+
 .right {
     text-align: right;
 }
 
-@keyframes subtle-pulse {
+@keyframes gradientMove {
     0% {
-        background-color: #eee;
-        transform: scale(1);
+        background-position: 0% 50%;
     }
 
     50% {
-        background-color: #bbb;
-        transform: scale(0.97);
+        background-position: 100% 50%;
     }
 
     100% {
-        background-color: #eee;
-        transform: scale(1);
+        background-position: 0% 50%;
     }
 }
