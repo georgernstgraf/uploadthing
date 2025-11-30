@@ -6,6 +6,7 @@
     --spenger-color-dark-1: #bd1436;
     --spenger-color-dark-2: #8e0f29;
     --spenger-color-dark-3: #5f0a1b;
+    --success-color-background: #61d458;
 }
 
 body {
@@ -70,7 +71,7 @@ nav {
 }
 
 .success {
-    background: var(--spenger-color-light-2);
+    background: var(--success-color-background);
     padding: 0.5em;
     border-radius: 0.3em;
 }
