@@ -1,7 +1,0 @@
-#!/bin/sh
-gpart destroy -F da0
-gpart create -s mbr da0
-gpart add -t fat32 da0
-newfs_msdos -L GRG /dev/da0s1 
-mount_msdosfs /dev/da0s1 /mnt/
-rsync -rv tomsticks/GRG/ /mnt/
