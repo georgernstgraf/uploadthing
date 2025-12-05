@@ -1,6 +1,7 @@
 {
   "tasks": {
-    "dev": "deno run -A --watch main.ts"
+    "dev": "deno run -A --watch main.ts",
+    "start": "deno run -A --env-file main.ts"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1",

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/deno";
 import { createHash } from "node:crypto";
 import Handlebars from "handlebars";
-import cf from "./config.ts";
+import config from "./config.ts";
 import { get_unterlagen } from "./lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 
@@ -29,14 +29,14 @@ Handlebars.registerPartial(
 );
 
 // ensure ABGABEN_DIR exists
-await Deno.mkdir(cf.ABGABEN_DIR, { recursive: true });
+await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 app.use("*", remoteIPMiddleware);
 app.get("/", async (c) => {
   const files = await get_unterlagen();
   return c.html(dirIndexTemplate({
-    UNTERLAGEN_DIR: cf.UNTERLAGEN_DIR,
+    UNTERLAGEN_DIR: config.UNTERLAGEN_DIR,
     files,
   }));
 });
@@ -46,11 +46,11 @@ app.get("static/style.css", (c) => {
   });
 });
 // 1. Directory Index Handler
-app.get(cf.UPLOAD_DIR, (c) => {
+app.get("upload", (c) => {
   const remote_ip = c.get("remoteip");
   return c.html(uploadTemplate({ remote_ip }));
 });
-app.post(cf.UPLOAD_DIR, async (c) => {
+app.post("upload", async (c) => {
   const beginTime = Date.now();
   const remote_ip = c.get("remoteip");
   const formData = await c.req.formData();
@@ -65,7 +65,7 @@ app.post(cf.UPLOAD_DIR, async (c) => {
   hash.update(data);
   const md5sum = hash.digest("hex");
   await Deno.writeFile(
-    `${cf.ABGABEN_DIR}/${remote_ip}-${file.name}`,
+    `${config.ABGABEN_DIR}/${remote_ip}-${file.name}`,
     data,
   );
   const endTime = Date.now();
@@ -80,11 +80,19 @@ app.post(cf.UPLOAD_DIR, async (c) => {
     }),
   );
 });
-app.use(`${cf.UNTERLAGEN_DIR}/*`, serveStatic({ root: "./" }));
+
+app.get(
+  "unterlagen/*",
+  serveStatic({
+    root: config.UNTERLAGEN_DIR,
+    rewriteRequestPath: (path) => path.replace(/^\/unterlagen/, "/"),
+  }),
+);
+
 Deno.serve(
   {
-    hostname: "0.0.0.0",
-    port: 8000, // Optionally specify a port
+    hostname: config.LISTEN_HOST,
+    port: config.LISTEN_PORT,
   },
   (req, info) => app.fetch(req, { info }),
 );

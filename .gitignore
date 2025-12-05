@@ -3,3 +3,4 @@
 /.Trash-*/
 .DS_Store
 Thumbs.db
+.env
