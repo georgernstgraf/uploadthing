@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  runtime  = "deno"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model ipfact {
+  id   Int      @id @default(autoincrement())
+  ip   String   @unique
+  seen DateTime
+}
