@@ -10,6 +10,13 @@ datasource db {
 
 model ipfact {
   id   Int      @id @default(autoincrement())
-  ip   String   @unique
+  ip   String
   seen DateTime
+
+  @@unique([ip, seen])
+}
+
+model knownlog {
+  id   Int    @id @default(autoincrement())
+  file String @unique
 }

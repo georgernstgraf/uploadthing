@@ -1,3 +1,6 @@
 import db from "./db.ts";
-console.log(db.prepare("SELECT * FROM ipfact").all());
-db.close();
+
+const insert_prep = db.prepare("INSERT INTO ipfact (ip, seen) VALUES (?, ?)");
+export function insert(ip: string, seen: Date) {
+  insert_prep.run(ip, seen);
+}

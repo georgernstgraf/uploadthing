@@ -3,6 +3,7 @@ const config = {
   UNTERLAGEN_DIR: `${Deno.env.get("HOME")}/unterlagen`,
   LISTEN_HOST: Deno.env.get("LISTEN_HOST"),
   LISTEN_PORT: Number(Deno.env.get("LISTEN_PORT")),
+  logdir: "/var/log/exampy",
 };
 export default config;
 

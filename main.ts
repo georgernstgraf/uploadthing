@@ -5,7 +5,7 @@ import Handlebars from "handlebars";
 import config from "./config.ts";
 import { get_unterlagen } from "./lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
-
+import * as service from "./service/service.ts";
 type Bindings = {
   info: Deno.ServeHandlerInfo;
 };
@@ -81,6 +81,17 @@ app.post("upload", async (c) => {
   );
 });
 
+//  I get a filename per json
+app.post("newscanfile", async (c) => {
+  try {
+    const body = await c.req.json();
+    const file = body.file as string;
+    const result = service.ip.eatfile(file);
+    return c.json({ "ok": "true", file, result });
+  } catch (e) {
+    return c.json({ "ok": "false", "message": (e as Error).message }, 400);
+  }
+});
 app.get(
   "unterlagen/*",
   serveStatic({
