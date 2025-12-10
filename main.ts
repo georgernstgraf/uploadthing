@@ -23,6 +23,9 @@ const uploadTemplate = Handlebars.compile(
 const successTemplate = Handlebars.compile(
   Deno.readTextFileSync("templates/success.hbs"),
 );
+const ldapTemplate = Handlebars.compile(
+  Deno.readTextFileSync("templates/ldap.hbs"),
+);
 Handlebars.registerPartial(
   "top",
   Deno.readTextFileSync("templates/top.hbs"),
@@ -81,6 +84,15 @@ app.post("upload", async (c) => {
   );
 });
 
+app.get("ldap", async (c) => {
+  const query = c.req.query();
+  try {
+    const users = await service.ldap.getUserByEmail(query.email);
+    return c.html(ldapTemplate({ users }));
+  } catch (e) {
+    return c.text((e as Error).message, 400);
+  }
+});
 //  I get a filename per json
 app.post("newscanfile", async (c) => {
   try {

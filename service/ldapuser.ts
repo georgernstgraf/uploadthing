@@ -5,6 +5,10 @@ export async function getUserByEmail(startstring: string) {
     throw new Error("startstring must be at least 3 characters");
   }
   const result = await repo.ldap.getUsersStartingWith(startstring);
-  return result;
+  return result.sort((a, b) =>
+    a.displayName.localeCompare(b.displayName, undefined, {
+      sensitivity: "base",
+    })
+  );
 }
 export const serviceClient = repo.ldap.serviceClient;
