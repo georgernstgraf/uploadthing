@@ -84,51 +84,49 @@ function getServiceClient(): Promise<ldap.Client> {
         1000 * 60 * 15
       })`,
     );
-    console.log("INFO registering connect for client");
-
     client.on("connect", () => {
-      console.log("INFO client_on_connect: binding ...");
+      console.log("ldap client_on_connect: now start binding ...");
       client.bind(cf.SERVICE_DN, cf.SERVICE_PW, bindCB);
     });
     client.on("reconnect", () => {
-      console.log("WARN client_on_reconnect: binding ...");
+      console.log("ldap client_on_reconnect: binding ...");
       client.bind(cf.SERVICE_DN, cf.SERVICE_PW, bindCB);
     });
     client.on("error", (err: Error) => {
-      console.error(`ERROR client_on_error [${err.message}]`);
+      console.error(`ldap ERROR client_on_error [${err.message}]`);
     });
     client.on("close", () => {
-      console.log("INFO client_on_close");
+      console.log("ldap INFO client_on_close");
     });
     client.on("timeout", () => {
-      console.log("INFO client_on_timeout");
+      console.log("ldap client_on_timeout");
     });
     client.on("end", () => {
-      console.log("INFO client_on_end");
+      console.log("ldap client_on_end");
     });
     client.on("idle", () => {
-      console.log("INFO client_on_idle: binding ...");
+      console.log("ldap client_on_idle: binding ...");
       client.bind(cf.SERVICE_DN, cf.SERVICE_PW, bindCB);
     });
     client.on("destroy", () => {
-      console.log("INFO client_on_destroy");
+      console.log("ldap client_on_destroy");
     });
     client.on("unbind", () => {
-      console.log("INFO client_on_unbind");
+      console.log("ldap client_on_unbind");
     });
     function bindCB(err: Error | null) {
-      const errmsg = err ? err.message : "no error";
-      console.log(`INFO bindCB called, err: ${errmsg}`);
       if (!pending) {
-        console.warn("WARN bindCB called but not pending, ignoring ...");
+        console.warn("ldap bindCB called but not pending, ignoring ...");
         return;
       }
       pending = false;
       if (!err) {
+        console.log("ldap Binding has completed w/o Errors");
         return resolve(client);
       } else {
-        console.error(errmsg);
-        return reject(errmsg);
+        const msg = `ldap error: ${err.message}`;
+        console.error(msg);
+        return reject(msg);
       }
     }
   });

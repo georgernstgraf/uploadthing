@@ -1,4 +1,4 @@
-GET http://localhost:8000/ldap?email=grafg
+GET http://localhost:8000/ldap?email=hoc
 ###
 POST http://localhost:8000/newscanfile
 Content-Type: application/json
