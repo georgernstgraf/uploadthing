@@ -1,4 +1,4 @@
-import config from "../config.ts";
+import config from "../lib/config.ts";
 import * as repo from "../repo/repo.ts";
 import * as service from "./service.ts";
 

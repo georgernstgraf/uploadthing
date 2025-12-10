@@ -1,6 +1,7 @@
 import * as ip from "./ip.ts";
 import * as knownlog from "./knownlog.ts";
 import * as ldap from "./ldapuser.ts";
+import * as user from "./user.ts";
 import * as repo from "../repo/repo.ts";
 
 function wipedb() {

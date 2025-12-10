@@ -1,4 +1,4 @@
-import cf from "../config.ts";
+import cf from "../lib/config.ts";
 import ldap from "ldapjs";
 export const serviceClient = await getServiceClient();
 

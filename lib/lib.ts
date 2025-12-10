@@ -9,3 +9,8 @@ export async function get_unterlagen() {
   files.sort();
   return files;
 }
+export type UserType = {
+  ip: string;
+  name: string;
+  email: string;
+};

@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/deno";
 import { createHash } from "node:crypto";
 import Handlebars from "handlebars";
-import config from "./config.ts";
-import { get_unterlagen } from "./lib.ts";
+import config from "./lib/config.ts";
+import { get_unterlagen } from "./lib/lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import * as service from "./service/service.ts";
 type Bindings = {
