@@ -14,4 +14,4 @@ function closedb() {
 function closeldap() {
   ldap.unbind_client();
 }
-export { closedb, closeldap, ip, knownlog, ldap, wipedb };
+export { closedb, closeldap, ip, knownlog, ldap, user, wipedb };
