@@ -19,6 +19,22 @@
         "main.ts"
       ],
       "attachSimplePort": 9229
+    },
+    {
+      "request": "launch",
+      "name": "TEST",
+      "type": "node",
+      "cwd": "${workspaceFolder}",
+      "env": {},
+      "runtimeExecutable": "/home/georg/.deno/bin/deno",
+      "runtimeArgs": [
+        "run",
+        "--inspect-wait",
+        "--env-file",
+        "-A",
+        "main_test.ts"
+      ],
+      "attachSimplePort": 9229
     }
   ]
 }
