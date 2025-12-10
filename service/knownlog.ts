@@ -1,4 +1,7 @@
-import config from "../config.ts";
 import * as repo from "../repo/repo.ts";
-export function havelog(file: string): boolean {
+export function exists(file: string): boolean {
+  if (repo.knownlog.findByName(file)) {
+    return true;
+  }
+  return false;
 }

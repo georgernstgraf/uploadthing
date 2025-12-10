@@ -1,2 +1,5 @@
+import db from "./db.ts";
 import * as ip from "./ip.ts";
-export { ip };
+import * as knownlog from "./knownlog.ts";
+
+export { db, ip, knownlog };
