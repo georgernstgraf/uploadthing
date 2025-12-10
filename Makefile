@@ -1,3 +1,6 @@
+default:
+	@echo "no default action"
+
 pull:
 	scp vosense:uploadthing/uploadthing.db .
 
