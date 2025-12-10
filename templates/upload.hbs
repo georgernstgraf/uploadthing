@@ -3,12 +3,13 @@
 <form action="/upload"
       method="POST"
       enctype="multipart/form-data">
-    <input type="file"
-           name="file"
-           accept="*" />
-    <button type="submit">Upload</button>
-    <p>IP-Adresse: {{remote_ip}}</p>
+       <input type="file"
+              name="file"
+              accept=".zip">
+       <button type="submit">Upload</button>
+       <p>IP-Adresse: {{remote_ip}}</p>
 </form>
+</main>
 </body>
 
 </html>

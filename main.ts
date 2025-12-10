@@ -43,11 +43,13 @@ app.get("/", async (c) => {
     files,
   }));
 });
-app.get("static/style.css", (c) => {
-  return c.html(Deno.readTextFileSync("static/style.css"), 200, {
-    "Content-Type": "text/css",
-  });
-});
+app.get(
+  "static/*",
+  serveStatic({
+    root: "./static",
+    rewriteRequestPath: (path) => path.replace(/^\/static/, "/"),
+  }),
+);
 // 1. Directory Index Handler
 app.get("upload", (c) => {
   const remote_ip = c.get("remoteip");

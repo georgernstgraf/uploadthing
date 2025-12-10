@@ -12,3 +12,6 @@ export async function getUserByEmail(startstring: string) {
   );
 }
 export const serviceClient = repo.ldap.serviceClient;
+export async function unbind_client() {
+  await serviceClient.unbind();
+}

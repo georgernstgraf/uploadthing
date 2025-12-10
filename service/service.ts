@@ -7,4 +7,10 @@ function wipedb() {
   repo.knownlog.deleteAll();
   repo.ip.deleteAll();
 }
-export { ip, knownlog, ldap, wipedb };
+function closedb() {
+  repo.db.close();
+}
+function closeldap() {
+  ldap.unbind_client();
+}
+export { closedb, closeldap, ip, knownlog, ldap, wipedb };
