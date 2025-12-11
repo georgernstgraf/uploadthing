@@ -1,3 +1,4 @@
+import { sleep } from "../lib/lib.ts";
 import * as repo from "../repo/repo.ts";
 
 export async function getUserByEmail(startstring: string) {
@@ -11,6 +12,7 @@ export async function getUserByEmail(startstring: string) {
     })
   );
 }
-export async function unbind_client() {
-  await repo.ldap.serviceClientCarrier.client.unbind();
+export async function close() {
+  // await sleep(1);
+  await repo.ldap.serviceClientFactory.close();
 }

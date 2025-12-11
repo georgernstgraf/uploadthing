@@ -8,6 +8,7 @@ const config = {
   SERVICE_URL: Deno.env.get("SERVICE_URL")!,
   SEARCH_BASE: Deno.env.get("SEARCH_BASE")!,
   logdir: "/var/log/exampy",
+  ldap_retry_wait_seconds: 7,
 };
 export default config;
 

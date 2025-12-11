@@ -1,17 +1,8 @@
+// just re-export all service moodules
 import * as ip from "./ip.ts";
 import * as knownlog from "./knownlog.ts";
 import * as ldap from "./ldapuser.ts";
 import * as user from "./user.ts";
-import * as repo from "../repo/repo.ts";
+import * as db from "./db.ts";
 
-function wipedb() {
-  repo.knownlog.deleteAll();
-  repo.ip.deleteAll();
-}
-function closedb() {
-  repo.db.close();
-}
-function closeldap() {
-  ldap.unbind_client();
-}
-export { closedb, closeldap, ip, knownlog, ldap, user, wipedb };
+export { db, ip, knownlog, ldap, user };

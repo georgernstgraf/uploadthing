@@ -1,7 +1,8 @@
 // import config from "./config.ts";
-import * as service from "./service/service.ts";
-
-console.log(service.user.getbyip("127.0.0.1"));
-console.log(service.user.getbyip("127.0.0.2"));
-service.closedb();
-service.closeldap();
+import * as ldap from "./service/ldapuser.ts";
+import { sleep } from "./lib/lib.ts";
+console.log("Testing LDAP user fetch...");
+await sleep(.5);
+const users = await ldap.getUserByEmail("grafg");
+console.log("users:", users);
+ldap.close();

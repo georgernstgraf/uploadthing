@@ -1,7 +1,101 @@
 import cf from "../lib/config.ts";
 import { sleep } from "../lib/lib.ts";
 import ldap from "ldapjs";
-export const serviceClientCarrier = { "client": await getServiceClient() };
+
+class ServiceClientFactory {
+  private lasttry = new Date(0);
+  private isConnecting = false;
+  private client: ldap.Client | null;
+  constructor() {
+    this.client = null;
+  }
+  getClient(): ldap.Client {
+    if (!this.client) {
+      throw new Error("ServiceClientFactory: client not available");
+    }
+    return this.client;
+  }
+  close() {
+    if (this.client) {
+      try {
+        this.client.unbind();
+      } catch { // just try
+      }
+      try {
+        this.client.destroy();
+      } catch { // just try
+      }
+      try {
+        this.client.removeAllListeners(); // Wichtig: Zombie-Listener entfernen
+      } catch { // just try
+      }
+      this.client = null;
+    }
+  }
+  async makeClient() { // can take very long
+    console.log(
+      "ServiceClientFactory.makeClient: called ...",
+    );
+    if (this.isConnecting) {
+      console.log(
+        "ServiceClientFactory.makeClient: already connecting, simply return",
+      );
+      return;
+    }
+    this.isConnecting = true;
+    const oldclient = this.client;
+    this.client = null; // prevent usage of old client
+    while (true) {
+      console.log(
+        "ServiceClientFactory.makeClient: trying to get new client, entering loop ...",
+      );
+      const now = new Date();
+      const diff = (now.getTime() - this.lasttry.getTime()) /
+        1000;
+      if (diff < cf.ldap_retry_wait_seconds) {
+        console.log(
+          `ServiceClientFactory.makeClient: waiting ${
+            cf.ldap_retry_wait_seconds - diff
+          }s ...`,
+        );
+        await sleep(cf.ldap_retry_wait_seconds - diff);
+      }
+      this.lasttry = new Date();
+      try {
+        if (oldclient) {
+          try {
+            oldclient.unbind();
+          } catch { // just try
+          }
+          try {
+            oldclient.destroy();
+          } catch { // just try
+          }
+          try {
+            oldclient.removeAllListeners(); // Wichtig: Zombie-Listener entfernen
+          } catch { // just try
+          }
+        }
+        this.client = await getServiceClient(); // can take very long, as ldapjs retries the bind internally
+        this.isConnecting = false;
+        console.info(
+          "ServiceClientFactory.makeClient: got new client, returning from loop.",
+        );
+        return; // essentiell
+      } catch (e) {
+        console.error(
+          `ServiceClientFactory.makeClient: could not get client, retrying in ${cf.ldap_retry_wait_seconds}s ... Error: ${
+            (e as Error).message
+          }`,
+        );
+        continue; // while loop
+      }
+    }
+  }
+}
+
+export const serviceClientFactory = new ServiceClientFactory();
+void serviceClientFactory.makeClient();
 
 export function getUsersStartingWith(
   initial: string,
@@ -18,71 +112,150 @@ export function getUsersStartingWith(
   };
   const searchPromise = new Promise((resolve, reject) => {
     try {
-      serviceClientCarrier.client.search(
+      serviceClientFactory.getClient().search(
         cf.SEARCH_BASE,
         options,
-        (_err: Error, res: ldap.SearchCallbackResponse) => {
+        (_err: Error, searchResponse: ldap.SearchCallbackResponse) => {
           const searchStatus = {
             results: [] as ldap.SearchEntry[],
             searchRequest: [] as ldap.SearchRequest[],
             searchReference: [] as ldap.SearchReference[],
             end: [] as ldap.SearchEnd[],
           };
-          res.on("searchRequest", (req: ldap.SearchRequest) => {
+          searchResponse.on("searchRequest", (req: ldap.SearchRequest) => {
             searchStatus.searchRequest.push(req);
           });
-          res.on("searchEntry", (entry: ldap.SearchEntry) => {
+          searchResponse.on("searchEntry", (entry: ldap.SearchEntry) => {
             searchStatus.results.push(entry);
           });
-          res.on("searchReference", (referral: ldap.SearchReference) => {
-            searchStatus.searchReference.push(referral);
-          });
-          res.on("end", (result: ldap.SearchEnd) => {
+          searchResponse.on(
+            "searchReference",
+            (referral: ldap.SearchReference) => {
+              searchStatus.searchReference.push(referral);
+            },
+          );
+          searchResponse.on("end", (result: ldap.SearchEnd) => {
             searchStatus.end.push(result);
             if (result.status != 0) {
               return reject(
-                `LDAP Status ${result.status}, results: ${searchStatus.results.length}`,
+                new Error(
+                  `LDAP Status ${result.status}, results: ${searchStatus.results.length}`,
+                ),
               );
             }
             return resolve([
               ...searchStatus.results.map(resultFromResponse),
             ]);
           });
-          res.on("error", (error: Error) => {
-            const msg = `res.on.error: ${error.message}`;
-            console.log(msg);
-            return reject(msg);
+          searchResponse.on("error", (error: Error) => {
+            console.log(
+              "searchResponse.on_error (but probably I've lost the race)",
+              error.message,
+            );
+            // TODO : should we trigger a reconnect here? only, if the error a timeout?
+            return reject(error);
           });
         },
       );
     } catch (error) {
-      console.log(
-        `ERROR .. catch serviceClient search: [${(error as Error).message}]`,
+      console.error(
+        "getUsersStartingWith: catching serviceClient search with:",
+        (error as Error).message,
       );
-      reject((error as Error).message);
+      reject(error);
     }
   });
   const timeoutPromise = new Promise<never>((_resolve, reject) => {
     setTimeout(() => {
       reject(new Error("LDAP Search Timeout - Server unreachable? dead?"));
-    }, 7000);
+    }, cf.ldap_retry_wait_seconds * 1000);
   });
   return Promise.race([searchPromise, timeoutPromise]).catch((err) => {
     if (err.message.includes("Timeout")) {
-      console.error("Search timed out. Killing Zombie Client.");
-      try {
-        serviceClientCarrier.client.emit(
-          "error",
-          new Error("Force Kill by Timeout"),
-        );
-      } catch {
-        // just try
-      }
+      console.error("Search timed out. Triggering factory reconnect.");
+      void serviceClientFactory.makeClient();
     }
-    throw err; // Fehler weiterwerfen an den Aufrufer
+    throw err; // Fehler weiterwerfen an den Aufrufer, habe ja schon lange gewartet
   }) as Promise<
     Record<string, string>[]
   >;
+}
+
+function getServiceClient(): Promise<ldap.Client> {
+  // Promise resolves after successful bind
+  // Promise rejects on bind error
+  return new Promise((resolve, reject) => {
+    let pending = true;
+    const ldapClient = ldap.createClient({
+      url: cf.SERVICE_URL,
+      reconnect: true,
+      idleTimeout: 1000 * 60 * 15, // 15 minutes
+      connectTimeout: 7000, // 10 seconds
+    });
+    console.log(
+      `INFO created serviceClient (url: ${cf.SERVICE_URL}, idleTimeout: ${
+        1000 * 60 * 15
+      })`,
+    );
+    ldapClient.on("connect", () => {
+      console.log("ldap client_on_connect: now start binding ...");
+      ldapClient.bind(cf.SERVICE_DN, cf.SERVICE_PW, bindCB);
+    });
+    ldapClient.on("reconnect", () => {
+      console.log("ldap client_on_reconnect: binding ...");
+      ldapClient.bind(cf.SERVICE_DN, cf.SERVICE_PW, bindCB);
+    });
+    ldapClient.on("error", (err: Error) => {
+      console.error("ldap client_on_error", err);
+      void serviceClientFactory.makeClient();
+    });
+    ldapClient.on("close", () => {
+      console.log("ldap INFO client_on_close");
+    });
+    ldapClient.on("timeout", () => {
+      console.log("ldap client_on_timeout");
+    });
+    ldapClient.on("end", () => {
+      console.log("ldap client_on_end");
+    });
+    ldapClient.on("idle", () => {
+      console.log("ldap client_on_idle: binding ...");
+      ldapClient.bind(cf.SERVICE_DN, cf.SERVICE_PW, bindCB);
+    });
+    ldapClient.on("destroy", () => {
+      console.log("ldap client_on_destroy");
+    });
+    ldapClient.on("unbind", () => {
+      console.log("ldap client_on_unbind");
+    });
+    // Nested Function, need to resolve/reject the outer Promise
+    function bindCB(err: Error | null) {
+      let msg = "";
+      if (!err) {
+        console.log("bindCB: Binding has completed successfully.");
+      } else {
+        msg = `LDAP bind error: ${err.message}`;
+        console.error(err);
+        console.log(`above: ${msg}`);
+      }
+      if (pending) {
+        pending = false; // never resolve/reject more than once
+        if (err) {
+          return reject(err);
+        }
+        return resolve(ldapClient);
+      } else { // not pending, only return
+        if (err) {
+          console.error("bindCB: not pending (promise resolved), error:", err);
+          console.info("bindCB: calling serviceClientFactory.makeClient ...");
+          void serviceClientFactory.makeClient();
+          return;
+        }
+        console.info("bindCB: called, not pending, simply returning.");
+        return;
+      }
+    }
+  });
 }
 
 function resultFromResponse(response: ldap.Response) {
@@ -91,96 +264,4 @@ function resultFromResponse(response: ldap.Response) {
     result[attr.type] = attr.values.join(", ");
   });
   return result;
-}
-
-function getServiceClient(): Promise<ldap.Client> {
-  return new Promise((resolve, reject) => {
-    let pending = true;
-    const client = ldap.createClient({
-      url: cf.SERVICE_URL,
-      reconnect: true,
-      idleTimeout: 1000 * 60 * 15, // 15 minutes
-    });
-    console.log(
-      `INFO created serviceClient (url: ${cf.SERVICE_URL}, idleTimeout: ${
-        1000 * 60 * 15
-      })`,
-    );
-    client.on("connect", () => {
-      console.log("ldap client_on_connect: now start binding ...");
-      client.bind(cf.SERVICE_DN, cf.SERVICE_PW, bindCB);
-    });
-    client.on("reconnect", () => {
-      console.log("ldap client_on_reconnect: binding ...");
-      client.bind(cf.SERVICE_DN, cf.SERVICE_PW, bindCB);
-    });
-    client.on("error", (err: Error) => {
-      console.error(`ldap ERROR client_on_error [${err.message}]`);
-    });
-    client.on("close", () => {
-      console.log("ldap INFO client_on_close");
-    });
-    client.on("timeout", () => {
-      console.log("ldap client_on_timeout");
-    });
-    client.on("end", () => {
-      console.log("ldap client_on_end");
-    });
-    client.on("idle", () => {
-      console.log("ldap client_on_idle: binding ...");
-      client.bind(cf.SERVICE_DN, cf.SERVICE_PW, bindCB);
-    });
-    client.on("destroy", () => {
-      console.log("ldap client_on_destroy");
-    });
-    client.on("unbind", () => {
-      console.log("ldap client_on_unbind");
-    });
-    // Nested Function, need to resolve/reject the outer Promise
-    async function bindCB(err: Error | null) {
-      let msg = "";
-      if (!err) {
-        console.log("bindCB: Binding has completed successfully.");
-      } else {
-        msg = `bindCB: error: ${err.message}`;
-        console.error(err);
-      }
-      if (pending) {
-        pending = false; // never resolve/reject more than once
-        if (err) {
-          return reject(msg);
-        }
-        return resolve(client);
-      } else { // not pending, only return
-        if (err) {
-          console.error("bindCB: not pending (promise resolved), error:", err);
-          try {
-            client.unbind(); // Versuch höflich zu sein
-          } catch { // just try
-          }
-          try {
-            client.destroy(); // Hard kill des Sockets
-          } catch { // just try
-          }
-          client.removeAllListeners(); // Wichtig: Zombie-Listener entfernen
-          console.info("bindCB: detroyed old client, retrying in 20s ...");
-          await sleep(20);
-
-          let newClient = null;
-          while (!newClient) {
-            try {
-              newClient = await getServiceClient();
-            } catch (e) {
-              console.error("Retry failed, waiting another 20s...", e);
-              await sleep(20);
-            }
-          }
-          serviceClientCarrier.client = newClient;
-          return;
-        }
-        console.info("bindCB: called, not pending, simply returning.");
-        return;
-      }
-    }
-  });
 }

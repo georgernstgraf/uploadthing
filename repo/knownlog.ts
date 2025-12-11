@@ -1,4 +1,4 @@
-import db from "./db.ts";
+import { db } from "./db.ts";
 
 const insertPrep = db.prepare("INSERT INTO knownlog (file) VALUES (?)");
 const findByNamePrep = db.prepare(

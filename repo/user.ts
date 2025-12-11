@@ -1,4 +1,4 @@
-import db from "./db.ts";
+import { db } from "./db.ts";
 
 const selectbyip_prep = db.prepare(
   "select ip,name,email from user where ip = ?",

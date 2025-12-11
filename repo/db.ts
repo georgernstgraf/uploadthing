@@ -1,3 +1,5 @@
 import { Database } from "@db/sqlite";
-const db = new Database("uploadthing.db");
-export default db;
+export const db = new Database("uploadthing.db");
+export function close() {
+  db.close();
+}
