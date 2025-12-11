@@ -6,12 +6,14 @@ import config from "./lib/config.ts";
 import { get_unterlagen } from "./lib/lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import * as service from "./service/service.ts";
+import { UserType } from "./lib/lib.ts";
 type Bindings = {
   info: Deno.ServeHandlerInfo;
 };
 
 type Variables = {
   remoteip: string;
+  remoteuser: UserType | null;
 };
 
 const dirIndexTemplate = Handlebars.compile(
@@ -25,6 +27,9 @@ const successTemplate = Handlebars.compile(
 );
 const ldapTemplate = Handlebars.compile(
   Deno.readTextFileSync("templates/ldap.hbs"),
+);
+const whoamiTemplate = Handlebars.compile(
+  Deno.readTextFileSync("templates/whoami.hbs"),
 );
 Handlebars.registerPartial(
   "top",
@@ -86,6 +91,16 @@ app.post("upload", async (c) => {
   );
 });
 
+app.get("whoami", (c) => {
+  const remote_ip = c.get("remoteip");
+  const remote_user = c.get("remoteuser");
+  return c.html(
+    whoamiTemplate({
+      remote_ip,
+      remote_user,
+    }),
+  );
+});
 app.get("ldap", async (c) => {
   const query = c.req.query();
   try {

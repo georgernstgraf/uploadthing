@@ -1,6 +1,7 @@
 import cf from "../lib/config.ts";
+import { sleep } from "../lib/lib.ts";
 import ldap from "ldapjs";
-export const serviceClient = await getServiceClient();
+export const serviceClientCarrier = { "client": await getServiceClient() };
 
 export function getUsersStartingWith(
   initial: string,
@@ -15,9 +16,9 @@ export function getUsersStartingWith(
     scope: "sub",
     attributes: attributes,
   };
-  return new Promise((resolve, reject) => {
+  const searchPromise = new Promise((resolve, reject) => {
     try {
-      serviceClient.search(
+      serviceClientCarrier.client.search(
         cf.SEARCH_BASE,
         options,
         (_err: Error, res: ldap.SearchCallbackResponse) => {
@@ -58,9 +59,30 @@ export function getUsersStartingWith(
       console.log(
         `ERROR .. catch serviceClient search: [${(error as Error).message}]`,
       );
-      return [(error as Error).message];
+      reject((error as Error).message);
     }
   });
+  const timeoutPromise = new Promise<never>((_resolve, reject) => {
+    setTimeout(() => {
+      reject(new Error("LDAP Search Timeout - Server unreachable? dead?"));
+    }, 7000);
+  });
+  return Promise.race([searchPromise, timeoutPromise]).catch((err) => {
+    if (err.message.includes("Timeout")) {
+      console.error("Search timed out. Killing Zombie Client.");
+      try {
+        serviceClientCarrier.client.emit(
+          "error",
+          new Error("Force Kill by Timeout"),
+        );
+      } catch {
+        // just try
+      }
+    }
+    throw err; // Fehler weiterwerfen an den Aufrufer
+  }) as Promise<
+    Record<string, string>[]
+  >;
 }
 
 function resultFromResponse(response: ldap.Response) {
@@ -114,19 +136,50 @@ function getServiceClient(): Promise<ldap.Client> {
     client.on("unbind", () => {
       console.log("ldap client_on_unbind");
     });
-    function bindCB(err: Error | null) {
-      if (!pending) {
-        console.warn("ldap bindCB called but not pending, ignoring ...");
-        return;
-      }
-      pending = false;
+    // Nested Function, need to resolve/reject the outer Promise
+    async function bindCB(err: Error | null) {
+      let msg = "";
       if (!err) {
-        console.log("ldap Binding has completed w/o Errors");
-        return resolve(client);
+        console.log("bindCB: Binding has completed successfully.");
       } else {
-        const msg = `ldap error: ${err.message}`;
-        console.error(msg);
-        return reject(msg);
+        msg = `bindCB: error: ${err.message}`;
+        console.error(err);
+      }
+      if (pending) {
+        pending = false; // never resolve/reject more than once
+        if (err) {
+          return reject(msg);
+        }
+        return resolve(client);
+      } else { // not pending, only return
+        if (err) {
+          console.error("bindCB: not pending (promise resolved), error:", err);
+          try {
+            client.unbind(); // Versuch höflich zu sein
+          } catch { // just try
+          }
+          try {
+            client.destroy(); // Hard kill des Sockets
+          } catch { // just try
+          }
+          client.removeAllListeners(); // Wichtig: Zombie-Listener entfernen
+          console.info("bindCB: detroyed old client, retrying in 20s ...");
+          await sleep(20);
+
+          let newClient = null;
+          while (!newClient) {
+            try {
+              newClient = await getServiceClient();
+            } catch (e) {
+              console.error("Retry failed, waiting another 20s...", e);
+              await sleep(20);
+            }
+          }
+          serviceClientCarrier.client = newClient;
+          return;
+        }
+        console.info("bindCB: called, not pending, simply returning.");
+        return;
       }
     }
   });
