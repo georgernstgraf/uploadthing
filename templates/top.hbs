@@ -13,11 +13,15 @@
 
 <body>
     <main class="container mt-4">
-        <h1 class="mx-5 mb-3">PLF - Router</h1>
-        <div class="h2 mx-5 mb-3">(Studierende/r: <p class="d-inline text-bg-danger rounded-2 p-2">Nicht bekannt</p>)</div>
-        </div>
-        <nav class="d-flex gap-5 mx-5 my-3">
-            <a href="/">Home</a>
-            <a href="/upload">Zipfile Upload</a>
-            <a href="/whoami">Anmelden / Name ändern</a>
+        <h1 class="mx-5 mb-3 text-center">PLF - Router</h1>
+        <a class="d-block btn mx-5 mb-3 fw-bold {{#if remote_user}}btn-info{{else}}text-bg-danger btn-danger{{/if}}"
+           {{#if remote_user}}
+           href="/whoami">{{remote_user.name}} ({{remote_user.email}})
+            {{else}} href="/whoami">Bitte Name bekanntgeben! {{/if}}</a>
+        <h5 class="text-center">IP: {{remote_ip}}</h5>
+        <nav class="d-flex justify-content-around gap-5 mx-5 my-5">
+            <a href="/"
+               class="btn btn-outline-primary">Home</a>
+            <a href="/upload"
+               class="btn btn-outline-primary">Zipfile Upload</a>
         </nav>

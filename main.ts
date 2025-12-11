@@ -46,6 +46,8 @@ app.get("/", async (c) => {
   return c.html(dirIndexTemplate({
     UNTERLAGEN_DIR: config.UNTERLAGEN_DIR,
     files,
+    remote_user: c.get("remoteuser"),
+    remote_ip: c.get("remoteip"),
   }));
 });
 app.get(
@@ -58,15 +60,22 @@ app.get(
 // 1. Directory Index Handler
 app.get("upload", (c) => {
   const remote_ip = c.get("remoteip");
-  return c.html(uploadTemplate({ remote_ip }));
+  const remote_user = c.get("remoteuser");
+  return c.html(
+    uploadTemplate({ remote_ip, remote_user }),
+  );
 });
 app.post("upload", async (c) => {
   const beginTime = Date.now();
   const remote_ip = c.get("remoteip");
+  const remote_user = c.get("remoteuser");
   const formData = await c.req.formData();
   const file = formData.get("file") as File;
   if (!file) {
     return c.text("No file uploaded", 400);
+  }
+  if (!remote_user) {
+    return c.text("User not registered", 403);
   }
   const arrayBuffer = await file.arrayBuffer();
   const data = new Uint8Array(arrayBuffer);
@@ -74,8 +83,11 @@ app.post("upload", async (c) => {
   const hash = createHash("md5");
   hash.update(data);
   const md5sum = hash.digest("hex");
+  const real_filename = `${
+    remote_user.name.replace(/ /g, "_")
+  }-${remote_ip}-${file.name}`;
   await Deno.writeFile(
-    `${config.ABGABEN_DIR}/${remote_ip}-${file.name}`,
+    `${config.ABGABEN_DIR}/${real_filename}`,
     data,
   );
   const endTime = Date.now();
@@ -83,10 +95,11 @@ app.post("upload", async (c) => {
   return c.html(
     successTemplate({
       remote_ip,
-      filename: file.name,
+      filename: real_filename,
       filesize: (filesize / 1024).toFixed(0),
       md5sum,
       durationSeconds,
+      remote_user,
     }),
   );
 });
@@ -105,7 +118,29 @@ app.get("ldap", async (c) => {
   const query = c.req.query();
   try {
     const users = await service.ldap.getUserByEmail(query.email);
+    if (users.length === 0) {
+      users.push({
+        email: "",
+        name: `Keine Email beginnend mit ${query.email} gefunden!`,
+      });
+    }
     return c.html(ldapTemplate({ users }));
+  } catch (_e) {
+    return c.html(
+      ldapTemplate({
+        users: [{ email: "", name: "mindestens 3 Anfangsbuchstaben!" }],
+      }),
+    );
+  }
+});
+app.post("register", async (c) => {
+  try {
+    const body = await c.req.parseBody();
+    const email = body.email as string;
+    const ldapuser = (await service.ldap.getUserByEmail(email))[0];
+    ldapuser.ip = c.get("remoteip");
+    service.user.register(ldapuser);
+    return c.redirect("/");
   } catch (e) {
     return c.text((e as Error).message, 400);
   }

@@ -1,6 +1,7 @@
 import cf from "../lib/config.ts";
-import { sleep } from "../lib/lib.ts";
+import { LdapUserType, sleep } from "../lib/lib.ts";
 import ldap from "ldapjs";
+import { UserType } from "../lib/lib.ts";
 
 class ServiceClientFactory {
   private lasttry = new Date(0);
@@ -99,7 +100,7 @@ void serviceClientFactory.makeClient();
 
 export function getUsersStartingWith(
   initial: string,
-): Promise<Record<string, string>[]> {
+): Promise<LdapUserType[]> {
   const filter = `(mail=${initial}*)`;
   const attributes = [
     "mail",
@@ -110,7 +111,7 @@ export function getUsersStartingWith(
     scope: "sub",
     attributes: attributes,
   };
-  const searchPromise = new Promise((resolve, reject) => {
+  const searchPromise = new Promise<LdapUserType[]>((resolve, reject) => {
     try {
       serviceClientFactory.getClient().search(
         cf.SEARCH_BASE,
@@ -177,7 +178,7 @@ export function getUsersStartingWith(
     }
     throw err; // Fehler weiterwerfen an den Aufrufer, habe ja schon lange gewartet
   }) as Promise<
-    Record<string, string>[]
+    LdapUserType[]
   >;
 }
 
@@ -258,10 +259,13 @@ function getServiceClient(): Promise<ldap.Client> {
   });
 }
 
-function resultFromResponse(response: ldap.Response) {
+function resultFromResponse(response: ldap.Response): LdapUserType {
   const result: Record<string, string> = {};
   response.pojo.attributes.forEach((attr: ldap.Attribute) => {
     result[attr.type] = attr.values.join(", ");
   });
-  return result;
+  return {
+    displayName: result.displayName,
+    mail: result.mail,
+  };
 }

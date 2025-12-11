@@ -1,11 +1,11 @@
 {{> top}}
-<h2>Anmelden / Name ändern</h2>
+<h2 class="my-3 text-center">Anmelden / Name ändern</h2>
 <!-- 1. Das Suchfeld -->
 <div class="mb-3">
-    <label class="form-label">Suche <input type="text"
-               class="form-control"
+    <label class="w-100">Suche nach Email<input type="text"
+               class="form-control mt-1"
                name="email"
-               placeholder="Tippen zum Filtern..."
+               placeholder="Anfangsbuchstaben meiner Email..."
                hx-get="/ldap"
                hx-trigger="keyup changed delay:500ms"
                hx-target="#options-select">
@@ -13,22 +13,20 @@
 </div>
 <!-- 2. Die Select-Box -->
 <div class="mb-3">
-    <label class="form-label">Auswahl <select id="options-select"
-                class="form-select"
+    <label class="w-100">Auswahl <select id="options-select"
+                class="form-select mt-1"
                 name="email"
                 size="10"
                 hx-post="/register"
-                hx-trigger="change">
+                hx-trigger="change"
+                hx-target="body"
+                hx-swap="innerHTML">
             <!-- Initialer Inhalt oder leer -->
             <option value=""
-                    selected>Bitte zuerst suchen...</option>
+                    selected>Bitte oben suchen...</option>
         </select>
     </label>
 </div>
-<p>remote_user.ip: {{remote_user.ip}}</p>
-<p>remote_user.name: {{remote_user.name}}</p>
-<p>remote_user.email: {{remote_user.email}}</p>
-<p>remote_ip: {{remote_ip}}</p>
 </main>
 </body>
 

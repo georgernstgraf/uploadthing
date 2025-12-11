@@ -10,9 +10,13 @@ export async function get_unterlagen() {
   return files;
 }
 export type UserType = {
-  ip: string;
+  ip?: string;
   name: string;
   email: string;
+};
+export type LdapUserType = {
+  displayName: string;
+  mail: string;
 };
 export function sleep(s: number) {
   return new Promise((resolve) => setTimeout(resolve, s * 1000));

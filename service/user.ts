@@ -6,3 +6,6 @@ export function getbyip(ip: string): UserType | null {
   if (!result) return null;
   return result as UserType;
 }
+export function register(userData: UserType) {
+  user.registerip(userData);
+}
