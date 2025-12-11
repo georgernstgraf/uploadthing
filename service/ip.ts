@@ -4,7 +4,7 @@ import * as service from "./service.ts";
 
 const ipRegex = /Host:\s+(\d+\.\d+\.\d+\.\d+)\s+\(([^)]*)\)\s+Status:\s+Up/;
 
-const eatfiletransaction = repo.db.transaction((file: string) => {
+const eatfiletransaction = repo.db.db.transaction((file: string) => {
   repo.knownlog.add(file);
   const filedate = new Date(file.split(".")[0].replace("_", " "));
   const content = Deno.readTextFileSync(`${config.logdir}/${file}`);
