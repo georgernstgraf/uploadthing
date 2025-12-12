@@ -117,11 +117,12 @@ app.get("whoami", (c) => {
 app.get("ldap", async (c) => {
   const query = c.req.query();
   try {
-    const users = await service.ldap.getUserByEmail(query.email);
+    const users = await service.ldap.searchUserByEmailStart(query.email);
     if (users.length === 0) {
       users.push({
         email: "",
         name: `Keine Email beginnend mit ${query.email} gefunden!`,
+        klasse: "",
       });
     }
     return c.html(ldapTemplate({ users }));
@@ -137,7 +138,10 @@ app.post("register", async (c) => {
   try {
     const body = await c.req.parseBody();
     const email = body.email as string;
-    const ldapuser = (await service.ldap.getUserByEmail(email))[0];
+    const ldapuser = await service.ldap.getUserByEmail(email);
+    if (!ldapuser) {
+      return c.text("User not found", 404);
+    }
     ldapuser.ip = c.get("remoteip");
     service.user.register(ldapuser);
     return c.redirect("/");

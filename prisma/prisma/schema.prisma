@@ -24,8 +24,9 @@ model knownlog {
 }
 
 model user {
-  id    Int    @id @default(autoincrement())
-  ip    String @unique
-  name  String
-  email String
+  id     Int    @id @default(autoincrement())
+  ip     String @unique
+  name   String
+  email  String
+  klasse String
 }

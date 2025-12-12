@@ -1,7 +1,6 @@
 import cf from "../lib/config.ts";
-import { LdapUserType, sleep } from "../lib/lib.ts";
+import { LdapUserType, nowString, sleep } from "../lib/lib.ts";
 import ldap from "ldapjs";
-import { UserType } from "../lib/lib.ts";
 
 class ServiceClientFactory {
   private lasttry = new Date(0);
@@ -80,7 +79,7 @@ class ServiceClientFactory {
         this.client = await getServiceClient(); // can take very long, as ldapjs retries the bind internally
         this.isConnecting = false;
         console.info(
-          "ServiceClientFactory.makeClient: got new client, returning from loop.",
+          `${nowString()} ServiceClientFactory.makeClient: got new client, returning from loop.`,
         );
         return; // essentiell
       } catch (e) {
@@ -98,13 +97,29 @@ class ServiceClientFactory {
 export const serviceClientFactory = new ServiceClientFactory();
 void serviceClientFactory.makeClient();
 
-export function getUsersStartingWith(
+export async function getUserByEmail(
+  email: string,
+): Promise<LdapUserType | null> {
+  const filter = `(mail=${email})`;
+  const results = await searchUsers(filter);
+  if (results.length === 0) {
+    return null;
+  }
+  return results[0];
+}
+export function getUsersMailStartingWith(
   initial: string,
 ): Promise<LdapUserType[]> {
   const filter = `(mail=${initial}*)`;
+  return searchUsers(filter);
+}
+export function searchUsers(
+  filter: string,
+): Promise<LdapUserType[]> {
   const attributes = [
     "mail",
     "displayName",
+    "physicalDeliveryOfficeName",
   ];
   const options = {
     filter,
@@ -267,5 +282,6 @@ function resultFromResponse(response: ldap.Response): LdapUserType {
   return {
     displayName: result.displayName,
     mail: result.mail,
+    physicalDeliveryOfficeName: result.physicalDeliveryOfficeName,
   };
 }
