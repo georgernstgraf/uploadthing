@@ -1,13 +1,22 @@
 {{> top}}
-<h2>Zipfile Upload</h2>
 <form action="/upload"
       method="POST"
-      enctype="multipart/form-data">
-       <input type="file"
-              name="file"
-              accept=".zip">
-       <button type="submit">Upload</button>
-       <p>IP-Adresse: {{remote_ip}}</p>
+      enctype="multipart/form-data"
+      class="border border-2 border-black needs-validation p-4 rounded-2"
+      novalidate="">
+       <div class="mb-3">
+              <label class="d-block form-label h3 text-center mb-3">Bitte ZIP Datei auswählen:</label>
+              <input type="file"
+                     class="form-control"
+                     name="file"
+                     accept=".zip"
+                     required>
+              <div class="invalid-feedback">Bitte eine ZIP-Datei auswählen.</div>
+       </div>
+       <div class="text-center">
+              <button type="submit"
+                      class="btn btn-primary">Upload</button>
+       </div>
 </form>
 </main>
 </body>
