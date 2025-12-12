@@ -30,3 +30,13 @@ model user {
   email  String
   klasse String
 }
+
+model history {
+  id    Int      @id @default(autoincrement())
+  ip    String
+  email String
+  at    DateTime
+
+  @@index([email])
+  @@index([ip])
+}
