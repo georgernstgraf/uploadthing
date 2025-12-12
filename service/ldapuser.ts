@@ -25,7 +25,7 @@ export async function searchUserByEmailStart(
 }
 function userFromLdap(ldapUser: LdapUserType): UserType {
   return {
-    email: ldapUser.mail,
+    email: ldapUser.mail.toLocaleLowerCase(),
     name: ldapUser.displayName,
     klasse: ldapUser.physicalDeliveryOfficeName,
   };
