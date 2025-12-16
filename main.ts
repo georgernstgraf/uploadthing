@@ -69,34 +69,70 @@ app.post("upload", async (c) => {
   const beginTime = Date.now();
   const remote_ip = c.get("remoteip");
   const remote_user = c.get("remoteuser");
+
   const formData = await c.req.formData();
   const file = formData.get("file") as File;
-  if (!file) {
-    return c.text("No file uploaded", 400);
-  }
-  if (!remote_user) {
-    return c.text("User not registered", 403);
-  }
-  const arrayBuffer = await file.arrayBuffer();
-  const data = new Uint8Array(arrayBuffer);
-  const filesize = data.length;
+
+  if (!file) return c.text("No file uploaded", 400);
+  if (!remote_user) return c.text("User not registered", 403);
+
+  const real_filename = `${safeFileComponent(remote_user.name)}-${
+    safeFileComponent(remote_ip)
+  }-${safeFileComponent(file.name)}`;
+  const outPath = `${config.ABGABEN_DIR}/${real_filename}`;
+
   const hash = createHash("md5");
-  hash.update(data);
+  let bytesWritten = 0;
+
+  let out: Deno.FsFile | null = null;
+  try {
+    out = await Deno.open(outPath, {
+      create: true,
+      write: true,
+      truncate: true,
+    });
+
+    const reader = file.stream().getReader();
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+
+      // value is a Uint8Array chunk
+      bytesWritten += value.byteLength;
+      hash.update(value);
+      await writeAll(out, value);
+    }
+  } catch (e) {
+    // best-effort cleanup of partial file
+    try {
+      if (out) out.close();
+    } catch {
+      // ignore
+    }
+    try {
+      await Deno.remove(outPath);
+    } catch {
+      // ignore
+    }
+    return c.text((e as Error).message, 500);
+  } finally {
+    try {
+      out?.close();
+    } catch {
+      // ignore
+    }
+  }
+
   const md5sum = hash.digest("hex");
-  const real_filename = `${
-    remote_user.name.replace(/ /g, "_")
-  }-${remote_ip}-${file.name}`;
-  await Deno.writeFile(
-    `${config.ABGABEN_DIR}/${real_filename}`,
-    data,
-  );
   const endTime = Date.now();
   const durationSeconds = ((endTime - beginTime) / 1000).toFixed(1);
+
   return c.html(
     successTemplate({
       remote_ip,
       filename: real_filename,
-      filesize: (filesize / 1024).toFixed(0),
+      filesize: (bytesWritten / 1024).toFixed(0),
       md5sum,
       durationSeconds,
       remote_user,
@@ -175,3 +211,20 @@ Deno.serve(
   },
   (req, info) => app.fetch(req, { info }),
 );
+
+function safeFileComponent(input: string): string {
+  // prevent path traversal + weird separators; keep it simple
+  return input
+    .replace(/[\/\\]/g, "_")
+    .replace(/\.\./g, "_")
+    .replace(/\s+/g, "_");
+}
+
+async function writeAll(f: Deno.FsFile, chunk: Uint8Array): Promise<void> {
+  let off = 0;
+  while (off < chunk.length) {
+    const n = await f.write(chunk.subarray(off));
+    if (n <= 0) throw new Error("short write");
+    off += n;
+  }
+}
