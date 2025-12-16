@@ -1,7 +1,7 @@
 {
-  "version": "5",
+  "version": "4",
   "specifiers": {
-    "jsr:@db/sqlite@0.12": "0.12.0",
+    "jsr:@db/sqlite@0.12.0": "0.12.0",
     "jsr:@denosaurs/plug@1": "1.1.0",
     "jsr:@std/assert@0.217": "0.217.0",
     "jsr:@std/assert@1": "1.0.16",
@@ -13,7 +13,7 @@
     "jsr:@std/path@1": "1.1.3",
     "jsr:@std/path@^1.1.3": "1.1.3",
     "npm:handlebars@^4.7.8": "4.7.8",
-    "npm:hono@^4.10.6": "4.10.6",
+    "npm:hono@^4.10.6": "4.11.1",
     "npm:htmx.org@^2.0.8": "2.0.8",
     "npm:ldapjs@^3.0.7": "3.0.7"
   },
@@ -74,12 +74,10 @@
   },
   "npm": {
     "@ldapjs/asn1@1.2.0": {
-      "integrity": "sha512-KX/qQJ2xxzvO2/WOvr1UdQ+8P5dVvuOLk/C9b1bIkXxZss8BaR28njXdPgFCpj5aHaf1t8PmuVnea+N9YG9YMw==",
-      "deprecated": true
+      "integrity": "sha512-KX/qQJ2xxzvO2/WOvr1UdQ+8P5dVvuOLk/C9b1bIkXxZss8BaR28njXdPgFCpj5aHaf1t8PmuVnea+N9YG9YMw=="
     },
     "@ldapjs/asn1@2.0.0": {
-      "integrity": "sha512-G9+DkEOirNgdPmD0I8nu57ygQJKOOgFEMKknEuQvIHbGLwP3ny1mY+OTUYLCbCaGJP4sox5eYgBJRuSUpnAddA==",
-      "deprecated": true
+      "integrity": "sha512-G9+DkEOirNgdPmD0I8nu57ygQJKOOgFEMKknEuQvIHbGLwP3ny1mY+OTUYLCbCaGJP4sox5eYgBJRuSUpnAddA=="
     },
     "@ldapjs/attribute@1.0.0": {
       "integrity": "sha512-ptMl2d/5xJ0q+RgmnqOi3Zgwk/TMJYG7dYMC0Keko+yZU6n+oFM59MjQOUht5pxJeS4FWrImhu/LebX24vJNRQ==",
@@ -87,32 +85,28 @@
         "@ldapjs/asn1@2.0.0",
         "@ldapjs/protocol",
         "process-warning"
-      ],
-      "deprecated": true
+      ]
     },
     "@ldapjs/change@1.0.0": {
       "integrity": "sha512-EOQNFH1RIku3M1s0OAJOzGfAohuFYXFY4s73wOhRm4KFGhmQQ7MChOh2YtYu9Kwgvuq1B0xKciXVzHCGkB5V+Q==",
       "dependencies": [
         "@ldapjs/asn1@2.0.0",
         "@ldapjs/attribute"
-      ],
-      "deprecated": true
+      ]
     },
     "@ldapjs/controls@2.1.0": {
       "integrity": "sha512-2pFdD1yRC9V9hXfAWvCCO2RRWK9OdIEcJIos/9cCVP9O4k72BY1bLDQQ4KpUoJnl4y/JoD4iFgM+YWT3IfITWw==",
       "dependencies": [
         "@ldapjs/asn1@1.2.0",
         "@ldapjs/protocol"
-      ],
-      "deprecated": true
+      ]
     },
     "@ldapjs/dn@1.1.0": {
       "integrity": "sha512-R72zH5ZeBj/Fujf/yBu78YzpJjJXG46YHFo5E4W1EqfNpo1UsVPqdLrRMXeKIsJT3x9dJVIfR6OpzgINlKpi0A==",
       "dependencies": [
         "@ldapjs/asn1@2.0.0",
         "process-warning"
-      ],
-      "deprecated": true
+      ]
     },
     "@ldapjs/filter@2.1.1": {
       "integrity": "sha512-TwPK5eEgNdUO1ABPBUQabcZ+h9heDORE4V9WNZqCtYLKc06+6+UAJ3IAbr0L0bYTnkkWC/JEQD2F+zAFsuikNw==",
@@ -120,8 +114,7 @@
         "@ldapjs/asn1@2.0.0",
         "@ldapjs/protocol",
         "process-warning"
-      ],
-      "deprecated": true
+      ]
     },
     "@ldapjs/messages@1.3.0": {
       "integrity": "sha512-K7xZpXJ21bj92jS35wtRbdcNrwmxAtPwy4myeh9duy/eR3xQKvikVycbdWVzkYEAVE5Ce520VXNOwCHjomjCZw==",
@@ -134,12 +127,10 @@
         "@ldapjs/filter",
         "@ldapjs/protocol",
         "process-warning"
-      ],
-      "deprecated": true
+      ]
     },
     "@ldapjs/protocol@1.2.1": {
-      "integrity": "sha512-O89xFDLW2gBoZWNXuXpBSM32/KealKCTb3JGtJdtUQc7RjAk8XzrRgyz02cPAwGKwKPxy0ivuC7UP9bmN87egQ==",
-      "deprecated": true
+      "integrity": "sha512-O89xFDLW2gBoZWNXuXpBSM32/KealKCTb3JGtJdtUQc7RjAk8XzrRgyz02cPAwGKwKPxy0ivuC7UP9bmN87egQ=="
     },
     "abstract-logging@2.0.1": {
       "integrity": "sha512-2BjRTZxTPvheOvGbBslFSYOUkr+SjPtOnrLP33f+VIWLzezQpZcqVg7ja3L4dBXmzzgwT+a029jRx5PCi3JuiA=="
@@ -165,15 +156,12 @@
         "minimist",
         "neo-async",
         "source-map",
+        "uglify-js",
         "wordwrap"
-      ],
-      "optionalDependencies": [
-        "uglify-js"
-      ],
-      "bin": true
+      ]
     },
-    "hono@4.10.6": {
-      "integrity": "sha512-BIdolzGpDO9MQ4nu3AUuDwHZZ+KViNm+EZ75Ae55eMXMqLVhDFqEMXxtUe9Qh8hjL+pIna/frs2j6Y2yD5Ua/g=="
+    "hono@4.11.1": {
+      "integrity": "sha512-KsFcH0xxHes0J4zaQgWbYwmz3UPOOskdqZmItstUG93+Wk1ePBLkLGwbP9zlmh1BFUiL8Qp+Xfu9P7feJWpGNg=="
     },
     "htmx.org@2.0.8": {
       "integrity": "sha512-fm297iru0iWsNJlBrjvtN7V9zjaxd+69Oqjh4F/Vq9Wwi2kFisLcrLCiv5oBX0KLfOX/zG8AUo9ROMU5XUB44Q=="
@@ -195,8 +183,7 @@
         "once",
         "vasync",
         "verror@1.10.1"
-      ],
-      "deprecated": true
+      ]
     },
     "minimist@1.2.8": {
       "integrity": "sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA=="
@@ -220,8 +207,7 @@
       "integrity": "sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g=="
     },
     "uglify-js@3.19.3": {
-      "integrity": "sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ==",
-      "bin": true
+      "integrity": "sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ=="
     },
     "vasync@2.2.1": {
       "integrity": "sha512-Hq72JaTpcTFdWiNA4Y22Amej2GH3BFmBaKPPlDZ4/oC8HNn2ISHLkFrJU4Ds8R3jcUi7oo5Y9jcMHKjES+N9wQ==",
@@ -254,7 +240,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@db/sqlite@0.12",
+      "jsr:@db/sqlite@0.12.0",
       "jsr:@std/assert@1",
       "npm:handlebars@^4.7.8",
       "npm:hono@^4.10.6",
