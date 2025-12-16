@@ -6,3 +6,4 @@ Thumbs.db
 .env
 uploadthing.db-wal
 uploadthing.db-shm
+startloop.log
