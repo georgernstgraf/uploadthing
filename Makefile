@@ -2,7 +2,7 @@ default:
 	@echo "no default action"
 
 pull:
-	scp osense:uploadthing/uploadthing.db .
+	scp sense:uploadthing/uploadthing.db .
 
 push:
-	scp uploadthing.db osense:uploadthing/
+	scp uploadthing.db sense:uploadthing/

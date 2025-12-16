@@ -1,11 +1,11 @@
 {
-  "name": "5hwii_plf_prisma_restaurant",
+  "name": "uploadthing-prisma",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
+  "description": "This is for prisma-migrating the sqlite file, see make pull / make push in my parent dir",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "status": "npx prisma migrate status"
   },
   "keywords": [],
   "author": "",
