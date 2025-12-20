@@ -1,7 +1,6 @@
 // import config from "./config.ts";
-import * as user from "./service/user.ts";
-import * as db from "./service/db.ts";
+import * as history from "./repo/history.ts";
 
-console.log(user.getbyip("127.0.0.1"));
-console.log(user.getbyip("1.2.3.4"));
-db.close();
+console.log("Recent Events:");
+console.log(history.selectHistoryRange("2025-12-18 14:25", "2025-12-18 16:25"));
+history.db.close();

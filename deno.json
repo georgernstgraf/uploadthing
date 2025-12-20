@@ -2,7 +2,8 @@
   "tasks": {
     "dev": "deno run -A --env-file --watch=templates/ main.ts",
     "start": "deno run -A --env-file main.ts",
-    "test": "deno run -A --env-file main_test.ts"
+    "test": "deno run -A --env-file main_test.ts",
+    "testdb": "deno run -A --env-file main_test_db.ts"
   },
   "imports": {
     "@db/sqlite": "jsr:@db/sqlite@0.12.0",
