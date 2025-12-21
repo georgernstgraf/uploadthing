@@ -18,7 +18,7 @@ export type UserType = {
 export type LdapUserType = {
   displayName: string;
   mail: string;
-  physicalDeliveryOfficeName: string;
+  physicalDeliveryOfficeName: string; // Klasse
 };
 export function sleep(s: number) {
   return new Promise((resolve) => setTimeout(resolve, s * 1000));

@@ -27,7 +27,7 @@ function userFromLdap(ldapUser: LdapUserType): UserType {
   return {
     email: ldapUser.mail.toLocaleLowerCase(),
     name: ldapUser.displayName,
-    klasse: ldapUser.physicalDeliveryOfficeName,
+    klasse: ldapUser.physicalDeliveryOfficeName || "None",
   };
 }
 export async function close() {
