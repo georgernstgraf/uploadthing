@@ -7,6 +7,7 @@ import { get_unterlagen } from "./lib/lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import * as service from "./service/service.ts";
 import { UserType } from "./lib/lib.ts";
+import forensicRouter from "./routes/forensic.ts";
 type Bindings = {
   info: Deno.ServeHandlerInfo;
 };
@@ -41,6 +42,10 @@ await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 app.use("*", remoteIPMiddleware);
+
+// Mount forensic router
+app.route("/forensic", forensicRouter);
+
 app.get("/", async (c) => {
   const files = await get_unterlagen();
   return c.html(dirIndexTemplate({
