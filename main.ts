@@ -1,41 +1,16 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/deno";
 import { createHash } from "node:crypto";
-import Handlebars from "handlebars";
 import config from "./lib/config.ts";
 import { get_unterlagen } from "./lib/lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import * as service from "./service/service.ts";
-import { UserType } from "./lib/lib.ts";
+import * as hbs from "./lib/templates.ts";
+import { Variables } from "./lib/lib.ts";
 import forensicRouter from "./routes/forensic.ts";
 type Bindings = {
   info: Deno.ServeHandlerInfo;
 };
-
-type Variables = {
-  remoteip: string;
-  remoteuser: UserType | null;
-};
-
-const dirIndexTemplate = Handlebars.compile(
-  Deno.readTextFileSync("templates/dirindex.hbs"),
-);
-const uploadTemplate = Handlebars.compile(
-  Deno.readTextFileSync("templates/upload.hbs"),
-);
-const successTemplate = Handlebars.compile(
-  Deno.readTextFileSync("templates/success.hbs"),
-);
-const ldapTemplate = Handlebars.compile(
-  Deno.readTextFileSync("templates/ldap.hbs"),
-);
-const whoamiTemplate = Handlebars.compile(
-  Deno.readTextFileSync("templates/whoami.hbs"),
-);
-Handlebars.registerPartial(
-  "top",
-  Deno.readTextFileSync("templates/top.hbs"),
-);
 
 // ensure ABGABEN_DIR exists
 await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
@@ -48,7 +23,7 @@ app.route("/forensic", forensicRouter);
 
 app.get("/", async (c) => {
   const files = await get_unterlagen();
-  return c.html(dirIndexTemplate({
+  return c.html(hbs.dirIndexTemplate({
     UNTERLAGEN_DIR: config.UNTERLAGEN_DIR,
     files,
     remote_user: c.get("remoteuser"),
@@ -67,7 +42,7 @@ app.get("upload", (c) => {
   const remote_ip = c.get("remoteip");
   const remote_user = c.get("remoteuser");
   return c.html(
-    uploadTemplate({ remote_ip, remote_user }),
+    hbs.uploadTemplate({ remote_ip, remote_user }),
   );
 });
 app.post("upload", async (c) => {
@@ -134,7 +109,7 @@ app.post("upload", async (c) => {
   const durationSeconds = ((endTime - beginTime) / 1000).toFixed(1);
 
   return c.html(
-    successTemplate({
+    hbs.successTemplate({
       remote_ip,
       filename: real_filename,
       filesize: (bytesWritten / 1024).toFixed(0),
@@ -149,7 +124,7 @@ app.get("whoami", (c) => {
   const remote_ip = c.get("remoteip");
   const remote_user = c.get("remoteuser");
   return c.html(
-    whoamiTemplate({
+    hbs.whoamiTemplate({
       remote_ip,
       remote_user,
     }),
@@ -166,10 +141,10 @@ app.get("ldap", async (c) => {
         klasse: "",
       });
     }
-    return c.html(ldapTemplate({ users }));
+    return c.html(hbs.ldapTemplate({ users }));
   } catch (_e) {
     return c.html(
-      ldapTemplate({
+      hbs.ldapTemplate({
         users: [{ email: "", name: "mindestens 3 Anfangsbuchstaben!" }],
       }),
     );
@@ -195,7 +170,7 @@ app.post("newscanfile", async (c) => {
   try {
     const body = await c.req.json();
     const file = body.file as string;
-    const result = service.ip.eatfile(file);
+    const result = service.ipfact.eatfile(file);
     return c.json({ "ok": "true", file, result });
   } catch (e) {
     return c.json({ "ok": "false", "message": (e as Error).message }, 400);

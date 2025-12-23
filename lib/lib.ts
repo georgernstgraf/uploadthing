@@ -9,6 +9,14 @@ export async function get_unterlagen() {
   files.sort();
   return files;
 }
+export type Variables = {
+  remoteip: string;
+  remoteuser: UserType | null;
+};
+export type ForensicIPCount = {
+  ip: string;
+  count: number;
+};
 export type UserType = {
   ip?: string;
   name: string;

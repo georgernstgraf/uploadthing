@@ -15,7 +15,7 @@ const eatfiletransaction = repo.db.db.transaction((file: string) => {
     }
     const ipAddress = match?.[1]; // "192.168.21.59"
     console.log(ipAddress);
-    repo.ip.registerSeen(ipAddress, filedate);
+    repo.ipfact.registerSeen(ipAddress, filedate);
   });
 });
 
@@ -25,4 +25,11 @@ export function eatfile(file: string) {
     throw new Error(`file ${file} already processed`);
   }
   eatfiletransaction(file);
+}
+
+export function ips_with_counts_in_range(
+  start_localtime: string,
+  end_localtime: string,
+) {
+  return repo.ipfact.seenStatsForRange(start_localtime, end_localtime);
 }

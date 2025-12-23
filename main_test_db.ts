@@ -1,14 +1,16 @@
 // import config from "./config.ts";
 import * as history from "./repo/history.ts";
 
+const start = "2025-12-22 14:15";
+const end = "2025-12-22 14:20";
 console.log("Recent Events:");
 console.log(
-  history.getHistoryEventsRange("2025-12-18 14:25", "2025-12-18 16:25"),
+  history.getHistoryEventsRange(start, end),
 );
 console.log("Stats from seen:");
-import * as ip from "./repo/ip.ts";
+import * as ip from "./repo/ipfact.ts";
 console.log(
-  ip.seenStatsForRange("2025-12-18 14:25", "2025-12-18 16:25"),
+  ip.seenStatsForRange(start, end),
 );
 
 // Close the databases

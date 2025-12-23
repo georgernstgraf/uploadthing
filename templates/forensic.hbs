@@ -1,0 +1,23 @@
+{{> top}}
+<section class="mx-3">
+    <h2 class="ps-5">Schüler und IP Adressen</h2>
+    <ul class="list-unstyled ps-5 text-start">
+        {{#each foundips}}
+        <li>IP: {{this.ip}} ({{this.count}} mal gesehen)</li>
+        {{/each}}
+    </ul>
+    <h2 class="ps-5">Dokumentation online</h2>
+    <ul class="list-unstyled ps-5 text-start">
+        <li><a href="https://getbootstrap.com/">Bootstrap</a></li>
+        <li><a href="https://css-tricks.com/">CSS Tricks</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/dotnet/">C# / .NET</a></li>
+        <li><a href="https://developer.mozilla.org/">Developer.mozilla.org</a></li>
+        <li><a href="https://docs.oracle.com/en/java/javase/21/docs/api/index.html">Javadoc</a></li>
+        <li><a href="https://www.prisma.io/docs/orm">Prisma</a></li>
+        <li><a href="https://www.w3schools.com/">W3Schools</a></li>
+    </ul>
+</section>
+</main>
+</body>
+
+</html>

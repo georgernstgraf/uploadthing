@@ -1,13 +1,36 @@
 import { Hono } from "hono";
+import { Variables } from "../lib/lib.ts";
+import * as hbs from "../lib/templates.ts";
 import * as service from "../service/service.ts";
-
-type Variables = {
-  remoteip: string;
-  remoteuser: string;
-};
+import cf from "../lib/config.ts";
 
 const forensicRouter = new Hono<{ Variables: Variables }>();
 
+forensicRouter.get("/", (c) => {
+  const remote_user = c.get("remoteuser");
+  if (!remote_user) {
+    return c.text("Unauthorized", 401);
+  }
+  const start_localtime = new Date(Date.now() - 3_600_000).toISOString().slice(
+    0,
+    16,
+  ).replace("T", " ");
+  const end_localtime = new Date().toISOString().slice(0, 16).replace("T", " ");
+  const foundips = service.ipfact.ips_with_counts_in_range(
+    start_localtime,
+    end_localtime,
+  );
+  return c.html(
+    hbs.forensicTemplate({
+      remote_ip: c.get("remoteip")!,
+      remote_user,
+      foundips,
+      spg_times: cf.spg_times,
+      start_localtime,
+      end_localtime,
+    }),
+  );
+});
 // Stub endpoint 1: Get forensic logs
 forensicRouter.get("/users", async (c) => {
   const startTime = c.req.query("startTime");
