@@ -1,0 +1,25 @@
+-- database: /home/georg/gitm/uploadthing/uploadthing.db
+SELECT
+    *
+FROM
+    history
+ORDER BY
+    `at` DESC;
+
+SELECT
+    *
+FROM
+    history
+where
+    ip = '192.168.21.101'
+ORDER BY
+    `at` DESC;
+
+SELECT
+    *
+FROM
+    history
+where
+    email = 'grafg@spengergasse.at'
+ORDER BY
+    `at` DESC;
