@@ -39,3 +39,15 @@ export function nowString(date?: Date): string {
     hour12: false, // Use 24-hour format
   });
 }
+const dateFormatter = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+export function localTimeString(date: Date): string {
+  return dateFormatter.format(date).replace(",", "");
+}

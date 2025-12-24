@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { Variables } from "../lib/lib.ts";
+import { localTimeString, Variables } from "../lib/lib.ts";
 import * as hbs from "../lib/templates.ts";
 import * as service from "../service/service.ts";
 import cf from "../lib/config.ts";
@@ -11,11 +11,8 @@ forensicRouter.get("/", (c) => {
   if (!remote_user) {
     return c.text("Unauthorized", 401);
   }
-  const start_localtime = new Date(Date.now() - 3_600_000).toISOString().slice(
-    0,
-    16,
-  ).replace("T", " ");
-  const end_localtime = new Date().toISOString().slice(0, 16).replace("T", " ");
+  const start_localtime = localTimeString(new Date(Date.now() - 3_600_000));
+  const end_localtime = localTimeString(new Date());
   const foundips = service.ipfact.ips_with_counts_in_range(
     start_localtime,
     end_localtime,
