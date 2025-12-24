@@ -14,7 +14,7 @@ const eatfiletransaction = repo.db.db.transaction((file: string) => {
       return; // stick to my pattern ;)
     }
     const ipAddress = match?.[1]; // "192.168.21.59"
-    console.log(ipAddress);
+    // console.log(ipAddress);
     repo.ipfact.registerSeen(ipAddress, filedate);
   });
 });
