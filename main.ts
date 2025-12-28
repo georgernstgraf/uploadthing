@@ -41,6 +41,10 @@ app.get(
 app.get("upload", (c) => {
   const remote_ip = c.get("remoteip");
   const remote_user = c.get("remoteuser");
+  if (!remote_user) {
+    return c.text("Unauthorized", 401);
+  }
+
   return c.html(
     hbs.uploadTemplate({ remote_ip, remote_user }),
   );
@@ -49,6 +53,9 @@ app.post("upload", async (c) => {
   const beginTime = Date.now();
   const remote_ip = c.get("remoteip");
   const remote_user = c.get("remoteuser");
+  if (!remote_user) {
+    return c.text("Unauthorized", 401);
+  }
 
   const formData = await c.req.formData();
   const file = formData.get("file") as File;
