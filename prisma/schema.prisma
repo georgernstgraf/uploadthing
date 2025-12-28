@@ -19,11 +19,6 @@ model ipfact {
   @@index([seen])
 }
 
-model knownlog {
-  id   Int    @id @default(autoincrement())
-  file String @unique
-}
-
 model user {
   id     Int    @id @default(autoincrement())
   ip     String @unique
