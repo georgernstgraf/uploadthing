@@ -56,9 +56,8 @@ app.post("upload", async (c) => {
   if (!file) return c.text("No file uploaded", 400);
   if (!remote_user) return c.text("User not registered", 403);
 
-  const real_filename = `${safeFileComponent(remote_user.name)}-${
-    safeFileComponent(remote_ip)
-  }-${safeFileComponent(file.name)}`;
+  const real_filename = `${safeFileComponent(remote_user.name)}-${safeFileComponent(remote_ip)
+    }-${safeFileComponent(file.name)}`;
   const outPath = `${config.ABGABEN_DIR}/${real_filename}`;
 
   const hash = createHash("md5");
@@ -167,13 +166,14 @@ app.post("register", async (c) => {
 });
 //  I get a filename per json
 app.post("newscanfile", async (c) => {
+  let file = "";
   try {
     const body = await c.req.json();
-    const file = body.file as string;
+    file = body.file as string;
     const result = service.ipfact.eatfile(file);
     return c.json({ "ok": "true", file, result });
   } catch (e) {
-    return c.json({ "ok": "false", "message": (e as Error).message }, 400);
+    return c.json({ "ok": "false", file, "message": (e as Error).message }, 400);
   }
 });
 app.get(
