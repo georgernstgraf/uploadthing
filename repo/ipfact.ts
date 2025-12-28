@@ -23,7 +23,7 @@ export function registerSeenMany(ips: string[], seen: Date) {
   const sql = `INSERT INTO ipfact (ip, seen) VALUES ${placeholders}`;
   const stmt = db.prepare(sql);
   const params = ips.flatMap((ip) => [ip, seen]);
-  stmt.run(params);
+  return stmt.run(params);
 }
 const seenStatsForRange_sql = `SELECT ip, COUNT(*) as count FROM ipfact
     WHERE seen BETWEEN

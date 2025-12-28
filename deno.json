@@ -13,5 +13,8 @@
     "hono": "npm:hono@^4.10.6",
     "htmx.org": "npm:htmx.org@^2.0.8",
     "ldapjs": "npm:ldapjs@^3.0.7"
+  },
+  "fmt": {
+    "indentWidth": 4
   }
 }

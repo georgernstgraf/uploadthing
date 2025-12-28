@@ -165,15 +165,14 @@ app.post("register", async (c) => {
   }
 });
 //  I get a filename per json
-app.post("newscanfile", async (c) => {
-  let file = "";
+app.post("activeips", async (c) => {
   try {
     const body = await c.req.json();
-    file = body.file as string;
-    const result = service.ipfact.eatfile(file);
-    return c.json({ "ok": "true", file, result });
+    const ips = body.ips as string[];
+    const count = service.ipfact.registerips(ips);
+    return c.json({ "ok": "true", count });
   } catch (e) {
-    return c.json({ "ok": "false", file, "message": (e as Error).message }, 400);
+    return c.json({ "ok": "false", "message": (e as Error).message }, 400);
   }
 });
 app.get(
