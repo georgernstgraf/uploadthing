@@ -4,12 +4,12 @@ GET http://localhost:8000/static/style.css
 ###
 GET http://localhost:8000/ldap?email=graf
 
-##
+###
 POST http://localhost:8000/newscanfile
 Content-Type: application/json
 
 {
-    "file": "2025-12-09_19:01:00.log"
+    "file": "2025-12-28_12:03:00.log"
 }
 
 ###

@@ -18,7 +18,13 @@ const registerSeen_stmt = db.prepare(
 export function registerSeen(ip: string, seen: Date) {
   registerSeen_stmt.run(ip, seen);
 }
-
+export function registerSeenMany(ips: string[], seen: Date) {
+  const placeholders = ips.map(() => "(?, ?)").join(", ");
+  const sql = `INSERT INTO ipfact (ip, seen) VALUES ${placeholders}`;
+  const stmt = db.prepare(sql);
+  const params = ips.flatMap((ip) => [ip, seen]);
+  stmt.run(params);
+}
 const seenStatsForRange_sql = `SELECT ip, COUNT(*) as count FROM ipfact
     WHERE seen BETWEEN
     (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))) AND

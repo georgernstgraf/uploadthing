@@ -1,5 +1,5 @@
 default:
-	@echo "no default action"
+	@echo "no default action (pull / push / logsync)"
 
 pull:
 	rm -f uploadthing.db
@@ -8,3 +8,6 @@ pull:
 
 push:
 	scp uploadthing.db sense:uploadthing/
+
+logsync:
+	rsync -av --delete sense:/var/log/exampy/ /home/georg/exampy/
