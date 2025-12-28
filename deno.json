@@ -19,9 +19,9 @@
     "hono": "npm:hono@^4.10.6",
     "htmx.org": "npm:htmx.org@^2.0.8",
     "ldapjs": "npm:ldapjs@^3.0.7",
-    "@prisma/client": "npm:@prisma/client@^6.18.0",
+    "@prisma/client": "npm:@prisma/client@^6.19.1",
     "he": "npm:he@^1.2.0",
-    "prisma": "npm:prisma@^6.18.0",
+    "prisma": "npm:prisma@^6.19.1",
     "model": "./prisma/client/client.ts"
   },
   "fmt": {
