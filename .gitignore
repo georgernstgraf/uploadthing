@@ -1,5 +1,5 @@
 *.db
-/generated/
+/lib/prismaclient/
 /.Trash-*/
 .DS_Store
 Thumbs.db
