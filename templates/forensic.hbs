@@ -4,22 +4,40 @@
     <h2 class="text-center">Zeitauswahl</h2>
     <form action="forensic"
           method="get"
-          class="d-flex justify-content-around align-items-center">
-        <label>Start Time: <select name="time"
-                    class="px-3 ms-3"
-                    id="timeselect">
-                {{#each spg_times}}
-                    <option value="{{this}}">{{this}}</option>
-                {{/each}}
-            </select>
-        </label>
-        <label><input type="submit"
-                   class="btn btn-primary"
-                   value="Suchen"></label>
-        <label>Start Date: <input type="date"
-                   name="date"
-                   class="px-3 ms-3"
-                   value="{{today}}"></label>
+          class="container text-center">
+        <div class="row">
+            <label class="col">Start Time: <select name="starttime"
+                        class="px-3 ms-3"
+                        id="timestartselect">
+                    {{#each spg_times}}
+                        <option value="{{this}}">{{this}}</option>
+                    {{/each}}
+                </select>
+            </label>
+            <label class="col">Start Date: <input type="date"
+                       name="startdate"
+                       class="px-3 ms-3"
+                       value="{{today}}"></label>
+        </div>
+        <div class="row mt-2">
+            <label class="col">End Time: <select name="endtime"
+                        class="px-3 ms-3"
+                        id="timeendselect">
+                    {{#each spg_times}}
+                        <option value="{{this}}">{{this}}</option>
+                    {{/each}}
+                </select>
+            </label>
+            <label class="col">End Date: <input type="date"
+                       name="enddate"
+                       class="px-3 ms-3"
+                       value="{{today}}"></label>
+        </div>
+        <div class="row mt-2">
+            <label class="col"><input type="submit"
+                       class="btn btn-secondary w-100"
+                       value="Suchen"></label>
+        </div>
     </form>
 </section>
 <section class="mx-3">
