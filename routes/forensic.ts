@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { localTimeString, Variables } from "../lib/lib.ts";
+import { localTimeString, localDateString, Variables } from "../lib/lib.ts";
 import * as hbs from "../lib/templates.ts";
 import * as service from "../service/service.ts";
 import cf from "../lib/config.ts";
@@ -13,6 +13,7 @@ forensicRouter.get("/", (c) => {
   }
   const start_localtime = localTimeString(new Date(Date.now() - 3_600_000));
   const end_localtime = localTimeString(new Date());
+  const today = localDateString(new Date());
   const foundips = service.ipfact.ips_with_counts_in_range(
     start_localtime,
     end_localtime,
@@ -25,13 +26,14 @@ forensicRouter.get("/", (c) => {
       spg_times: cf.spg_times,
       start_localtime,
       end_localtime,
+      today
     }),
   );
 });
 // Stub endpoint 1: Get forensic logs
-forensicRouter.get("/users", async (c) => {
-  const startTime = c.req.query("startTime");
-  const endTime = c.req.query("endTime");
+forensicRouter.get("/users", (c) => {
+  const _startTime = c.req.query("startTime");
+  const _endTime = c.req.query("endTime");
   return c.json({
     message: "Forensic logs endpoint",
     data: [],

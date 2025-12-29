@@ -32,6 +32,7 @@ type ForensicTemplateData = {
   spg_times: string[];
   start_localtime: string;
   end_localtime: string;
+  today: string;
 };
 
 Handlebars.registerPartial(

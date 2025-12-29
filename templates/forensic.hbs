@@ -1,20 +1,34 @@
 {{> top}}
+<section id="timeselector"
+         class="mb-4 mx-3 p-3 border border-2 border-primary rounded-3">
+    <h2 class="text-center">Zeitauswahl</h2>
+    <form action="forensic"
+          method="get"
+          class="d-flex justify-content-around align-items-center">
+        <label>Start Time: <select name="time"
+                    class="px-3 ms-3"
+                    id="timeselect">
+                {{#each spg_times}}
+                    <option value="{{this}}">{{this}}</option>
+                {{/each}}
+            </select>
+        </label>
+        <label><input type="submit"
+                   class="btn btn-primary"
+                   value="Suchen"></label>
+        <label>Start Date: <input type="date"
+                   name="date"
+                   class="px-3 ms-3"
+                   value="{{today}}"></label>
+    </form>
+</section>
 <section class="mx-3">
-    <h2 class="ps-5">Schüler und IP Adressen</h2>
+    <h2 class="text-center">Schüler und IP Adressen</h2>
+    <h3 class="text-center">Zeitraum: {{start_localtime}} - {{end_localtime}}</h3>
     <ul class="list-unstyled ps-5 text-start">
         {{#each foundips}}
-        <li>IP: {{this.ip}} ({{this.count}} mal gesehen)</li>
+            <li>IP: {{this.ip}} ({{this.count}} mal gesehen)</li>
         {{/each}}
-    </ul>
-    <h2 class="ps-5">Dokumentation online</h2>
-    <ul class="list-unstyled ps-5 text-start">
-        <li><a href="https://getbootstrap.com/">Bootstrap</a></li>
-        <li><a href="https://css-tricks.com/">CSS Tricks</a></li>
-        <li><a href="https://learn.microsoft.com/en-us/dotnet/">C# / .NET</a></li>
-        <li><a href="https://developer.mozilla.org/">Developer.mozilla.org</a></li>
-        <li><a href="https://docs.oracle.com/en/java/javase/21/docs/api/index.html">Javadoc</a></li>
-        <li><a href="https://www.prisma.io/docs/orm">Prisma</a></li>
-        <li><a href="https://www.w3schools.com/">W3Schools</a></li>
     </ul>
 </section>
 </main>
