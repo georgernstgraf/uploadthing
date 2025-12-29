@@ -10,28 +10,30 @@
                         class="px-3 ms-3"
                         id="timestartselect">
                     {{#each spg_times}}
-                        <option value="{{this}}">{{this}}</option>
+                        <option value="{{this}}"
+                                {{#if (eq this ../starttime)}}selected{{/if}}>{{this}}</option>
                     {{/each}}
                 </select>
             </label>
             <label class="col">Start Date: <input type="date"
                        name="startdate"
                        class="px-3 ms-3"
-                       value="{{today}}"></label>
+                       value="{{startdate}}"></label>
         </div>
         <div class="row mt-2">
             <label class="col">End Time: <select name="endtime"
                         class="px-3 ms-3"
                         id="timeendselect">
                     {{#each spg_times}}
-                        <option value="{{this}}">{{this}}</option>
+                        <option value="{{this}}"
+                                {{#if (eq this ../endtime)}}selected{{/if}}>{{this}}</option>
                     {{/each}}
                 </select>
             </label>
             <label class="col">End Date: <input type="date"
                        name="enddate"
                        class="px-3 ms-3"
-                       value="{{today}}"></label>
+                       value="{{enddate}}"></label>
         </div>
         <div class="row mt-2">
             <label class="col"><input type="submit"

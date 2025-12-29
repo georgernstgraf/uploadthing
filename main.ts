@@ -5,11 +5,11 @@ import config from "./lib/config.ts";
 import { get_unterlagen } from "./lib/lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import * as service from "./service/service.ts";
-import * as hbs from "./lib/templates.ts";
+import * as hbs from "./lib/handlebars.ts";
 import { Variables } from "./lib/lib.ts";
 import forensicRouter from "./routes/forensic.ts";
 type Bindings = {
-  info: Deno.ServeHandlerInfo;
+    info: Deno.ServeHandlerInfo;
 };
 
 // ensure ABGABEN_DIR exists
@@ -22,195 +22,196 @@ app.use("*", remoteIPMiddleware);
 app.route("/forensic", forensicRouter);
 
 app.get("/", async (c) => {
-  const files = await get_unterlagen();
-  return c.html(hbs.dirIndexTemplate({
-    UNTERLAGEN_DIR: config.UNTERLAGEN_DIR,
-    files,
-    remote_user: c.get("remoteuser"),
-    remote_ip: c.get("remoteip"),
-  }));
+    const files = await get_unterlagen();
+    return c.html(hbs.dirIndexTemplate({
+        UNTERLAGEN_DIR: config.UNTERLAGEN_DIR,
+        files,
+        remote_user: c.get("remoteuser"),
+        remote_ip: c.get("remoteip"),
+    }));
 });
 app.get(
-  "static/*",
-  serveStatic({
-    root: "./static",
-    rewriteRequestPath: (path) => path.replace(/^\/static/, "/"),
-  }),
+    "static/*",
+    serveStatic({
+        root: "./static",
+        rewriteRequestPath: (path) => path.replace(/^\/static/, "/"),
+    }),
 );
 // 1. Directory Index Handler
 app.get("upload", (c) => {
-  const remote_ip = c.get("remoteip");
-  const remote_user = c.get("remoteuser");
-  if (!remote_user) {
-    return c.text("Unauthorized", 401);
-  }
+    const remote_ip = c.get("remoteip");
+    const remote_user = c.get("remoteuser");
+    if (!remote_user) {
+        return c.text("Unauthorized", 401);
+    }
 
-  return c.html(
-    hbs.uploadTemplate({ remote_ip, remote_user }),
-  );
+    return c.html(
+        hbs.uploadTemplate({ remote_ip, remote_user }),
+    );
 });
 app.post("upload", async (c) => {
-  const beginTime = Date.now();
-  const remote_ip = c.get("remoteip");
-  const remote_user = c.get("remoteuser");
-  if (!remote_user) {
-    return c.text("Unauthorized", 401);
-  }
+    const beginTime = Date.now();
+    const remote_ip = c.get("remoteip");
+    const remote_user = c.get("remoteuser");
+    if (!remote_user) {
+        return c.text("Unauthorized", 401);
+    }
 
-  const formData = await c.req.formData();
-  const file = formData.get("file") as File;
+    const formData = await c.req.formData();
+    const file = formData.get("file") as File;
 
-  if (!file) return c.text("No file uploaded", 400);
-  if (!remote_user) return c.text("User not registered", 403);
+    if (!file) return c.text("No file uploaded", 400);
+    if (!remote_user) return c.text("User not registered", 403);
 
-  const real_filename = `${safeFileComponent(remote_user.name)}-${safeFileComponent(remote_ip)
+    const real_filename = `${safeFileComponent(remote_user.name)}-${
+        safeFileComponent(remote_ip)
     }-${safeFileComponent(file.name)}`;
-  const outPath = `${config.ABGABEN_DIR}/${real_filename}`;
+    const outPath = `${config.ABGABEN_DIR}/${real_filename}`;
 
-  const hash = createHash("md5");
-  let bytesWritten = 0;
+    const hash = createHash("md5");
+    let bytesWritten = 0;
 
-  let out: Deno.FsFile | null = null;
-  try {
-    out = await Deno.open(outPath, {
-      create: true,
-      write: true,
-      truncate: true,
-    });
-
-    const reader = file.stream().getReader();
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      if (!value) continue;
-
-      // value is a Uint8Array chunk
-      bytesWritten += value.byteLength;
-      hash.update(value);
-      await writeAll(out, value);
-    }
-  } catch (e) {
-    // best-effort cleanup of partial file
+    let out: Deno.FsFile | null = null;
     try {
-      if (out) out.close();
-    } catch {
-      // ignore
-    }
-    try {
-      await Deno.remove(outPath);
-    } catch {
-      // ignore
-    }
-    return c.text((e as Error).message, 500);
-  } finally {
-    try {
-      out?.close();
-    } catch {
-      // ignore
-    }
-  }
+        out = await Deno.open(outPath, {
+            create: true,
+            write: true,
+            truncate: true,
+        });
 
-  const md5sum = hash.digest("hex");
-  const endTime = Date.now();
-  const durationSeconds = ((endTime - beginTime) / 1000).toFixed(1);
+        const reader = file.stream().getReader();
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (!value) continue;
 
-  return c.html(
-    hbs.successTemplate({
-      remote_ip,
-      filename: real_filename,
-      filesize: (bytesWritten / 1024).toFixed(0),
-      md5sum,
-      durationSeconds,
-      remote_user,
-    }),
-  );
+            // value is a Uint8Array chunk
+            bytesWritten += value.byteLength;
+            hash.update(value);
+            await writeAll(out, value);
+        }
+    } catch (e) {
+        // best-effort cleanup of partial file
+        try {
+            if (out) out.close();
+        } catch {
+            // ignore
+        }
+        try {
+            await Deno.remove(outPath);
+        } catch {
+            // ignore
+        }
+        return c.text((e as Error).message, 500);
+    } finally {
+        try {
+            out?.close();
+        } catch {
+            // ignore
+        }
+    }
+
+    const md5sum = hash.digest("hex");
+    const endTime = Date.now();
+    const durationSeconds = ((endTime - beginTime) / 1000).toFixed(1);
+
+    return c.html(
+        hbs.successTemplate({
+            remote_ip,
+            filename: real_filename,
+            filesize: (bytesWritten / 1024).toFixed(0),
+            md5sum,
+            durationSeconds,
+            remote_user,
+        }),
+    );
 });
 
 app.get("whoami", (c) => {
-  const remote_ip = c.get("remoteip");
-  const remote_user = c.get("remoteuser");
-  return c.html(
-    hbs.whoamiTemplate({
-      remote_ip,
-      remote_user,
-    }),
-  );
+    const remote_ip = c.get("remoteip");
+    const remote_user = c.get("remoteuser");
+    return c.html(
+        hbs.whoamiTemplate({
+            remote_ip,
+            remote_user,
+        }),
+    );
 });
 app.get("ldap", async (c) => {
-  const query = c.req.query();
-  try {
-    const users = await service.ldap.searchUserByEmailStart(query.email);
-    if (users.length === 0) {
-      users.push({
-        email: "",
-        name: `Keine Email beginnend mit ${query.email} gefunden!`,
-        klasse: "",
-      });
+    const query = c.req.query();
+    try {
+        const users = await service.ldap.searchUserByEmailStart(query.email);
+        if (users.length === 0) {
+            users.push({
+                email: "",
+                name: `Keine Email beginnend mit ${query.email} gefunden!`,
+                klasse: "",
+            });
+        }
+        return c.html(hbs.ldapTemplate({ users }));
+    } catch (_e) {
+        return c.html(
+            hbs.ldapTemplate({
+                users: [{ email: "", name: "mindestens 3 Anfangsbuchstaben!" }],
+            }),
+        );
     }
-    return c.html(hbs.ldapTemplate({ users }));
-  } catch (_e) {
-    return c.html(
-      hbs.ldapTemplate({
-        users: [{ email: "", name: "mindestens 3 Anfangsbuchstaben!" }],
-      }),
-    );
-  }
 });
 app.post("register", async (c) => {
-  try {
-    const body = await c.req.parseBody();
-    const email = body.email as string;
-    const ldapuser = await service.ldap.getUserByEmail(email);
-    if (!ldapuser) {
-      return c.text("User not found", 404);
+    try {
+        const body = await c.req.parseBody();
+        const email = body.email as string;
+        const ldapuser = await service.ldap.getUserByEmail(email);
+        if (!ldapuser) {
+            return c.text("User not found", 404);
+        }
+        ldapuser.ip = c.get("remoteip");
+        service.user.register(ldapuser);
+        return c.redirect("/");
+    } catch (e) {
+        return c.text((e as Error).message, 400);
     }
-    ldapuser.ip = c.get("remoteip");
-    service.user.register(ldapuser);
-    return c.redirect("/");
-  } catch (e) {
-    return c.text((e as Error).message, 400);
-  }
 });
 //  I get a filename per json
 app.post("activeips", async (c) => {
-  try {
-    const body = await c.req.json();
-    const ips = body.ips as string[];
-    const count = service.ipfact.registerips(ips);
-    return c.json({ "ok": "true", count });
-  } catch (e) {
-    return c.json({ "ok": "false", "message": (e as Error).message }, 400);
-  }
+    try {
+        const body = await c.req.json();
+        const ips = body.ips as string[];
+        const count = service.ipfact.registerips(ips);
+        return c.json({ "ok": "true", count });
+    } catch (e) {
+        return c.json({ "ok": "false", "message": (e as Error).message }, 400);
+    }
 });
 app.get(
-  "unterlagen/*",
-  serveStatic({
-    root: config.UNTERLAGEN_DIR,
-    rewriteRequestPath: (path) => path.replace(/^\/unterlagen/, "/"),
-  }),
+    "unterlagen/*",
+    serveStatic({
+        root: config.UNTERLAGEN_DIR,
+        rewriteRequestPath: (path) => path.replace(/^\/unterlagen/, "/"),
+    }),
 );
 
 Deno.serve(
-  {
-    hostname: config.LISTEN_HOST,
-    port: config.LISTEN_PORT,
-  },
-  (req, info) => app.fetch(req, { info }),
+    {
+        hostname: config.LISTEN_HOST,
+        port: config.LISTEN_PORT,
+    },
+    (req, info) => app.fetch(req, { info }),
 );
 
 function safeFileComponent(input: string): string {
-  // prevent path traversal + weird separators; keep it simple
-  return input
-    .replace(/[\/\\]/g, "_")
-    .replace(/\.\./g, "_")
-    .replace(/\s+/g, "_");
+    // prevent path traversal + weird separators; keep it simple
+    return input
+        .replace(/[\/\\]/g, "_")
+        .replace(/\.\./g, "_")
+        .replace(/\s+/g, "_");
 }
 
 async function writeAll(f: Deno.FsFile, chunk: Uint8Array): Promise<void> {
-  let off = 0;
-  while (off < chunk.length) {
-    const n = await f.write(chunk.subarray(off));
-    if (n <= 0) throw new Error("short write");
-    off += n;
-  }
+    let off = 0;
+    while (off < chunk.length) {
+        const n = await f.write(chunk.subarray(off));
+        if (n <= 0) throw new Error("short write");
+        off += n;
+    }
 }
