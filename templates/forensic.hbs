@@ -44,7 +44,8 @@
 </section>
 <section class="mx-3">
     <h2 class="text-center">Schüler und IP Adressen</h2>
-    <h3 class="text-center">Zeitraum: {{start_localtime}} - {{end_localtime}}</h3>
+    <h3 class="text-center">Zeitraum: <span class="fs-6">({{startdate}})</span> {{starttime}} - <span class="fs-6">({{enddate}})</span> {{endtime}}
+    </h3>
     <ul class="list-unstyled ps-5 text-start">
         {{#each foundips}}
             <li>IP: {{this.ip}} ({{this.count}} mal gesehen)</li>

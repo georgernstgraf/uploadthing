@@ -13,6 +13,7 @@
             "runtimeExecutable": "/home/georg/.deno/bin/deno",
             "runtimeArgs": [
                 "run",
+                "--watch=templates/",
                 "--inspect-wait",
                 "--env-file",
                 "-A",
