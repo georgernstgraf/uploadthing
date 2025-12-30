@@ -6,6 +6,8 @@ import * as service from "../service/service.ts";
 import cf from "../lib/config.ts";
 
 const forensicRouter = new Hono<{ Variables: Variables }>();
+const start_ms_earlier = 3.6 * 1.5e6;
+const plus_one_day_ms = 24 * 3.6e6;
 
 forensicRouter.get("/", (c) => {
     const remote_user = c.get("remoteuser");
@@ -13,11 +15,11 @@ forensicRouter.get("/", (c) => {
         return c.text("Unauthorized", 401);
     }
     const startdate = c.req.query("startdate") ||
-        localDateString(new Date(Date.now() - 7.2e6));
+        localDateString(new Date(Date.now() - start_ms_earlier));
     let starttime = c.req.query("starttime");
     // if either startdate or starttime is missing, default to 2 hours ago
     if (!starttime) {
-        starttime = localTimeString(new Date(Date.now() - 7.2e6));
+        starttime = localTimeString(new Date(Date.now() - start_ms_earlier));
         const times = [...cf.spg_times, starttime];
         times.sort();
         const index = times.indexOf(starttime);
@@ -25,7 +27,7 @@ forensicRouter.get("/", (c) => {
         starttime = times.at(index < times.length ? index : -1)!;
     }
     const enddate = c.req.query("enddate") ||
-        localDateString(new Date(Date.now() + 24 * 3.6e6));
+        localDateString(new Date(Date.now() + plus_one_day_ms));
     const endtime = c.req.query("endtime") || starttime;
     const foundips = service.ipfact.ips_with_counts_in_range(
         `${startdate} ${starttime}`,
