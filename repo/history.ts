@@ -1,7 +1,7 @@
 import { db } from "./db.ts";
 
 const select_event_stmt = db.prepare(
-  `select id, ip, email,
+    `select id, ip, email,
   strftime('%Y-%m-%dT%H:%M:%f', datetime(at, 'localtime')) as at
   from history 
   where at 
@@ -11,7 +11,13 @@ const select_event_stmt = db.prepare(
 
 // Takes and returns local time strings
 export function getHistoryEventsRange(start: string, end: string) {
-  return select_event_stmt.all(start, end);
+    return select_event_stmt.all(start, end);
 }
 
-export { db };
+const ip_history_prepared = db.prepare(
+    `select a.ip, b.name, a.at from history a join user b on a.email = b.email where a.ip = ? order by a.at desc;`,
+);
+
+export function getHistoryForIP(ip: string) {
+    return ip_history_prepared.all(ip);
+}
