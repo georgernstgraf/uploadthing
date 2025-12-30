@@ -5,22 +5,7 @@
     <form action="forensic"
           method="get"
           class="container text-center">
-        <div class="row">
-            <label class="col">Start Time: <select name="starttime"
-                        class="px-3 ms-3"
-                        id="timestartselect">
-                    {{#each spg_times}}
-                        <option value="{{this}}"
-                                {{#if (eq this ../starttime)}}selected{{/if}}>{{this}}</option>
-                    {{/each}}
-                </select>
-            </label>
-            <label class="col">Start Date: <input type="date"
-                       name="startdate"
-                       class="px-3 ms-3"
-                       value="{{startdate}}"></label>
-        </div>
-        <div class="row mt-2">
+        <div class="row mt-2 text-body text-opacity-50">
             <label class="col">End Time: <select name="endtime"
                         class="px-3 ms-3"
                         id="timeendselect">
@@ -36,6 +21,21 @@
                        value="{{enddate}}"></label>
         </div>
         <div class="row mt-2">
+            <label class="col">START Time: <select name="starttime"
+                        class="px-3 ms-3"
+                        id="timestartselect">
+                    {{#each spg_times}}
+                        <option value="{{this}}"
+                                {{#if (eq this ../starttime)}}selected{{/if}}>{{this}}</option>
+                    {{/each}}
+                </select>
+            </label>
+            <label class="col">Start Date: <input type="date"
+                       name="startdate"
+                       class="px-3 ms-3"
+                       value="{{startdate}}"></label>
+        </div>
+        <div class="row mt-2">
             <label class="col"><input type="submit"
                        class="btn btn-secondary w-100"
                        value="Suchen"></label>
@@ -48,7 +48,7 @@
     </h3>
     <ul class="list-unstyled ps-5 text-start">
         {{#each foundips}}
-            <li>IP: {{this.ip}} ({{this.count}} mal gesehen)</li>
+            <li>IP: {{this.ip}} == {{get ../ip2users this.ip}} ({{this.count}} mal gesehen)</li>
         {{/each}}
     </ul>
 </section>

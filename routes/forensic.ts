@@ -30,6 +30,15 @@ forensicRouter.get("/", (c) => {
         `${startdate} ${starttime}`,
         `${enddate} ${endtime}`,
     );
+    const ip2users = service.user.ofIPs(foundips.map((f) => f.ip));
+    foundips.sort((a, b) => {
+        const hasA = ip2users.has(a.ip);
+        const hasB = ip2users.has(b.ip);
+        if (hasA === hasB) {
+            return a.count - b.count;
+        }
+        return Number(hasB) - Number(hasA);
+    });
     return c.html(
         hbs.forensicTemplate({
             remote_ip: c.get("remoteip"),
@@ -40,6 +49,7 @@ forensicRouter.get("/", (c) => {
             endtime,
             startdate,
             enddate,
+            ip2users,
         }),
     );
 });

@@ -34,10 +34,15 @@ type ForensicTemplateData = {
     endtime: string;
     startdate: string;
     enddate: string;
+    ip2users: Map<string, string>;
 };
 
 Handlebars.registerHelper("eq", function (a, b) {
     return a === b;
+});
+
+Handlebars.registerHelper("get", function (map, key) {
+    return map.get(key);
 });
 
 Handlebars.registerPartial(
