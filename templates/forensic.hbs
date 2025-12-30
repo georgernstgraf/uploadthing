@@ -48,7 +48,17 @@
     </h3>
     <ul class="list-unstyled ps-5 text-start">
         {{#each foundips}}
-            <li>IP: {{this.ip}} == {{get ../ip2users this.ip}} ({{this.count}} mal gesehen)</li>
+            <li class="row">
+                <details class="col">
+                    <summary>IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary> Lorem ipsum dolor sit amet consectetur adipisicing
+                    elit. Maxime atque, dolore quam repudiandae architecto incidunt asperiores nam. Rerum, officiis sint.
+                </details>
+                <details class="col">
+                    <summary>
+                        {{get ../ip2users this.ip}}
+                    </summary> Lorem ipsum dolor sit, amet consectetur adipisicing elit. Repellendus, fuga.
+                </details>
+            </li>
         {{/each}}
     </ul>
 </section>

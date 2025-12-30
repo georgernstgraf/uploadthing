@@ -16,7 +16,9 @@ export type Variables = {
 export type ForensicIPCount = {
     ip: string;
     count: number;
+    lastseen: string;
 };
+
 export type UserType = {
     ip?: string;
     name: string;

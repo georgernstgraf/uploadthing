@@ -25,7 +25,8 @@ export function registerSeenMany(ips: string[], seen: Date) {
     const params = ips.flatMap((ip) => [ip, seen]);
     return stmt.run(params);
 }
-const seenStatsForRange_sql = `SELECT ip, COUNT(*) as count FROM ipfact
+const seenStatsForRange_sql =
+    `SELECT ip, COUNT(*) as count, max(seen) as lastseen FROM ipfact
     WHERE seen BETWEEN
     (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))) AND
     (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))
@@ -34,12 +35,15 @@ const seenStatsForRange_stmt = db.prepare(
     seenStatsForRange_sql,
 );
 
-export function seenStatsForRange(start: string, end: string) {
+export function seenStatsForRange(
+    start: string,
+    end: string,
+): ForensicIPCount[] {
     console.log("Executing SQL:", seenStatsForRange_sql);
     console.log(`start: ${start} -> ${strftime(start)}`);
     console.log(`end: ${end} -> ${strftime(end)}`);
     console.log("With parameters:", start, end);
-    return seenStatsForRange_stmt.all(start, end) as ForensicIPCount[];
+    return seenStatsForRange_stmt.all(start, end);
 }
 export function deleteAll() {
     db.exec("DELETE FROM ipfact");

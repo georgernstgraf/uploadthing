@@ -35,7 +35,7 @@ forensicRouter.get("/", (c) => {
         const hasA = ip2users.has(a.ip);
         const hasB = ip2users.has(b.ip);
         if (hasA === hasB) {
-            return a.count - b.count;
+            return a.lastseen.localeCompare(b.lastseen);
         }
         return Number(hasB) - Number(hasA);
     });

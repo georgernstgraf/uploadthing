@@ -1,14 +1,10 @@
 import Handlebars from "handlebars";
 import { UserType } from "./lib.ts";
+import { ForensicIPCount } from "./lib.ts";
 type TopType = {
     remote_ip: string;
     remote_user: UserType | null;
 };
-type ForensicIPCount = {
-    ip: string;
-    count: number;
-}[];
-
 const dirIndexTemplate_untyped = Handlebars.compile(
     Deno.readTextFileSync("templates/dirindex.hbs"),
 );
@@ -28,7 +24,7 @@ const whoamiTemplate_untyped = Handlebars.compile(
 type ForensicTemplateData = {
     remote_ip: string;
     remote_user: UserType;
-    foundips: ForensicIPCount;
+    foundips: ForensicIPCount[];
     spg_times: string[];
     starttime: string;
     endtime: string;
