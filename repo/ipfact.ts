@@ -1,4 +1,4 @@
-import { type ForensicIPCount } from "../lib/lib.ts";
+import { type ForensicIPCount } from "../lib/types.ts";
 import { db } from "./db.ts";
 /*
 Zu den Zeiten:

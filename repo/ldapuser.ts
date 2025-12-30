@@ -1,5 +1,6 @@
 import cf from "../lib/config.ts";
-import { LdapUserType, localTimeString, sleep } from "../lib/lib.ts";
+import { localTimeString, sleep } from "../lib/timefunc.ts";
+import { LdapUserType } from "../lib/types.ts";
 import ldap from "ldapjs";
 
 class ServiceClientFactory {

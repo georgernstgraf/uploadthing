@@ -1,5 +1,5 @@
 import * as repo from "../repo/repo.ts";
-import { type ForensicIPCount } from "../lib/lib.ts";
+import { type ForensicIPCount } from "../lib/types.ts";
 
 export function registerips(ips: string[]): number {
     return repo.ipfact.registerSeenMany(ips, new Date());

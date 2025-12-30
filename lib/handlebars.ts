@@ -1,6 +1,8 @@
 import Handlebars from "handlebars";
-import { UserType } from "./lib.ts";
-import { ForensicIPCount } from "./lib.ts";
+import { ForensicIPCount, UserType } from "./types.ts";
+
+// Hier nur Template Types, bitte!
+
 type TopType = {
     remote_ip: string;
     remote_user: UserType | null;

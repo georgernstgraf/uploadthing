@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { localDateString, localTimeString, Variables } from "../lib/lib.ts";
+import { Variables } from "../lib/types.ts";
+import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
 import cf from "../lib/config.ts";

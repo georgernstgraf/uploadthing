@@ -1,5 +1,5 @@
 import { db } from "./db.ts";
-import { UserType } from "../lib/lib.ts";
+import { UserType } from "../lib/types.ts";
 
 // FIND USER BY IP
 const selectbyip_prep = db.prepare(

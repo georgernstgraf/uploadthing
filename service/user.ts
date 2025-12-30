@@ -1,5 +1,5 @@
 import * as user from "../repo/user.ts";
-import { UserType } from "../lib/lib.ts";
+import { UserType } from "../lib/types.ts";
 
 export function ofIPs(ips: string[]): Map<string, string> {
     const result = new Map<string, string>();

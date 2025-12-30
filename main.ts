@@ -6,11 +6,8 @@ import { get_unterlagen } from "./lib/lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import * as service from "./service/service.ts";
 import * as hbs from "./lib/handlebars.ts";
-import { Variables } from "./lib/lib.ts";
+import { Bindings, Variables } from "./lib/types.ts";
 import forensicRouter from "./routes/forensic.ts";
-type Bindings = {
-    info: Deno.ServeHandlerInfo;
-};
 
 // ensure ABGABEN_DIR exists
 await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
