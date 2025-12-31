@@ -50,7 +50,13 @@
         {{#each forensic_ipcount_array}}
             <li class="row">
                 <details class="col">
-                    <summary>IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary> not yet.
+                    <summary>IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary>
+                    <ul class="list-unstyled ms-3">
+                        <li class="text-center">Registrations History für {{this.ip}}</li>
+                        {{#each (get ../ip_history this.ip) }}
+                            <li>{{this.at}} {{this.name}}</li>
+                        {{/each}}
+                    </ul>
                 </details>
                 <details class="col">
                     <summary>

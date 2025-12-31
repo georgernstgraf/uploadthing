@@ -21,7 +21,6 @@ export type IPHistoryRecord = {
     at: string;
 };
 
-export type IPHistory = IPHistoryRecord[];
 export type UserType = {
     ip?: string;
     name: string;

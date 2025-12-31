@@ -1,5 +1,5 @@
 import Handlebars from "handlebars";
-import { ForensicIPCount, UserType } from "./types.ts";
+import { ForensicIPCount, IPHistoryRecord, UserType } from "./types.ts";
 
 // Hier nur Template Types, bitte!
 
@@ -33,6 +33,7 @@ type ForensicTemplateData = {
     startdate: string;
     enddate: string;
     ip2users: Map<string, UserType>;
+    ip_history: Map<string, IPHistoryRecord[]>;
 };
 
 Handlebars.registerHelper("eq", function (a, b) {

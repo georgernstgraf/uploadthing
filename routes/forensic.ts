@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { IPHistory, Variables } from "../lib/types.ts";
+import { IPHistoryRecord, Variables } from "../lib/types.ts";
 import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
@@ -46,7 +46,7 @@ forensicRouter.get("/", (c) => {
         }
         return Number(hasB) - Number(hasA);
     });
-    const ip_history = new Map<string, IPHistory>();
+    const ip_history = new Map<string, IPHistoryRecord[]>();
     for (const iprec of forensic_ipcount_array) {
         ip_history.set(iprec.ip, service.history.ofIP(iprec.ip));
     }
@@ -54,13 +54,14 @@ forensicRouter.get("/", (c) => {
         hbs.forensicTemplate({
             remote_ip: c.get("remoteip"),
             remote_user,
-            endtime,
             startdate,
+            starttime,
+            endtime,
             enddate,
             spg_times: cf.spg_times,
             forensic_ipcount_array,
-            starttime,
             ip2users,
+            ip_history,
         }),
     );
 });
