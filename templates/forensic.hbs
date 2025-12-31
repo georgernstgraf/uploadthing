@@ -50,19 +50,25 @@
         {{#each forensic_ipcount_array}}
             <li class="row">
                 <details class="col">
-                    <summary>IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary>
-                    <ul class="list-unstyled ms-3">
-                        <li class="text-center">Registrations History für {{this.ip}}</li>
-                        {{#each (get ../ip_history this.ip) }}
-                            <li>{{this.at}} {{this.name}}</li>
-                        {{/each}}
-                    </ul>
+                    {{#let (get ../ip2users this.ip) as |user|}}
+                        <summary> Name: {{user.name}}
+                        </summary>
+                        <ul class="list-unstyled border border-2 p-1">
+                            <li class="text-center">History{{user.name}}</li>
+                            {{#each (get ../../user_history user.email) }}
+                                <li>{{this.at}} --> {{this.ip}}</li>
+                            {{/each}}
+                        </ul>
+                    {{/let}}
                 </details>
                 <details class="col">
-                    <summary>
-                        {{#let (get ../ip2users this.ip) as |user|}} Name: {{user.name}}
-                        {{/let}}
-                    </summary>not yet.
+                    <summary>IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary>
+                    <ul class="list-unstyled border border-2 p-1">
+                        <li class="text-center">History IP {{this.ip}}</li>
+                        {{#each (get ../ip_history this.ip) }}
+                            <li>{{this.at}} --> {{this.name}}</li>
+                        {{/each}}
+                    </ul>
                 </details>
             </li>
         {{/each}}

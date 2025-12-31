@@ -14,10 +14,14 @@ export type ForensicIPCount = {
     count: number;
     lastseen: string;
 };
-
+// key: IP
 export type IPHistoryRecord = {
-    ip: string;
     name: string;
+    at: string;
+};
+// key: email
+export type UserHistoryRecord = {
+    ip: string;
     at: string;
 };
 

@@ -50,6 +50,7 @@ forensicRouter.get("/", (c) => {
     for (const iprec of forensic_ipcount_array) {
         ip_history.set(iprec.ip, service.history.ofIP(iprec.ip));
     }
+    const user_history = service.history.ofEmail();
     return c.html(
         hbs.forensicTemplate({
             remote_ip: c.get("remoteip"),
@@ -62,6 +63,7 @@ forensicRouter.get("/", (c) => {
             forensic_ipcount_array,
             ip2users,
             ip_history,
+            user_history,
         }),
     );
 });
