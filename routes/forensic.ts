@@ -1,13 +1,15 @@
 import { Hono } from "hono";
-import { Variables } from "../lib/types.ts";
+import { IPHistory, Variables } from "../lib/types.ts";
 import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
 import cf from "../lib/config.ts";
 
 const forensicRouter = new Hono<{ Variables: Variables }>();
-const start_ms_earlier = 3.6 * 1.5e6;
-const plus_one_day_ms = 24 * 3.6e6;
+const start_ms_earlier = 3.6 * 1.5e6; // 1.5 hours ago
+const plus_one_day_ms = 24 * 3.6e6; // plus one day
+
+// Forensic main page
 
 forensicRouter.get("/", (c) => {
     const remote_user = c.get("remoteuser");
@@ -29,12 +31,14 @@ forensicRouter.get("/", (c) => {
     const enddate = c.req.query("enddate") ||
         localDateString(new Date(Date.now() + plus_one_day_ms));
     const endtime = c.req.query("endtime") || starttime;
-    const foundips = service.ipfact.ips_with_counts_in_range(
+    const forensic_ipcount_array = service.ipfact.ips_with_counts_in_range(
         `${startdate} ${starttime}`,
         `${enddate} ${endtime}`,
     );
-    const ip2users = service.user.ofIPs(foundips.map((f) => f.ip));
-    foundips.sort((a, b) => {
+    const ip2users = service.user.ofIPs(
+        forensic_ipcount_array.map((f) => f.ip),
+    );
+    forensic_ipcount_array.sort((a, b) => {
         const hasA = ip2users.has(a.ip);
         const hasB = ip2users.has(b.ip);
         if (hasA === hasB) {
@@ -42,16 +46,20 @@ forensicRouter.get("/", (c) => {
         }
         return Number(hasB) - Number(hasA);
     });
+    const ip_history = new Map<string, IPHistory>();
+    for (const iprec of forensic_ipcount_array) {
+        ip_history.set(iprec.ip, service.history.ofIP(iprec.ip));
+    }
     return c.html(
         hbs.forensicTemplate({
             remote_ip: c.get("remoteip"),
             remote_user,
-            foundips,
-            spg_times: cf.spg_times,
-            starttime,
             endtime,
             startdate,
             enddate,
+            spg_times: cf.spg_times,
+            forensic_ipcount_array,
+            starttime,
             ip2users,
         }),
     );
@@ -67,26 +75,4 @@ forensicRouter.get("/users", (c) => {
     });
 });
 
-// Stub endpoint 2: Get IP history
-/* forensicRouter.get("/ip-history/:ip", async (c) => {
-  const ip = c.req.param("ip");
-  return c.json({
-    message: "IP history endpoint",
-    ip,
-    history: [],
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// Stub endpoint 3: Search forensic data
-forensicRouter.post("/search", async (c) => {
-  const body = await c.req.json();
-  return c.json({
-    message: "Forensic search endpoint",
-    query: body,
-    results: [],
-    timestamp: new Date().toISOString(),
-  });
-});
- */
 export default forensicRouter;

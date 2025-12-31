@@ -1,4 +1,5 @@
 import { db } from "./db.ts";
+import { IPHistory } from "../lib/types.ts";
 
 const select_event_stmt = db.prepare(
     `select id, ip, email,
@@ -18,6 +19,6 @@ const ip_history_prepared = db.prepare(
     `select a.ip, b.name, a.at from history a join user b on a.email = b.email where a.ip = ? order by a.at desc;`,
 );
 
-export function getHistoryForIP(ip: string) {
+export function getHistoryForIP(ip: string): IPHistory {
     return ip_history_prepared.all(ip);
 }

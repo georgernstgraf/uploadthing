@@ -15,6 +15,13 @@ export type ForensicIPCount = {
     lastseen: string;
 };
 
+export type IPHistoryRecord = {
+    ip: string;
+    name: string;
+    at: string;
+};
+
+export type IPHistory = IPHistoryRecord[];
 export type UserType = {
     ip?: string;
     name: string;

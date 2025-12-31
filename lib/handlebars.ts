@@ -26,13 +26,13 @@ const whoamiTemplate_untyped = Handlebars.compile(
 type ForensicTemplateData = {
     remote_ip: string;
     remote_user: UserType;
-    foundips: ForensicIPCount[];
+    forensic_ipcount_array: ForensicIPCount[];
     spg_times: string[];
     starttime: string;
     endtime: string;
     startdate: string;
     enddate: string;
-    ip2users: Map<string, string>;
+    ip2users: Map<string, UserType>;
 };
 
 Handlebars.registerHelper("eq", function (a, b) {
@@ -42,7 +42,12 @@ Handlebars.registerHelper("eq", function (a, b) {
 Handlebars.registerHelper("get", function (map, key) {
     return map.get(key);
 });
-
+Handlebars.registerHelper("let", function (value, options) {
+    return options.fn(value, {
+        data: options.data,
+        blockParams: [value],
+    });
+});
 Handlebars.registerPartial(
     "top",
     Deno.readTextFileSync("templates/top.hbs"),

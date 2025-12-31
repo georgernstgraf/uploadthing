@@ -47,16 +47,16 @@
     <h3 class="text-center">Zeitraum: <span class="fs-6">({{startdate}})</span> {{starttime}} - <span class="fs-6">({{enddate}})</span> {{endtime}}
     </h3>
     <ul class="list-unstyled ps-5 text-start">
-        {{#each foundips}}
+        {{#each forensic_ipcount_array}}
             <li class="row">
                 <details class="col">
-                    <summary>IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary> Lorem ipsum dolor sit amet consectetur adipisicing
-                    elit. Maxime atque, dolore quam repudiandae architecto incidunt asperiores nam. Rerum, officiis sint.
+                    <summary>IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary> not yet.
                 </details>
                 <details class="col">
                     <summary>
-                        {{get ../ip2users this.ip}}
-                    </summary> Lorem ipsum dolor sit, amet consectetur adipisicing elit. Repellendus, fuga.
+                        {{#let (get ../ip2users this.ip) as |user|}} Name: {{user.name}}
+                        {{/let}}
+                    </summary>not yet.
                 </details>
             </li>
         {{/each}}
