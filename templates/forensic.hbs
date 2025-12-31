@@ -54,7 +54,7 @@
                         <summary> Name: {{user.name}}
                         </summary>
                         <ul class="list-unstyled border border-2 p-1">
-                            <li class="text-center">History{{user.name}}</li>
+                            <li class="text-center">{{user.name}} - Registrierungen</li>
                             {{#each (get ../../user_history user.email) }}
                                 <li>{{this.at}} --> {{this.ip}}</li>
                             {{/each}}
@@ -64,7 +64,7 @@
                 <details class="col">
                     <summary>IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary>
                     <ul class="list-unstyled border border-2 p-1">
-                        <li class="text-center">History IP {{this.ip}}</li>
+                        <li class="text-center">{{this.ip}} - Registrierungen</li>
                         {{#each (get ../ip_history this.ip) }}
                             <li>{{this.at}} --> {{this.name}}</li>
                         {{/each}}
