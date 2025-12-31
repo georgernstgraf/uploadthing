@@ -9,7 +9,6 @@ export function ofIP(ip: string): IPHistoryRecord[] {
     return res;
 }
 export function ofEmail(): Map<string, UserHistoryRecord[]> {
-    const res = new Map<string, UserHistoryRecord[]>();
     const all_emails = repo.history.allEmailFromHistory();
     const ret = new Map<string, UserHistoryRecord[]>();
     for (const email of all_emails) {
