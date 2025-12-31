@@ -42,9 +42,11 @@
         </div>
     </form>
 </section>
-<section class="mx-3">
+</main>
+<section class="container-fluid">
     <h2 class="text-center">Schüler und IP Adressen</h2>
-    <h3 class="text-center">Zeitraum: <span class="fs-6">({{startdate}})</span> {{starttime}} - <span class="fs-6">({{enddate}})</span> {{endtime}}
+    <h3 class="text-center">Zeitraum: <span class="fs-6">({{startdate}})</span> {{starttime}} - <span class="fs-6">({{enddate}})</span>
+        {{endtime}}
     </h3>
     <ul class="list-unstyled ps-5 text-start">
         {{#each forensic_ipcount_array}}
@@ -74,7 +76,6 @@
         {{/each}}
     </ul>
 </section>
-</main>
 </body>
 
 </html>

@@ -16,7 +16,7 @@ export function getHistoryEventsRange(start: string, end: string) {
 }
 /////////////////////////////////////////////////////////////////////
 const ip_history_prepared = db.prepare(
-    `select a.ip, b.name, a.at from history a join user b on a.email = b.email where a.ip = ? order by a.at desc;`,
+    `select email as name, at from history where  ip = ? order by at desc`,
 );
 export function getHistoryForIP(ip: string): IPHistoryRecord[] {
     return ip_history_prepared.all(ip);
