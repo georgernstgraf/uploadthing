@@ -67,15 +67,5 @@ forensicRouter.get("/", (c) => {
         }),
     );
 });
-// Stub endpoint 1: Get forensic logs
-forensicRouter.get("/users", (c) => {
-    const _startTime = c.req.query("startTime");
-    const _endTime = c.req.query("endTime");
-    return c.json({
-        message: "Forensic logs endpoint",
-        data: [],
-        timestamp: new Date().toISOString(),
-    });
-});
 
 export default forensicRouter;

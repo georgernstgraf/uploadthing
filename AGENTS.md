@@ -151,13 +151,13 @@ router.get("/endpoint", (c) => {
     if (!remote_user) {
         return c.text("Unauthorized", 401);
     }
-    
+
     // Extract and validate query parameters
     const param = c.req.query("param") || defaultValue;
-    
+
     // Business logic through service layer
     const data = service.someMethod(param);
-    
+
     // Template rendering
     return c.html(hbs.renderTemplate("template", { data }));
 });
@@ -168,9 +168,9 @@ router.get("/endpoint", (c) => {
 export const someMiddleware = createMiddleware(async (c, next) => {
     // Pre-processing
     c.set("variable", value);
-    
+
     await next();
-    
+
     // Post-processing if needed
 });
 ```
@@ -263,12 +263,13 @@ import * as service from "../service/service.ts";
 1. **Before coding**: Run `deno task check` to ensure type safety
 2. **During development**: Use `deno task dev` with file watching
 3. **After changes**:
+   - Check with `deno task check` to ensure type safety
+   - Lint with `deno task lint` to ensure code quality
+   - Test with `deno task test` and `deno task testdb`
+4. **Database changes**: Use Prisma commands (`pg`, `pmd`, `pd`)
+5. **Before committing**: Run full check, lint, and test suite
 
-- Check with `deno task check` to ensure type safety
-- Test with `deno task test` and `deno task testdb`
-
-5. **Database changes**: Use Prisma commands (`pg`, `pmd`, `pd`)
-6. **Before committing**: Run full check and test suite
+> **IMPORTANT**: Linting must always succeed before the completion of any task. Run `deno task lint` and fix all issues before marking work as complete.
 
 ## Special Notes
 

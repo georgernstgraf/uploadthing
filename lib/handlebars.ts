@@ -49,8 +49,8 @@ Handlebars.registerHelper("eq", function (a, b) {
 Handlebars.registerHelper("get", function (map, key) {
     return map.get(key);
 });
-Handlebars.registerHelper("let", function (value, options) {
-    return options.fn(value, {
+Handlebars.registerHelper("let", function (this: any, value, options) {
+    return options.fn(this, {
         data: options.data,
         blockParams: [value],
     });
