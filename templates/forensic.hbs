@@ -1,6 +1,6 @@
 {{> top}}
 <section id="timeselector"
-         class="mb-4 p-3 border border-2 border-info rounded-3">
+         class="mb-4 p-3 border border-1 border-info rounded-3">
     <h2 class="text-center">Zeitauswahl</h2>
     <form action="forensic"
           method="get"
@@ -38,23 +38,23 @@
 </section>
 </main>
 <section class="container">
-    <h2 class="text-center">Schüler und IP Adressen</h2>
+    <h2 class="text-center">SchülerInnen und IP Adressen</h2>
     <h3 class="text-center">Zeitraum: <span class="fs-6">({{startdate}})</span> {{starttime}} - <span class="fs-6">({{enddate}})</span>
         {{endtime}}
     </h3>
-    <ul class="list-unstyled ps-5 text-start">
+    <ul class="list-unstyled ps-5 mt-3 text-start">
         {{#each forensic_ipcount_array}}
         <li class="row">
             {{#let (get @root.ip2users this.ip) as |user|}}
             <details class="col mb-1">
-                <summary>Name: {{user.name}} | IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary>
+                <summary>{{user.name}} | {{this.ip}} ({{this.count}} mal, zuletzt: {{this.lastseen}})</summary>
                 <div class="row border border-2 rounded p-2 mt-2">
                     <h5 class="text-center w-100 mb-2">Registrierungen</h5>
                     <div class="col">
                         <div class="fw-bold text-center mb-1">{{user.name}}</div>
                         <ul class="list-unstyled p-1">
                             {{#each (get @root.user_history user.email) }}
-                            <li>{{this.at}} --> {{this.ip}}</li>
+                            <li>{{this.at}} ➔ {{this.ip}}</li>
                             {{/each}}
                         </ul>
                     </div>
@@ -62,7 +62,7 @@
                         <div class="fw-bold text-center mb-1">{{this.ip}}</div>
                         <ul class="list-unstyled p-1">
                             {{#each (get @root.ip_history this.ip) }}
-                            <li>{{this.at}} --> {{this.name}}</li>
+                            <li>{{this.at}} ➔ {{this.name}}</li>
                             {{/each}}
                         </ul>
                     </div>
