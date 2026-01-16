@@ -4,6 +4,7 @@
     "start": "deno run -A --env-file main.ts",
     "test": "deno run -A --env-file main_test.ts",
     "testdb": "deno run -A --env-file main_test_db.ts",
+    "browser-test": "deno run -A --env-file browser_test.ts",
     "check": "deno check *ts lib/*ts routes/*ts ./middleware/*ts repo/*ts service/*ts",
     "pg": "deno run -A prisma generate",
     "pv": "deno run -A prisma validate",
@@ -23,6 +24,7 @@
     "@prisma/client": "npm:@prisma/client@^6.19.1",
     "he": "npm:he@^1.2.0",
     "prisma": "npm:prisma@^6.19.1",
+    "puppeteer": "npm:puppeteer@^24.35.0",
     "model": "./prisma/client/client.ts"
   },
   "fmt": {

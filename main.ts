@@ -8,6 +8,7 @@ import * as service from "./service/service.ts";
 import * as hbs from "./lib/handlebars.ts";
 import { Bindings, Variables } from "./lib/types.ts";
 import forensicRouter from "./routes/forensic.ts";
+import browserRouter from "./routes/browser.ts";
 
 // ensure ABGABEN_DIR exists
 await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
@@ -17,6 +18,9 @@ app.use("*", remoteIPMiddleware);
 
 // Mount forensic router
 app.route("/forensic", forensicRouter);
+
+// Mount browser router
+app.route("/browser", browserRouter);
 
 app.get("/", async (c) => {
     const files = await get_unterlagen();
