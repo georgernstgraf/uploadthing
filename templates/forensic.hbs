@@ -1,6 +1,6 @@
 {{> top}}
 <section id="timeselector"
-         class="mb-4 p-3 border border-2 border-primary rounded-3">
+         class="mb-4 p-3 border border-2 border-info rounded-3">
     <h2 class="text-center">Zeitauswahl</h2>
     <form action="forensic"
           method="get"
@@ -46,20 +46,21 @@
         {{#each forensic_ipcount_array}}
         <li class="row">
             {{#let (get @root.ip2users this.ip) as |user|}}
-            <details class="col mb-2">
+            <details class="col mb-1">
                 <summary>Name: {{user.name}} | IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary>
                 <div class="row border border-2 rounded p-2 mt-2">
+                    <h5 class="text-center w-100 mb-2">Registrierungen</h5>
                     <div class="col">
+                        <div class="fw-bold text-center mb-1">{{user.name}}</div>
                         <ul class="list-unstyled p-1">
-                            <li class="text-center">{{user.name}} - Registrierungen</li>
                             {{#each (get @root.user_history user.email) }}
                             <li>{{this.at}} --> {{this.ip}}</li>
                             {{/each}}
                         </ul>
                     </div>
                     <div class="col">
+                        <div class="fw-bold text-center mb-1">{{this.ip}}</div>
                         <ul class="list-unstyled p-1">
-                            <li class="text-center">{{this.ip}} - Registrierungen</li>
                             {{#each (get @root.ip_history this.ip) }}
                             <li>{{this.at}} --> {{this.name}}</li>
                             {{/each}}
