@@ -47,8 +47,10 @@ Handlebars.registerHelper("eq", function (a, b) {
 });
 
 Handlebars.registerHelper("get", function (map, key) {
+    if (!map) return undefined;
     return map.get(key);
 });
+// deno-lint-ignore no-explicit-any
 Handlebars.registerHelper("let", function (this: any, value, options) {
     return options.fn(this, {
         data: options.data,

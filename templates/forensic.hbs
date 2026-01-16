@@ -45,14 +45,14 @@
     <ul class="list-unstyled ps-5 text-start">
         {{#each forensic_ipcount_array}}
         <li class="row">
-            {{#let (get ../ip2users this.ip) as |user|}}
-            <details class="col border border-2 rounded p-2 mb-2">
+            {{#let (get @root.ip2users this.ip) as |user|}}
+            <details class="col mb-2">
                 <summary>Name: {{user.name}} | IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary>
-                <div class="row">
+                <div class="row border border-2 rounded p-2 mt-2">
                     <div class="col">
                         <ul class="list-unstyled p-1">
                             <li class="text-center">{{user.name}} - Registrierungen</li>
-                            {{#each (get ../../user_history user.email) }}
+                            {{#each (get @root.user_history user.email) }}
                             <li>{{this.at}} --> {{this.ip}}</li>
                             {{/each}}
                         </ul>
@@ -60,7 +60,7 @@
                     <div class="col">
                         <ul class="list-unstyled p-1">
                             <li class="text-center">{{this.ip}} - Registrierungen</li>
-                            {{#each (get ../../ip_history this.ip) }}
+                            {{#each (get @root.ip_history this.ip) }}
                             <li>{{this.at}} --> {{this.name}}</li>
                             {{/each}}
                         </ul>
