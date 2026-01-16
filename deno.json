@@ -1,31 +1,46 @@
 {
-  "tasks": {
-    "dev": "deno run -A --env-file --watch=templates/ main.ts",
-    "start": "deno run -A --env-file main.ts",
-    "test": "deno run -A --env-file main_test.ts",
-    "testdb": "deno run -A --env-file main_test_db.ts",
-    "check": "deno check *ts lib/*ts routes/*ts ./middleware/*ts repo/*ts service/*ts",
-    "pg": "deno run -A prisma generate",
-    "pv": "deno run -A prisma validate",
-    "pd": "deno run -A --env-file prisma migrate deploy",
-    "pmd": "deno run -A --env-file prisma migrate dev",
-    "pms": "deno -A prisma migrate status",
-    "pmr": "deno -A prisma migrate reset",
-    "ps": "deno -A --env-file prisma studio"
-  },
-  "imports": {
-    "@db/sqlite": "jsr:@db/sqlite@0.12.0",
-    "@std/assert": "jsr:@std/assert@1",
-    "handlebars": "npm:handlebars@^4.7.8",
-    "hono": "npm:hono@^4.10.6",
-    "htmx.org": "npm:htmx.org@^2.0.8",
-    "ldapjs": "npm:ldapjs@^3.0.7",
-    "@prisma/client": "npm:@prisma/client@^6.19.1",
-    "he": "npm:he@^1.2.0",
-    "prisma": "npm:prisma@^6.19.1",
-    "model": "./prisma/client/client.ts"
-  },
-  "fmt": {
-    "indentWidth": 4
-  }
+    "tasks": {
+        "dev": "deno run -A --env-file --watch=templates/ main.ts",
+        "start": "deno run -A --env-file main.ts",
+        "test": "deno test -A",
+        "testdb": "deno run -A --env-file main_test_db.ts",
+        "browser-test": "deno run -A --env-file browser_test.ts",
+        "check": "deno check *ts lib/*ts routes/*ts ./middleware/*ts repo/*ts service/*ts",
+        "lint": "deno lint *.ts lib/ middleware/ repo/ routes/ service/ test/",
+        "fullcheck": "deno task check && deno task lint && deno task test",
+        "pg": "deno run -A prisma generate",
+        "pv": "deno run -A prisma validate",
+        "pd": "deno run -A --env-file prisma migrate deploy",
+        "pmd": "deno run -A --env-file prisma migrate dev",
+        "pms": "deno -A prisma migrate status",
+        "pmr": "deno -A prisma migrate reset",
+        "ps": "deno -A --env-file prisma studio"
+    },
+    "imports": {
+        "@db/sqlite": "jsr:@db/sqlite@0.12.0",
+        "@std/assert": "jsr:@std/assert@1",
+        "handlebars": "npm:handlebars@^4.7.8",
+        "hono": "npm:hono@^4.10.6",
+        "htmx.org": "npm:htmx.org@^2.0.8",
+        "ldapjs": "npm:ldapjs@^3.0.7",
+        "@prisma/client": "npm:@prisma/client@^6.19.1",
+        "he": "npm:he@^1.2.0",
+        "prisma": "npm:prisma@^6.19.1",
+        "puppeteer": "npm:puppeteer@^24.35.0",
+        "model": "./prisma/client/client.ts"
+    },
+    "fmt": {
+        "indentWidth": 4
+    },
+    "lint": {
+        "include": [
+            "*.ts",
+            "lib/",
+            "middleware/",
+            "repo/",
+            "routes/",
+            "service/",
+            "test/"
+        ]
+    }
 }

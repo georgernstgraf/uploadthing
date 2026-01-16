@@ -12,24 +12,44 @@
 </head>
 
 <body>
-    <main class="container mt-4 p-4">
-        <h1 class="mb-3 text-center">PLF - Router</h1>
-        <a href="/whoami"
-           class="btn btn-lg mb-3 fw-bold d-flex align-items-baseline justify-content-around gap-4 {{#if remote_user}}btn-info text-dark{{else}}text-bg-danger btn-danger{{/if}}">
-            {{#if remote_user}}
-                <span>{{remote_user.name}} ({{remote_user.email}} / {{remote_user.klasse}})</span>
-                <span class="badge text-bg-light text-uppercase">Change</span>
-            {{else}}
-                <span class="text-decoration-underline">Bitte Name bekanntgeben!</span>
-            {{/if}}
-        </a>
-        <h5 class="text-center">Meine IP: {{remote_ip}}</h5>
+    <div class="position-absolute top-0 end-0 p-3">
+        <button id="theme-toggle"
+                class="btn btn-sm btn-outline-secondary">Theme</button>
+    </div>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+
+            window.addEventListener('load', () => {
+                const toggleBtn = document.getElementById('theme-toggle');
+                toggleBtn.addEventListener('click', () => {
+                    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-bs-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                });
+            });
+        })();
+    </script>
+    <main class="container mt-4 p-3">
+        <h1 class="mb-3 text-center">http://router:8000/</h1>
         <nav class="d-flex justify-content-around gap-5 my-4">
             <a href="/"
-               class="btn btn-outline-primary">Home</a>
+               class="btn btn-lg btn-info">Home</a>
             <a href="/forensic"
                class="btn btn-outline-light"
                style="opacity: 0;">Forensic</a>
             <a href="/upload"
-               class="btn btn-outline-primary">Zipfile Upload</a>
+               class="btn btn-lg btn-info">Zipfile Upload</a>
         </nav>
+        <a href="/whoami"
+           class="btn btn-lg mb-4 fw-bold d-flex align-items-baseline justify-content-around gap-4 {{#if remote_user}}btn-info text-dark{{else}}text-bg-danger btn-danger{{/if}}">
+            {{#if remote_user}}
+            <span>{{remote_user.name}} ({{remote_user.email}} / {{remote_user.klasse}})</span>
+            <span class="badge text-bg-light text-uppercase">Change</span>
+            {{else}}
+            <span class="text-decoration-underline">Bitte Name bekanntgeben!</span>
+            {{/if}}
+        </a>
+        <h5 class="text-center mb-4">Meine IP: {{remote_ip}}</h5>

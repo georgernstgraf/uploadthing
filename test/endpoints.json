@@ -1,0 +1,61 @@
+{
+    "baseUrl": "http://localhost:8000",
+    "endpoints": [
+        {
+            "method": "GET",
+            "path": "/forensic/logs",
+            "description": "Get forensic logs",
+            "expectedOutput": {
+                "type": "Logs array or HTML"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/static/style.css",
+            "description": "Static CSS file",
+            "expectedOutput": {
+                "type": "CSS content"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/ldap?email=graf",
+            "description": "Search LDAP by email prefix",
+            "expectedOutput": {
+                "type": "HTML with user list"
+            }
+        },
+        {
+            "method": "POST",
+            "path": "/activeips",
+            "description": "Register active IPs",
+            "data": {
+                "ips": ["10.10.10.10", "7.7.7.7", "8.8.1.1"]
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/unterlagen",
+            "description": "Serve unterlagen directory",
+            "expectedOutput": {
+                "type": "Directory listing or static files"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/forensic",
+            "description": "Serve forensic page",
+            "expectedOutput": {
+                "type": "HTML page"
+            }
+        },
+        {
+            "method": "GET",
+            "path": "/",
+            "description": "Home page with directory index",
+            "expectedOutput": {
+                "type": "HTML page"
+            }
+        }
+    ]
+}

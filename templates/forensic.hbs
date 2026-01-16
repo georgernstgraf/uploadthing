@@ -1,34 +1,16 @@
 {{> top}}
 <section id="timeselector"
-         class="mb-4 p-3 border border-2 border-primary rounded-3">
+         class="mb-4 p-3 border border-1 border-info rounded-3">
     <h2 class="text-center">Zeitauswahl</h2>
     <form action="forensic"
           method="get"
           class="container text-center">
-        <div class="row mt-2 text-body text-opacity-50">
-            <label class="col">End Time: <select name="endtime"
-                        class="px-3 ms-3"
-                        id="timeendselect">
-                    {{#each spg_times}}
-                        <option value="{{this}}"
-                                {{#if (eq this ../endtime)}}selected{{/if}}>{{this}}</option>
-                    {{/each}}
-                </select>
-            </label>
-            <label class="col">End Date: <input type="date"
-                       name="enddate"
-                       class="px-3 ms-3"
-                       value="{{enddate}}"></label>
-        </div>
         <div class="row mt-2">
-            <label class="col">START Time: <select name="starttime"
-                        class="px-3 ms-3"
-                        id="timestartselect">
-                    {{#each spg_times}}
-                        <option value="{{this}}"
-                                {{#if (eq this ../starttime)}}selected{{/if}}>{{this}}</option>
-                    {{/each}}
-                </select>
+            <label class="col">START Time: <input type="text"
+                       name="starttime"
+                       class="px-3 ms-3"
+                       id="timestartselect"
+                       value="{{starttime}}">
             </label>
             <label class="col">Start Date: <input type="date"
                        name="startdate"
@@ -37,42 +19,57 @@
         </div>
         <div class="row mt-2">
             <label class="col"><input type="submit"
-                       class="btn btn-secondary w-100"
+                       class="btn btn-outline-info w-100"
                        value="Suchen"></label>
+        </div>
+        <div class="row mt-2 text-body text-opacity-50">
+            <label class="col">End Time: <input type="text"
+                       name="endtime"
+                       class="px-3 ms-3"
+                       id="timeendselect"
+                       value="{{endtime}}">
+            </label>
+            <label class="col">End Date: <input type="date"
+                       name="enddate"
+                       class="px-3 ms-3"
+                       value="{{enddate}}"></label>
         </div>
     </form>
 </section>
 </main>
 <section class="container">
-    <h2 class="text-center">Schüler und IP Adressen</h2>
+    <h2 class="text-center">SchülerInnen und IP Adressen</h2>
     <h3 class="text-center">Zeitraum: <span class="fs-6">({{startdate}})</span> {{starttime}} - <span class="fs-6">({{enddate}})</span>
         {{endtime}}
     </h3>
-    <ul class="list-unstyled ps-5 text-start">
+    <ul class="list-unstyled ps-5 mt-3 text-start">
         {{#each forensic_ipcount_array}}
-            <li class="row">
-                <details class="col">
-                    {{#let (get ../ip2users this.ip) as |user|}}
-                        <summary> Name: {{user.name}}
-                        </summary>
-                        <ul class="list-unstyled border border-2 p-1">
-                            <li class="text-center">{{user.name}} - Registrierungen</li>
-                            {{#each (get ../../user_history user.email) }}
-                                <li>{{this.at}} --> {{this.ip}}</li>
+        <li class="row">
+            {{#let (get @root.ip2users this.ip) as |user|}}
+            <details class="col mb-1">
+                <summary>{{user.name}} | {{this.ip}} ({{this.count}} mal, zuletzt: {{this.lastseen}})</summary>
+                <div class="row border border-2 rounded p-2 mt-2">
+                    <h5 class="text-center w-100 mb-2">Registrierungen</h5>
+                    <div class="col">
+                        <div class="fw-bold text-center mb-1">{{user.name}}</div>
+                        <ul class="list-unstyled p-1">
+                            {{#each (get @root.user_history user.email) }}
+                            <li>{{this.at}} ➔ {{this.ip}}</li>
                             {{/each}}
                         </ul>
-                    {{/let}}
-                </details>
-                <details class="col">
-                    <summary>IP: {{this.ip}} ({{this.count}}, zuletzt: {{this.lastseen}})</summary>
-                    <ul class="list-unstyled border border-2 p-1">
-                        <li class="text-center">{{this.ip}} - Registrierungen</li>
-                        {{#each (get ../ip_history this.ip) }}
-                            <li>{{this.at}} --> {{this.name}}</li>
-                        {{/each}}
-                    </ul>
-                </details>
-            </li>
+                    </div>
+                    <div class="col">
+                        <div class="fw-bold text-center mb-1">{{this.ip}}</div>
+                        <ul class="list-unstyled p-1">
+                            {{#each (get @root.ip_history this.ip) }}
+                            <li>{{this.at}} ➔ {{this.name}}</li>
+                            {{/each}}
+                        </ul>
+                    </div>
+                </div>
+            </details>
+            {{/let}}
+        </li>
         {{/each}}
     </ul>
 </section>

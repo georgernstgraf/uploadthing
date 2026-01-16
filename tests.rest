@@ -1,4 +1,21 @@
-GET http://localhost:8000/forensic/logs
+###
+GET http://localhost:8000/browser/status
+### curl -X POST http://localhost:8000/browser/pdf -H "Content-Type: application/json" -d '{"url": "http://graf.priv.at/"}' -o out.pdf
+POST http://localhost:8000/browser/pdf
+Content-Type: application/json
+
+{
+    "url": "http://orf.at/"
+}
+###
+POST http://localhost:8000/browser/screenshot
+Content-Type: application/json
+
+{
+    "url": "http://orf.at/"
+}
+###
+GET http://localhost:8000/forensic/users
 ###
 GET http://localhost:8000/static/style.css
 ###
@@ -15,7 +32,7 @@ Content-Type: application/json
 ###
 GET http://localhost:8000/unterlagen
 ###
-GET http://localhost:8000/
+GET http://localhost:8000/forensic
 ###
 GET http://localhost:8000/
 ###

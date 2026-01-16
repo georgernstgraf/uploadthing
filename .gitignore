@@ -8,3 +8,5 @@ Thumbs.db
 uploadthing.db-wal
 uploadthing.db-shm
 startloop.log
+/browser_cache/
+opencode.json
