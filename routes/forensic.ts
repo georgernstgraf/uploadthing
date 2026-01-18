@@ -38,14 +38,15 @@ forensicRouter.get("/", (c) => {
     const ip2users = service.user.ofIPs(
         forensic_ipcount_array.map((f) => f.ip),
     );
-    forensic_ipcount_array.sort((a, b) => {
-        const hasA = ip2users.has(a.ip);
-        const hasB = ip2users.has(b.ip);
-        if (hasA === hasB) {
-            return a.lastseen.localeCompare(b.lastseen);
-        }
-        return Number(hasB) - Number(hasA);
-    });
+    const registered_ips = service.user.get_registered_ips(
+        forensic_ipcount_array.map((f) => f.ip),
+    );
+    
+    const { with_name, without_name } = service.ipfact.split_ips_by_registration_status(
+        forensic_ipcount_array,
+        registered_ips,
+    );
+    
     const ip_history = new Map<string, IPHistoryRecord[]>();
     for (const iprec of forensic_ipcount_array) {
         ip_history.set(iprec.ip, service.history.ofIP(iprec.ip));
@@ -60,10 +61,13 @@ forensicRouter.get("/", (c) => {
             endtime,
             enddate,
             spg_times: cf.spg_times,
-            forensic_ipcount_array,
+            forensic_ipcount_array: with_name, // Keep for backward compatibility
             ip2users,
             ip_history,
             user_history,
+            // New data for the two tables
+            ips_with_name: with_name,
+            ips_without_name: without_name,
         }),
     );
 });

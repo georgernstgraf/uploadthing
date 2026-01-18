@@ -29,7 +29,7 @@ export type UserType = {
     ip?: string;
     name: string;
     email: string;
-    klasse: string;
+    klasse?: string;
 };
 export type LdapUserType = {
     displayName: string;

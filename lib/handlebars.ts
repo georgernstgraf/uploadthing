@@ -12,19 +12,49 @@ type TopType = {
     remote_ip: string;
     remote_user: UserType | null;
 };
-const dirIndexTemplate_untyped = Handlebars.compile(
+
+type DirIndexTemplateData = {
+    remote_ip: string;
+    remote_user: UserType | null;
+    files: string[];
+    UNTERLAGEN_DIR: string;
+};
+
+type UploadTemplateData = {
+    remote_ip: string;
+    remote_user: UserType | null;
+};
+
+type SuccessTemplateData = {
+    remote_ip: string;
+    remote_user: UserType | null;
+    filename: string;
+    filesize: string;
+    md5sum: string;
+    durationSeconds: string;
+};
+
+type WhoamiTemplateData = {
+    remote_ip: string;
+    remote_user: UserType | null;
+};
+
+type LdapTemplateData = {
+    users: UserType[];
+};
+export const dirIndexTemplate = Handlebars.compile<DirIndexTemplateData>(
     Deno.readTextFileSync("templates/dirindex.hbs"),
 );
-const uploadTemplate_untyped = Handlebars.compile(
+export const uploadTemplate = Handlebars.compile<UploadTemplateData>(
     Deno.readTextFileSync("templates/upload.hbs"),
 );
-const successTemplate_untyped = Handlebars.compile(
+export const successTemplate = Handlebars.compile<SuccessTemplateData>(
     Deno.readTextFileSync("templates/success.hbs"),
 );
-const ldapTemplate_untyped = Handlebars.compile(
+export const ldapTemplate = Handlebars.compile<LdapTemplateData>(
     Deno.readTextFileSync("templates/ldap.hbs"),
 );
-const whoamiTemplate_untyped = Handlebars.compile(
+export const whoamiTemplate = Handlebars.compile<WhoamiTemplateData>(
     Deno.readTextFileSync("templates/whoami.hbs"),
 );
 
@@ -40,6 +70,9 @@ type ForensicTemplateData = {
     ip2users: Map<string, UserType>;
     ip_history: Map<string, IPHistoryRecord[]>;
     user_history: Map<string, UserHistoryRecord[]>;
+    // New properties for split tables
+    ips_with_name: ForensicIPCount[];
+    ips_without_name: ForensicIPCount[];
 };
 
 Handlebars.registerHelper("eq", function (a, b) {
@@ -64,13 +97,3 @@ Handlebars.registerPartial(
 export const forensicTemplate = Handlebars.compile<ForensicTemplateData>(
     Deno.readTextFileSync("templates/forensic.hbs"),
 );
-
-export const dirIndexTemplate =
-    dirIndexTemplate_untyped as Handlebars.TemplateDelegate;
-export const uploadTemplate =
-    uploadTemplate_untyped as Handlebars.TemplateDelegate;
-export const successTemplate =
-    successTemplate_untyped as Handlebars.TemplateDelegate;
-export const ldapTemplate = ldapTemplate_untyped as Handlebars.TemplateDelegate;
-export const whoamiTemplate =
-    whoamiTemplate_untyped as Handlebars.TemplateDelegate;

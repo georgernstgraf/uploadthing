@@ -17,3 +17,14 @@ export function getbyip(ip: string): UserType | null {
 export function register(userData: UserType) {
     user.registerip(userData);
 }
+
+export function get_registered_ips(ips: string[]): Set<string> {
+    const users = user.searchbyips(ips);
+    const registered_ips = new Set<string>();
+    for (const u of users) {
+        if (u.ip) {
+            registered_ips.add(u.ip);
+        }
+    }
+    return registered_ips;
+}
