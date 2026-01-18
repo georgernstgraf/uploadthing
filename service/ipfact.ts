@@ -2,6 +2,10 @@ import * as repo from "../repo/repo.ts";
 import { type ForensicIPCount } from "../lib/types.ts";
 import { localTimeString, localDateTimeString } from "../lib/timefunc.ts";
 
+export function registerips(ips: string[]): number {
+    return repo.ipfact.registerSeenMany(ips, new Date());
+}
+
 function formatLastSeen(lastSeenDate: Date): string {
     const now = new Date();
     const twelveHoursMs = 12 * 60 * 60 * 1000;

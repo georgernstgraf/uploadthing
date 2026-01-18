@@ -4,7 +4,9 @@
     <h2 class="text-center">Zeitauswahl</h2>
     <form action="forensic"
           method="get"
-          class="container text-center">
+          class="container text-center"
+          x-data="endTimeToggle()"
+          x-init="init()">
         <div class="row mt-2">
             <label class="col">START Time: <input type="text"
                        name="starttime"
@@ -17,12 +19,24 @@
                        class="px-3 ms-3"
                        value="{{startdate}}"></label>
         </div>
-        <div class="row mt-2">
-            <label class="col"><input type="submit"
-                       class="btn btn-outline-info w-100"
-                       value="Suchen"></label>
+        <!-- Toggle for End Time -->
+        <div class="row mt-3">
+            <div class="col text-center">
+                <div class="form-check form-switch d-inline-block">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           id="toggleEndTime"
+                           x-model="showEndTime"
+                           @change="savePreference()">
+                    <label class="form-check-label"
+                           for="toggleEndTime"> Endzeit festlegen </label>
+                </div>
+            </div>
         </div>
-        <div class="row mt-2 text-body text-opacity-50">
+        <!-- Conditional End Time Section -->
+        <div class="row mt-2"
+             x-show="showEndTime"
+             x-cloak>
             <label class="col">End Time: <input type="text"
                        name="endtime"
                        class="px-3 ms-3"
@@ -34,76 +48,107 @@
                        class="px-3 ms-3"
                        value="{{enddate}}"></label>
         </div>
+        <div class="row mt-2">
+            <label class="col"><input type="submit"
+                       class="btn btn-outline-info w-100"
+                       value="Suchen"></label>
+        </div>
     </form>
 </section>
+<!-- Alpine.js Component for End Time Toggle -->
+<script>
+    function endTimeToggle() {
+        return {
+            showEndTime: false,
+
+            init() {
+                // Load preference from LocalStorage
+                const saved = localStorage.getItem('forensicShowEndTime');
+                this.showEndTime = saved === 'true';
+
+                // If no preference saved, default to false (hidden)
+                if (saved === null) {
+                    this.showEndTime = false;
+                }
+            },
+
+            savePreference() {
+                localStorage.setItem('forensicShowEndTime', this.showEndTime);
+            }
+        }
+    }
+</script>
+<style>
+    [x-cloak] {
+        display: none !important;
+    }
+</style>
 </main>
 <section class="container">
     <h2 class="text-center">SchülerInnen und IP Adressen</h2>
     <h3 class="text-center">Zeitraum: <span class="fs-6">({{startdate}})</span> {{starttime}} - <span class="fs-6">({{enddate}})</span>
         {{endtime}}
     </h3>
-
     <!-- Table 1: IPs with registered names -->
     <h4 class="text-center mt-4 mb-3">Registrierte IP-Adressen</h4>
     <ul class="list-unstyled ps-5 mt-3 text-start">
         {{#each ips_with_name}}
-        <li class="row">
-            {{#let (get @root.ip2users this.ip) as |user|}}
-            <details class="col mb-1">
-                <summary>{{user.name}} | {{this.ip}} ({{this.count}} mal, zuletzt: {{this.lastseen}})</summary>
-                <div class="row border border-2 rounded p-2 mt-2">
-                    <h5 class="text-center w-100 mb-2">Registrierungen</h5>
-                    <div class="col">
-                        <div class="fw-bold text-center mb-1">{{user.name}}</div>
-                        <ul class="list-unstyled p-1">
-                            {{#each (get @root.user_history user.email) }}
-                            <li>{{this.at}} ➔ {{this.ip}}</li>
-                            {{/each}}
-                        </ul>
-                    </div>
-                    <div class="col">
-                        <div class="fw-bold text-center mb-1">{{this.ip}}</div>
-                        <ul class="list-unstyled p-1">
-                            {{#each (get @root.ip_history this.ip) }}
-                            <li>{{this.at}} ➔ {{this.name}}</li>
-                            {{/each}}
-                        </ul>
-                    </div>
-                </div>
-            </details>
-            {{/let}}
-        </li>
+            <li class="row">
+                {{#let (get @root.ip2users this.ip) as |user|}}
+                    <details class="col mb-1">
+                        <summary>{{user.name}} | {{this.ip}} ({{this.count}} mal, zuletzt: {{this.lastseen}})</summary>
+                        <div class="row border border-2 rounded p-2 mt-2">
+                            <h5 class="text-center w-100 mb-2">Registrierungen</h5>
+                            <div class="col">
+                                <div class="fw-bold text-center mb-1">{{user.name}}</div>
+                                <ul class="list-unstyled p-1">
+                                    {{#each (get @root.user_history user.email) }}
+                                        <li>{{this.at}} ➔ {{this.ip}}</li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            <div class="col">
+                                <div class="fw-bold text-center mb-1">{{this.ip}}</div>
+                                <ul class="list-unstyled p-1">
+                                    {{#each (get @root.ip_history this.ip) }}
+                                        <li>{{this.at}} ➔ {{this.name}}</li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                        </div>
+                    </details>
+                {{/let}}
+            </li>
         {{else}}
-        <li class="text-center text-muted">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</li>
+            <li class="text-center text-muted">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</li>
         {{/each}}
     </ul>
-
     <!-- Table 2: IPs without registered names -->
     <h4 class="text-center mt-5 mb-3">Nicht registrierte IP-Adressen</h4>
     <ul class="list-unstyled ps-5 mt-3 text-start">
         {{#each ips_without_name}}
-        <li class="row">
-            <details class="col mb-1">
-                <summary>{{this.ip}} ({{this.count}} mal, zuletzt: {{this.lastseen}})</summary>
-                <div class="row border border-2 rounded p-2 mt-2">
-                    <h5 class="text-center w-100 mb-2">Registrierungen</h5>
-                    <div class="col">
-                        <div class="fw-bold text-center mb-1">Kein Benutzer registriert</div>
-                        <p class="text-muted text-center">Für diese IP-Adresse ist kein Benutzer registriert.</p>
+            <li class="row">
+                <details class="col mb-1">
+                    <summary>{{this.ip}} ({{this.count}} mal, zuletzt: {{this.lastseen}})</summary>
+                    <div class="row border border-2 rounded p-2 mt-2">
+                        <h5 class="text-center w-100 mb-2">Registrierungen</h5>
+                        <div class="col">
+                            <div class="fw-bold text-center mb-1">Kein Benutzer registriert</div>
+                            <p class="text-muted text-center">Für diese IP-Adresse ist kein Benutzer registriert.</p>
+                        </div>
+                        <div class="col">
+                            <div class="fw-bold text-center mb-1">{{this.ip}}</div>
+                            <ul class="list-unstyled p-1">
+                                {{#each (get @root.ip_history this.ip) }}
+                                    <li>{{this.at}} ➔ {{this.name}}</li>
+                                {{/each}}
+                            </ul>
+                        </div>
                     </div>
-                    <div class="col">
-                        <div class="fw-bold text-center mb-1">{{this.ip}}</div>
-                        <ul class="list-unstyled p-1">
-                            {{#each (get @root.ip_history this.ip) }}
-                            <li>{{this.at}} ➔ {{this.name}}</li>
-                            {{/each}}
-                        </ul>
-                    </div>
-                </div>
-            </details>
-        </li>
+                </details>
+            </li>
         {{else}}
-        <li class="text-center text-muted">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</li>
+            <li class="text-center text-muted">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</li>
         {{/each}}
     </ul>
 </section>

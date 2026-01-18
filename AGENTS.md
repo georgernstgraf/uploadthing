@@ -13,6 +13,7 @@ This document provides essential guidelines for coding agents working in this re
 ## Build & Development Commands
 
 ### Core Commands
+
 ```bash
 deno task dev          # Development server with file watching and env file
 deno task start        # Production server with env file
@@ -20,12 +21,14 @@ deno task check        # TypeScript checking across all modules
 ```
 
 ### Testing Commands
+
 ```bash
 deno task test         # Run integration tests (main_test.ts)
 deno task testdb       # Database-specific tests (main_test_db.ts)
 ```
 
 ### Database Commands (Prisma)
+
 ```bash
 deno task pg           # Generate Prisma client
 deno task pv           # Validate Prisma schema
@@ -39,12 +42,14 @@ deno task ps           # Open Prisma Studio
 ## Code Style Guidelines
 
 ### Formatting
-- **Indentation**: 4 spaces (configured in deno.json)
+
+- **Indentation**: 4 spaces (configured in deno.json; use also for .hbs, .html, and .css files)
 - **Line endings**: LF
 - **File extensions**: Always include `.ts` for imports
 - **Language**: Mixed German (comments/variables) and English (functions/types)
 
 ### Import Organization
+
 ```typescript
 // External dependencies first
 import { Hono } from "hono";
@@ -68,6 +73,7 @@ import cf from "../lib/config.ts";
 - **Constants**: SCREAMING_SNAKE_CASE or camelCase based on scope
 
 ### Type Definitions
+
 ```typescript
 // Use interfaces for complex objects
 export type UserType = {
@@ -84,6 +90,7 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 ## Error Handling Patterns
 
 ### Standard Error Handling
+
 ```typescript
 try {
     // Operation that might fail
@@ -99,6 +106,7 @@ try {
 ```
 
 ### Resource Management
+
 - Always clean up resources in `finally` blocks
 - Use `Deno.close()` for file handles
 - Properly close database connections
@@ -106,6 +114,7 @@ try {
 ## Database Patterns
 
 ### Prisma Usage
+
 ```typescript
 // Use the generated client from lib/prismaclient/
 import { PrismaClient } from "../lib/prismaclient/client.ts";
@@ -145,6 +154,7 @@ export async function findIPsInTimeRange(startTime: Date, endTime: Date) {
 - make sure no node_modules directory gets created
 
 ### Route Handler Structure
+
 ```typescript
 router.get("/endpoint", (c) => {
     const remote_user = c.get("remoteuser");
@@ -164,6 +174,7 @@ router.get("/endpoint", (c) => {
 ```
 
 ### Middleware Usage
+
 ```typescript
 export const someMiddleware = createMiddleware(async (c, next) => {
     // Pre-processing
@@ -178,12 +189,14 @@ export const someMiddleware = createMiddleware(async (c, next) => {
 ## Testing Guidelines
 
 ### Current Testing Approach
+
 - No formal testing framework (use direct script execution)
 - Focus on integration testing over unit testing
 - Test files: `main_test.ts`, `main_test_db.ts`
 - Use environment files for test configuration
 
 ### Running Single Tests
+
 ```bash
 # Run specific test scenarios
 deno run -A --env-file main_test.ts
@@ -193,6 +206,7 @@ deno run -A --env-file main_test_db.ts
 ## Security Considerations
 
 ### Input Validation
+
 ```typescript
 // Use safeFileComponent for path sanitization
 import { safeFileComponent } from "../lib/utils.ts";
@@ -205,6 +219,7 @@ if (!remoteuser) {
 ```
 
 ### Environment Variables
+
 - Use `Deno.env.get()` for configuration
 - Never commit sensitive data to repository
 - Use `.env` files for local development
@@ -212,12 +227,14 @@ if (!remoteuser) {
 ## Language & Documentation
 
 ### Mixed Language Usage
+
 - **Code**: English (functions, types, external libraries)
 - **Comments**: German (business logic explanations)
 - **Templates**: German (user-facing content)
 - **Variable Names**: Often German domain-specific terms
 
 ### Comment Style
+
 ```typescript
 // German comments for domain-specific logic
 // Hier keine Template Types, bitte!
@@ -227,7 +244,8 @@ const start_ms_earlier = 3.6 * 1.5e6; // 1.5 Stunden zuvor
 ## Module Organization
 
 ### Directory Structure
-```
+
+```console
 lib/           # Utilities, types, configuration
 middleware/    # Hono middleware functions
 routes/        # Route handlers
@@ -239,6 +257,7 @@ templates/     # Handlebars templates
 ```
 
 ### Module Re-exports
+
 ```typescript
 // service/service.ts aggregates all services
 export * from "./user.ts";
