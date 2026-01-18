@@ -39,6 +39,10 @@ deno task pmr          # Reset database
 deno task ps           # Open Prisma Studio
 ```
 
+### Tool calls
+
+- **github**: use the `gh` command, it is authorized.
+
 ## Code Style Guidelines
 
 ### Formatting
