@@ -1,9 +1,6 @@
 import * as repo from "../repo/repo.ts";
 import { type ForensicIPCount } from "../lib/types.ts";
-
-export function registerips(ips: string[]): number {
-    return repo.ipfact.registerSeenMany(ips, new Date());
-}
+import { localTimeString, localDateTimeString } from "../lib/timefunc.ts";
 
 function formatLastSeen(lastSeenDate: Date): string {
     const now = new Date();
@@ -11,22 +8,11 @@ function formatLastSeen(lastSeenDate: Date): string {
     const timeDiff = now.getTime() - lastSeenDate.getTime();
     
     if (timeDiff > twelveHoursMs) {
-        // More than 12 hours ago - show full date
-        return lastSeenDate.toLocaleString("de-DE", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-        });
+        // More than 12 hours ago - show full date using existing converter
+        return localDateTimeString(lastSeenDate);
     } else {
-        // Less than 12 hours ago - show only time
-        return lastSeenDate.toLocaleString("de-DE", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-        });
+        // Less than 12 hours ago - show only time using existing converter
+        return localTimeString(lastSeenDate);
     }
 }
 
