@@ -31,6 +31,14 @@ forensicRouter.get("/", (c) => {
     const enddate = c.req.query("enddate") ||
         localDateString(new Date(Date.now() + plus_one_day_ms));
     const endtime = c.req.query("endtime") || starttime;
+    // Calculate if start and end times are within 12 hours
+    const startDateTime = new Date(`${startdate} ${starttime}`);
+    const endDateTime = new Date();
+    const timeDiffMs = Math.abs(
+        endDateTime.getTime() - startDateTime.getTime(),
+    );
+    const within12hours = timeDiffMs < (12 * 60 * 60 * 1000); // 12 hours in milliseconds
+
     const forensic_ipcount_array = service.ipfact.ips_with_counts_in_range(
         `${startdate} ${starttime}`,
         `${enddate} ${endtime}`,
@@ -41,12 +49,13 @@ forensicRouter.get("/", (c) => {
     const registered_ips = service.user.get_registered_ips(
         forensic_ipcount_array.map((f) => f.ip),
     );
-    
-    const { with_name, without_name } = service.ipfact.split_ips_by_registration_status(
-        forensic_ipcount_array,
-        registered_ips,
-    );
-    
+
+    const { with_name, without_name } = service.ipfact
+        .split_ips_by_registration_status(
+            forensic_ipcount_array,
+            registered_ips,
+        );
+
     const ip_history = new Map<string, IPHistoryRecord[]>();
     for (const iprec of forensic_ipcount_array) {
         ip_history.set(iprec.ip, service.history.ofIP(iprec.ip));
@@ -68,6 +77,7 @@ forensicRouter.get("/", (c) => {
             // New data for the two tables
             ips_with_name: with_name,
             ips_without_name: without_name,
+            within12hours,
         }),
     );
 });

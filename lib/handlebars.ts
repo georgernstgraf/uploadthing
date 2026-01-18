@@ -73,6 +73,7 @@ type ForensicTemplateData = {
     // New properties for split tables
     ips_with_name: ForensicIPCount[];
     ips_without_name: ForensicIPCount[];
+    within12hours: boolean;
 };
 
 Handlebars.registerHelper("eq", function (a, b) {
