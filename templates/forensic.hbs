@@ -78,25 +78,18 @@
             }
         }
     </script>
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-    </style>
-    </main>
     <section class="container"
              id="report">
         <h2 class="text-center">SchülerInnen und IP Adressen</h2>
-    <h3 class="text-center"> Zeitraum: {{#unless within12hours}}
-            {{startdate}}
-        {{/unless}}
-        {{starttime}}<span x-show="showEndTime"
-              x-cloak> - {{#unless within12hours}}
-                {{enddate}}
+        <h3 class="text-center"> Zeitraum: {{#unless within12hours}}
+                {{startdate}}
             {{/unless}}
-            {{endtime}}
-        </span>
-    </h3>
+            {{starttime}} - <span x-show="showEndTime">{{#unless within12hours}}
+                    {{enddate}}
+                {{/unless}}
+                {{endtime}}
+            </span>
+        </h3>
         <!-- Table 1: IPs with registered names -->
         <h4 class="text-center mt-4 mb-3">Registrierte IP-Adressen</h4>
         <ul class="list-unstyled ps-5 mt-3 text-start">
@@ -161,6 +154,7 @@
         </ul>
     </section>
 </div>
+</main>
 </body>
 
 </html>
