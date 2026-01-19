@@ -84,7 +84,8 @@
         <h3 class="text-center"> Zeitraum: {{#unless within12hours}}
                 {{startdate}}
             {{/unless}}
-            {{starttime}} - <span x-show="showEndTime">{{#unless within12hours}}
+            {{starttime}} - <span x-show="showEndTime"
+                  x-cloak>{{#unless within12hours}}
                     {{enddate}}
                 {{/unless}}
                 {{endtime}}

@@ -10,3 +10,4 @@ uploadthing.db-shm
 startloop.log
 /browser_cache/
 opencode.json
+/errors/
