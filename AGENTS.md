@@ -43,6 +43,7 @@ deno task ps           # Open Prisma Studio
 
 - **github**: use the `gh` command, it is authorized.
 - **browser**: use the `agent-browser` command on `http://localhost:8000/` to test the application. Run `agent-browser -h` for comprehensive usage instructions.
+- **forensic page testing**: To view a good amount of forensic items, use start date December 1, 2025.
 
 ## Code Style Guidelines
 

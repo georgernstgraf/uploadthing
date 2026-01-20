@@ -85,16 +85,16 @@ Handlebars.registerHelper("get", function (map, key) {
     return map.get(key);
 });
 
-// Extract first letter of given name (after last blank in displayname)
-// e.g., "Gradascevic Edvin" → "E"
+// Extract first letter of given name (after first blank in displayname)
+// e.g., "Breuss Moritz Peter" → "M", "Indra Daniel Paul Philipp" → "D"
 Handlebars.registerHelper("givenNameInitial", function (name: string) {
     if (!name || typeof name !== "string") return "?";
-    const lastSpace = name.lastIndexOf(" ");
-    if (lastSpace === -1 || lastSpace >= name.length - 1) {
+    const firstSpace = name.indexOf(" ");
+    if (firstSpace === -1 || firstSpace >= name.length - 1) {
         // No space or space is at the end, use first character
         return name.charAt(0).toUpperCase();
     }
-    return name.charAt(lastSpace + 1).toUpperCase();
+    return name.charAt(firstSpace + 1).toUpperCase();
 });
 
 // deno-lint-ignore no-explicit-any
