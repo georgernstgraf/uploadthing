@@ -1,23 +1,82 @@
 {{> top}}
-<form action="/upload"
-      method="POST"
-      enctype="multipart/form-data"
-      class="border border-2 border-black needs-validation p-4 rounded-2"
-      novalidate="">
-       <div class="mb-3">
-              <label class="d-block form-label h3 text-center mb-3">Bitte ZIP Datei auswählen:</label>
-              <input type="file"
-                     class="form-control"
-                     name="file"
-                     accept=".zip"
-                     required>
-              <div class="invalid-feedback">Bitte eine ZIP-Datei auswählen.</div>
-       </div>
-       <div class="text-center">
-              <button type="submit"
-                      class="btn btn-primary">Upload</button>
-       </div>
-</form>
+<div x-data="{ uploading: false, errorMessage: '', toastInstance: null }">
+    <form @submit.prevent="
+            const fileInput = $refs.fileInput;
+            if (!fileInput.files || fileInput.files.length === 0) {
+                errorMessage = 'Bitte eine ZIP-Datei auswählen.';
+                if (!toastInstance) toastInstance = new bootstrap.Toast($refs.errorToast);
+                toastInstance.show();
+                return;
+            }
+            uploading = true;
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            try {
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                if (response.ok) {
+                    const html = await response.text();
+                    document.open();
+                    document.write(html);
+                    document.close();
+                } else {
+                    const errorText = await response.text();
+                    errorMessage = 'Upload fehlgeschlagen: ' + errorText;
+                    if (!toastInstance) toastInstance = new bootstrap.Toast($refs.errorToast);
+                    toastInstance.show();
+                }
+            } catch (err) {
+                errorMessage = 'Upload fehlgeschlagen: ' + err.message;
+                if (!toastInstance) toastInstance = new bootstrap.Toast($refs.errorToast);
+                toastInstance.show();
+            } finally {
+                uploading = false;
+            }
+          "
+          enctype="multipart/form-data"
+          class="border border-2 border-black needs-validation p-4 rounded-2"
+          novalidate="">
+        <div class="mb-3">
+            <label class="d-block form-label h3 text-center mb-3">Bitte ZIP Datei auswählen:</label>
+            <input type="file"
+                   x-ref="fileInput"
+                   class="form-control"
+                   name="file"
+                   accept=".zip"
+                   required
+                   :disabled="uploading">
+            <div class="invalid-feedback">Bitte eine ZIP-Datei auswählen.</div>
+        </div>
+        <div class="text-center">
+            <button type="submit"
+                    class="btn btn-primary"
+                    :disabled="uploading">
+                <span :class="uploading ? 'd-none' : ''">Upload</span>
+                <span x-cloak :class="uploading ? '' : 'd-none'">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    Uploading...
+                </span>
+            </button>
+        </div>
+    </form>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+        <div x-ref="errorToast"
+             class="toast align-items-center text-bg-danger border-0"
+             role="alert"
+             aria-live="assertive"
+             aria-atomic="true"
+             data-bs-autohide="false">
+            <div class="d-flex">
+                <div class="toast-body fs-5" x-text="errorMessage"></div>
+                <button type="button"
+                        class="btn-close btn-close-white me-2 m-auto"
+                        @click="toastInstance?.hide()"
+                        aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+</div>
 </main>
 </body>
 

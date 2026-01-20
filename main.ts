@@ -116,7 +116,7 @@ app.post("upload", async (c) => {
         hbs.successTemplate({
             remote_ip,
             filename: real_filename,
-            filesize: (bytesWritten / 1024).toFixed(0),
+            filesize: bytesWritten.toString(),
             md5sum,
             durationSeconds,
             remote_user,
