@@ -17,7 +17,7 @@
 </head>
 
 <body>
-    <div class="position-absolute top-0 end-0 p-3">
+    <div class="position-fixed top-0 end-0 p-2" style="z-index: 1001;">
         <button id="theme-toggle"
                 class="btn btn-sm btn-outline-secondary rounded-pill px-3">Theme</button>
     </div>
@@ -37,11 +37,12 @@
             });
         })();
     </script>
-    <main class="container mt-2 p-2">
-        <div class="leisure-card floating-element mb-2 py-1">
+    <header class="sticky-top" style="z-index: 1000;">
+        <div class="leisure-card py-1 mx-2 mt-2" style="border-radius: 16px;">
             <h1 class="mb-0 text-center fw-bold" style="color: var(--leisure-primary); font-size: 1.25rem;">http://router:8000/</h1>
         </div>
-
+    </header>
+    <main class="container mt-2 p-2">
         <nav class="d-flex justify-content-center gap-2 my-2 mx-auto p-1 flex-wrap" style="width: fit-content; max-width: 100%; background: var(--leisure-glass-bg); backdrop-filter: blur(10px); border-radius: 50px; border: 1px solid var(--leisure-glass-border); box-shadow: var(--leisure-shadow-soft);">
             <a href="/"
                class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Home</a>
