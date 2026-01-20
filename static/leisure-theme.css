@@ -91,6 +91,10 @@ h4 { font-size: 0.9rem; }
 h5 { font-size: 0.85rem; }
 h6 { font-size: 0.75rem; }
 
+html, body {
+    overflow-x: hidden;
+}
+
 body {
     background-color: var(--leisure-bg-light);
     background-image: url('/static/img/bg-leisure.svg');
