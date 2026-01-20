@@ -294,6 +294,8 @@ import * as service from "../service/service.ts";
 
 > **IMPORTANT**: Linting must always succeed before the completion of any task. Run `deno task lint` and fix all issues before marking work as complete.
 
+> **IMPORTANT**: Every commit message must include a reference to the GitHub issue it addresses (e.g., "issue#13"). If there is no existing issue for the task, ask the user to create one or provide the issue number.
+
 ## Special Notes
 
 - **Prisma Client**: Custom output directory in `lib/prismaclient/`

@@ -33,22 +33,46 @@
             }
           "
           enctype="multipart/form-data"
-          class="border border-2 border-black needs-validation p-4 rounded-2"
+          class="leisure-card needs-validation mx-auto"
+          style="max-width: 600px;"
           novalidate="">
-        <div class="mb-3">
-            <label class="d-block form-label h3 text-center mb-3">Bitte ZIP Datei auswählen:</label>
-            <input type="file"
-                   x-ref="fileInput"
-                   class="form-control"
-                   name="file"
-                   accept=".zip"
-                   required
-                   :disabled="uploading">
+        <div class="mb-5 text-center">
+            <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm" style="color: var(--leisure-primary);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-cloud-arrow-up" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M7.646 5.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2z"/>
+                    <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383zm.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z"/>
+                </svg>
+            </div>
+            <label class="d-block form-label h3 mb-2 fw-bold">Bitte ZIP Datei auswählen</label>
+            <p class="text-muted small">Nur .zip Dateien sind erlaubt</p>
+            
+            <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all" 
+                 style="border-style: dashed; border-color: var(--leisure-secondary); background: rgba(255,255,255,0.4);"
+                 @dragover.prevent="$el.style.borderColor = 'var(--leisure-primary)'"
+                 @dragleave.prevent="$el.style.borderColor = 'var(--leisure-secondary)'"
+                 @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--leisure-secondary)'">
+                
+                <input type="file"
+                       x-ref="fileInput"
+                       class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0"
+                       style="cursor: pointer;"
+                       name="file"
+                       accept=".zip"
+                       required
+                       :disabled="uploading"
+                       @change="$el.nextElementSibling.innerText = $el.files[0] ? $el.files[0].name : 'Datei hier ablegen oder klicken'">
+                
+                <div class="d-flex align-items-center justify-content-center gap-2 text-muted fw-bold">
+                    <span>Datei hier ablegen oder klicken</span>
+                </div>
+            </div>
+            
             <div class="invalid-feedback">Bitte eine ZIP-Datei auswählen.</div>
         </div>
         <div class="text-center">
             <button type="submit"
-                    class="btn btn-primary"
+                    class="btn btn-primary btn-lg px-5 py-3 fs-5 shadow-sm"
+                    style="min-width: 200px;"
                     :disabled="uploading">
                 <span :class="uploading ? 'd-none' : ''">Upload</span>
                 <span x-cloak :class="uploading ? '' : 'd-none'">

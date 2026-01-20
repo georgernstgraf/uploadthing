@@ -1,21 +1,29 @@
 {{> top}}
-<h2 class="my-3 text-center">Anmelden / Name ändern</h2>
-<!-- 1. Das Suchfeld -->
-<div class="mb-3">
-    <label class="w-100">Suche nach Email<input type="text"
-               class="form-control mt-1"
-               name="email"
-               placeholder="Anfangsbuchstaben meiner Email..."
-               hx-get="/ldap"
-               autofocus
-               hx-trigger="keyup changed delay:500ms"
-               hx-target="#options-select">
-    </label>
-</div>
-<!-- 2. Die Select-Box -->
-<div class="mb-3">
-    <label class="w-100">Auswahl <select id="options-select"
-                class="form-select mt-1"
+<div class="leisure-card mx-auto" style="max-width: 600px;">
+    <h2 class="my-3 text-center mb-4">Anmelden / Name ändern</h2>
+    <!-- 1. Das Suchfeld -->
+    <div class="mb-4">
+        <label class="w-100 fw-bold mb-2">Suche nach Email</label>
+        <div class="position-relative">
+            <input type="text"
+                   class="form-control form-control-lg ps-5"
+                   name="email"
+                   placeholder="Anfangsbuchstaben meiner Email..."
+                   hx-get="/ldap"
+                   autofocus
+                   hx-trigger="keyup changed delay:500ms"
+                   hx-target="#options-select">
+            <span class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted">
+                🔍
+            </span>
+        </div>
+    </div>
+    <!-- 2. Die Select-Box -->
+    <div class="mb-3">
+        <label class="w-100 fw-bold mb-2">Auswahl</label>
+        <select id="options-select"
+                class="form-select form-select-lg mt-1 border-0 shadow-inner"
+                style="background-color: rgba(255,255,255,0.5);"
                 name="email"
                 size="10"
                 hx-post="/register"
@@ -25,9 +33,10 @@
                 hx-swap="innerHTML">
             <!-- Initialer Inhalt oder leer -->
             <option value=""
-                    selected>Bitte oben suchen...</option>
+                    selected
+                    class="p-2 text-muted fst-italic">Bitte oben suchen...</option>
         </select>
-    </label>
+    </div>
 </div>
 </main>
 </body>

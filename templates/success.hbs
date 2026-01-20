@@ -1,12 +1,49 @@
 {{> top}}
-<h2 class="my-5 p-2 rounded-2 success text-bg-success text-center">👍 Abgabe Erfolgreich! 👍</h2>
-<ul class="border border-2 border-black list-unstyled p-3 rounded-2">
-    <li class="fs-3"><strong>Dateiname</strong>: {{filename}}</li>
-    <li><strong>Größe</strong>: {{filesize}} Bytes</li>
-    <li><strong>MD5-Summe</strong>: {{md5sum}}</li>
-    <li><strong>Dauer</strong>: {{durationSeconds}} Sekunden</li>
-    <li><strong>IP</strong>: {{remote_ip}}</li>
-</ul>
+<div class="leisure-card mx-auto text-center p-5" style="max-width: 700px;">
+    <div class="mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center rounded-circle" 
+             style="width: 80px; height: 80px; background: var(--leisure-accent-chill); color: var(--leisure-success-text, #198754);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16">
+                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
+            </svg>
+        </div>
+    </div>
+    
+    <h2 class="mb-5 display-6 fw-bold" style="color: var(--leisure-primary);">Abgabe Erfolgreich!</h2>
+    
+    <div class="text-start p-4 rounded-4" style="background: rgba(255,255,255,0.5);">
+        <div class="row g-3">
+            <div class="col-12 pb-3 border-bottom border-light">
+                <span class="d-block text-muted small text-uppercase fw-bold letter-spacing-1">Dateiname</span>
+                <span class="fs-4 fw-bold text-break">{{filename}}</span>
+            </div>
+            
+            <div class="col-md-6 pb-2">
+                <span class="d-block text-muted small text-uppercase fw-bold letter-spacing-1">Größe</span>
+                <span class="fs-5">{{filesize}} Bytes</span>
+            </div>
+            
+            <div class="col-md-6 pb-2">
+                <span class="d-block text-muted small text-uppercase fw-bold letter-spacing-1">Dauer</span>
+                <span class="fs-5">{{durationSeconds}} Sekunden</span>
+            </div>
+            
+            <div class="col-md-6 pb-2">
+                <span class="d-block text-muted small text-uppercase fw-bold letter-spacing-1">IP</span>
+                <span class="fs-5">{{remote_ip}}</span>
+            </div>
+            
+            <div class="col-12 pt-2 border-top border-light">
+                <span class="d-block text-muted small text-uppercase fw-bold letter-spacing-1">MD5-Summe</span>
+                <span class="font-monospace text-break small">{{md5sum}}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-5">
+        <a href="/" class="btn btn-primary px-5 py-3">Zurück zur Startseite</a>
+    </div>
+</div>
 </main>
 </body>
 
