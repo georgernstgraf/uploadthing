@@ -158,8 +158,45 @@ nav {
     gap: 10px;
 }
 
-.user-badge .badge {
-    background-color: var(--leisure-primary) !important;
-    color: white !important;
-    border-radius: 10px;
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    .leisure-card {
+        padding: 1.5rem;
+    }
+    
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.75rem; }
+}
+
+@media (max-width: 768px) {
+    body {
+        background-attachment: scroll; /* Performance on mobile */
+    }
+    
+    .leisure-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    nav {
+        flex-direction: column;
+        width: 100%;
+        border-radius: var(--leisure-radius-md);
+        gap: 0.5rem;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .user-badge {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .user-badge .badge {
+        margin-top: 0.5rem;
+    }
 }

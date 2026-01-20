@@ -115,99 +115,116 @@
 
         <!-- Table 1: IPs with registered names -->
         <h4 class="text-center mt-4 mb-3 fw-bold text-uppercase letter-spacing-1 border-bottom pb-2 d-inline-block mx-auto" style="border-color: var(--leisure-primary) !important;">Registrierte IP-Adressen</h4>
-        <ul class="list-unstyled mt-3 text-start d-flex flex-column gap-3">
+        <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-3 mt-2">
             {{#each ips_with_name}}
-                <li class="row">
-                    {{#let (get @root.ip2users this.ip) as |user|}}
-                        <details class="col leisure-card p-3 mb-0" style="background: rgba(255,255,255,0.8);">
-                            <summary class="fw-bold" style="cursor: pointer; list-style: none;">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
-                                            {{user.name.[0]}}
-                                        </div>
-                                        <div>
-                                            <span class="d-block">{{user.name}}</span>
-                                            <span class="small text-muted fw-normal">{{this.ip}}</span>
-                                        </div>
+                {{#let (get @root.ip2users this.ip) as |user|}}
+                <div class="col">
+                    <details class="h-100 leisure-card p-3 mb-0 d-flex flex-column" style="background: rgba(255,255,255,0.8);">
+                        <summary class="fw-bold" style="cursor: pointer; list-style: none;">
+                            <div class="d-flex align-items-center justify-content-between w-100">
+                                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                        {{user.name.[0]}}
                                     </div>
-                                    <div class="badge bg-light text-dark border">
-                                        {{this.count}}x
-                                        <span class="d-none d-sm-inline ms-1 text-muted fw-normal">| {{this.lastseen}}</span>
+                                    <div class="overflow-hidden">
+                                        <span class="d-block text-truncate" title="{{user.name}}">{{user.name}}</span>
+                                        <span class="small text-muted fw-normal d-block text-truncate">{{this.ip}}</span>
                                     </div>
                                 </div>
-                            </summary>
-                            <div class="row mt-4 pt-3 border-top">
-                                <h5 class="text-center w-100 mb-3 small text-uppercase fw-bold text-muted">Historie</h5>
-                                <div class="col-md-6 border-end">
-                                    <div class="fw-bold text-center mb-2 text-primary">{{user.name}}</div>
-                                    <ul class="list-unstyled p-1 small">
-                                        {{#each (get @root.user_history user.email) }}
-                                            <li class="mb-1 border-bottom pb-1"><span class="text-muted">{{this.at}}</span> ➔ {{this.ip}}</li>
-                                        {{/each}}
-                                    </ul>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="fw-bold text-center mb-2 text-primary">{{this.ip}}</div>
-                                    <ul class="list-unstyled p-1 small">
-                                        {{#each (get @root.ip_history this.ip) }}
-                                            <li class="mb-1 border-bottom pb-1"><span class="text-muted">{{this.at}}</span> ➔ {{this.name}}</li>
-                                        {{/each}}
-                                    </ul>
+                                <div class="badge bg-light text-dark border ms-1 flex-shrink-0">
+                                    {{this.count}}x
                                 </div>
                             </div>
-                        </details>
-                    {{/let}}
-                </li>
-            {{else}}
-                <li class="text-center text-muted fst-italic py-4">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</li>
-            {{/each}}
-        </ul>
-
-        <!-- Table 2: IPs without registered names -->
-        <h4 class="text-center mt-5 mb-3 fw-bold text-uppercase letter-spacing-1 border-bottom pb-2 d-inline-block mx-auto" style="border-color: var(--leisure-secondary) !important;">Nicht registrierte IP-Adressen</h4>
-        <ul class="list-unstyled mt-3 text-start d-flex flex-column gap-3">
-            {{#each ips_without_name}}
-                <li class="row">
-                    <details class="col leisure-card p-3 mb-0" style="background: rgba(255,255,255,0.6);">
-                        <summary class="fw-bold" style="cursor: pointer; list-style: none;">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
-                                        ?
-                                    </div>
-                                    <div>
-                                        <span class="d-block">{{this.ip}}</span>
-                                        <span class="small text-muted fw-normal">Unbekannt</span>
-                                    </div>
-                                </div>
-                                <div class="badge bg-light text-dark border">
-                                    {{this.count}}x
-                                    <span class="d-none d-sm-inline ms-1 text-muted fw-normal">| {{this.lastseen}}</span>
-                                </div>
+                            <div class="text-muted small fw-normal mt-1 text-end" style="font-size: 0.75rem;">
+                                zuletzt: {{this.lastseen}}
                             </div>
                         </summary>
-                        <div class="row mt-4 pt-3 border-top">
-                            <h5 class="text-center w-100 mb-3 small text-uppercase fw-bold text-muted">Historie</h5>
-                            <div class="col-md-6 border-end">
-                                <div class="fw-bold text-center mb-2 text-muted">Kein Benutzer</div>
-                                <p class="text-muted text-center small fst-italic">Für diese IP-Adresse ist kein Benutzer registriert.</p>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="fw-bold text-center mb-2 text-primary">{{this.ip}}</div>
-                                <ul class="list-unstyled p-1 small">
-                                    {{#each (get @root.ip_history this.ip) }}
-                                        <li class="mb-1 border-bottom pb-1"><span class="text-muted">{{this.at}}</span> ➔ {{this.name}}</li>
-                                    {{/each}}
-                                </ul>
+                        <div class="mt-3 pt-3 border-top flex-grow-1">
+                            <h6 class="text-center w-100 mb-2 small text-uppercase fw-bold text-muted">Historie</h6>
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <div class="fw-bold text-center mb-1 text-primary small">User: {{user.name}}</div>
+                                    <ul class="list-unstyled p-1 small bg-light rounded mb-2" style="max-height: 100px; overflow-y: auto;">
+                                        {{#each (get @root.user_history user.email) }}
+                                            <li class="mb-1 border-bottom pb-1 px-1 d-flex justify-content-between">
+                                                <span class="text-muted">{{this.at}}</span>
+                                                <span class="fw-bold" style="color: var(--leisure-secondary);">{{this.ip}}</span>
+                                            </li>
+                                        {{/each}}
+                                    </ul>
+                                </div>
+                                <div class="col-12">
+                                    <div class="fw-bold text-center mb-1 text-primary small">IP: {{this.ip}}</div>
+                                    <ul class="list-unstyled p-1 small bg-light rounded" style="max-height: 100px; overflow-y: auto;">
+                                        {{#each (get @root.ip_history this.ip) }}
+                                            <li class="mb-1 border-bottom pb-1 px-1 d-flex justify-content-between">
+                                                <span class="text-muted">{{this.at}}</span>
+                                                <span class="fw-bold" style="color: var(--leisure-secondary);">{{this.name}}</span>
+                                            </li>
+                                        {{/each}}
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </details>
-                </li>
+                </div>
+                {{/let}}
             {{else}}
-                <li class="text-center text-muted fst-italic py-4">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</li>
+                <div class="col-12 text-center text-muted fst-italic py-4">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
             {{/each}}
-        </ul>
+        </div>
+
+        <!-- Table 2: IPs without registered names -->
+        <h4 class="text-center mt-5 mb-3 fw-bold text-uppercase letter-spacing-1 border-bottom pb-2 d-inline-block mx-auto" style="border-color: var(--leisure-secondary) !important;">Nicht registrierte IP-Adressen</h4>
+        <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-3 mt-2">
+            {{#each ips_without_name}}
+                <div class="col">
+                    <details class="h-100 leisure-card p-3 mb-0 d-flex flex-column" style="background: rgba(255,255,255,0.6);">
+                        <summary class="fw-bold" style="cursor: pointer; list-style: none;">
+                            <div class="d-flex align-items-center justify-content-between w-100">
+                                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                        ?
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <span class="d-block text-truncate">{{this.ip}}</span>
+                                        <span class="small text-muted fw-normal">Unbekannt</span>
+                                    </div>
+                                </div>
+                                <div class="badge bg-light text-dark border ms-1 flex-shrink-0">
+                                    {{this.count}}x
+                                </div>
+                            </div>
+                            <div class="text-muted small fw-normal mt-1 text-end" style="font-size: 0.75rem;">
+                                zuletzt: {{this.lastseen}}
+                            </div>
+                        </summary>
+                        <div class="mt-3 pt-3 border-top flex-grow-1">
+                            <h6 class="text-center w-100 mb-2 small text-uppercase fw-bold text-muted">Historie</h6>
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <div class="fw-bold text-center mb-1 text-muted small">Kein Benutzer</div>
+                                    <p class="text-muted text-center small fst-italic mb-2">Für diese IP ist kein Benutzer registriert.</p>
+                                </div>
+                                <div class="col-12">
+                                    <div class="fw-bold text-center mb-1 text-primary small">IP: {{this.ip}}</div>
+                                    <ul class="list-unstyled p-1 small bg-light rounded" style="max-height: 100px; overflow-y: auto;">
+                                        {{#each (get @root.ip_history this.ip) }}
+                                            <li class="mb-1 border-bottom pb-1 px-1 d-flex justify-content-between">
+                                                <span class="text-muted">{{this.at}}</span>
+                                                <span class="fw-bold" style="color: var(--leisure-secondary);">{{this.name}}</span>
+                                            </li>
+                                        {{/each}}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            {{else}}
+                <div class="col-12 text-center text-muted fst-italic py-4">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
+            {{/each}}
+        </div>
     </section>
 </div>
 </main>
