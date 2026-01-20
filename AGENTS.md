@@ -291,8 +291,9 @@ import * as service from "../service/service.ts";
    - Lint with `deno task lint` to ensure code quality
    - Test with `deno task test` and `deno task testdb`
 4. **Database changes**: Use Prisma commands (`pg`, `pmd`, `pd`)
-5. **Before committing**: Run full check, lint, and test suite
-6. **handling git**: never push unless asked to do so
+5. **Before stopping**: Run full check, lint, and test suite
+6. **handling git**: never commit or push unless asked to do so
+7. **working on issues**: If work on an issue is completed, make a comment containing it.
 
 > **IMPORTANT**: Linting must always succeed before the completion of any task. Run `deno task lint` and fix all issues before marking work as complete.
 

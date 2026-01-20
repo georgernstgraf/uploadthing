@@ -10,7 +10,7 @@
 }
 
 body {
-    margin: 0 max(1rem, 45vw - 10rem);
+    margin: 0 max(0.5rem, 45vw - 10rem);
 }
 
 h1,

@@ -24,12 +24,12 @@
 }
 
 [data-bs-theme="dark"] {
-    --leisure-bg-light: #1a1a2e;
-    --leisure-bg-white: #16213e;
-    --leisure-text-dark: #f0f0f0;
-    --leisure-text-muted: #d0d0d0;
-    --leisure-glass-bg: rgba(22, 33, 62, 0.85);
-    --leisure-glass-border: rgba(255, 255, 255, 0.2);
+    --leisure-bg-light: #0f0f23;
+    --leisure-bg-white: #1a1a2e;
+    --leisure-text-dark: #ffffff;
+    --leisure-text-muted: #b8b8b8;
+    --leisure-glass-bg: rgba(26, 26, 46, 0.85);
+    --leisure-glass-border: rgba(255, 255, 255, 0.15);
 }
 
 /* Fix text contrast in dark mode within glass cards */
@@ -77,11 +77,12 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     color: var(--leisure-primary);
     letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
 }
 
-h1 { font-size: 2rem; }
-h2 { font-size: 1.5rem; }
-h3 { font-size: 1.25rem; }
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.15rem; }
 
 /* Glassmorphism Containers */
 .leisure-card {
@@ -91,7 +92,7 @@ h3 { font-size: 1.25rem; }
     border: 1px solid var(--leisure-glass-border);
     border-radius: var(--leisure-radius-lg);
     box-shadow: var(--leisure-shadow-soft);
-    padding: 1.5rem; /* Reduced padding */
+    padding: 0.75rem; /* Further reduced padding */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -103,12 +104,13 @@ h3 { font-size: 1.25rem; }
 /* Buttons - Pill Shaped, Soft Gradients - Improved Colors */
 .btn {
     border-radius: 50rem; /* Pill shape */
-    padding: 0.5rem 1.25rem; /* Reduced padding */
+    padding: 0.35rem 0.85rem; /* Further reduced padding */
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.85rem;
 }
 
 .btn-primary, .btn-info { /* Re-skinning standard bootstrap classes */
@@ -137,20 +139,20 @@ h3 { font-size: 1.25rem; }
 
 /* Specific styling for History Items (blue items mentioned) */
 .history-item-ip {
-    color: #48DBFB !important; /* Brighter Cyan/Blue */
+    color: #2f3542 !important; /* Dark gray for better contrast */
     font-weight: bold;
 }
 
 [data-bs-theme="dark"] .history-item-ip {
-    color: #0ABDE3 !important; /* Slightly darker cyan for contrast on dark bg if needed, or keep bright */
+    color: #f1f2f6 !important; /* Light off-white for dark mode */
 }
 
 .history-item-user {
-    color: #5f27cd !important; /* Deep Purple */
+    color: #2f3542 !important; /* Dark gray for better contrast */
 }
 
 [data-bs-theme="dark"] .history-item-user {
-    color: #a29bfe !important; /* Lighter Purple for dark mode */
+    color: #f1f2f6 !important; /* Light off-white for dark mode */
 }
 
 /* Form Elements */

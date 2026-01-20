@@ -1,10 +1,10 @@
 {{> top}}
 <div x-data="endTimeToggle()"
      x-init="init()">
-    <section id="timeselector"
-             class="leisure-card mb-5 mx-auto"
-             style="max-width: 800px;">
-        <h2 class="text-center mb-4">Zeitauswahl</h2>
+     <section id="timeselector"
+              class="leisure-card mb-3 mx-auto"
+              style="max-width: 800px;">
+        <h2 class="text-center mb-3">Zeitauswahl</h2>
         <form action="forensic"
               method="get"
               class="container text-center">
@@ -114,8 +114,8 @@
         </h5>
 
         <!-- Table 1: IPs with registered names -->
-        <h4 class="text-center mt-4 mb-3 fw-bold text-uppercase letter-spacing-1 border-bottom pb-2 d-inline-block mx-auto" style="border-color: var(--leisure-primary) !important;">Registrierte IP-Adressen</h4>
-        <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-3 mt-2">
+        <h4 class="text-center mt-3 mb-2 fw-bold text-uppercase letter-spacing-1 border-bottom pb-2 d-inline-block mx-auto" style="border-color: var(--leisure-primary) !important;">Registrierte IP-Adressen</h4>
+        <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-2 mt-1">
             {{#each ips_with_name}}
                 {{#let (get @root.ip2users this.ip) as |user|}}
                 <div class="col">
@@ -123,7 +123,7 @@
                         <summary class="fw-bold" style="cursor: pointer; list-style: none;">
                             <div class="d-flex align-items-center justify-content-between w-100">
                                 <div class="d-flex align-items-center gap-2 overflow-hidden">
-                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.85rem; font-weight: 700; background: linear-gradient(135deg, #48DBFB, #0ABDE3); color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
                                         {{user.name.[0]}}
                                     </div>
                                     <div class="overflow-hidden">
@@ -146,9 +146,9 @@
                                     <div class="fw-bold text-center mb-1 text-primary small">User: {{user.name}}</div>
                                     <ul class="list-unstyled p-1 small bg-light rounded mb-2" style="max-height: 100px; overflow-y: auto;">
                                         {{#each (get @root.user_history user.email) }}
-                                            <li class="mb-1 border-bottom pb-1 px-1 d-flex justify-content-between">
-                                                <span class="text-muted">{{this.at}}</span>
-                                                <span class="fw-bold history-item-ip">{{this.ip}}</span>
+                                             <li class="mb-1 border-bottom pb-1 px-1 d-flex justify-content-between">
+                                                <span class="text-muted" style="font-size: 0.8rem;">{{this.at}}</span>
+                                                <span class="fw-bold" style="color: #2f3542; font-size: 0.8rem;">{{this.ip}}</span>
                                             </li>
                                         {{/each}}
                                     </ul>
@@ -159,7 +159,7 @@
                                         {{#each (get @root.ip_history this.ip) }}
                                             <li class="mb-1 border-bottom pb-1 px-1 d-flex justify-content-between">
                                                 <span class="text-muted">{{this.at}}</span>
-                                                <span class="fw-bold history-item-user">{{this.name}}</span>
+                                                <span class="fw-bold" style="color: #2f3542; font-size: 0.8rem;">{{this.name}}</span>
                                             </li>
                                         {{/each}}
                                     </ul>
@@ -175,15 +175,15 @@
         </div>
 
         <!-- Table 2: IPs without registered names -->
-        <h4 class="text-center mt-5 mb-3 fw-bold text-uppercase letter-spacing-1 border-bottom pb-2 d-inline-block mx-auto" style="border-color: var(--leisure-secondary) !important;">Nicht registrierte IP-Adressen</h4>
-        <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-3 mt-2">
+        <h4 class="text-center mt-4 mb-2 fw-bold text-uppercase letter-spacing-1 border-bottom pb-2 d-inline-block mx-auto" style="border-color: var(--leisure-secondary) !important;">Nicht registrierte IP-Adressen</h4>
+        <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-2 mt-1">
             {{#each ips_without_name}}
                 <div class="col">
                     <details class="h-100 leisure-card p-3 mb-0 d-flex flex-column" style="background: rgba(255,255,255,0.6);">
                         <summary class="fw-bold" style="cursor: pointer; list-style: none;">
                             <div class="d-flex align-items-center justify-content-between w-100">
                                 <div class="d-flex align-items-center gap-2 overflow-hidden">
-                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.85rem; font-weight: 700; background: linear-gradient(135deg, #636e72, #2d3436); color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
                                         ?
                                     </div>
                                     <div class="overflow-hidden">
@@ -212,7 +212,7 @@
                                         {{#each (get @root.ip_history this.ip) }}
                                             <li class="mb-1 border-bottom pb-1 px-1 d-flex justify-content-between">
                                                 <span class="text-muted">{{this.at}}</span>
-                                                <span class="fw-bold history-item-user">{{this.name}}</span>
+                                                <span class="fw-bold" style="color: #2f3542; font-size: 0.8rem;">{{this.name}}</span>
                                             </li>
                                         {{/each}}
                                     </ul>
