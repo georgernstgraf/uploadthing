@@ -148,7 +148,7 @@
                                         {{#each (get @root.user_history user.email) }}
                                             <li class="mb-1 border-bottom pb-1 px-1 d-flex justify-content-between">
                                                 <span class="text-muted">{{this.at}}</span>
-                                                <span class="fw-bold" style="color: var(--leisure-secondary);">{{this.ip}}</span>
+                                                <span class="fw-bold history-item-ip">{{this.ip}}</span>
                                             </li>
                                         {{/each}}
                                     </ul>
@@ -159,7 +159,7 @@
                                         {{#each (get @root.ip_history this.ip) }}
                                             <li class="mb-1 border-bottom pb-1 px-1 d-flex justify-content-between">
                                                 <span class="text-muted">{{this.at}}</span>
-                                                <span class="fw-bold" style="color: var(--leisure-secondary);">{{this.name}}</span>
+                                                <span class="fw-bold history-item-user">{{this.name}}</span>
                                             </li>
                                         {{/each}}
                                     </ul>
@@ -212,7 +212,7 @@
                                         {{#each (get @root.ip_history this.ip) }}
                                             <li class="mb-1 border-bottom pb-1 px-1 d-flex justify-content-between">
                                                 <span class="text-muted">{{this.at}}</span>
-                                                <span class="fw-bold" style="color: var(--leisure-secondary);">{{this.name}}</span>
+                                                <span class="fw-bold history-item-user">{{this.name}}</span>
                                             </li>
                                         {{/each}}
                                     </ul>
