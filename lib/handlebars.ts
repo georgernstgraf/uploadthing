@@ -84,6 +84,19 @@ Handlebars.registerHelper("get", function (map, key) {
     if (!map) return undefined;
     return map.get(key);
 });
+
+// Extract first letter of given name (after last blank in displayname)
+// e.g., "Gradascevic Edvin" → "E"
+Handlebars.registerHelper("givenNameInitial", function (name: string) {
+    if (!name || typeof name !== "string") return "?";
+    const lastSpace = name.lastIndexOf(" ");
+    if (lastSpace === -1 || lastSpace >= name.length - 1) {
+        // No space or space is at the end, use first character
+        return name.charAt(0).toUpperCase();
+    }
+    return name.charAt(lastSpace + 1).toUpperCase();
+});
+
 // deno-lint-ignore no-explicit-any
 Handlebars.registerHelper("let", function (this: any, value, options) {
     return options.fn(this, {
