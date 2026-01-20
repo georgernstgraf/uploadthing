@@ -58,6 +58,39 @@
     background-image: url('/static/img/bg-leisure-dark.svg');
 }
 
+/* Dark mode form controls */
+[data-bs-theme="dark"] input.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--leisure-text-dark);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-bs-theme="dark"] input.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--leisure-primary-soft);
+}
+
+/* Dark mode badges */
+[data-bs-theme="dark"] .badge.bg-light {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: var(--leisure-text-dark) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Dark mode border colors */
+[data-bs-theme="dark"] .border-top,
+[data-bs-theme="dark"] .border-bottom {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Compact heading styles */
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.2rem; }
+h3 { font-size: 1rem; }
+h4 { font-size: 0.9rem; }
+h5 { font-size: 0.85rem; }
+h6 { font-size: 0.75rem; }
+
 body {
     background-color: var(--leisure-bg-light);
     background-image: url('/static/img/bg-leisure.svg');
@@ -69,7 +102,7 @@ body {
     min-height: 100vh;
     margin: 0;
     padding: 0;
-    font-size: 0.95rem; /* Slightly smaller base font */
+    font-size: 0.9rem; /* Smaller base font for compact layout */
 }
 
 /* Typography - Round and Friendly */
@@ -77,12 +110,8 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     color: var(--leisure-primary);
     letter-spacing: -0.02em;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.3rem;
 }
-
-h1 { font-size: 1.75rem; }
-h2 { font-size: 1.35rem; }
-h3 { font-size: 1.15rem; }
 
 /* Glassmorphism Containers */
 .leisure-card {
@@ -92,25 +121,25 @@ h3 { font-size: 1.15rem; }
     border: 1px solid var(--leisure-glass-border);
     border-radius: var(--leisure-radius-lg);
     box-shadow: var(--leisure-shadow-soft);
-    padding: 0.75rem; /* Further reduced padding */
+    padding: 0.5rem; /* Compact padding */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .leisure-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgba(237, 25, 68, 0.2), 0 10px 10px -5px rgba(237, 25, 68, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 15px 20px -5px rgba(237, 25, 68, 0.15), 0 8px 8px -4px rgba(237, 25, 68, 0.08);
 }
 
 /* Buttons - Pill Shaped, Soft Gradients - Improved Colors */
 .btn {
     border-radius: 50rem; /* Pill shape */
-    padding: 0.35rem 0.85rem; /* Further reduced padding */
+    padding: 0.25rem 0.7rem; /* Compact padding */
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     border: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-size: 0.85rem;
+    font-size: 0.75rem;
 }
 
 .btn-primary, .btn-info { /* Re-skinning standard bootstrap classes */
@@ -137,22 +166,24 @@ h3 { font-size: 1.15rem; }
     color: white;
 }
 
-/* Specific styling for History Items (blue items mentioned) */
+/* Specific styling for History Items - Improved contrast */
 .history-item-ip {
-    color: #2f3542 !important; /* Dark gray for better contrast */
-    font-weight: bold;
-}
-
-[data-bs-theme="dark"] .history-item-ip {
-    color: #f1f2f6 !important; /* Light off-white for dark mode */
+    color: var(--leisure-text-dark) !important;
+    font-weight: 600;
 }
 
 .history-item-user {
-    color: #2f3542 !important; /* Dark gray for better contrast */
+    color: var(--leisure-text-dark) !important;
+    font-weight: 600;
 }
 
-[data-bs-theme="dark"] .history-item-user {
-    color: #f1f2f6 !important; /* Light off-white for dark mode */
+/* Dark mode: Use theme background for history lists */
+[data-bs-theme="dark"] .leisure-card {
+    background: var(--leisure-glass-bg) !important;
+}
+
+[data-bs-theme="dark"] details.leisure-card {
+    background: rgba(26, 26, 46, 0.9) !important;
 }
 
 /* Form Elements */
@@ -160,8 +191,9 @@ input.form-control {
     border-radius: var(--leisure-radius-md);
     border: 2px solid transparent;
     background: rgba(255, 255, 255, 0.6);
-    padding: 0.8rem 1rem;
+    padding: 0.5rem 0.75rem;
     transition: all 0.3s ease;
+    font-size: 0.85rem;
 }
 
 input.form-control:focus {
@@ -196,13 +228,13 @@ nav {
 /* User Badge */
 .user-badge {
     background: linear-gradient(to right, #fff, #fefefe);
-    border-left: 5px solid var(--leisure-primary);
-    padding: 0.5rem 1rem;
+    border-left: 4px solid var(--leisure-primary);
+    padding: 0.35rem 0.75rem;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 

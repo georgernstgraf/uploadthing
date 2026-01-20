@@ -37,41 +37,41 @@
             });
         })();
     </script>
-    <main class="container mt-4 p-3">
-        <div class="leisure-card floating-element mb-3">
-            <h1 class="mb-2 text-center display-6 fw-bold" style="color: var(--leisure-primary); font-size: 1.5rem;">http://router:8000/</h1>
+    <main class="container mt-2 p-2">
+        <div class="leisure-card floating-element mb-2 py-1">
+            <h1 class="mb-0 text-center fw-bold" style="color: var(--leisure-primary); font-size: 1.25rem;">http://router:8000/</h1>
         </div>
 
-        <nav class="d-flex justify-content-center gap-3 my-3 mx-auto p-2 flex-wrap" style="width: fit-content; max-width: 100%; background: var(--leisure-glass-bg); backdrop-filter: blur(10px); border-radius: 50px; border: 1px solid var(--leisure-glass-border); box-shadow: var(--leisure-shadow-soft);">
+        <nav class="d-flex justify-content-center gap-2 my-2 mx-auto p-1 flex-wrap" style="width: fit-content; max-width: 100%; background: var(--leisure-glass-bg); backdrop-filter: blur(10px); border-radius: 50px; border: 1px solid var(--leisure-glass-border); box-shadow: var(--leisure-shadow-soft);">
             <a href="/"
-               class="btn btn-lg btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Home</a>
+               class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Home</a>
             <a href="/forensic"
-               class="btn btn-lg btn-outline-light flex-grow-1 flex-sm-grow-0"
+               class="btn btn-sm btn-outline-light flex-grow-1 flex-sm-grow-0"
                style="color: var(--leisure-primary-soft); border-color: transparent;">Forensic</a>
             <a href="/upload"
-               class="btn btn-lg btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Zipfile Upload</a>
+               class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Zipfile Upload</a>
         </nav>
 
-        <div class="d-flex justify-content-center mb-4">
+        <div class="d-flex justify-content-center mb-2">
             <a href="/whoami"
-               class="text-decoration-none user-badge p-3 leisure-card w-100" style="max-width: 500px; justify-content: center;">
+               class="text-decoration-none user-badge p-2 leisure-card w-100" style="max-width: 500px; justify-content: center;">
                 {{#if remote_user}}
-                    <div class="d-flex align-items-center gap-3 justify-content-center flex-wrap text-center text-sm-start">
-                        <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                    <div class="d-flex align-items-center gap-2 justify-content-center flex-wrap text-center text-sm-start">
+                        <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.1rem;">
                             {{remote_user.name.[0]}}
                         </div>
                         <div class="d-flex flex-column text-dark">
-                            <span class="fw-bold fs-5 text-break">{{remote_user.name}}</span>
-                            <span class="text-muted small text-break">{{remote_user.email}} / {{remote_user.klasse}}</span>
+                            <span class="fw-bold text-break" style="font-size: 0.95rem;">{{remote_user.name}}</span>
+                            <span class="text-muted text-break" style="font-size: 0.75rem;">{{remote_user.email}} / {{remote_user.klasse}}</span>
                         </div>
-                        <span class="badge rounded-pill bg-light text-dark border ms-2">Change</span>
+                        <span class="badge rounded-pill bg-light text-dark border ms-1" style="font-size: 0.7rem;">Change</span>
                     </div>
                 {{else}}
-                    <span class="text-danger fw-bold text-decoration-underline fs-5 text-center d-block">Bitte Name bekanntgeben!</span>
+                    <span class="text-danger fw-bold text-decoration-underline text-center d-block" style="font-size: 0.95rem;">Bitte Name bekanntgeben!</span>
                 {{/if}}
             </a>
         </div>
         
-        <div class="text-center mb-5 opacity-50">
-            <h6 class="text-uppercase letter-spacing-2" style="font-size: 0.8rem; letter-spacing: 2px;">Meine IP: {{remote_ip}}</h6>
+        <div class="text-center mb-2 opacity-50">
+            <span class="text-uppercase" style="font-size: 0.7rem; letter-spacing: 2px;">Meine IP: {{remote_ip}}</span>
         </div>
