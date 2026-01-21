@@ -1,33 +1,22 @@
 {{> top}}
-<section class="mx-3 d-flex flex-wrap justify-content-center gap-4">
-    <div class="leisure-card flex-fill" style="max-width: 500px;">
-        <h2 class="text-center mb-4"><span class="border-bottom border-3 border-danger pb-2">Angabe und Unterlagen</span></h2>
-        <ul class="list-unstyled text-center d-flex flex-column gap-3">
-            {{#each files}}
-                <li>
-                    <a href="../unterlagen/{{this}}" 
-                       class="btn btn-outline-light text-dark w-100 py-3 text-truncate shadow-sm fw-bold hover-scale"
-                       style="background: white; border-color: var(--leisure-secondary);">
-                       📄 {{this}}
-                    </a>
-                </li>
-            {{/each}}
-        </ul>
-    </div>
-
-    <div class="leisure-card flex-fill" style="max-width: 500px;">
-        <h2 class="text-center mb-4"><span class="border-bottom border-3 border-danger pb-2">Dokumentation online</span></h2>
-        <div class="d-flex flex-wrap gap-2 justify-content-center">
-            <a href="https://getbootstrap.com/" class="btn btn-sm btn-light shadow-sm">Bootstrap</a>
-            <a href="https://learn.microsoft.com/en-us/dotnet/" class="btn btn-sm btn-light shadow-sm">C# / .NET</a>
-            <a href="https://css-tricks.com/" class="btn btn-sm btn-light shadow-sm">CSS Tricks</a>
-            <a href="https://fakerjs.dev/" class="btn btn-sm btn-light shadow-sm">Faker JS</a>
-            <a href="https://docs.oracle.com/en/java/javase/21/docs/api/index.html" class="btn btn-sm btn-light shadow-sm">Javadoc</a>
-            <a href="https://developer.mozilla.org/" class="btn btn-sm btn-light shadow-sm">MDN</a>
-            <a href="https://www.prisma.io/docs/orm" class="btn btn-sm btn-light shadow-sm">Prisma</a>
-            <a href="https://www.w3schools.com/" class="btn btn-sm btn-light shadow-sm">W3Schools</a>
-        </div>
-    </div>
+<section class="mx-3">
+    <h2 class="ps-5">Angabe und Unterlagen</h2>
+    <ul class="list-unstyled ps-5 text-start">
+        {{#each files}}
+            <li><a href="../unterlagen/{{this}}">{{this}}</a></li>
+        {{/each}}
+    </ul>
+    <h2 class="ps-5">Dokumentation online</h2>
+    <ul class="list-unstyled ps-5 text-start">
+        <li><a href="https://getbootstrap.com/">Bootstrap</a></li>
+        <li><a href="https://css-tricks.com/">CSS Tricks</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/dotnet/">C# / .NET</a></li>
+        <li><a href="https://developer.mozilla.org/">Developer.mozilla.org</a></li>
+        <li><a href="https://fakerjs.dev/">Faker JS</a></li>
+        <li><a href="https://docs.oracle.com/en/java/javase/21/docs/api/index.html">Javadoc</a></li>
+        <li><a href="https://prisma.io/docs/orm">Prisma</a></li>
+        <li><a href="https://www.w3schools.com/">W3Schools</a></li>
+    </ul>
 </section>
 </main>
 </body>
