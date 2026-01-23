@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+cd
+set -v
+
+# make a snapshot not to loose sth.
+datestr=$(date -Iminutes | awk -v 'FS=+' '{print $1}')
+zfs snap zroot/home/georg@$datestr
+
+# empty registered users
+echo 'delete from user;' | sqlite3 uploadthing/uploadthing.db
+
+# clean uabgabe folder
+rm -f abgaben/*

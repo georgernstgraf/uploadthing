@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+cd || exit
+rm -f uploadthing.db
+echo "vacuum into 'uploadthing.db'" | sqlite3 uploadthing/uploadthing.db
+ls -l uploadthing.db uploadthing/uploadthing.db
