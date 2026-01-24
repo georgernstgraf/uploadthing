@@ -9,10 +9,13 @@ export async function getUserByEmail(
         return null;
     }
     const user = userFromLdap(result);
-    registerUser(user).catch((e) => {
+    try {
+        registerUser(user);
+    } catch (e) {
         console.error("Failed to register user async:", email);
         console.error(e);
-    });
+        return user;
+    }
     return user;
 }
 export async function searchUserByEmailStart(
@@ -28,13 +31,15 @@ export async function searchUserByEmailStart(
         })
     ).map(userFromLdap);
 
-    registerManyUsers(result).catch((e) => {
+    try {
+        registerManyUsers(result);
+    } catch (e) {
         console.error(
             "Failed to register many users async, error:",
             startstring,
         );
         console.error(e);
-    });
+    }
     return result;
 }
 function userFromLdap(ldapUser: LdapUserType): UserType {
