@@ -19,8 +19,8 @@
     --leisure-radius-lg: 24px;
     --leisure-radius-md: 16px;
     
-    /* Font (system fallbacks for now, aiming for round sans-serif) */
-    --leisure-font-family: "Nunito", "Quicksand", system-ui, -apple-system, sans-serif;
+    /* Font */
+    --leisure-font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
 }
 
 [data-bs-theme="dark"] {
@@ -93,6 +93,10 @@ h6 { font-size: 0.75rem; }
 
 html, body {
     overflow-x: hidden;
+}
+
+.page-content {
+    padding-top: 4.5rem;
 }
 
 body {
@@ -303,4 +307,8 @@ nav {
     .user-badge .badge {
         margin-top: 0.5rem;
     }
+}
+.app-header {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
