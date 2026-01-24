@@ -6,7 +6,7 @@ import { get_unterlagen } from "./lib/lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import * as service from "./service/service.ts";
 import * as hbs from "./lib/handlebars.ts";
-import { Bindings, Variables } from "./lib/types.ts";
+import { Bindings, Variables, UserType } from "./lib/types.ts";
 import forensicRouter from "./routes/forensic.ts";
 import { setupShutdown } from "./repo/prismadb.ts";
 
@@ -161,12 +161,19 @@ app.post("register", async (c) => {
     try {
         const body = await c.req.parseBody();
         const email = body.email as string;
-        const ldapuser = await service.ldap.getUserByEmail(email);
+        let ldapuser = await service.ldap.getUserByEmail(email);
         if (!ldapuser) {
-            return c.text("User not found", 404);
+            const users = await service.ldap.searchUserByEmailStart(email);
+            const exactMatch = users.find((u: UserType) => u.email.toLowerCase() === email.toLowerCase());
+            if (!exactMatch) {
+                return c.text("User not found", 404);
+            }
+            ldapuser = exactMatch;
         }
-        ldapuser.ip = c.get("remoteip");
-        service.user.register(ldapuser);
+        if (ldapuser) {
+            ldapuser.ip = c.get("remoteip");
+            service.user.register(ldapuser);
+        }
         return c.redirect("/");
     } catch (e) {
         return c.text((e as Error).message, 400);
