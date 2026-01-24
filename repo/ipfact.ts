@@ -39,18 +39,25 @@ export function seenStatsForRange(
     start: string,
     end: string,
 ): ForensicIPCount[] {
-    console.log("Executing SQL:", seenStatsForRange_sql);
-    console.log(`start: ${start} -> ${strftime(start)}`);
-    console.log(`end: ${end} -> ${strftime(end)}`);
-    console.log("With parameters:", start, end);
+    console.log(
+        `SEENSTATSFORRANGE called with params START: ${start}, END: ${end}`,
+    );
+    console.log(`start: ${start} -> ${db_strftime_to_utc(start)}`);
+    console.log(`end: ${end} -> ${db_strftime_to_utc(end)}`);
+    console.log(
+        "EXECUTING SQL (strftime will convert to UTC!):",
+    );
+    console.log(
+        seenStatsForRange_sql,
+    );
     return seenStatsForRange_stmt.all(start, end);
 }
 export function deleteAll() {
     db.exec("DELETE FROM ipfact");
 }
-export function strftime(date: string) {
+export function db_strftime_to_utc(date: string) {
     const stmt = db.prepare(
-        "SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')) as formatted",
+        "SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')) as formatted;",
     );
     const result = stmt.get(date) as { formatted: string } | undefined;
     if (!result) {

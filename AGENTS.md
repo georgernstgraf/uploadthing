@@ -145,6 +145,11 @@ export async function findIPsInTimeRange(startTime: Date, endTime: Date) {
 }
 ```
 
+### Exam Data Retention
+
+- The `user` table is wiped before each exam.
+- For forensics on older exams, use the `registrations` table to map historical IPs to user data.
+
 ### Time Zone Handling
 
 - **Service Layer**: Work with local time for user display

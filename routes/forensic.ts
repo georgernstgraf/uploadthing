@@ -47,25 +47,25 @@ forensicRouter.get("/", (c) => {
     ) < twelve_hours_ms; // 12 hours in milliseconds
     const endtimeInFuture = endDateTime.getTime() > new Date().getTime();
 
-    const forensic_ipcount_array = service.ipfact.ips_with_counts_in_range(
+    const ipfact_array = service.ipfact.ips_with_counts_in_range(
         `${startdate} ${starttime}`,
         `${enddate} ${endtime}`,
     );
     const ip2users = service.user.ofIPs(
-        forensic_ipcount_array.map((f) => f.ip),
+        ipfact_array.map((f) => f.ip),
     );
     const registered_ips = service.user.get_registered_ips(
-        forensic_ipcount_array.map((f) => f.ip),
+        ipfact_array.map((f) => f.ip),
     );
 
     const { with_name, without_name } = service.ipfact
         .split_ips_by_registration_status(
-            forensic_ipcount_array,
+            ipfact_array,
             registered_ips,
         );
 
     const ip_history = new Map<string, IPHistoryRecord[]>();
-    for (const iprec of forensic_ipcount_array) {
+    for (const iprec of ipfact_array) {
         ip_history.set(iprec.ip, service.registrations.ofIP(iprec.ip));
     }
     const user_history = service.registrations.ofEmail();
