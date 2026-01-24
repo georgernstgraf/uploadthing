@@ -36,3 +36,11 @@ model history {
   @@index([email])
   @@index([ip])
 }
+
+model ldapusercache {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  klasse    String?
+  updatedat DateTime
+}

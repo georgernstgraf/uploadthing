@@ -1,6 +1,6 @@
 import * as repo from "../repo/repo.ts";
 import { LdapUserType, UserType } from "../lib/types.ts";
-
+import { registerManyUsers, registerUser } from "./ldapusercache.ts";
 export async function getUserByEmail(
     email: string,
 ): Promise<UserType | null> {
@@ -8,7 +8,12 @@ export async function getUserByEmail(
     if (!result) {
         return null;
     }
-    return userFromLdap(result);
+    const user = userFromLdap(result);
+    registerUser(user).catch((e) => {
+        console.error("Failed to register user async:", email);
+        console.error(e);
+    });
+    return user;
 }
 export async function searchUserByEmailStart(
     startstring: string,
@@ -16,12 +21,21 @@ export async function searchUserByEmailStart(
     if (startstring.length < 3) {
         throw new Error("startstring must be at least 3 characters");
     }
-    const result = await repo.ldap.getUsersMailStartingWith(startstring);
-    return result.sort((a, b) =>
+    const reporesult = await repo.ldap.getUsersMailStartingWith(startstring);
+    const result = reporesult.sort((a, b) =>
         a.displayName.localeCompare(b.displayName, undefined, {
             sensitivity: "base",
         })
     ).map(userFromLdap);
+
+    registerManyUsers(result).catch((e) => {
+        console.error(
+            "Failed to register many users async, error:",
+            startstring,
+        );
+        console.error(e);
+    });
+    return result;
 }
 function userFromLdap(ldapUser: LdapUserType): UserType {
     return {
