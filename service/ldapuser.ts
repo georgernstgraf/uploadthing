@@ -10,7 +10,7 @@ export async function getUserByEmail(
     }
     const user = userFromLdap(result);
     try {
-        registerUser(user);
+        await registerUser(user);
     } catch (e) {
         console.error("Failed to register user async:", email);
         console.error(e);
@@ -32,7 +32,7 @@ export async function searchUserByEmailStart(
     ).map(userFromLdap);
 
     try {
-        registerManyUsers(result);
+        await registerManyUsers(result);
     } catch (e) {
         console.error(
             "Failed to register many users async, error:",
