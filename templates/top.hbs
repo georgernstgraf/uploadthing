@@ -5,19 +5,26 @@
     <meta charset="UTF-8">
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
-    <title>PLF</title>
+    <title>router:8000</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet"
           href="/static/bootstrap.css">
     <link rel="stylesheet"
           href="/static/leisure-theme.css">
-    <style>[x-cloak] { display: none !important; }</style>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
     <script src="/static/htmx.js"></script>
     <script src="/static/bootstrap.js"></script>
-    <script src="/static/alpine.min.js" defer></script>
+    <script src="/static/alpine.min.js"
+            defer></script>
 </head>
 
 <body>
-    <div class="position-fixed top-0 end-0 p-2" style="z-index: 1001;">
+    <div class="position-fixed top-0 end-0 p-2"
+         style="z-index: 1001;">
         <button id="theme-toggle"
                 class="btn btn-sm btn-outline-secondary rounded-pill px-3">Theme</button>
     </div>
@@ -37,13 +44,17 @@
             });
         })();
     </script>
-    <header class="sticky-top" style="z-index: 1000;">
-        <div class="leisure-card py-1 mx-2 mt-2" style="border-radius: 16px;">
-            <h1 class="mb-0 text-center fw-bold" style="color: var(--leisure-primary); font-size: 1.25rem;">http://router:8000/</h1>
+    <header class="sticky-top"
+            style="z-index: 1000;">
+        <div class="leisure-card py-1 mx-2 mt-2"
+             style="border-radius: 16px;">
+            <h1 class="mb-0 text-center fw-bold"
+                style="color: var(--leisure-primary); font-size: 1.25rem;">http://router:8000/</h1>
         </div>
     </header>
     <main class="container mt-2 p-2">
-        <nav class="d-flex justify-content-center gap-2 my-2 mx-auto p-1 flex-wrap" style="width: fit-content; max-width: 100%; background: var(--leisure-glass-bg); backdrop-filter: blur(10px); border-radius: 50px; border: 1px solid var(--leisure-glass-border); box-shadow: var(--leisure-shadow-soft);">
+        <nav class="d-flex justify-content-center gap-2 my-2 mx-auto p-1 flex-wrap"
+             style="width: fit-content; max-width: 100%; background: var(--leisure-glass-bg); backdrop-filter: blur(10px); border-radius: 50px; border: 1px solid var(--leisure-glass-border); box-shadow: var(--leisure-shadow-soft);">
             <a href="/"
                class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Home</a>
             <a href="/forensic"
@@ -52,27 +63,32 @@
             <a href="/upload"
                class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Zipfile Upload</a>
         </nav>
-
         <div class="d-flex justify-content-center mb-2">
             <a href="/whoami"
-               class="text-decoration-none user-badge p-2 leisure-card w-100" style="max-width: 500px; justify-content: center;">
+               class="text-decoration-none user-badge p-2 leisure-card w-100"
+               style="max-width: 500px; justify-content: center;">
                 {{#if remote_user}}
                     <div class="d-flex align-items-center gap-2 justify-content-center flex-wrap text-center text-sm-start">
-                        <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.1rem;">
+                        <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center"
+                             style="width: 36px; height: 36px; font-size: 1.1rem;">
                             {{givenNameInitial remote_user.name}}
                         </div>
                         <div class="d-flex flex-column text-dark">
-                            <span class="fw-bold text-break" style="font-size: 0.95rem;">{{remote_user.name}}</span>
-                            <span class="text-muted text-break" style="font-size: 0.75rem;">{{remote_user.email}} / {{remote_user.klasse}}</span>
+                            <span class="fw-bold text-break"
+                                  style="font-size: 0.95rem;">{{remote_user.name}}</span>
+                            <span class="text-muted text-break"
+                                  style="font-size: 0.75rem;">{{remote_user.email}} / {{remote_user.klasse}}</span>
                         </div>
-                        <span class="badge rounded-pill bg-light text-dark border ms-1" style="font-size: 0.7rem;">Change</span>
+                        <span class="badge rounded-pill bg-light text-dark border ms-1"
+                              style="font-size: 0.7rem;">Change</span>
                     </div>
                 {{else}}
-                    <span class="text-danger fw-bold text-decoration-underline text-center d-block" style="font-size: 0.95rem;">Bitte Name bekanntgeben!</span>
+                    <span class="text-danger fw-bold text-decoration-underline text-center d-block"
+                          style="font-size: 0.95rem;">Bitte Name bekanntgeben!</span>
                 {{/if}}
             </a>
         </div>
-        
         <div class="text-center mb-2 opacity-50">
-            <span class="text-uppercase" style="font-size: 0.7rem; letter-spacing: 2px;">Meine IP: {{remote_ip}}</span>
+            <span class="text-uppercase"
+                  style="font-size: 0.7rem; letter-spacing: 2px;">Meine IP: {{remote_ip}}</span>
         </div>
