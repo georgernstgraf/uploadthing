@@ -3,6 +3,6 @@ import * as ipfact from "./ipfact.ts";
 import * as ldap from "./ldapuser.ts";
 import * as user from "./user.ts";
 import * as db from "./db.ts";
-import * as history from "./history.ts";
+import * as registrations from "./registrations.ts";
 
-export { db, history, ipfact, ldap, user };
+export { db, ipfact, ldap, registrations, user };

@@ -4,7 +4,7 @@ import prismadb from "./prismadb.ts";
 import * as ipfact from "./ipfact.ts";
 import * as user from "./user.ts";
 import * as ldap from "./ldapuser.ts";
-import * as history from "./history.ts";
+import * as registrations from "./registrations.ts";
 import * as ldapusercache from "./ldapusercache.ts";
 
-export { db, history, ipfact, ldap, ldapusercache, prismadb, user };
+export { db, ipfact, ldap, ldapusercache, prismadb, registrations, user };

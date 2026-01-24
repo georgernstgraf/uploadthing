@@ -58,9 +58,9 @@ forensicRouter.get("/", (c) => {
 
     const ip_history = new Map<string, IPHistoryRecord[]>();
     for (const iprec of forensic_ipcount_array) {
-        ip_history.set(iprec.ip, service.history.ofIP(iprec.ip));
+        ip_history.set(iprec.ip, service.registrations.ofIP(iprec.ip));
     }
-    const user_history = service.history.ofEmail();
+    const user_history = service.registrations.ofEmail();
     return c.html(
         hbs.forensicTemplate({
             remote_ip: c.get("remoteip"),
