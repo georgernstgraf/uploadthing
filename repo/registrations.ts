@@ -35,3 +35,33 @@ const registrationsOfEmail_prepared = db.prepare(
 export function registrationsOfEmail(email: string): UserHistoryRecord[] {
     return registrationsOfEmail_prepared.all(email);
 }
+
+export type LatestRegistrationRecord = {
+    ip: string;
+    email: string;
+    at: string;
+};
+
+export function latestRegistrationsForIPsInRange(
+    ips: string[],
+    start: string,
+    end: string,
+): LatestRegistrationRecord[] {
+    if (ips.length === 0) return [];
+    const placeholders = ips.map(() => "?").join(",");
+    const query = `
+        select r.ip, r.email, r.at
+        from registrations r
+        join (
+            select ip, max(at) as max_at
+            from registrations
+            where ip in (${placeholders})
+              and at between
+                (select strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))
+                and (select strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))
+            group by ip
+        ) latest on r.ip = latest.ip and r.at = latest.max_at
+    `;
+    const stmt = db.prepare(query);
+    return stmt.all(...ips, start, end) as LatestRegistrationRecord[];
+}

@@ -1,6 +1,12 @@
 import { UserType } from "../lib/types.ts";
 import prisma from "./prismadb.ts";
 
+export type LdapUserCacheRecord = {
+    email: string;
+    name: string;
+    klasse: string | null;
+};
+
 export async function registerUser(user: UserType) {
     await prisma.ldapusercache.upsert({
         where: { email: user.email },
@@ -35,4 +41,14 @@ export async function registerManyUsers(users: UserType[]) {
         })
     );
     await prisma.$transaction(operations);
+}
+
+export async function getUsersByEmails(
+    emails: string[],
+): Promise<LdapUserCacheRecord[]> {
+    if (emails.length === 0) return [];
+    return await prisma.ldapusercache.findMany({
+        where: { email: { in: emails } },
+        select: { email: true, name: true, klasse: true },
+    });
 }

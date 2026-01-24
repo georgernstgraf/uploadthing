@@ -12,7 +12,7 @@ const twelve_hours_ms = 12 * 3.6e6;
 
 // Forensic main page
 
-forensicRouter.get("/", (c) => {
+forensicRouter.get("/", async (c) => {
     const remote_user = c.get("remoteuser");
     if (!remote_user) {
         return c.text("Unauthorized", 401);
@@ -51,12 +51,21 @@ forensicRouter.get("/", (c) => {
         `${startdate} ${starttime}`,
         `${enddate} ${endtime}`,
     );
-    const ip2users = service.user.ofIPs(
-        ipfact_array.map((f) => f.ip),
-    );
-    const registered_ips = service.user.get_registered_ips(
-        ipfact_array.map((f) => f.ip),
-    );
+    const ipList = ipfact_array.map((f) => f.ip);
+    const ip2users = service.user.ofIPs(ipList);
+    const registered_ips = service.user.get_registered_ips(ipList);
+    const missingIps = ipList.filter((ip) => !ip2users.has(ip));
+    if (missingIps.length > 0) {
+        const registrationUsers = await service.user.ofIPsFromRegistrationsInRange(
+            missingIps,
+            `${startdate} ${starttime}`,
+            `${enddate} ${endtime}`,
+        );
+        for (const [ip, user] of registrationUsers.entries()) {
+            ip2users.set(ip, user);
+            registered_ips.add(ip);
+        }
+    }
 
     const { with_name, without_name } = service.ipfact
         .split_ips_by_registration_status(
