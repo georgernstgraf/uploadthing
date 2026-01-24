@@ -46,11 +46,11 @@
             <label class="d-block form-label h3 mb-2 fw-bold">Bitte ZIP Datei auswählen</label>
             <p class="text-muted small">Nur .zip Dateien sind erlaubt</p>
             
-            <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all" 
-                 style="border-style: dashed; border-color: var(--leisure-secondary); background: rgba(255,255,255,0.4);"
-                 @dragover.prevent="$el.style.borderColor = 'var(--leisure-primary)'"
-                 @dragleave.prevent="$el.style.borderColor = 'var(--leisure-secondary)'"
-                 @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--leisure-secondary)'">
+             <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all" 
+                  style="border-style: dashed; border-color: var(--leisure-secondary); background: rgba(255,255,255,0.4);"
+                  @dragover.prevent="$el.style.borderColor = 'var(--leisure-primary)'"
+                  @dragleave.prevent="$el.style.borderColor = 'var(--leisure-secondary)'"
+                  @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $refs.fileInput.dispatchEvent(new Event('change', { bubbles: true })); $el.style.borderColor = 'var(--leisure-secondary)'">
                 
                 <input type="file"
                        x-ref="fileInput"
