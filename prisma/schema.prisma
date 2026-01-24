@@ -27,7 +27,7 @@ model user {
   klasse String
 }
 
-model history {
+model registrations {
   id    Int      @id @default(autoincrement())
   ip    String
   email String
