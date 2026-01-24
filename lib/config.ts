@@ -3,6 +3,7 @@ const config = {
   UNTERLAGEN_DIR: `${Deno.env.get("HOME")}/unterlagen`,
   LISTEN_HOST: Deno.env.get("LISTEN_HOST"),
   LISTEN_PORT: Number(Deno.env.get("LISTEN_PORT")),
+  page_title: `${Deno.env.get("LISTEN_HOST") || "localhost"}:${Deno.env.get("LISTEN_PORT")}`,
   SERVICE_DN: Deno.env.get("SERVICE_DN")!,
   SERVICE_PW: Deno.env.get("SERVICE_PW")!,
   SERVICE_URL: Deno.env.get("SERVICE_URL")!,

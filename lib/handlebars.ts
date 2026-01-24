@@ -4,40 +4,26 @@ import {
     IPHistoryRecord,
     UserHistoryRecord,
     UserType,
+    TopType,
 } from "./types.ts";
 
 // Hier nur Template Types, bitte!
 
-type TopType = {
-    remote_ip: string;
-    remote_user: UserType | null;
-};
-
-type DirIndexTemplateData = {
-    remote_ip: string;
-    remote_user: UserType | null;
+type DirIndexTemplateData = TopType & {
     files: string[];
     UNTERLAGEN_DIR: string;
 };
 
-type UploadTemplateData = {
-    remote_ip: string;
-    remote_user: UserType | null;
-};
+type UploadTemplateData = TopType;
 
-type SuccessTemplateData = {
-    remote_ip: string;
-    remote_user: UserType | null;
+type SuccessTemplateData = TopType & {
     filename: string;
     filesize: string;
     md5sum: string;
     durationSeconds: string;
 };
 
-type WhoamiTemplateData = {
-    remote_ip: string;
-    remote_user: UserType | null;
-};
+type WhoamiTemplateData = TopType;
 
 type LdapTemplateData = {
     users: UserType[];
@@ -58,8 +44,7 @@ export const whoamiTemplate = Handlebars.compile<WhoamiTemplateData>(
     Deno.readTextFileSync("templates/whoami.hbs"),
 );
 
-type ForensicTemplateData = {
-    remote_ip: string;
+type ForensicTemplateData = TopType & {
     remote_user: UserType;
     forensic_ipcount_array: ForensicIPCount[];
     spg_times: string[];
@@ -70,7 +55,7 @@ type ForensicTemplateData = {
     ip2users: Map<string, UserType>;
     ip_history: Map<string, IPHistoryRecord[]>;
     user_history: Map<string, UserHistoryRecord[]>;
-    // New properties for split tables
+    // New properties for the two tables
     ips_with_name: ForensicIPCount[];
     ips_without_name: ForensicIPCount[];
     within12hours: boolean;

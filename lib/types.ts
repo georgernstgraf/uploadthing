@@ -9,6 +9,12 @@ export type Bindings = {
     info: Deno.ServeHandlerInfo;
 };
 
+export type TopType = {
+    remote_ip: string;
+    remote_user: UserType | null;
+    page_title: string;
+};
+
 export type ForensicIPCount = {
     ip: string;
     count: number;

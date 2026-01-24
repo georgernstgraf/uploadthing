@@ -7,7 +7,8 @@ import cf from "../lib/config.ts";
 
 const forensicRouter = new Hono<{ Variables: Variables }>();
 const start_ms_earlier = 3.6 * 1.5e6; // 1.5 hours ago
-const plus_one_day_ms = 24 * 3.6e6; // plus one day
+const one_day_ms = 24 * 3.6e6; // plus one day
+const twelve_hours_ms = 12 * 3.6e6;
 
 // Forensic main page
 
@@ -29,15 +30,14 @@ forensicRouter.get("/", (c) => {
         starttime = times.at(index < times.length ? index : -1)!;
     }
     const enddate = c.req.query("enddate") ||
-        localDateString(new Date(Date.now() + plus_one_day_ms));
+        localDateString(new Date(Date.now() + one_day_ms));
     const endtime = c.req.query("endtime") || starttime;
     // Calculate if start and end times are within 12 hours
     const startDateTime = new Date(`${startdate} ${starttime}`);
-    const endDateTime = new Date();
-    const timeDiffMs = Math.abs(
-        endDateTime.getTime() - startDateTime.getTime(),
-    );
-    const within12hours = timeDiffMs < (12 * 60 * 60 * 1000); // 12 hours in milliseconds
+
+    const within12hours = Math.abs(
+        new Date().getTime() - startDateTime.getTime(),
+    ) < twelve_hours_ms; // 12 hours in milliseconds
 
     const forensic_ipcount_array = service.ipfact.ips_with_counts_in_range(
         `${startdate} ${starttime}`,
@@ -78,6 +78,7 @@ forensicRouter.get("/", (c) => {
             ips_with_name: with_name,
             ips_without_name: without_name,
             within12hours,
+            page_title: cf.page_title,
         }),
     );
 });

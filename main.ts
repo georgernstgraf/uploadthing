@@ -28,6 +28,7 @@ app.get("/", async (c) => {
         files,
         remote_user: c.get("remoteuser"),
         remote_ip: c.get("remoteip"),
+        page_title: config.page_title,
     }));
 });
 app.get(
@@ -46,7 +47,11 @@ app.get("upload", (c) => {
     }
 
     return c.html(
-        hbs.uploadTemplate({ remote_ip, remote_user }),
+        hbs.uploadTemplate({
+            remote_ip,
+            remote_user,
+            page_title: config.page_title,
+        }),
     );
 });
 app.post("upload", async (c) => {
@@ -123,6 +128,7 @@ app.post("upload", async (c) => {
             md5sum,
             durationSeconds,
             remote_user,
+            page_title: config.page_title,
         }),
     );
 });
@@ -134,6 +140,7 @@ app.get("whoami", (c) => {
         hbs.whoamiTemplate({
             remote_ip,
             remote_user,
+            page_title: config.page_title,
         }),
     );
 });
