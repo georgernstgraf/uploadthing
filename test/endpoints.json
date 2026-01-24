@@ -9,14 +9,7 @@
                 "type": "Logs array or HTML"
             }
         },
-        {
-            "method": "GET",
-            "path": "/static/style.css",
-            "description": "Static CSS file",
-            "expectedOutput": {
-                "type": "CSS content"
-            }
-        },
+
         {
             "method": "GET",
             "path": "/ldap?email=graf",

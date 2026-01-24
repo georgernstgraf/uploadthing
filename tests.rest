@@ -1,7 +1,6 @@
 ###
 GET http://localhost:8000/forensic/users
-###
-GET http://localhost:8000/static/style.css
+
 ###
 GET http://localhost:8000/ldap?email=graf
 

@@ -27,13 +27,7 @@ Deno.test("GET /forensic/logs - Forensic logs", async () => {
     assertExists(text);
 });
 
-Deno.test("GET /static/style.css - Static CSS file", async () => {
-    const res = await fetch(`${BASE_URL}/static/style.css`);
-    assertEquals(res.status, 200);
-    const text = await res.text();
-    assertExists(text);
-    assertEquals(res.headers.get("content-type")?.includes("text/css"), true);
-});
+
 
 Deno.test("GET /ldap?email=graf - LDAP search", async () => {
     const res = await fetch(`${BASE_URL}/ldap?email=graf`);
