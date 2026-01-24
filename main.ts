@@ -202,10 +202,17 @@ app.post("activeips", async (c) => {
 });
 app.get(
     "unterlagen/*",
-    serveStatic({
-        root: config.UNTERLAGEN_DIR,
-        rewriteRequestPath: (path) => path.replace(/^\/unterlagen/, "/"),
-    }),
+    async (c, next) => {
+        const remote_user = c.get("remoteuser");
+        if (!remote_user) {
+            return c.text("Unauthorized", 401);
+        }
+        const handler = serveStatic({
+            root: config.UNTERLAGEN_DIR,
+            rewriteRequestPath: (path) => path.replace(/^\/unterlagen/, "/"),
+        });
+        return await handler(c, next);
+    },
 );
 
 Deno.serve(
