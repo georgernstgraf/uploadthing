@@ -58,6 +58,7 @@ app.post("upload", async (c) => {
     const beginTime = Date.now();
     const remote_ip = c.get("remoteip");
     const remote_user = c.get("remoteuser");
+    const maxUploadBytes = config.MAX_UPLOAD_MB * 1024 * 1024;
     if (!remote_user) {
         return c.text("Unauthorized", 401);
     }
@@ -66,6 +67,12 @@ app.post("upload", async (c) => {
     const file = formData.get("file") as File;
 
     if (!file) return c.text("No file uploaded", 400);
+    if (file.size > maxUploadBytes) {
+        return c.text(
+            `Upload too large. Max ${config.MAX_UPLOAD_MB} MB allowed.`,
+            413,
+        );
+    }
     if (!remote_user) return c.text("User not registered", 403);
 
     const baseFilename = `${safeFileComponent(remote_user.name)}-${
