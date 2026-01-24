@@ -17,7 +17,7 @@ forensicRouter.get("/", (c) => {
     if (!remote_user) {
         return c.text("Unauthorized", 401);
     }
-    const startdate = c.req.query("startdate") ||
+    let startdate = c.req.query("startdate") ||
         localDateString(new Date(Date.now() - start_ms_earlier));
     let starttime = c.req.query("starttime");
     // if either startdate or starttime is missing, default to 2 hours ago
@@ -29,15 +29,23 @@ forensicRouter.get("/", (c) => {
         times.splice(index, 1); // remove the added time
         starttime = times.at(index < times.length ? index : -1)!;
     }
-    const enddate = c.req.query("enddate") ||
+    let enddate = c.req.query("enddate") ||
         localDateString(new Date(Date.now() + one_day_ms));
-    const endtime = c.req.query("endtime") || starttime;
-    // Calculate if start and end times are within 12 hours
-    const startDateTime = new Date(`${startdate} ${starttime}`);
+    let endtime = c.req.query("endtime") || starttime;
+    // Calculate if start time is within the last 12 hours
+    let startDateTime = new Date(`${startdate} ${starttime}`);
+    let endDateTime = new Date(`${enddate} ${endtime}`);
+
+    if (endDateTime.getTime() < startDateTime.getTime()) {
+        [startdate, enddate] = [enddate, startdate];
+        [starttime, endtime] = [endtime, starttime];
+        [startDateTime, endDateTime] = [endDateTime, startDateTime];
+    }
 
     const within12hours = Math.abs(
         new Date().getTime() - startDateTime.getTime(),
     ) < twelve_hours_ms; // 12 hours in milliseconds
+    const endtimeInFuture = endDateTime.getTime() > new Date().getTime();
 
     const forensic_ipcount_array = service.ipfact.ips_with_counts_in_range(
         `${startdate} ${starttime}`,
@@ -78,6 +86,7 @@ forensicRouter.get("/", (c) => {
             ips_with_name: with_name,
             ips_without_name: without_name,
             within12hours,
+            endtimeInFuture,
             page_title: cf.page_title,
         }),
     );

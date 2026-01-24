@@ -102,12 +102,15 @@
             Zeitraum: {{#unless within12hours}}
                 {{startdate}}
             {{/unless}}
-            {{starttime}} - <span x-show="showEndTime"
-                  x-cloak>{{#unless within12hours}}
+            {{starttime}} -
+            {{#if endtimeInFuture}}
+                jetzt
+            {{else}}
+                <span x-show="showEndTime" x-cloak>
                     {{enddate}}
-                {{/unless}}
-                {{endtime}}
-            </span>
+                    {{endtime}}
+                </span>
+            {{/if}}
         </h6>
 
         <!-- Table 1: IPs with registered names -->

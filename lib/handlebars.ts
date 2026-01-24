@@ -59,6 +59,7 @@ type ForensicTemplateData = TopType & {
     ips_with_name: ForensicIPCount[];
     ips_without_name: ForensicIPCount[];
     within12hours: boolean;
+    endtimeInFuture: boolean;
 };
 
 Handlebars.registerHelper("eq", function (a, b) {
