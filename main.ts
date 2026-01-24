@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/deno";
 import { createHash } from "node:crypto";
 import config from "./lib/config.ts";
-import { get_unterlagen } from "./lib/lib.ts";
+import { get_unterlagen, getVersionedPath } from "./lib/lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import * as service from "./service/service.ts";
 import * as hbs from "./lib/handlebars.ts";
@@ -68,10 +68,13 @@ app.post("upload", async (c) => {
     if (!file) return c.text("No file uploaded", 400);
     if (!remote_user) return c.text("User not registered", 403);
 
-    const real_filename = `${safeFileComponent(remote_user.name)}-${
+    const baseFilename = `${safeFileComponent(remote_user.name)}-${
         safeFileComponent(remote_ip)
     }-${safeFileComponent(file.name)}`;
-    const outPath = `${config.ABGABEN_DIR}/${real_filename}`;
+    const { filename: real_filename, outPath } = await getVersionedPath(
+        config.ABGABEN_DIR,
+        baseFilename,
+    );
 
     const hash = createHash("md5");
     let bytesWritten = 0;
