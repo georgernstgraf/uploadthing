@@ -11,6 +11,8 @@ const config = {
   SEARCH_BASE: Deno.env.get("SEARCH_BASE")!,
   logdir: Deno.env.get("LOGDIR") || "/var/log/exampy",
   ldap_retry_wait_seconds: 7,
+  forensic_stale_minutes: Number(Deno.env.get("FORENSIC_STALE_MINUTES") || "10"),
+  forensic_refresh_seconds: Number(Deno.env.get("FORENSIC_REFRESH_SECONDS") || "30"),
   spg_times: [
     "08:00",
     "08:50",

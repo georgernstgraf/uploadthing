@@ -29,9 +29,12 @@ forensicRouter.get("/", async (c) => {
         times.splice(index, 1); // remove the added time
         starttime = times.at(index < times.length ? index : -1)!;
     }
-    let enddate = c.req.query("enddate") ||
+    const requestedEndDate = c.req.query("enddate");
+    const requestedEndTime = c.req.query("endtime");
+    const endtimeProvided = Boolean(requestedEndDate || requestedEndTime);
+    let enddate = requestedEndDate ||
         localDateString(new Date(Date.now() + one_day_ms));
-    let endtime = c.req.query("endtime") || starttime;
+    let endtime = requestedEndTime || starttime;
     // Calculate if start time is within the last 12 hours
     let startDateTime = new Date(`${startdate} ${starttime}`);
     let endDateTime = new Date(`${enddate} ${endtime}`);
@@ -47,10 +50,22 @@ forensicRouter.get("/", async (c) => {
     ) < twelve_hours_ms; // 12 hours in milliseconds
     const endtimeInFuture = endDateTime.getTime() > new Date().getTime();
 
+    const now = new Date().getTime();
+    const staleThresholdMinutes = cf.forensic_stale_minutes;
+    const staleThresholdMs = staleThresholdMinutes * 60 * 1000;
+    const refreshSeconds = cf.forensic_refresh_seconds;
+
     const ipfact_array = service.ipfact.ips_with_counts_in_range(
         `${startdate} ${starttime}`,
         `${enddate} ${endtime}`,
     );
+    for (const iprec of ipfact_array) {
+        if (typeof iprec.lastseen_epoch === "number") {
+            iprec.is_stale = endtimeProvided
+                ? false
+                : now - iprec.lastseen_epoch > staleThresholdMs;
+        }
+    }
     const ipList = ipfact_array.map((f) => f.ip);
     const ip2users = service.user.ofIPs(ipList);
     const registered_ips = service.user.get_registered_ips(ipList);
@@ -96,6 +111,8 @@ forensicRouter.get("/", async (c) => {
             ips_without_name: without_name,
             within12hours,
             endtimeInFuture,
+            endtimeProvided,
+            forensic_refresh_seconds: refreshSeconds,
             page_title: cf.page_title,
         }),
     );

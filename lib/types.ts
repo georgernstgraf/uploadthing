@@ -19,6 +19,8 @@ export type ForensicIPCount = {
     ip: string;
     count: number;
     lastseen: string;
+    lastseen_epoch?: number;
+    is_stale?: boolean;
 };
 // key: IP
 export type IPHistoryRecord = {

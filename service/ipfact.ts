@@ -25,9 +25,11 @@ export function ips_with_counts_in_range(
     end_localtime: string,
 ): ForensicIPCount[] {
     const r = repo.ipfact.seenStatsForRange(start_localtime, end_localtime);
-    r.forEach((e) =>
-        e.lastseen = formatLastSeen(new Date(e.lastseen))
-    );
+    r.forEach((e) => {
+        const lastSeenDate = new Date(e.lastseen);
+        e.lastseen_epoch = lastSeenDate.getTime();
+        e.lastseen = formatLastSeen(lastSeenDate);
+    });
     return r;
 }
 

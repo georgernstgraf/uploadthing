@@ -1,5 +1,5 @@
 {{> top}}
-<div x-data="endTimeToggle()"
+<div x-data="endTimeToggle({{forensic_refresh_seconds}})"
      x-init="init()">
      <section id="timeselector"
                class="leisure-card mb-2 mx-auto py-2"
@@ -7,7 +7,8 @@
         <h2 class="text-center mb-2" style="font-size: 1.1rem;">Zeitauswahl</h2>
         <form action="forensic"
               method="get"
-              class="container text-center">
+              class="container text-center"
+              @submit="handleSubmit">
             <div class="row mt-1 g-2 align-items-center">
                 <div class="col-md-6">
                     <label class="form-label fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">START Time</label>
@@ -74,9 +75,11 @@
     </section>
     <!-- Alpine.js Component for End Time Toggle -->
     <script>
-        function endTimeToggle() {
+        function endTimeToggle(refreshSeconds) {
             return {
                 showEndTime: false,
+                endFields: ["endtime", "enddate"],
+                refreshSeconds: refreshSeconds,
 
                 init() {
                     // Load preference from LocalStorage
@@ -87,10 +90,60 @@
                     if (saved === null) {
                         this.showEndTime = false;
                     }
+
+                    if (!this.showEndTime) {
+                        this.disableEndFields();
+                    }
+
+                    if (!this.showEndTime && this.refreshSeconds > 0) {
+                        window.setInterval(() => {
+                            window.location.reload();
+                        }, this.refreshSeconds * 1000);
+                    }
                 },
 
                 savePreference() {
                     localStorage.setItem('forensicShowEndTime', this.showEndTime);
+                    if (this.showEndTime) {
+                        this.enableEndFields();
+                    } else {
+                        this.disableEndFields();
+                    }
+                },
+
+                handleSubmit(event) {
+                    if (!this.showEndTime) {
+                        this.disableEndFields();
+                        return;
+                    }
+
+                    const form = event.target;
+                    const endtimeInput = form.querySelector('[name="endtime"]');
+                    const enddateInput = form.querySelector('[name="enddate"]');
+                    const endtimeValue = endtimeInput ? endtimeInput.value.trim() : "";
+                    const enddateValue = enddateInput ? enddateInput.value.trim() : "";
+
+                    if (!endtimeValue && !enddateValue) {
+                        this.disableEndFields();
+                    }
+                },
+
+                disableEndFields() {
+                    this.endFields.forEach((name) => {
+                        const input = document.querySelector(`[name="${name}"]`);
+                        if (input) {
+                            input.disabled = true;
+                        }
+                    });
+                },
+
+                enableEndFields() {
+                    this.endFields.forEach((name) => {
+                        const input = document.querySelector(`[name="${name}"]`);
+                        if (input) {
+                            input.disabled = false;
+                        }
+                    });
                 }
             }
         }
@@ -119,7 +172,7 @@
             {{#each ips_with_name}}
                 {{#let (get @root.ip2users this.ip) as |user|}}
                 <div class="col">
-                    <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column" style="background: rgba(255,255,255,0.85);">
+                    <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column {{#if this.is_stale}}forensic-stale{{/if}}" style="background: rgba(255,255,255,0.85);">
                         <summary class="fw-bold" style="cursor: pointer; list-style: none;">
                             <div class="d-flex align-items-center justify-content-between w-100">
                                 <div class="d-flex align-items-center gap-1 overflow-hidden">
@@ -179,7 +232,7 @@
         <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
             {{#each ips_without_name}}
                 <div class="col">
-                    <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column" style="background: rgba(255,255,255,0.7);">
+                    <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column {{#if this.is_stale}}forensic-stale{{/if}}" style="background: rgba(255,255,255,0.7);">
                         <summary class="fw-bold" style="cursor: pointer; list-style: none;">
                             <div class="d-flex align-items-center justify-content-between w-100">
                                 <div class="d-flex align-items-center gap-1 overflow-hidden">
