@@ -19,28 +19,30 @@ model ipfact {
   @@index([seen])
 }
 
-model user {
-  id     Int    @id @default(autoincrement())
-  ip     String @unique
-  name   String
-  email  String
-  klasse String
-}
-
-model registrations {
-  id    Int      @id @default(autoincrement())
-  ip    String
-  email String
-  at    DateTime
-
-  @@index([email])
-  @@index([ip])
-}
-
-model ldapusercache {
+model users {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String
   klasse    String?
   updatedat DateTime
+}
+
+model registrations {
+  id     Int      @id @default(autoincrement())
+  ip     String
+  userId Int
+  at     DateTime
+
+  @@index([userId])
+  @@index([ip])
+}
+
+model abgaben {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  filename String
+  at       DateTime
+
+  @@index([userId])
+  @@index([at])
 }

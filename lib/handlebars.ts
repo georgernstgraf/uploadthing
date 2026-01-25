@@ -2,10 +2,10 @@ import Handlebars from "handlebars";
 import {
     ForensicIPCount,
     IPHistoryRecord,
-    UserHistoryRecord,
     UserType,
     TopType,
 } from "./types.ts";
+import type { UserRegistrationRecord } from "../service/registrations.ts";
 
 // Hier nur Template Types, bitte!
 
@@ -54,7 +54,7 @@ type ForensicTemplateData = TopType & {
     enddate: string;
     ip2users: Map<string, UserType>;
     ip_history: Map<string, IPHistoryRecord[]>;
-    user_history: Map<string, UserHistoryRecord[]>;
+    user_history: Map<number, UserRegistrationRecord[]>;
     // New properties for the two tables
     ips_with_name: ForensicIPCount[];
     ips_without_name: ForensicIPCount[];

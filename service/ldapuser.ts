@@ -1,6 +1,6 @@
 import * as repo from "../repo/repo.ts";
 import { LdapUserType, UserType } from "../lib/types.ts";
-import { registerManyUsers, registerUser } from "./ldapusercache.ts";
+import { registerManyUsers, registerUser } from "./user.ts";
 export async function getUserByEmail(
     email: string,
 ): Promise<UserType | null> {

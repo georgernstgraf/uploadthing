@@ -1,36 +1,71 @@
-import * as userRepo from "../repo/user.ts";
 import { UserType } from "../lib/types.ts";
-import * as ldapService from "./ldapuser.ts";
-import * as ldapcache from "./ldapusercache.ts";
-import * as repo from "../repo/repo.ts";
-import { LdapUserCacheRecord } from "../repo/ldapusercache.ts";
+import * as usersRepo from "../repo/users.ts";
+import * as registrationsRepo from "../repo/registrations.ts";
+import type { UserRecord } from "../repo/users.ts";
 
-export function ofIPs(ips: string[]): Map<string, UserType> {
+export async function ofIPs(ips: string[]): Promise<Map<string, UserType>> {
     const result = new Map<string, UserType>();
-    const users = userRepo.searchbyips(ips);
-    for (const u of users) {
-        result.set(u.ip!, u);
+    const userIds = new Set<number>();
+    
+    for (const ip of ips) {
+        const userId = registrationsRepo.getLatestRegistrationForIP(ip);
+        if (userId !== null) {
+            userIds.add(userId);
+        }
     }
+    
+    const userRecords = userIds.size > 0 ? await usersRepo.getByIds([...userIds]) : [];
+    const usersById = new Map<number, UserRecord>(
+        userRecords.map((u) => [u.id, u])
+    );
+    
+    for (const ip of ips) {
+        const userId = registrationsRepo.getLatestRegistrationForIP(ip);
+        if (userId !== null) {
+            const user = usersById.get(userId);
+            if (user) {
+                result.set(ip, {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    klasse: user.klasse ?? undefined,
+                });
+            }
+        }
+    }
+    
     return result;
 }
-export function getbyip(ip: string): UserType | null {
-    const result = userRepo.searchbyip(ip);
-    if (!result) return null;
-    return result as UserType;
+
+export async function getbyip(ip: string): Promise<UserType | null> {
+    const userId = registrationsRepo.getLatestRegistrationForIP(ip);
+    if (userId === null) return null;
+    
+    const user = await usersRepo.getById(userId);
+    if (!user) return null;
+    
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        klasse: user.klasse ?? undefined,
+    };
 }
-export function register(userData: UserType) {
-    userRepo.registerip(userData);
+
+export async function register(userData: UserType, ip: string) {
+    const userRecord = await usersRepo.upsert(userData);
+    registrationsRepo.create(ip, userRecord.id, new Date());
 }
 
 export function get_registered_ips(ips: string[]): Set<string> {
-    const users = userRepo.searchbyips(ips);
-    const registered_ips = new Set<string>();
-    for (const u of users) {
-        if (u.ip) {
-            registered_ips.add(u.ip);
+    const result = new Set<string>();
+    for (const ip of ips) {
+        const userId = registrationsRepo.getLatestRegistrationForIP(ip);
+        if (userId !== null) {
+            result.add(ip);
         }
     }
-    return registered_ips;
+    return result;
 }
 
 export async function ofIPsFromRegistrationsInRange(
@@ -39,68 +74,42 @@ export async function ofIPsFromRegistrationsInRange(
     endtime: string,
 ): Promise<Map<string, UserType>> {
     const result = new Map<string, UserType>();
-    const registrations = repo.registrations.latestRegistrationsForIPsInRange(
+    const registrations = registrationsRepo.latestRegistrationsForIPsInRange(
         ips,
         starttime,
         endtime,
     );
     if (registrations.length === 0) return result;
-    const emails = [
-        ...new Set(registrations.map((registration) => registration.email)),
-    ];
-    const cachedUsers = await ldapcache.getUsersByEmails(emails);
-    const cachedByEmail = new Map<string, LdapUserCacheRecord>(
-        cachedUsers.map((user) => [user.email, user]),
+    
+    const userIds = [...new Set(registrations.map((registration) => registration.userId))];
+    const users = await usersRepo.getByIds(userIds);
+    const usersById = new Map<number, UserRecord>(
+        users.map((u) => [u.id, u])
     );
-    const missingEmails = emails.filter((email) => !cachedByEmail.has(email));
-    const fetchedUsers: UserType[] = [];
-    for (const email of missingEmails) {
-        try {
-            const user = await ldapService.getUserByEmail(email);
-            if (user) {
-                fetchedUsers.push(user);
-            } else {
-                fetchedUsers.push({
-                    email,
-                    name: "not-in-ldap-anymore",
-                    klasse: "",
-                });
-            }
-        } catch (e) {
-            console.error("LDAP lookup failed for", email, e);
-            fetchedUsers.push({
-                email,
-                name: "not-in-ldap-anymore",
-                klasse: "",
-            });
-        }
-    }
-    if (fetchedUsers.length > 0) {
-        try {
-            await ldapcache.registerManyUsers(
-                fetchedUsers.filter((user) =>
-                    user.name !== "not-in-ldap-anymore"
-                ),
-            );
-        } catch (e) {
-            console.error("Failed to update ldapusercache", e);
-        }
-        for (const user of fetchedUsers) {
-            cachedByEmail.set(user.email, {
-                email: user.email,
-                name: user.name,
-                klasse: user.klasse ?? null,
-            });
-        }
-    }
+    
     for (const registration of registrations) {
-        const user = cachedByEmail.get(registration.email);
+        const user = usersById.get(registration.userId);
         result.set(registration.ip, {
-            ip: registration.ip,
-            email: registration.email,
+            id: user?.id,
             name: user?.name ?? "not-in-ldap-anymore",
+            email: user?.email ?? "",
             klasse: user?.klasse ?? "",
         });
     }
     return result;
+}
+
+export async function registerUser(user: UserType) {
+    await usersRepo.upsert(user);
+}
+
+export async function registerManyUsers(users: UserType[]) {
+    await usersRepo.upsertMany(users);
+}
+
+export async function getUsersByEmails(
+    emails: string[],
+): Promise<UserRecord[]> {
+    if (emails.length === 0) return [];
+    return await usersRepo.getByEmails(emails);
 }

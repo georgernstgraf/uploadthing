@@ -129,6 +129,10 @@ app.post("upload", async (c) => {
     const endTime = Date.now();
     const durationSeconds = ((endTime - beginTime) / 1000).toFixed(1);
 
+    if (remote_user.id) {
+        await service.abgaben.recordSubmission(remote_user.id, real_filename);
+    }
+
     return c.html(
         hbs.successTemplate({
             remote_ip,
@@ -181,8 +185,8 @@ app.post("register", async (c) => {
         if (!ldapuser) {
             return c.text("User not found", 404);
         }
-        ldapuser.ip = c.get("remoteip");
-        service.user.register(ldapuser);
+        const remoteIp = c.get("remoteip");
+        await service.user.register(ldapuser, remoteIp);
         return c.redirect("/");
     } catch (e) {
         return c.text((e as Error).message, 400);

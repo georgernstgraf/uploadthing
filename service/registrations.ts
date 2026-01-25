@@ -1,22 +1,33 @@
-import { IPHistoryRecord, UserHistoryRecord } from "../lib/types.ts";
 import { localDateTimeString } from "../lib/timefunc.ts";
 import * as repo from "../repo/repo.ts";
-export function ofIP(ip: string): IPHistoryRecord[] {
-    const res = repo.registrations.getHistoryForIP(ip);
-    res.forEach((r) => {
-        r.at = localDateTimeString(new Date(r.at));
-    });
-    return res;
+
+export type UserRegistrationRecord = {
+    ip: string;
+    at: string;
+};
+
+export function ofIP(ip: string) {
+    const registrations = repo.registrations.getRegistrationsByIP(ip);
+    return registrations.map((r) => ({
+        name: r.userId.toString(),
+        at: localDateTimeString(new Date(r.at)),
+    }));
 }
-export function ofEmail(): Map<string, UserHistoryRecord[]> {
-    const all_emails = repo.registrations.allEmailFromHistory();
-    const ret = new Map<string, UserHistoryRecord[]>();
-    for (const email of all_emails) {
-        const records = repo.registrations.registrationsOfEmail(email); // careful, repo has utc timestrings
-        records.forEach((r) => {
-            r.at = localDateTimeString(new Date(r.at));
+
+export function ofEmail(): Map<number, UserRegistrationRecord[]> {
+    const registrations = repo.registrations.getHistoryEventsRange(
+        new Date().toISOString().split("T")[0],
+        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    );
+    const result = new Map<number, UserRegistrationRecord[]>();
+    for (const r of registrations) {
+        if (!result.has(r.userId)) {
+            result.set(r.userId, []);
+        }
+        result.get(r.userId)!.push({
+            ip: r.ip,
+            at: localDateTimeString(new Date(r.at)),
         });
-        ret.set(email, records);
     }
-    return ret;
+    return result;
 }
