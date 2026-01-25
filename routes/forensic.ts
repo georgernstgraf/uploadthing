@@ -67,7 +67,7 @@ forensicRouter.get("/", async (c) => {
         }
     }
     const ipList = ipfact_array.map((f) => f.ip);
-    const ip2users = service.user.ofIPs(ipList);
+    const ip2users = await service.user.ofIPs(ipList);
     const registered_ips = service.user.get_registered_ips(ipList);
     const missingIps = ipList.filter((ip) => !ip2users.has(ip));
     if (missingIps.length > 0) {
