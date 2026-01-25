@@ -11,7 +11,7 @@ import {
 
 type DirIndexTemplateData = TopType & {
     files: string[];
-    UNTERLAGEN_DIR: string;
+    unterlagen_dir: string;
 };
 
 type UploadTemplateData = TopType;
@@ -20,7 +20,7 @@ type SuccessTemplateData = TopType & {
     filename: string;
     filesize: string;
     md5sum: string;
-    durationSeconds: string;
+    duration_seconds: string;
 };
 
 type WhoamiTemplateData = TopType;

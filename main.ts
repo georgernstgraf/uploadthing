@@ -24,7 +24,7 @@ app.route("/forensic", forensicRouter);
 app.get("/", async (c) => {
     const files = await get_unterlagen();
     return c.html(hbs.dirIndexTemplate({
-        UNTERLAGEN_DIR: config.UNTERLAGEN_DIR,
+        unterlagen_dir: config.UNTERLAGEN_DIR,
         files,
         remote_user: c.get("remoteuser"),
         remote_ip: c.get("remoteip"),
@@ -43,7 +43,7 @@ app.get("upload", (c) => {
     const remote_ip = c.get("remoteip");
     const remote_user = c.get("remoteuser");
     if (!remote_user) {
-        return c.text("Unauthorized", 401);
+        return c.redirect("/whoami");
     }
 
     return c.html(
@@ -60,7 +60,7 @@ app.post("upload", async (c) => {
     const remote_user = c.get("remoteuser");
     const maxUploadBytes = config.MAX_UPLOAD_MB * 1024 * 1024;
     if (!remote_user) {
-        return c.text("Unauthorized", 401);
+        return c.redirect("/whoami");
     }
 
     const formData = await c.req.formData();
@@ -73,7 +73,6 @@ app.post("upload", async (c) => {
             413,
         );
     }
-    if (!remote_user) return c.text("User not registered", 403);
 
     const baseFilename = `${safeFileComponent(remote_user.name)}-${
         safeFileComponent(remote_ip)
@@ -136,7 +135,7 @@ app.post("upload", async (c) => {
             filename: real_filename,
             filesize: bytesWritten.toString(),
             md5sum,
-            durationSeconds,
+            duration_seconds: durationSeconds,
             remote_user,
             page_title: config.page_title,
         }),
@@ -205,7 +204,7 @@ app.get(
     async (c, next) => {
         const remote_user = c.get("remoteuser");
         if (!remote_user) {
-            return c.text("Unauthorized", 401);
+            return c.redirect("/whoami");
         }
         const handler = serveStatic({
             root: config.UNTERLAGEN_DIR,
