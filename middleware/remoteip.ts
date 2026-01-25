@@ -7,7 +7,7 @@ export const remoteIPMiddleware = createMiddleware(async (c, next) => {
     : "unix-socket";
 
   c.set("remoteip", remoteip);
-  const remoteuser = service.user.getbyip(remoteip);
+  const remoteuser = await service.user.getbyip(remoteip);
   c.set("remoteuser", remoteuser);
   await next();
 });

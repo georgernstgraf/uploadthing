@@ -198,7 +198,7 @@
                                 <div class="col-12">
                                     <div class="fw-bold text-center mb-1" style="font-size: 0.7rem; color: var(--leisure-primary);">User: {{user.name}}</div>
                                     <ul class="list-unstyled p-1 rounded mb-1" style="max-height: 80px; overflow-y: auto; background: var(--leisure-bg-light);">
-                                        {{#each (get @root.user_history user.email) }}
+                                        {{#each (get @root.user_history user.id) }}
                                              <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between" style="font-size: 0.7rem;">
                                                 <span class="text-muted">{{this.at}}</span>
                                                 <span class="history-item-ip">{{this.ip}}</span>

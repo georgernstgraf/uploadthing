@@ -34,7 +34,7 @@ export type UserHistoryRecord = {
 };
 
 export type UserType = {
-    ip?: string;
+    id?: number;
     name: string;
     email: string;
     klasse?: string;

@@ -6,11 +6,9 @@ import * as service from "../service/service.ts";
 import cf from "../lib/config.ts";
 
 const forensicRouter = new Hono<{ Variables: Variables }>();
-const start_ms_earlier = 3.6 * 1.5e6; // 1.5 hours ago
-const one_day_ms = 24 * 3.6e6; // plus one day
+const start_ms_earlier = 3.6 * 1.5e6; 
+const one_day_ms = 24 * 3.6e6; 
 const twelve_hours_ms = 12 * 3.6e6;
-
-// Forensic main page
 
 forensicRouter.get("/", async (c) => {
     const remote_user = c.get("remoteuser");
@@ -20,13 +18,12 @@ forensicRouter.get("/", async (c) => {
     let startdate = c.req.query("startdate") ||
         localDateString(new Date(Date.now() - start_ms_earlier));
     let starttime = c.req.query("starttime");
-    // if either startdate or starttime is missing, default to 2 hours ago
     if (!starttime) {
         starttime = localTimeString(new Date(Date.now() - start_ms_earlier));
         const times = [...cf.spg_times, starttime];
         times.sort();
         const index = times.indexOf(starttime);
-        times.splice(index, 1); // remove the added time
+        times.splice(index, 1); 
         starttime = times.at(index < times.length ? index : -1)!;
     }
     const requestedEndDate = c.req.query("enddate");
@@ -35,7 +32,6 @@ forensicRouter.get("/", async (c) => {
     let enddate = requestedEndDate ||
         localDateString(new Date(Date.now() + one_day_ms));
     let endtime = requestedEndTime || starttime;
-    // Calculate if start time is within the last 12 hours
     let startDateTime = new Date(`${startdate} ${starttime}`);
     let endDateTime = new Date(`${enddate} ${endtime}`);
 
@@ -47,7 +43,7 @@ forensicRouter.get("/", async (c) => {
 
     const within12hours = Math.abs(
         new Date().getTime() - startDateTime.getTime(),
-    ) < twelve_hours_ms; // 12 hours in milliseconds
+    ) < twelve_hours_ms;
     const endtimeInFuture = endDateTime.getTime() > new Date().getTime();
 
     const now = new Date().getTime();
@@ -67,7 +63,7 @@ forensicRouter.get("/", async (c) => {
         }
     }
     const ipList = ipfact_array.map((f) => f.ip);
-    const ip2users = service.user.ofIPs(ipList);
+    const ip2users = await service.user.ofIPs(ipList);
     const registered_ips = service.user.get_registered_ips(ipList);
     const missingIps = ipList.filter((ip) => !ip2users.has(ip));
     if (missingIps.length > 0) {
@@ -102,11 +98,10 @@ forensicRouter.get("/", async (c) => {
             endtime,
             enddate,
             spg_times: cf.spg_times,
-            forensic_ipcount_array: with_name, // Keep for backward compatibility
+            forensic_ipcount_array: with_name, 
             ip2users,
             ip_history,
             user_history,
-            // New data for the two tables
             ips_with_name: with_name,
             ips_without_name: without_name,
             within12hours,
