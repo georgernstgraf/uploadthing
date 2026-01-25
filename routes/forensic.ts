@@ -93,29 +93,33 @@ forensicRouter.get("/", async (c) => {
         ip_history.set(iprec.ip, service.registrations.ofIP(iprec.ip));
     }
     const user_history = service.registrations.ofEmail();
-    return c.html(
-        hbs.forensicTemplate({
-            remote_ip: c.get("remoteip"),
-            remote_user,
-            startdate,
-            starttime,
-            endtime,
-            enddate,
-            spg_times: cf.spg_times,
-            forensic_ipcount_array: with_name, // Keep for backward compatibility
-            ip2users,
-            ip_history,
-            user_history,
-            // New data for the two tables
-            ips_with_name: with_name,
-            ips_without_name: without_name,
-            within12hours,
-            endtimeInFuture,
-            endtimeProvided,
-            forensic_refresh_seconds: refreshSeconds,
-            page_title: cf.page_title,
-        }),
-    );
+    const templateData = {
+        remote_ip: c.get("remoteip"),
+        remote_user,
+        startdate,
+        starttime,
+        endtime,
+        enddate,
+        spg_times: cf.spg_times,
+        forensic_ipcount_array: with_name, // Keep for backward compatibility
+        ip2users,
+        ip_history,
+        user_history,
+        // New data for the two tables
+        ips_with_name: with_name,
+        ips_without_name: without_name,
+        within12hours,
+        endtimeInFuture,
+        endtimeProvided,
+        forensic_refresh_seconds: refreshSeconds,
+        page_title: cf.page_title,
+    };
+
+    if (c.req.header("HX-Request") === "true") {
+        return c.html(hbs.forensicReportTemplate(templateData));
+    }
+
+    return c.html(hbs.forensicTemplate(templateData));
 });
 
 export default forensicRouter;

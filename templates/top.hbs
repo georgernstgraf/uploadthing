@@ -30,14 +30,21 @@
     <header class="position-fixed top-0 start-0 end-0 app-header"
             style="z-index: 1000;">
         <div class="position-relative mx-2 mt-2">
-            <div class="leisure-card py-1 d-flex justify-content-center"
+            <div class="leisure-card py-1 d-flex align-items-center gap-2 header-bar"
                  style="border-radius: 16px;">
-                <a class="mb-0 text-center fw-bold h1"
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 theme-toggle-btn header-spacer"
+                        type="button"
+                        aria-hidden="true"
+                        tabindex="-1"
+                        disabled>
+                    Theme
+                </button>
+                <a class="mb-0 text-center fw-bold h1 flex-grow-1"
                    href="http://{{page_title}}/"
                    style="color: var(--leisure-primary); font-size: 1.25rem;">http://{{page_title}}/</a>
+                <button id="theme-toggle"
+                        class="btn btn-sm btn-outline-secondary rounded-pill px-3 theme-toggle-btn">Theme</button>
             </div>
-            <button id="theme-toggle"
-                    class="btn btn-sm btn-outline-secondary rounded-pill px-3 position-absolute top-50 end-0 translate-middle-y">Theme</button>
         </div>
     </header>
     <script>

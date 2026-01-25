@@ -69,7 +69,7 @@ app.post("upload", async (c) => {
     if (!file) return c.text("No file uploaded", 400);
     if (file.size > maxUploadBytes) {
         return c.text(
-            `Upload too large. Max ${config.MAX_UPLOAD_MB} MB allowed.`,
+            `Es sind maximal ${config.MAX_UPLOAD_MB} MB möglich.`,
             413,
         );
     }

@@ -313,6 +313,43 @@ nav {
     -webkit-backdrop-filter: blur(12px);
 }
 
+.theme-toggle-btn {
+    right: 0.5rem;
+}
+
+.header-spacer {
+    opacity: 0;
+    pointer-events: none;
+    color: transparent;
+    visibility: hidden;
+    border-color: transparent;
+    background: transparent;
+}
+
+@media (max-width: 576px) {
+    .header-bar {
+        flex-direction: row-reverse;
+        flex-wrap: wrap;
+    }
+
+    .theme-toggle-btn {
+        position: static !important;
+        transform: none !important;
+        margin: 0.5rem 0 0;
+        display: inline-flex;
+        align-self: flex-start;
+    }
+
+    .header-bar .btn {
+        width: auto;
+        margin-bottom: 0;
+    }
+
+    .header-spacer {
+        display: none;
+    }
+}
+
 .forensic-stale {
     animation: forensic-pulse 1.4s ease-in-out infinite;
     border-color: rgba(237, 25, 68, 0.6);

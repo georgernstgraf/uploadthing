@@ -96,6 +96,13 @@ Handlebars.registerPartial(
     "top",
     Deno.readTextFileSync("templates/top.hbs"),
 );
+Handlebars.registerPartial(
+    "forensic-report",
+    Deno.readTextFileSync("templates/forensic-report.hbs"),
+);
 export const forensicTemplate = Handlebars.compile<ForensicTemplateData>(
     Deno.readTextFileSync("templates/forensic.hbs"),
+);
+export const forensicReportTemplate = Handlebars.compile<ForensicTemplateData>(
+    Deno.readTextFileSync("templates/forensic-report.hbs"),
 );

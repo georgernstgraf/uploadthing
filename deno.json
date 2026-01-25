@@ -1,6 +1,6 @@
 {
     "tasks": {
-        "dev": "deno run -A --env-file --watch=templates/ main.ts",
+        "dev": "deno run -A --env-file --watch=templates/,.env main.ts",
         "start": "deno run -A --env-file main.ts",
         "test": "deno test -A",
         "testdb": "deno run -A --env-file main_test_db.ts",
