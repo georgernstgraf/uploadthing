@@ -11,7 +11,7 @@ import type { UserRegistrationRecord } from "../service/registrations.ts";
 
 type DirIndexTemplateData = TopType & {
     files: string[];
-    UNTERLAGEN_DIR: string;
+    unterlagen_dir: string;
 };
 
 type UploadTemplateData = TopType;
@@ -20,7 +20,7 @@ type SuccessTemplateData = TopType & {
     filename: string;
     filesize: string;
     md5sum: string;
-    durationSeconds: string;
+    duration_seconds: string;
 };
 
 type WhoamiTemplateData = TopType;
@@ -96,6 +96,13 @@ Handlebars.registerPartial(
     "top",
     Deno.readTextFileSync("templates/top.hbs"),
 );
+Handlebars.registerPartial(
+    "forensic-report",
+    Deno.readTextFileSync("templates/forensic-report.hbs"),
+);
 export const forensicTemplate = Handlebars.compile<ForensicTemplateData>(
     Deno.readTextFileSync("templates/forensic.hbs"),
+);
+export const forensicReportTemplate = Handlebars.compile<ForensicTemplateData>(
+    Deno.readTextFileSync("templates/forensic-report.hbs"),
 );

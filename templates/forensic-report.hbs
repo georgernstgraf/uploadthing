@@ -1,0 +1,137 @@
+<section class="container"
+         id="report"
+         hx-get="/forensic"
+         hx-trigger="load, every {{forensic_refresh_seconds}}s"
+         hx-target="#report"
+         hx-swap="innerHTML"
+         hx-select="#report > *"
+         hx-include="#timeselector form">
+    <h2 class="text-center mb-0" style="font-size: 1.1rem;">SchülerInnen und IP Adressen</h2>
+    <h6 class="text-center text-muted mb-2" style="font-size: 0.75rem;">
+        Zeitraum: {{#unless within12hours}}
+            {{startdate}}
+        {{/unless}}
+        {{starttime}} -
+        {{#if endtimeInFuture}}
+            jetzt
+        {{else}}
+            <span x-show="showEndTime" x-cloak>
+                {{enddate}}
+                {{endtime}}
+            </span>
+        {{/if}}
+    </h6>
+
+    <!-- Table 1: IPs with registered names -->
+    <h5 class="text-center mt-2 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto" style="border-color: var(--leisure-primary) !important; font-size: 0.8rem; letter-spacing: 0.05em;">Registrierte IP-Adressen</h5>
+    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
+        {{#each ips_with_name}}
+            {{#let (get @root.ip2users this.ip) as |user|}}
+            <div class="col">
+                <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column {{#if this.is_stale}}forensic-stale{{/if}}" style="background: rgba(255,255,255,0.85);">
+                    <summary class="fw-bold" style="cursor: pointer; list-style: none;">
+                        <div class="d-flex align-items-center justify-content-between w-100">
+                            <div class="d-flex align-items-center gap-1 overflow-hidden">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 26px; height: 26px; font-size: 0.75rem; font-weight: 700; background: linear-gradient(135deg, var(--leisure-primary), var(--leisure-primary-soft)); color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                                    {{givenNameInitial user.name}}
+                                </div>
+                                <div class="overflow-hidden">
+                                    <span class="d-block text-truncate" title="{{user.name}}" style="font-size: 0.85rem;">{{user.name}}</span>
+                                    <span class="text-muted fw-normal d-block text-truncate" style="font-size: 0.7rem;">{{this.ip}}</span>
+                                </div>
+                            </div>
+                            <div class="badge bg-light text-dark border ms-1 flex-shrink-0" style="font-size: 0.7rem;">
+                                {{this.count}}x
+                            </div>
+                        </div>
+                        <div class="text-muted fw-normal mt-0 text-end" style="font-size: 0.65rem;">
+                            zuletzt: {{this.lastseen}}
+                        </div>
+                    </summary>
+                    <div class="mt-2 pt-2 border-top flex-grow-1">
+                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem;">Historie</h6>
+                        <div class="row g-1">
+                            <div class="col-12">
+                                <div class="fw-bold text-center mb-1" style="font-size: 0.7rem; color: var(--leisure-primary);">User: {{user.name}}</div>
+                                <ul class="list-unstyled p-1 rounded mb-1" style="max-height: 80px; overflow-y: auto; background: var(--leisure-bg-light);">
+                                    {{#each (get @root.user_history user.id) }}
+                                         <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between" style="font-size: 0.7rem;">
+                                            <span class="text-muted">{{this.at}}</span>
+                                            <span class="history-item-ip">{{this.ip}}</span>
+                                        </li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            <div class="col-12">
+                                <div class="fw-bold text-center mb-1" style="font-size: 0.7rem; color: var(--leisure-primary);">IP: {{this.ip}}</div>
+                                <ul class="list-unstyled p-1 rounded" style="max-height: 80px; overflow-y: auto; background: var(--leisure-bg-light);">
+                                    {{#each (get @root.ip_history this.ip) }}
+                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between" style="font-size: 0.7rem;">
+                                            <span class="text-muted">{{this.at}}</span>
+                                            <span class="history-item-user">{{this.name}}</span>
+                                        </li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            {{/let}}
+        {{else}}
+            <div class="col-12 text-center text-muted fst-italic py-2" style="font-size: 0.8rem;">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
+        {{/each}}
+    </div>
+
+    <!-- Table 2: IPs without registered names -->
+    <h5 class="text-center mt-3 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto" style="border-color: var(--leisure-secondary) !important; font-size: 0.8rem; letter-spacing: 0.05em;">Nicht registrierte IP-Adressen</h5>
+    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
+        {{#each ips_without_name}}
+            <div class="col">
+                <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column" style="background: rgba(255,255,255,0.7);">
+                    <summary class="fw-bold" style="cursor: pointer; list-style: none;">
+                        <div class="d-flex align-items-center justify-content-between w-100">
+                            <div class="d-flex align-items-center gap-1 overflow-hidden">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 26px; height: 26px; font-size: 0.75rem; font-weight: 700; background: linear-gradient(135deg, #636e72, #2d3436); color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                                    ?
+                                </div>
+                                <div class="overflow-hidden">
+                                    <span class="d-block text-truncate" style="font-size: 0.85rem;">{{this.ip}}</span>
+                                    <span class="text-muted fw-normal" style="font-size: 0.7rem;">Unbekannt</span>
+                                </div>
+                            </div>
+                            <div class="badge bg-light text-dark border ms-1 flex-shrink-0" style="font-size: 0.7rem;">
+                                {{this.count}}x
+                            </div>
+                        </div>
+                        <div class="text-muted fw-normal mt-0 text-end" style="font-size: 0.65rem;">
+                            zuletzt: {{this.lastseen}}
+                        </div>
+                    </summary>
+                    <div class="mt-2 pt-2 border-top flex-grow-1">
+                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem;">Historie</h6>
+                        <div class="row g-1">
+                            <div class="col-12">
+                                <div class="fw-bold text-center mb-1 text-muted" style="font-size: 0.7rem;">Kein Benutzer</div>
+                                <p class="text-muted text-center fst-italic mb-1" style="font-size: 0.65rem;">Für diese IP ist kein Benutzer registriert.</p>
+                            </div>
+                            <div class="col-12">
+                                <div class="fw-bold text-center mb-1" style="font-size: 0.7rem; color: var(--leisure-primary);">IP: {{this.ip}}</div>
+                                <ul class="list-unstyled p-1 rounded" style="max-height: 80px; overflow-y: auto; background: var(--leisure-bg-light);">
+                                    {{#each (get @root.ip_history this.ip) }}
+                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between" style="font-size: 0.7rem;">
+                                            <span class="text-muted">{{this.at}}</span>
+                                            <span class="history-item-user">{{this.name}}</span>
+                                        </li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        {{else}}
+            <div class="col-12 text-center text-muted fst-italic py-2" style="font-size: 0.8rem;">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
+        {{/each}}
+    </div>
+</section>
