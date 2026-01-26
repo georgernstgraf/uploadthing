@@ -17,8 +17,8 @@ export type TopType = {
 
 export type ForensicIPCount = {
     ip: string;
-    count: number;
-    lastseen: string;
+    count: number; // wie oft
+    lastseen: string; // wann zuletzt
     lastseen_epoch?: number;
     is_stale?: boolean;
 };

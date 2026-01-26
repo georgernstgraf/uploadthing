@@ -16,7 +16,10 @@ const select_event_stmt = db.prepare(
   and (select strftime('%Y-%m-%dT%H:%M:%fZ',datetime(?, 'utc'))) order by at`,
 );
 
-export function getHistoryEventsRange(start: string, end: string): RegistrationRecord[] {
+export function getHistoryEventsRange(
+    start: string,
+    end: string,
+): RegistrationRecord[] {
     return select_event_stmt.all(start, end) as RegistrationRecord[];
 }
 
@@ -33,6 +36,36 @@ export type LatestRegistrationRecord = {
     userId: number;
     at: string;
 };
+
+const getLastRegistrationForIPInRange_stmt = db.prepare(`
+    WITH combined_registrations AS (
+        SELECT userId, ip, at FROM registrations
+        UNION ALL
+        SELECT userId, ip, at FROM forensic_registrations
+    )
+    SELECT userId
+    FROM combined_registrations
+    WHERE ip = ?
+        AND at BETWEEN (
+            SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))
+        ) AND (
+            SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))
+        )
+    ORDER BY at DESC
+    LIMIT 1
+`);
+export function lastRegistrationForIP_in_timerange(
+    ip: string,
+    start: Date,
+    end: Date,
+): number | null {
+    const result = getLastRegistrationForIPInRange_stmt.get(
+        ip,
+        start.toISOString(),
+        end.toISOString(),
+    ) as { userId: number } | undefined;
+    return result?.userId ?? null;
+}
 
 export function latestRegistrationsForIPsInRange(
     ips: string[],
@@ -63,7 +96,9 @@ const latestRegistrationForIP_stmt = db.prepare(
 );
 
 export function getLatestRegistrationForIP(ip: string): number | null {
-    const result = latestRegistrationForIP_stmt.get(ip) as { userId: number } | undefined;
+    const result = latestRegistrationForIP_stmt.get(ip) as
+        | { userId: number }
+        | undefined;
     return result?.userId ?? null;
 }
 

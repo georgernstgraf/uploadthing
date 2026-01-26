@@ -3,7 +3,7 @@ import { IPHistoryRecord, Variables } from "../lib/types.ts";
 import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
-import cf from "../lib/config.ts";
+import config from "../lib/config.ts";
 
 const forensicRouter = new Hono<{ Variables: Variables }>();
 const start_ms_earlier = 3.6 * 1.5e6; // 1.5 hours ago
@@ -23,7 +23,7 @@ forensicRouter.get("/", async (c) => {
     // if either startdate or starttime is missing, default to 2 hours ago
     if (!starttime) {
         starttime = localTimeString(new Date(Date.now() - start_ms_earlier));
-        const times = [...cf.spg_times, starttime];
+        const times = [...config.spg_times, starttime];
         times.sort();
         const index = times.indexOf(starttime);
         times.splice(index, 1); // remove the added time
@@ -31,11 +31,12 @@ forensicRouter.get("/", async (c) => {
     }
     const requestedEndDate = c.req.query("enddate");
     const requestedEndTime = c.req.query("endtime");
+
+    // endtime provided?
     const endtimeProvided = Boolean(requestedEndDate || requestedEndTime);
     let enddate = requestedEndDate ||
         localDateString(new Date(Date.now() + one_day_ms));
     let endtime = requestedEndTime || starttime;
-    // Calculate if start time is within the last 12 hours
     let startDateTime = new Date(`${startdate} ${starttime}`);
     let endDateTime = new Date(`${enddate} ${endtime}`);
 
@@ -45,20 +46,24 @@ forensicRouter.get("/", async (c) => {
         [startDateTime, endDateTime] = [endDateTime, startDateTime];
     }
 
+    // Calculate if start time is within the last 12 hours
     const within12hours = Math.abs(
         new Date().getTime() - startDateTime.getTime(),
     ) < twelve_hours_ms; // 12 hours in milliseconds
     const endtimeInFuture = endDateTime.getTime() > new Date().getTime();
 
     const now = new Date().getTime();
-    const staleThresholdMinutes = cf.forensic_stale_minutes;
+    const staleThresholdMinutes = config.forensic_stale_minutes;
     const staleThresholdMs = staleThresholdMinutes * 60 * 1000;
-    const refreshSeconds = cf.forensic_refresh_seconds;
+    const refreshSeconds = config.forensic_refresh_seconds;
 
     const ipfact_array = service.ipfact.ips_with_counts_in_range(
         `${startdate} ${starttime}`,
         `${enddate} ${endtime}`,
     );
+
+    // set is_stale flag to false if endtime is provided, else check against threshold
+    // if no endtime is provided, mark entries as stale if lastseen_epoch is older than threshold
     for (const iprec of ipfact_array) {
         if (typeof iprec.lastseen_epoch === "number") {
             iprec.is_stale = endtimeProvided
@@ -67,7 +72,12 @@ forensicRouter.get("/", async (c) => {
         }
     }
     const ipList = ipfact_array.map((f) => f.ip);
-    const ip2users = await service.user.ofIPs(ipList);
+
+    const ip2users = await service.user.ofIPs_in_timerange(
+        ipList,
+        startDateTime,
+        endDateTime,
+    );
     const registered_ips = service.user.get_registered_ips(ipList);
     const missingIps = ipList.filter((ip) => !ip2users.has(ip));
     if (missingIps.length > 0) {
@@ -101,7 +111,7 @@ forensicRouter.get("/", async (c) => {
         starttime,
         endtime,
         enddate,
-        spg_times: cf.spg_times,
+        spg_times: config.spg_times,
         forensic_ipcount_array: with_name, // Keep for backward compatibility
         ip2users,
         ip_history,
@@ -113,7 +123,7 @@ forensicRouter.get("/", async (c) => {
         endtimeInFuture,
         endtimeProvided,
         forensic_refresh_seconds: refreshSeconds,
-        page_title: cf.page_title,
+        page_title: config.page_title,
     };
 
     if (c.req.header("HX-Request") === "true") {

@@ -40,7 +40,7 @@ export function seenStatsForRange(
     end: string,
 ): ForensicIPCount[] {
     console.log(
-        `SEENSTATSFORRANGE called with params START: ${start}, END: ${end}`,
+        `repo.ipfact.seenStatsForRange called with params START: ${start}, END: ${end}`,
     );
     console.log(`start: ${start} -> ${db_strftime_to_utc(start)}`);
     console.log(`end: ${end} -> ${db_strftime_to_utc(end)}`);

@@ -26,7 +26,6 @@
         "@prisma/client": "npm:@prisma/client@^6.19.1",
         "he": "npm:he@^1.2.0",
         "prisma": "npm:prisma@^6.19.1",
-        "puppeteer": "npm:puppeteer@^24.35.0",
         "model": "./prisma/client/client.ts"
     },
     "fmt": {
