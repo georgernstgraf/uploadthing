@@ -1,4 +1,6 @@
-export async function sleep(s: number) {
+import config from "./config.ts";
+
+export async function sleep_seconds(s: number) {
     await new Promise((resolve) => setTimeout(resolve, s * 1000));
 }
 export function localTimeString(date?: Date): string {
@@ -10,6 +12,13 @@ export function localDateTimeString(date: Date): string {
 }
 export function localDateString(date: Date): string {
     return dateFormatter.format(date);
+}
+export function localAutoString(date: Date): string {
+    if ((date.getTime() + config.TODAY_HOURS_CUTOFF * 3600000) >= Date.now()) {
+        return localTimeString(date);
+    } else {
+        return localDateTimeString(date);
+    }
 }
 ///////////////////////////////////////////////////////////
 const timeFormatter = new Intl.DateTimeFormat("en-CA", {

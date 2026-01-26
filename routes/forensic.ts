@@ -40,6 +40,7 @@ forensicRouter.get("/", async (c) => {
     let startDateTime = new Date(`${startdate} ${starttime}`);
     let endDateTime = new Date(`${enddate} ${endtime}`);
 
+    // end before start => swap
     if (endDateTime.getTime() < startDateTime.getTime()) {
         [startdate, enddate] = [enddate, startdate];
         [starttime, endtime] = [endtime, starttime];
@@ -57,29 +58,30 @@ forensicRouter.get("/", async (c) => {
     const staleThresholdMs = staleThresholdMinutes * 60 * 1000;
     const refreshSeconds = config.forensic_refresh_seconds;
 
-    const ipfact_array = service.ipfact.ips_with_counts_in_range(
+    const forensic_ip_facts_in_range = service.ipfact.ips_with_counts_in_range(
         `${startdate} ${starttime}`,
         `${enddate} ${endtime}`,
     );
 
     // set is_stale flag to false if endtime is provided, else check against threshold
     // if no endtime is provided, mark entries as stale if lastseen_epoch is older than threshold
-    for (const iprec of ipfact_array) {
+    for (const iprec of forensic_ip_facts_in_range) {
         if (typeof iprec.lastseen_epoch === "number") {
             iprec.is_stale = endtimeProvided
                 ? false
                 : now - iprec.lastseen_epoch > staleThresholdMs;
         }
     }
-    const ipList = ipfact_array.map((f) => f.ip);
+    const ips_in_range = forensic_ip_facts_in_range.map((f) => f.ip);
 
     const ip2users = await service.user.ofIPs_in_timerange(
-        ipList,
+        ips_in_range,
         startDateTime,
         endDateTime,
     );
-    const registered_ips = service.user.get_registered_ips(ipList);
-    const missingIps = ipList.filter((ip) => !ip2users.has(ip));
+    // TODO continue understandeing hiere
+    const registered_ips = service.user.get_registered_ips(ips_in_range);
+    const missingIps = ips_in_range.filter((ip) => !ip2users.has(ip));
     if (missingIps.length > 0) {
         const registrationUsers = await service.user
             .ofIPsFromRegistrationsInRange(
@@ -95,16 +97,17 @@ forensicRouter.get("/", async (c) => {
 
     const { with_name, without_name } = service.ipfact
         .split_ips_by_registration_status(
-            ipfact_array,
+            forensic_ip_facts_in_range,
             registered_ips,
         );
 
     const ip_history = new Map<string, IPHistoryRecord[]>();
-    for (const iprec of ipfact_array) {
+    for (const iprec of forensic_ip_facts_in_range) {
         ip_history.set(iprec.ip, service.registrations.ofIP(iprec.ip));
     }
     const user_history = service.registrations.ofEmail();
     const templateData = {
+        // simple data
         remote_ip: c.get("remoteip"),
         remote_user,
         startdate,

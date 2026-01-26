@@ -50,6 +50,7 @@ model forensic_registrations {
 model abgaben {
   id       Int      @id @default(autoincrement())
   userId   Int
+  ip       String
   filename String
   at       DateTime
 

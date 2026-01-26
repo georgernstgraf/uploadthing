@@ -65,3 +65,32 @@ export function db_strftime_to_utc(date: string) {
     }
     return result.formatted;
 }
+export function ips_in_range(start: Date, end: Date): string[] {
+    const stmt = db.prepare(
+        `SELECT DISTINCT ip FROM ipfact
+        WHERE seen BETWEEN
+        (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))) AND
+        (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))`,
+    );
+    return stmt.all(start.toISOString(), end.toISOString()).map((row) =>
+        row.ip
+    );
+}
+
+export function getHistoryForIPInRangeDesc(
+    ip: string,
+    start: Date,
+    end: Date,
+): Date[] {
+    const stmt = db.prepare(
+        `SELECT seen FROM ipfact
+        WHERE ip = ? AND seen BETWEEN
+        (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))) AND
+        (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))
+        ORDER BY seen DESC`,
+    );
+    const rows = stmt.all(ip, start.toISOString(), end.toISOString()) as {
+        seen: string;
+    }[];
+    return rows.map((row) => new Date(row.seen));
+}

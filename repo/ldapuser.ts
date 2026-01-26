@@ -1,5 +1,5 @@
 import cf from "../lib/config.ts";
-import { localTimeString, sleep } from "../lib/timefunc.ts";
+import { localTimeString, sleep_seconds } from "../lib/timefunc.ts";
 import { LdapUserType } from "../lib/types.ts";
 import ldap from "ldapjs";
 
@@ -59,7 +59,7 @@ class ServiceClientFactory {
                         cf.ldap_retry_wait_seconds - diff
                     }s ...`,
                 );
-                await sleep(cf.ldap_retry_wait_seconds - diff);
+                await sleep_seconds(cf.ldap_retry_wait_seconds - diff);
             }
             this.lasttry = new Date();
             try {

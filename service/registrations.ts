@@ -14,6 +14,29 @@ export function ofIP(ip: string) {
     }));
 }
 
+export function ofIPInRange(
+    ip: string,
+    start: Date,
+    end: Date,
+): { at: string; user: { id: number; name: string; email: string; klasse?: string } }[] {
+    const registrations = repo.registrations.getRegistrationsByIPInRange(
+        ip,
+        start,
+        end,
+    );
+    if (registrations.length === 0) return [];
+
+    return registrations.map((r) => ({
+        at: localDateTimeString(new Date(r.at)),
+        user: {
+            id: r.userId,
+            name: r.userId.toString(),
+            email: "",
+            klasse: "",
+        },
+    }));
+}
+
 export function ofEmail(): Map<number, UserRegistrationRecord[]> {
     const registrations = repo.registrations.getHistoryEventsRange(
         new Date().toISOString().split("T")[0],

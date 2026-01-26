@@ -130,7 +130,11 @@ app.post("upload", async (c) => {
     const durationSeconds = ((endTime - beginTime) / 1000).toFixed(1);
 
     if (remote_user.id) {
-        await service.abgaben.recordSubmission(remote_user.id, real_filename);
+        await service.abgaben.recordSubmission(
+            remote_user.id,
+            remote_ip,
+            real_filename,
+        );
     }
 
     return c.html(
