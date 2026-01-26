@@ -15,7 +15,7 @@ const twelve_hours_ms = 12 * 3.6e6;
 forensicRouter.get("/", async (c) => {
     const remote_user = c.get("remoteuser");
     if (!remote_user) {
-        return c.text("Unauthorized", 401);
+        return c.redirect("/whoami");
     }
     let startdate = c.req.query("startdate") ||
         localDateString(new Date(Date.now() - start_ms_earlier));
@@ -71,11 +71,12 @@ forensicRouter.get("/", async (c) => {
     const registered_ips = service.user.get_registered_ips(ipList);
     const missingIps = ipList.filter((ip) => !ip2users.has(ip));
     if (missingIps.length > 0) {
-        const registrationUsers = await service.user.ofIPsFromRegistrationsInRange(
-            missingIps,
-            `${startdate} ${starttime}`,
-            `${enddate} ${endtime}`,
-        );
+        const registrationUsers = await service.user
+            .ofIPsFromRegistrationsInRange(
+                missingIps,
+                `${startdate} ${starttime}`,
+                `${enddate} ${endtime}`,
+            );
         for (const [ip, user] of registrationUsers.entries()) {
             ip2users.set(ip, user);
             registered_ips.add(ip);
