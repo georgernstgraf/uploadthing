@@ -2,6 +2,7 @@
     "tasks": {
         "dev": "deno run -A --env-file --watch=templates/,.env main.ts",
         "start": "deno run -A --env-file main.ts",
+        "stop": "scripts/stop.sh",
         "test": "deno test -A",
         "testdb": "deno run -A --env-file main_test_db.ts",
         "browser-test": "deno run -A --env-file browser_test.ts",
