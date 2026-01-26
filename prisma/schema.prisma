@@ -37,6 +37,16 @@ model registrations {
   @@index([ip])
 }
 
+model forensic_registrations {
+  id     Int      @id @default(autoincrement())
+  ip     String
+  userId Int
+  at     DateTime
+
+  @@index([userId])
+  @@index([ip])
+}
+
 model abgaben {
   id       Int      @id @default(autoincrement())
   userId   Int
