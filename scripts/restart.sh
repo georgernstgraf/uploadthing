@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# einfach ordentlich killen, die startloop kümmert sich um den restart
 
 set -euo pipefail
 
