@@ -20,7 +20,7 @@ export function for_range(
     start: Date,
     end: Date,
     calculate_stale: boolean,
-): IpForensics[] {
+): { registered: IpForensics[]; unregistered: IpForensics[] } {
     const rv: IpForensics[] = [];
     const seen_ips = repo.ipfact.ips_in_range(start, end); // start, end: Date
     for (const ip of seen_ips) {
@@ -58,7 +58,8 @@ export function for_range(
         );
         rv.push(ip_forensics);
     }
-    return rv.toSorted((a, b) =>
-        b.seen_at_desc[0].localeCompare(a.seen_at_desc[0])
-    );
+    rv.sort((a, b) => b.seen_at_desc[0].localeCompare(a.seen_at_desc[0]));
+    const registered = rv.filter((ipf) => ipf.registrations.length > 0);
+    const unregistered = rv.filter((ipf) => ipf.registrations.length === 0);
+    return { registered, unregistered };
 }
