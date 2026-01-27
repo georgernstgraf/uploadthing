@@ -27,8 +27,6 @@ Deno.test("GET /forensic/logs - Forensic logs", async () => {
     assertExists(text);
 });
 
-
-
 Deno.test("GET /ldap?email=graf - LDAP search", async () => {
     const res = await fetch(`${BASE_URL}/ldap?email=graf`);
     assertEquals(res.status, 200);
@@ -46,6 +44,17 @@ Deno.test("POST /activeips - Register active IPs", async () => {
     const json = await res.json();
     assertEquals(json.ok, "true");
     assertExists(json.count);
+});
+
+Deno.test("POST /register - Register User to own IP", async () => {
+    const testEmail = "grafg@spengergasse.at";
+    const res = await fetch(`${BASE_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `email=${encodeURIComponent(testEmail)}`,
+    });
+    await res.text(); // consume body to avoid resource leak
+    assertEquals(res.status, 200);
 });
 
 Deno.test("GET /unterlagen - Unterlagen directory", async () => {

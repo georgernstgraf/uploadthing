@@ -185,13 +185,13 @@ app.post("register", async (c) => {
     try {
         const body = await c.req.parseBody();
         const email = body.email as string;
-        const ldapuser = await service.user.getUserByEmail(email);
-        if (!ldapuser) {
+        const user = await service.user.getUserByEmail(email);
+        if (!user) {
             return c.text("User not found", 404);
         }
         const remoteIp = c.get("remoteip");
-        await service.user.register(ldapuser, remoteIp);
-        return c.redirect("/");
+        await service.user.register(user, remoteIp);
+        return c.redirect("/", 303);
     } catch (e) {
         return c.text((e as Error).message, 400);
     }

@@ -53,34 +53,22 @@ forensicRouter.get("/", async (c) => {
     ) < twelve_hours_ms; // 12 hours in milliseconds
     const endtimeInFuture = endDateTime.getTime() > new Date().getTime();
 
-    const now = new Date().getTime();
-    const staleThresholdMinutes = config.forensic_stale_minutes;
-    const staleThresholdMs = staleThresholdMinutes * 60 * 1000;
     const refreshSeconds = config.forensic_refresh_seconds;
 
-    const forensic_ip_facts_in_range = service.ipfact.ips_with_counts_in_range(
-        `${startdate} ${starttime}`,
-        `${enddate} ${endtime}`,
+    const { registered, unregistered } = service.ipforensics.for_range(
+        startDateTime,
+        endDateTime,
+        !endtimeProvided,
     );
-
-    // set is_stale flag to false if endtime is provided, else check against threshold
-    // if no endtime is provided, mark entries as stale if lastseen_epoch is older than threshold
-    for (const iprec of forensic_ip_facts_in_range) {
-        if (typeof iprec.lastseen_epoch === "number") {
-            iprec.is_stale = endtimeProvided
-                ? false
-                : now - iprec.lastseen_epoch > staleThresholdMs;
-        }
-    }
-    const ips_in_range = forensic_ip_facts_in_range.map((f) => f.ip);
+    const ips_in_range = [...registered, ...unregistered].map((entry) =>
+        entry.ip
+    );
 
     const ip2users = await service.user.ofIPs_in_timerange(
         ips_in_range,
         startDateTime,
         endDateTime,
     );
-    // TODO continue understandeing hiere
-    const registered_ips = service.user.get_registered_ips(ips_in_range);
     const missingIps = ips_in_range.filter((ip) => !ip2users.has(ip));
     if (missingIps.length > 0) {
         const registrationUsers = await service.user
@@ -91,18 +79,24 @@ forensicRouter.get("/", async (c) => {
             );
         for (const [ip, user] of registrationUsers.entries()) {
             ip2users.set(ip, user);
-            registered_ips.add(ip);
         }
     }
 
-    const { with_name, without_name } = service.ipfact
-        .split_ips_by_registration_status(
-            forensic_ip_facts_in_range,
-            registered_ips,
-        );
+    const with_name = registered.map((entry) => ({
+        ip: entry.ip,
+        count: entry.seen_count,
+        lastseen: entry.seen_at_desc[0] ?? "",
+        is_stale: entry.is_stale,
+    }));
+    const without_name = unregistered.map((entry) => ({
+        ip: entry.ip,
+        count: entry.seen_count,
+        lastseen: entry.seen_at_desc[0] ?? "",
+        is_stale: entry.is_stale,
+    }));
 
     const ip_history = new Map<string, IPHistoryRecord[]>();
-    for (const iprec of forensic_ip_facts_in_range) {
+    for (const iprec of [...registered, ...unregistered]) {
         ip_history.set(iprec.ip, service.registrations.ofIP(iprec.ip));
     }
     const user_history = service.registrations.ofEmail();
