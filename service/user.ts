@@ -39,7 +39,7 @@ export async function ofIPs_in_timerange(
                     id: user.id,
                     name: user.name,
                     email: user.email,
-                    klasse: user.klasse ?? undefined,
+                    klasse: user.klasse ?? "None",
                 });
             }
         }
@@ -59,7 +59,7 @@ export async function getRegisteredByIp(ip: string): Promise<UserType | null> {
         id: user.id,
         name: user.name,
         email: user.email,
-        klasse: user.klasse ?? undefined,
+        klasse: user.klasse ?? "None",
     };
 }
 
@@ -125,4 +125,19 @@ export async function getUsersByEmails(
 ): Promise<UserRecord[]> {
     if (emails.length === 0) return [];
     return await usersRepo.getByEmails(emails);
+}
+
+export async function getUserByEmail(
+    email: string,
+): Promise<UserType | null> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await usersRepo.getByEmail(normalizedEmail);
+    if (!user) return null;
+
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        klasse: user.klasse ?? undefined,
+    };
 }

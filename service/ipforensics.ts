@@ -13,7 +13,11 @@ export type IpForensics = {
     submissions: Record<string, string>[]; // <datestring, filename>
 };
 
-export function for_range(start: Date, end: Date): IpForensics[] {
+export function for_range(
+    start: Date,
+    end: Date,
+    calculate_stale: boolean,
+): IpForensics[] {
     const rv: IpForensics[] = [];
     const seen_ips = repo.ipfact.ips_in_range(start, end); // start, end: Date
     for (const ip of seen_ips) {
@@ -39,7 +43,7 @@ export function for_range(start: Date, end: Date): IpForensics[] {
             start,
             end,
         );
-        if (seen_at_desc.length > 0) {
+        if (calculate_stale && seen_at_desc.length > 0) {
             ip_forensics.is_stale = seen_at_desc[0].valueOf() < new Date(
                 Date.now() - config.forensic_stale_minutes * 60 * 1000,
             ).valueOf();

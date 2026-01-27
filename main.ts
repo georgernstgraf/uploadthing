@@ -185,7 +185,7 @@ app.post("register", async (c) => {
     try {
         const body = await c.req.parseBody();
         const email = body.email as string;
-        const ldapuser = await service.ldap.getUserByEmail(email);
+        const ldapuser = await service.user.getUserByEmail(email);
         if (!ldapuser) {
             return c.text("User not found", 404);
         }
