@@ -2,7 +2,6 @@
          id="report"
          hx-get="/forensic"
          hx-trigger="load, every {{forensic_refresh_seconds}}s"
-         hx-on:htmx:beforeRequest="if (document.querySelector('#report details[open]')) event.preventDefault()"
          hx-target="#report"
          hx-swap="innerHTML"
          hx-select="#report > *"
@@ -149,3 +148,14 @@
         {{/each}}
     </div>
 </section>
+<script>
+    document.addEventListener("htmx:beforeRequest", (event) => {
+        const trigger = event.detail.elt;
+        if (!trigger || !trigger.closest("#report")) {
+            return;
+        }
+        if (document.querySelector("#report details[open]")) {
+            event.preventDefault();
+        }
+    });
+</script>
