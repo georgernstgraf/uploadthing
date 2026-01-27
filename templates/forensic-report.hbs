@@ -33,10 +33,20 @@
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 26px; height: 26px; font-size: 0.75rem; font-weight: 700; background: linear-gradient(135deg, var(--leisure-primary), var(--leisure-primary-soft)); color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
-                                    {{givenNameInitial this.registrations.[0].user.name}}
+                                    {{#if this.registrations.[0].user}}
+                                        {{givenNameInitial this.registrations.[0].user.name}}
+                                    {{else}}
+                                        ?
+                                    {{/if}}
                                 </div>
                                 <div class="overflow-hidden">
-                                    <span class="d-block text-truncate" title="{{this.registrations.[0].user.name}}" style="font-size: 0.85rem;">{{this.registrations.[0].user.name}}</span>
+                                    <span class="d-block text-truncate" title="{{this.registrations.[0].user.name}}" style="font-size: 0.85rem;">
+                                        {{#if this.registrations.[0].user}}
+                                            {{this.registrations.[0].user.name}}
+                                        {{else}}
+                                            Unbekannt
+                                        {{/if}}
+                                    </span>
                                     <span class="text-muted fw-normal d-block text-truncate" style="font-size: 0.7rem;">{{this.ip}}</span>
                                 </div>
                             </div>
@@ -52,12 +62,18 @@
                         <h6 class="text-center w-100 mb-1 text-uppercase fw-bold text-muted" style="font-size: 0.65rem;">Historie</h6>
                         <div class="row g-1">
                             <div class="col-12">
-                                <div class="fw-bold text-center mb-1" style="font-size: 0.7rem; color: var(--leisure-primary);">User: {{this.registrations.[0].user.name}}</div>
+                                <div class="fw-bold text-center mb-1" style="font-size: 0.7rem; color: var(--leisure-primary);">Registrierungen</div>
                                 <ul class="list-unstyled p-1 rounded mb-1" style="max-height: 80px; overflow-y: auto; background: var(--leisure-bg-light);">
                                     {{#each this.registrations}}
                                          <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between" style="font-size: 0.7rem;">
                                             <span class="text-muted">{{this.at}}</span>
-                                            <span class="history-item-ip">{{../ip}}</span>
+                                            <span class="history-item-ip">
+                                                {{#if this.user}}
+                                                    {{this.user.name}}
+                                                {{else}}
+                                                    Unbekannt
+                                                {{/if}}
+                                            </span>
                                         </li>
                                     {{/each}}
                                 </ul>
