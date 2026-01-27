@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+cd
+cd uploadthing
+
 touch STOPPED
 
 pids=$(fuser -f uploadthing.db 2>/dev/null | tr -d "\n")
