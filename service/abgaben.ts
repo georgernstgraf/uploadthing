@@ -23,8 +23,8 @@ export function getSubmissionsForUser(userId: number): RepoAbgabeRecord[] {
  * Fetch all submissions within a date range.
  */
 export function getSubmissionsInRange(
-    start: string,
-    end: string,
+    start: Date,
+    end: Date,
 ): RepoAbgabeRecord[] {
     return repo.abgaben.getByDateRange(start, end);
 }
@@ -33,8 +33,8 @@ export function getSubmissionsInRange(
  */
 export function getUserSubmissionsInRange(
     userId: number,
-    start: string,
-    end: string,
+    start: Date,
+    end: Date,
 ): RepoAbgabeRecord[] {
     return repo.abgaben.getByUserIdAndDateRange(userId, start, end);
 }

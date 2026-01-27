@@ -2,6 +2,7 @@ import { userRecordToUserType } from "../lib/user_mapper.ts";
 import type { UserType } from "../lib/types.ts";
 import * as usersRepo from "../repo/users.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
+import type { RepoUserRecord } from "../repo/users.ts";
 
 /**
  * Fetch the latest registered user for a single IP.
@@ -49,4 +50,26 @@ export async function registerUser(user: UserType) {
  */
 export async function registerManyUsers(users: UserType[]) {
     await usersRepo.upsertMany(users);
+}
+
+/**
+ * Fetch a user by id for a given IP and timestamp.
+ * Prefers forensic registrations when matching an IP and time.
+ */
+export async function by_id_ip_at(
+    userId: number,
+    ip: string,
+    at: Date,
+): Promise<RepoUserRecord | null> {
+    const start = new Date(at);
+    start.setSeconds(start.getSeconds() - 1);
+    const end = new Date(at);
+    end.setSeconds(end.getSeconds() + 1);
+    const registrations = registrationsRepo.byIPInRange(ip, start, end);
+    const matches = registrations.filter((r) => r.userId === userId);
+    if (matches.length === 0) return null;
+    const targetTime = at.getTime();
+    const match = matches.find((r) => r.at.getTime() === targetTime) ??
+        matches[0];
+    return await usersRepo.getById(match.userId);
 }

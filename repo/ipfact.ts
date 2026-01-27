@@ -3,13 +3,6 @@ import { db } from "./db.ts";
 Zu den Zeiten:
 
 DATENBANK speichert Zeiten in UTC.
-
-Datetime berücksichtigt die lokale Zeitzone.
-Beispiel:
-    datetime('2025-12-18' || ' 08:00:00', 'utc')
-    2025-12-18 07:00:00
-    datetime('2026-08-18' || ' 08:00:00', 'utc')
-    2026-08-18 06:00:00
 */
 const registerSeen_stmt = db.prepare(
     "INSERT INTO ipfact (ip, seen) VALUES (?, ?)",
@@ -37,12 +30,9 @@ export function ips_in_range(start: Date, end: Date): string[] {
     const stmt = db.prepare(
         `SELECT DISTINCT ip FROM ipfact
         WHERE seen BETWEEN
-        (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))) AND
-        (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))`,
+        ? AND ?`,
     );
-    return stmt.all(start.toISOString(), end.toISOString()).map((row) =>
-        row.ip
-    );
+    return stmt.all(start.toISOString(), end.toISOString()).map((row) => row.ip);
 }
 
 /**
@@ -60,8 +50,7 @@ export function getHistoryForIPInRangeDesc(
     const stmt = db.prepare(
         `SELECT seen FROM ipfact
         WHERE ip = ? AND seen BETWEEN
-        (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))) AND
-        (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))
+        ? AND ?
         ORDER BY seen DESC`,
     );
     const rows = stmt.all(ip, start.toISOString(), end.toISOString()) as {

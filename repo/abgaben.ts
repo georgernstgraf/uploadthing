@@ -39,9 +39,7 @@ export function getByUserId(userId: number): RepoAbgabeRecord[] {
 
 const getByUserAndRange_stmt = db.prepare(
     `SELECT id, userId, ip, filename, at FROM abgaben
-    WHERE userId = ? AND at BETWEEN
-    (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))) AND
-    (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))
+    WHERE userId = ? AND at BETWEEN ? AND ?
     ORDER BY at DESC`,
 );
 
@@ -50,21 +48,19 @@ const getByUserAndRange_stmt = db.prepare(
  */
 export function getByUserIdAndDateRange(
     userId: number,
-    start: string,
-    end: string,
+    start: Date,
+    end: Date,
 ): RepoAbgabeRecord[] {
     return getByUserAndRange_stmt.all(
         userId,
-        start,
-        end,
+        start.toISOString(),
+        end.toISOString(),
     ) as RepoAbgabeRecord[];
 }
 
 const getByRange_stmt = db.prepare(
     `SELECT id, userId, ip, filename, at FROM abgaben
-    WHERE at BETWEEN
-    (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))) AND
-    (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))
+    WHERE at BETWEEN ? AND ?
     ORDER BY at DESC`,
 );
 
@@ -72,17 +68,18 @@ const getByRange_stmt = db.prepare(
  * Fetch submissions within a date range.
  */
 export function getByDateRange(
-    start: string,
-    end: string,
+    start: Date,
+    end: Date,
 ): RepoAbgabeRecord[] {
-    return getByRange_stmt.all(start, end) as RepoAbgabeRecord[];
+    return getByRange_stmt.all(
+        start.toISOString(),
+        end.toISOString(),
+    ) as RepoAbgabeRecord[];
 }
 
 const getByIPAndRange_stmt = db.prepare(
     `SELECT id, userId, ip, filename, at FROM abgaben
-    WHERE ip = ? AND at BETWEEN
-    (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc'))) AND
-    (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))
+    WHERE ip = ? AND at BETWEEN ? AND ?
     ORDER BY at DESC`,
 );
 

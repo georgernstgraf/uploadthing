@@ -13,13 +13,10 @@ const registrationsByIPInRange_stmt = db.prepare(
         UNION ALL
         SELECT userId, ip, at FROM forensic_registrations
     )
-    SELECT userId, ip,
-        strftime('%Y-%m-%dT%H:%M:%f', datetime(at, 'localtime')) as at
+    SELECT userId, ip, at
     FROM combined_registrations
     WHERE ip = ?
-        AND at BETWEEN
-        (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))
-        AND (SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')))
+        AND at BETWEEN ? AND ?
     ORDER BY at DESC`,
 );
 
@@ -32,11 +29,17 @@ export function byIPInRange(
     start: Date,
     end: Date,
 ): RepoRegistrationRecord[] {
-    return registrationsByIPInRange_stmt.all(
+    const rows = registrationsByIPInRange_stmt.all(
         ip,
         start.toISOString(),
         end.toISOString(),
-    ) as RepoRegistrationRecord[];
+    ) as { userId: number; ip: string; at: string }[];
+    return rows.map((row) => ({
+        id: 0,
+        ip: row.ip,
+        userId: row.userId,
+        at: new Date(row.at),
+    }));
 }
 
 const latestRegistrationForIP_stmt = db.prepare(
