@@ -2,7 +2,6 @@ import { userRecordToUserType } from "../lib/user_mapper.ts";
 import type { UserType } from "../lib/types.ts";
 import * as usersRepo from "../repo/users.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
-import type { RepoUserRecord } from "../repo/users.ts";
 
 /**
  * Fetch the latest registered user for a single IP.
