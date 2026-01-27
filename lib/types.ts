@@ -22,16 +22,6 @@ export type ForensicIPCount = {
     lastseen_epoch?: number;
     is_stale?: boolean;
 };
-// key: IP
-export type IPHistoryRecord = {
-    name: string;
-    at: string;
-};
-// key: email
-export type UserHistoryRecord = {
-    ip: string;
-    at: string;
-};
 
 export type UserType = {
     id?: number;
