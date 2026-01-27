@@ -47,6 +47,10 @@ export function ips_in_range(start: Date, end: Date): string[] {
 
 /**
  * Fetch IP seen timestamps in descending order within a UTC range.
+ * @param ip - IP address to query.
+ * @param start - Range start (inclusive).
+ * @param end - Range end (inclusive).
+ * @returns Array of seen timestamps in descending order.
  */
 export function getHistoryForIPInRangeDesc(
     ip: string,

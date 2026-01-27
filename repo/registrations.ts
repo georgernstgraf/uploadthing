@@ -25,6 +25,7 @@ const registrationsByIPInRange_stmt = db.prepare(
 
 /**
  * Fetch registrations by an IP within a UTC date range.
+ * RepoRegistrationRecord: id, ip, userId, at (Date)
  */
 export function byIPInRange(
     ip: string,

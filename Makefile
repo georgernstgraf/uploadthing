@@ -9,7 +9,9 @@ pull:
 	cp uploadthing.db ~/OneDrive/
 
 push:
-	scp uploadthing.db sense:uploadthing/
+	echo "vacuum into '/tmp/uploadthing.db'" | sqlite3 uploadthing.db
+	scp /tmp/uploadthing.db sense:uploadthing/
+	rm /tmp/uploadthing.db
 
 logsync:
 	rsync -av --delete sense:/var/log/exampy/ /home/georg/exampy/

@@ -44,7 +44,7 @@ export async function for_range(
         ip_forensics.seen_at_desc = seen_at_desc.map((dt) =>
             localAutoString(new Date(dt))
         );
-        ip_forensics.registrations = await service.registrations.ofIPInRange(
+        ip_forensics.registrations = await service.registrations.byIPInRange(
             ip,
             start,
             end,
