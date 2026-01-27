@@ -10,7 +10,7 @@ export type ServiceIpForensics = {
     seen_at_desc: string[]; // displayable times
     registrations: { at: string; user: UserType | null }[]; // sorted desc by at
     is_stale: boolean;
-    submissions: Record<string, string>[]; // <datestring, filename>
+    submissions: { at: string; filename: string }[];
 };
 
 /**

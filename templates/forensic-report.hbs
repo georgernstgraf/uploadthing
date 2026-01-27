@@ -78,6 +78,21 @@
                                 </ul>
                             </div>
                             <div class="col-12">
+                                <div class="fw-bold text-center mb-1" style="font-size: 0.7rem; color: var(--leisure-primary);">Abgaben</div>
+                                {{#if this.submissions.length}}
+                                    <ul class="list-unstyled p-1 rounded mb-1" style="max-height: 80px; overflow-y: auto; background: var(--leisure-bg-light);">
+                                        {{#each this.submissions}}
+                                             <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between" style="font-size: 0.7rem;">
+                                                <span class="text-muted">{{this.at}}</span>
+                                                <span class="history-item-ip">{{this.filename}}</span>
+                                            </li>
+                                        {{/each}}
+                                    </ul>
+                                {{else}}
+                                    <p class="text-muted text-center fst-italic mb-1" style="font-size: 0.65rem;">Keine Abgaben im Zeitraum.</p>
+                                {{/if}}
+                            </div>
+                            <div class="col-12">
                                 <div class="fw-bold text-center mb-1" style="font-size: 0.7rem; color: var(--leisure-primary);">IP: {{this.ip}}</div>
                                 <ul class="list-unstyled p-1 rounded" style="max-height: 80px; overflow-y: auto; background: var(--leisure-bg-light);">
                                     {{#each this.seen_at_desc }}

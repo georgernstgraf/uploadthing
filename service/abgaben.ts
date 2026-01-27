@@ -46,9 +46,10 @@ export function getIPSubmissionsInRange(
     ip: string,
     start: Date,
     end: Date,
-): Record<string, string>[] {
+): { at: string; filename: string }[] {
     const submissions = repo.abgaben.getByIPAndDateRange(ip, start, end);
     return submissions.map((submission) => ({
-        [submission.at.toISOString()]: submission.filename,
+        at: submission.at.toISOString(),
+        filename: submission.filename,
     }));
 }
