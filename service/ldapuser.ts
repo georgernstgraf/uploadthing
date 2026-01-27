@@ -1,6 +1,9 @@
 import * as repo from "../repo/repo.ts";
 import { LdapUserType, UserType } from "../lib/types.ts";
 import { registerManyUsers, registerUser } from "./user.ts";
+/**
+ * Fetch a user from LDAP by exact email and register locally.
+ */
 export async function getUserByEmail(
     email: string,
 ): Promise<UserType | null> {
@@ -18,6 +21,9 @@ export async function getUserByEmail(
     }
     return user;
 }
+/**
+ * Search LDAP users by email prefix and register results locally.
+ */
 export async function searchUserByEmailStart(
     startstring: string,
 ): Promise<UserType[]> {
@@ -42,6 +48,9 @@ export async function searchUserByEmailStart(
     }
     return result;
 }
+/**
+ * Convert LDAP user data into the local user shape.
+ */
 function userFromLdap(ldapUser: LdapUserType): UserType {
     return {
         email: ldapUser.mail.toLocaleLowerCase(),
@@ -49,6 +58,9 @@ function userFromLdap(ldapUser: LdapUserType): UserType {
         klasse: ldapUser.physicalDeliveryOfficeName || "None",
     };
 }
+/**
+ * Close LDAP service client resources.
+ */
 export async function close() {
     // await sleep(1);
     await repo.ldap.serviceClientFactory.close();

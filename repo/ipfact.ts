@@ -15,9 +15,15 @@ Beispiel:
 const registerSeen_stmt = db.prepare(
     "INSERT INTO ipfact (ip, seen) VALUES (?, ?)",
 );
+/**
+ * Insert a single IP seen timestamp.
+ */
 export function registerSeen(ip: string, seen: Date) {
     registerSeen_stmt.run(ip, seen);
 }
+/**
+ * Insert multiple IP seen timestamps in one statement.
+ */
 export function registerSeenMany(ips: string[], seen: Date) {
     const placeholders = ips.map(() => "(?, ?)").join(", ");
     const sql = `INSERT INTO ipfact (ip, seen) VALUES ${placeholders}`;
@@ -35,6 +41,9 @@ const seenStatsForRange_stmt = db.prepare(
     seenStatsForRange_sql,
 );
 
+/**
+ * Fetch IP counts and last seen timestamps for a range.
+ */
 export function seenStatsForRange(
     start: string,
     end: string,
@@ -52,9 +61,15 @@ export function seenStatsForRange(
     );
     return seenStatsForRange_stmt.all(start, end);
 }
+/**
+ * Delete all ipfact records.
+ */
 export function deleteAll() {
     db.exec("DELETE FROM ipfact");
 }
+/**
+ * Convert a local datetime string to UTC using sqlite strftime.
+ */
 export function db_strftime_to_utc(date: string) {
     const stmt = db.prepare(
         "SELECT strftime('%Y-%m-%dT%H:%M:%fZ', datetime(?, 'utc')) as formatted;",
@@ -65,6 +80,9 @@ export function db_strftime_to_utc(date: string) {
     }
     return result.formatted;
 }
+/**
+ * List distinct IPs seen within a UTC range.
+ */
 export function ips_in_range(start: Date, end: Date): string[] {
     const stmt = db.prepare(
         `SELECT DISTINCT ip FROM ipfact
@@ -77,6 +95,9 @@ export function ips_in_range(start: Date, end: Date): string[] {
     );
 }
 
+/**
+ * Fetch IP seen timestamps in descending order within a UTC range.
+ */
 export function getHistoryForIPInRangeDesc(
     ip: string,
     start: Date,

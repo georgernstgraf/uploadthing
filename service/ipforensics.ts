@@ -13,6 +13,9 @@ export type IpForensics = {
     submissions: Record<string, string>[]; // <datestring, filename>
 };
 
+/**
+ * Aggregate forensic data for all IPs seen in a time range.
+ */
 export function for_range(
     start: Date,
     end: Date,
@@ -55,5 +58,7 @@ export function for_range(
         );
         rv.push(ip_forensics);
     }
-    return rv.toSorted((a, b) => b.seen_count - a.seen_count);
+    return rv.toSorted((a, b) =>
+        b.seen_at_desc[0].localeCompare(a.seen_at_desc[0])
+    );
 }

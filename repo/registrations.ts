@@ -16,6 +16,9 @@ const select_event_stmt = db.prepare(
   and (select strftime('%Y-%m-%dT%H:%M:%fZ',datetime(?, 'utc'))) order by at`,
 );
 
+/**
+ * Fetch registration events between two local time strings.
+ */
 export function getHistoryEventsRange(
     start: string,
     end: string,
@@ -27,6 +30,9 @@ const registrationsByIP_prepared = db.prepare(
     `select userId, at from registrations where ip = ? order by at desc`,
 );
 
+/**
+ * Fetch all registrations for an IP ordered by most recent.
+ */
 export function getRegistrationsByIP(ip: string): RegistrationRecord[] {
     return registrationsByIP_prepared.all(ip) as RegistrationRecord[];
 }
@@ -47,6 +53,9 @@ const registrationsByIPInRange_stmt = db.prepare(
     ORDER BY at DESC`,
 );
 
+/**
+ * Fetch registrations for an IP within a UTC date range.
+ */
 export function getRegistrationsByIPInRange(
     ip: string,
     start: Date,
@@ -82,6 +91,9 @@ const getLastRegistrationForIPInRange_stmt = db.prepare(`
     ORDER BY at DESC
     LIMIT 1
 `);
+/**
+ * Get latest registered userId for an IP within a UTC range.
+ */
 export function lastRegistrationForIP_in_timerange(
     ip: string,
     start: Date,
@@ -96,6 +108,9 @@ export function lastRegistrationForIP_in_timerange(
     return result?.userId ?? null;
 }
 
+/**
+ * Fetch latest registrations per IP within a UTC range.
+ */
 export function latestRegistrationsForIPsInRange(
     ips: string[],
     start: string,
@@ -124,6 +139,9 @@ const latestRegistrationForIP_stmt = db.prepare(
     `select userId from registrations where ip = ? order by at desc limit 1`,
 );
 
+/**
+ * Fetch the most recent userId registered for an IP.
+ */
 export function getLatestRegistrationForIP(ip: string): number | null {
     const result = latestRegistrationForIP_stmt.get(ip) as
         | { userId: number }
@@ -135,6 +153,9 @@ const create_stmt = db.prepare(
     "INSERT INTO registrations (ip, userId, at) VALUES (?, ?, ?)",
 );
 
+/**
+ * Insert a registration record for an IP and user.
+ */
 export function create(ip: string, userId: number, at: Date): void {
     create_stmt.run(ip, userId, at);
 }

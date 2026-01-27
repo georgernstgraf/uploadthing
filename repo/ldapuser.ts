@@ -10,12 +10,18 @@ class ServiceClientFactory {
     constructor() {
         this.client = null;
     }
+    /**
+     * Return the connected LDAP client instance.
+     */
     getClient(): ldap.Client {
         if (!this.client) {
             throw new Error("ServiceClientFactory: client not available");
         }
         return this.client;
     }
+    /**
+     * Close and cleanup LDAP client resources.
+     */
     close() {
         if (this.client) {
             try {
@@ -33,6 +39,9 @@ class ServiceClientFactory {
             this.client = null;
         }
     }
+    /**
+     * Create or recreate the LDAP client with retry logic.
+     */
     async makeClient() { // can take very long
         console.log(
             "ServiceClientFactory.makeClient: called ...",
@@ -98,6 +107,9 @@ class ServiceClientFactory {
 export const serviceClientFactory = new ServiceClientFactory();
 void serviceClientFactory.makeClient();
 
+/**
+ * Fetch an LDAP user by exact email.
+ */
 export async function getUserByEmail(
     email: string,
 ): Promise<LdapUserType | null> {
@@ -108,12 +120,18 @@ export async function getUserByEmail(
     }
     return results[0];
 }
+/**
+ * Search LDAP for users with email starting with a prefix.
+ */
 export function getUsersMailStartingWith(
     initial: string,
 ): Promise<LdapUserType[]> {
     const filter = `(mail=${initial}*)`;
     return searchUsers(filter);
 }
+/**
+ * Execute an LDAP search with a raw filter string.
+ */
 export function searchUsers(
     filter: string,
 ): Promise<LdapUserType[]> {
@@ -206,6 +224,9 @@ export function searchUsers(
     >;
 }
 
+/**
+ * Create a bound LDAP client instance.
+ */
 function getServiceClient(): Promise<ldap.Client> {
     // Promise resolves after successful bind
     // Promise rejects on bind error
@@ -288,6 +309,9 @@ function getServiceClient(): Promise<ldap.Client> {
     });
 }
 
+/**
+ * Convert raw LDAP response to LdapUserType.
+ */
 function resultFromResponse(response: ldap.Response): LdapUserType {
     const result: Record<string, string> = {};
     response.pojo.attributes.forEach((attr: ldap.Attribute) => {

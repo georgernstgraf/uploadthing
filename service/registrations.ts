@@ -6,6 +6,9 @@ export type UserRegistrationRecord = {
     at: string;
 };
 
+/**
+ * List registration events for an IP with localized timestamps.
+ */
 export function ofIP(ip: string) {
     const registrations = repo.registrations.getRegistrationsByIP(ip);
     return registrations.map((r) => ({
@@ -14,6 +17,9 @@ export function ofIP(ip: string) {
     }));
 }
 
+/**
+ * List registration events for an IP in a time range.
+ */
 export function ofIPInRange(
     ip: string,
     start: Date,
@@ -37,6 +43,9 @@ export function ofIPInRange(
     }));
 }
 
+/**
+ * Build a per-user map of registration events for today and next day.
+ */
 export function ofEmail(): Map<number, UserRegistrationRecord[]> {
     const registrations = repo.registrations.getHistoryEventsRange(
         new Date().toISOString().split("T")[0],

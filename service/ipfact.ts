@@ -2,10 +2,16 @@ import * as repo from "../repo/repo.ts";
 import { type ForensicIPCount } from "../lib/types.ts";
 import { localTimeString, localDateTimeString } from "../lib/timefunc.ts";
 
+/**
+ * Register a set of IPs as seen at the current time.
+ */
 export function registerips(ips: string[]): number {
     return repo.ipfact.registerSeenMany(ips, new Date());
 }
 
+/**
+ * Format last-seen timestamps with a 12h time/day cutoff.
+ */
 function formatLastSeen(lastSeenDate: Date): string {
     const now = new Date();
     const twelveHoursMs = 12 * 60 * 60 * 1000;
@@ -20,6 +26,9 @@ function formatLastSeen(lastSeenDate: Date): string {
     }
 }
 
+/**
+ * Get IP counts and last-seen display values in a local-time range.
+ */
 export function ips_with_counts_in_range(
     start_localtime: string,
     end_localtime: string,
@@ -33,6 +42,9 @@ export function ips_with_counts_in_range(
     return r;
 }
 
+/**
+ * Split IP count data into registered vs unregistered buckets.
+ */
 export function split_ips_by_registration_status(
     ip_counts: ForensicIPCount[],
     registered_ips: Set<string>,

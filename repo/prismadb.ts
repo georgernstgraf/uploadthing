@@ -4,7 +4,13 @@ export const db = new PrismaClient();
 
 let shuttingDown = false;
 
+/**
+ * Register signal handlers to disconnect Prisma cleanly.
+ */
 export const setupShutdown = () => {
+    /**
+     * Disconnect Prisma on process signals.
+     */
     const shutdown = async (signal: Deno.Signal) => {
         if (shuttingDown) {
             return;

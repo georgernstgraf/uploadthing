@@ -1,6 +1,9 @@
 import { AbgabeRecord } from "../repo/abgaben.ts";
 import * as repo from "../repo/repo.ts";
 
+/**
+ * Persist a new submission record for a user and IP.
+ */
 export function recordSubmission(
     userId: number,
     ip: string,
@@ -9,16 +12,25 @@ export function recordSubmission(
     return repo.abgaben.create(userId, ip, filename, new Date());
 }
 
+/**
+ * Fetch all submissions for a user.
+ */
 export function getSubmissionsForUser(userId: number): AbgabeRecord[] {
     return repo.abgaben.getByUserId(userId);
 }
 
+/**
+ * Fetch all submissions within a date range.
+ */
 export function getSubmissionsInRange(
     start: string,
     end: string,
 ): AbgabeRecord[] {
     return repo.abgaben.getByDateRange(start, end);
 }
+/**
+ * Fetch submissions for a user within a date range.
+ */
 export function getUserSubmissionsInRange(
     userId: number,
     start: string,
@@ -27,6 +39,9 @@ export function getUserSubmissionsInRange(
     return repo.abgaben.getByUserIdAndDateRange(userId, start, end);
 }
 
+/**
+ * Fetch submissions for an IP within a date range.
+ */
 export function getIPSubmissionsInRange(
     ip: string,
     start: Date,

@@ -3,6 +3,9 @@ import * as usersRepo from "../repo/users.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
 import type { UserRecord } from "../repo/users.ts";
 
+/**
+ * Resolve users for IPs using registrations in a time range.
+ */
 export async function ofIPs_in_timerange(
     ips: string[],
     startDateTime: Date,
@@ -48,6 +51,9 @@ export async function ofIPs_in_timerange(
     return result;
 }
 
+/**
+ * Fetch the latest registered user for a single IP.
+ */
 export async function getRegisteredByIp(ip: string): Promise<UserType | null> {
     const userId = registrationsRepo.getLatestRegistrationForIP(ip);
     if (userId === null) return null;
@@ -63,11 +69,17 @@ export async function getRegisteredByIp(ip: string): Promise<UserType | null> {
     };
 }
 
+/**
+ * Upsert user data and create a registration entry for an IP.
+ */
 export async function register(userData: UserType, ip: string) {
     const userRecord = await usersRepo.upsert(userData);
     registrationsRepo.create(ip, userRecord.id, new Date());
 }
 
+/**
+ * Return the subset of IPs that have a registration.
+ */
 export function get_registered_ips(ips: string[]): Set<string> {
     const result = new Set<string>();
     for (const ip of ips) {
@@ -79,6 +91,9 @@ export function get_registered_ips(ips: string[]): Set<string> {
     return result;
 }
 
+/**
+ * Build IP-to-user map from latest registrations in a time range.
+ */
 export async function ofIPsFromRegistrationsInRange(
     ips: string[],
     starttime: string,
@@ -112,14 +127,23 @@ export async function ofIPsFromRegistrationsInRange(
     return result;
 }
 
+/**
+ * Upsert a single user record.
+ */
 export async function registerUser(user: UserType) {
     await usersRepo.upsert(user);
 }
 
+/**
+ * Upsert many users in a batch transaction.
+ */
 export async function registerManyUsers(users: UserType[]) {
     await usersRepo.upsertMany(users);
 }
 
+/**
+ * Fetch users by a list of emails.
+ */
 export async function getUsersByEmails(
     emails: string[],
 ): Promise<UserRecord[]> {
@@ -127,6 +151,9 @@ export async function getUsersByEmails(
     return await usersRepo.getByEmails(emails);
 }
 
+/**
+ * Fetch a single user by normalized email.
+ */
 export async function getUserByEmail(
     email: string,
 ): Promise<UserType | null> {

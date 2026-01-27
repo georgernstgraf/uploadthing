@@ -12,6 +12,9 @@ const create_stmt = db.prepare(
     "INSERT INTO abgaben (userId, ip, filename, at) VALUES (?, ?, ?, ?)",
 );
 
+/**
+ * Insert a submission record.
+ */
 export function create(
     userId: number,
     ip: string,
@@ -27,6 +30,9 @@ const getByUser_stmt = db.prepare(
     "SELECT id, userId, ip, filename, at FROM abgaben WHERE userId = ? ORDER BY at DESC",
 );
 
+/**
+ * Fetch submissions for a user.
+ */
 export function getByUserId(userId: number): AbgabeRecord[] {
     return getByUser_stmt.all(userId) as AbgabeRecord[];
 }
@@ -39,6 +45,9 @@ const getByUserAndRange_stmt = db.prepare(
     ORDER BY at DESC`,
 );
 
+/**
+ * Fetch submissions for a user within a date range.
+ */
 export function getByUserIdAndDateRange(
     userId: number,
     start: string,
@@ -55,6 +64,9 @@ const getByRange_stmt = db.prepare(
     ORDER BY at DESC`,
 );
 
+/**
+ * Fetch submissions within a date range.
+ */
 export function getByDateRange(start: string, end: string): AbgabeRecord[] {
     return getByRange_stmt.all(start, end) as AbgabeRecord[];
 }
@@ -67,6 +79,9 @@ const getByIPAndRange_stmt = db.prepare(
     ORDER BY at DESC`,
 );
 
+/**
+ * Fetch submissions for an IP within a date range.
+ */
 export function getByIPAndDateRange(
     ip: string,
     start: Date,
