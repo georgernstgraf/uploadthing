@@ -4,11 +4,11 @@ import { UserType } from "../lib/types.ts";
 import { localAutoString } from "../lib/timefunc.ts";
 import config from "../lib/config.ts";
 
-export type IpForensics = {
+export type ServiceIpForensics = {
     ip: string;
     seen_count: number;
     seen_at_desc: string[]; // displayable times
-    registrations: { at: string; user: UserType }[]; // sorted desc by at
+    registrations: { at: string; user: UserType | null }[]; // sorted desc by at
     is_stale: boolean;
     submissions: Record<string, string>[]; // <datestring, filename>
 };
@@ -16,15 +16,18 @@ export type IpForensics = {
 /**
  * Aggregate forensic data for all IPs seen in a time range.
  */
-export function for_range(
+export async function for_range(
     start: Date,
     end: Date,
     calculate_stale: boolean,
-): { registered: IpForensics[]; unregistered: IpForensics[] } {
-    const rv: IpForensics[] = [];
+): Promise<{
+    registered: ServiceIpForensics[];
+    unregistered: ServiceIpForensics[];
+}> {
+    const rv: ServiceIpForensics[] = [];
     const seen_ips = repo.ipfact.ips_in_range(start, end); // start, end: Date
     for (const ip of seen_ips) {
-        const ip_forensics: IpForensics = {
+        const ip_forensics: ServiceIpForensics = {
             ip,
             seen_count: 0,
             seen_at_desc: [],
@@ -41,7 +44,7 @@ export function for_range(
         ip_forensics.seen_at_desc = seen_at_desc.map((dt) =>
             localAutoString(new Date(dt))
         );
-        ip_forensics.registrations = service.registrations.ofIPInRange(
+        ip_forensics.registrations = await service.registrations.ofIPInRange(
             ip,
             start,
             end,

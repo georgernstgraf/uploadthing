@@ -169,7 +169,6 @@ app.get("ldap", async (c) => {
             users.push({
                 email: "",
                 name: `Keine Email beginnend mit ${query.email} gefunden!`,
-                klasse: "",
             });
         }
         return c.html(hbs.ldapTemplate({ users }));

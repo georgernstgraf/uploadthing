@@ -1,6 +1,6 @@
 import { db } from "./db.ts";
 
-export type AbgabeRecord = {
+export type RepoAbgabeRecord = {
     id: number;
     userId: number;
     ip: string;
@@ -20,7 +20,7 @@ export function create(
     ip: string,
     filename: string,
     at: Date,
-): AbgabeRecord {
+): RepoAbgabeRecord {
     create_stmt.run(userId, ip, filename, at);
     const id = db.lastInsertRowId as number;
     return { id, userId, ip, filename, at };
@@ -33,8 +33,8 @@ const getByUser_stmt = db.prepare(
 /**
  * Fetch submissions for a user.
  */
-export function getByUserId(userId: number): AbgabeRecord[] {
-    return getByUser_stmt.all(userId) as AbgabeRecord[];
+export function getByUserId(userId: number): RepoAbgabeRecord[] {
+    return getByUser_stmt.all(userId) as RepoAbgabeRecord[];
 }
 
 const getByUserAndRange_stmt = db.prepare(
@@ -52,8 +52,12 @@ export function getByUserIdAndDateRange(
     userId: number,
     start: string,
     end: string,
-): AbgabeRecord[] {
-    return getByUserAndRange_stmt.all(userId, start, end) as AbgabeRecord[];
+): RepoAbgabeRecord[] {
+    return getByUserAndRange_stmt.all(
+        userId,
+        start,
+        end,
+    ) as RepoAbgabeRecord[];
 }
 
 const getByRange_stmt = db.prepare(
@@ -67,8 +71,11 @@ const getByRange_stmt = db.prepare(
 /**
  * Fetch submissions within a date range.
  */
-export function getByDateRange(start: string, end: string): AbgabeRecord[] {
-    return getByRange_stmt.all(start, end) as AbgabeRecord[];
+export function getByDateRange(
+    start: string,
+    end: string,
+): RepoAbgabeRecord[] {
+    return getByRange_stmt.all(start, end) as RepoAbgabeRecord[];
 }
 
 const getByIPAndRange_stmt = db.prepare(
@@ -86,10 +93,10 @@ export function getByIPAndDateRange(
     ip: string,
     start: Date,
     end: Date,
-): AbgabeRecord[] {
+): RepoAbgabeRecord[] {
     return getByIPAndRange_stmt.all(
         ip,
         start.toISOString(),
         end.toISOString(),
-    ) as AbgabeRecord[];
+    ) as RepoAbgabeRecord[];
 }

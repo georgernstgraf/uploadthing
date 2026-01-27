@@ -1,11 +1,6 @@
 import Handlebars from "handlebars";
-import {
-    ForensicIPCount,
-    IPHistoryRecord,
-    UserType,
-    TopType,
-} from "./types.ts";
-import type { UserRegistrationRecord } from "../service/registrations.ts";
+import { UserType, TopType } from "./types.ts";
+import type { ServiceIpForensics } from "../service/ipforensics.ts";
 
 // Hier nur Template Types, bitte!
 
@@ -46,18 +41,13 @@ export const whoamiTemplate = Handlebars.compile<WhoamiTemplateData>(
 
 type ForensicTemplateData = TopType & {
     remote_user: UserType;
-    forensic_ipcount_array: ForensicIPCount[];
     spg_times: string[];
     starttime: string;
     endtime: string;
     startdate: string;
     enddate: string;
-    ip2users: Map<string, UserType>;
-    ip_history: Map<string, IPHistoryRecord[]>;
-    user_history: Map<number, UserRegistrationRecord[]>;
-    // New properties for the two tables
-    ips_with_name: ForensicIPCount[];
-    ips_without_name: ForensicIPCount[];
+    ips_with_name: ServiceIpForensics[];
+    ips_without_name: ServiceIpForensics[];
     within12hours: boolean;
     endtimeInFuture: boolean;
     endtimeProvided: boolean;

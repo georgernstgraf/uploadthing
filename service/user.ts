@@ -1,7 +1,8 @@
-import { UserType } from "../lib/types.ts";
+import { userRecordToUserType } from "../lib/user_mapper.ts";
+import type { UserType } from "../lib/types.ts";
 import * as usersRepo from "../repo/users.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
-import type { UserRecord } from "../repo/users.ts";
+import type { RepoUserRecord } from "../repo/users.ts";
 
 /**
  * Resolve users for IPs using registrations in a time range.
@@ -29,7 +30,7 @@ export async function ofIPs_in_timerange(
     const userRecords = userIds.size > 0
         ? await usersRepo.getByIds([...userIds])
         : [];
-    const usersById = new Map<number, UserRecord>(
+    const usersById = new Map<number, RepoUserRecord>(
         userRecords.map((u) => [u.id, u]),
     );
 
@@ -38,12 +39,7 @@ export async function ofIPs_in_timerange(
         if (userId !== null) {
             const user = usersById.get(userId);
             if (user) {
-                result.set(ip, {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    klasse: user.klasse ?? "None",
-                });
+                result.set(ip, userRecordToUserType(user));
             }
         }
     }
@@ -61,12 +57,7 @@ export async function getRegisteredByIp(ip: string): Promise<UserType | null> {
     const user = await usersRepo.getById(userId);
     if (!user) return null;
 
-    return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        klasse: user.klasse ?? "None",
-    };
+    return userRecordToUserType(user);
 }
 
 /**
@@ -111,18 +102,21 @@ export async function ofIPsFromRegistrationsInRange(
         ...new Set(registrations.map((registration) => registration.userId)),
     ];
     const users = await usersRepo.getByIds(userIds);
-    const usersById = new Map<number, UserRecord>(
+    const usersById = new Map<number, RepoUserRecord>(
         users.map((u) => [u.id, u]),
     );
 
     for (const registration of registrations) {
         const user = usersById.get(registration.userId);
-        result.set(registration.ip, {
-            id: user?.id,
-            name: user?.name ?? "not-in-ldap-anymore",
-            email: user?.email ?? "",
-            klasse: user?.klasse ?? "",
-        });
+        if (!user) {
+            result.set(registration.ip, {
+                name: "not-in-ldap-anymore",
+                email: "",
+                klasse: "",
+            });
+            continue;
+        }
+        result.set(registration.ip, userRecordToUserType(user));
     }
     return result;
 }
@@ -146,7 +140,7 @@ export async function registerManyUsers(users: UserType[]) {
  */
 export async function getUsersByEmails(
     emails: string[],
-): Promise<UserRecord[]> {
+): Promise<RepoUserRecord[]> {
     if (emails.length === 0) return [];
     return await usersRepo.getByEmails(emails);
 }
@@ -161,10 +155,5 @@ export async function getUserByEmail(
     const user = await usersRepo.getByEmail(normalizedEmail);
     if (!user) return null;
 
-    return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        klasse: user.klasse ?? undefined,
-    };
+    return userRecordToUserType(user);
 }

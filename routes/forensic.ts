@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { IPHistoryRecord, Variables } from "../lib/types.ts";
+import { Variables } from "../lib/types.ts";
 import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
@@ -55,51 +55,11 @@ forensicRouter.get("/", async (c) => {
 
     const refreshSeconds = config.forensic_refresh_seconds;
 
-    const { registered, unregistered } = service.ipforensics.for_range(
+    const { registered, unregistered } = await service.ipforensics.for_range(
         startDateTime,
         endDateTime,
         !endtimeProvided,
     );
-    const ips_in_range = [...registered, ...unregistered].map((entry) =>
-        entry.ip
-    );
-
-    const ip2users = await service.user.ofIPs_in_timerange(
-        ips_in_range,
-        startDateTime,
-        endDateTime,
-    );
-    const missingIps = ips_in_range.filter((ip) => !ip2users.has(ip));
-    if (missingIps.length > 0) {
-        const registrationUsers = await service.user
-            .ofIPsFromRegistrationsInRange(
-                missingIps,
-                `${startdate} ${starttime}`,
-                `${enddate} ${endtime}`,
-            );
-        for (const [ip, user] of registrationUsers.entries()) {
-            ip2users.set(ip, user);
-        }
-    }
-
-    const with_name = registered.map((entry) => ({
-        ip: entry.ip,
-        count: entry.seen_count,
-        lastseen: entry.seen_at_desc[0] ?? "",
-        is_stale: entry.is_stale,
-    }));
-    const without_name = unregistered.map((entry) => ({
-        ip: entry.ip,
-        count: entry.seen_count,
-        lastseen: entry.seen_at_desc[0] ?? "",
-        is_stale: entry.is_stale,
-    }));
-
-    const ip_history = new Map<string, IPHistoryRecord[]>();
-    for (const iprec of [...registered, ...unregistered]) {
-        ip_history.set(iprec.ip, service.registrations.ofIP(iprec.ip));
-    }
-    const user_history = service.registrations.ofEmail();
     const templateData = {
         // simple data
         remote_ip: c.get("remoteip"),
@@ -109,13 +69,8 @@ forensicRouter.get("/", async (c) => {
         endtime,
         enddate,
         spg_times: config.spg_times,
-        forensic_ipcount_array: with_name, // Keep for backward compatibility
-        ip2users,
-        ip_history,
-        user_history,
-        // New data for the two tables
-        ips_with_name: with_name,
-        ips_without_name: without_name,
+        ips_with_name: registered,
+        ips_without_name: unregistered,
         within12hours,
         endtimeInFuture,
         endtimeProvided,

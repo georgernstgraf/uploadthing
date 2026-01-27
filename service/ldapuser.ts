@@ -52,10 +52,11 @@ export async function searchUserByEmailStart(
  * Convert LDAP user data into the local user shape.
  */
 function userFromLdap(ldapUser: LdapUserType): UserType {
+    const klasse = ldapUser.physicalDeliveryOfficeName.trim();
     return {
         email: ldapUser.mail.toLocaleLowerCase(),
         name: ldapUser.displayName,
-        klasse: ldapUser.physicalDeliveryOfficeName || "None",
+        klasse: klasse.length > 0 ? klasse : undefined,
     };
 }
 /**

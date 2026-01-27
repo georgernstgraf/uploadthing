@@ -1,4 +1,4 @@
-import { AbgabeRecord } from "../repo/abgaben.ts";
+import { RepoAbgabeRecord } from "../repo/abgaben.ts";
 import * as repo from "../repo/repo.ts";
 
 /**
@@ -8,14 +8,14 @@ export function recordSubmission(
     userId: number,
     ip: string,
     filename: string,
-): AbgabeRecord {
+): RepoAbgabeRecord {
     return repo.abgaben.create(userId, ip, filename, new Date());
 }
 
 /**
  * Fetch all submissions for a user.
  */
-export function getSubmissionsForUser(userId: number): AbgabeRecord[] {
+export function getSubmissionsForUser(userId: number): RepoAbgabeRecord[] {
     return repo.abgaben.getByUserId(userId);
 }
 
@@ -25,7 +25,7 @@ export function getSubmissionsForUser(userId: number): AbgabeRecord[] {
 export function getSubmissionsInRange(
     start: string,
     end: string,
-): AbgabeRecord[] {
+): RepoAbgabeRecord[] {
     return repo.abgaben.getByDateRange(start, end);
 }
 /**
@@ -35,7 +35,7 @@ export function getUserSubmissionsInRange(
     userId: number,
     start: string,
     end: string,
-): AbgabeRecord[] {
+): RepoAbgabeRecord[] {
     return repo.abgaben.getByUserIdAndDateRange(userId, start, end);
 }
 

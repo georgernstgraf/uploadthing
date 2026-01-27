@@ -1,6 +1,6 @@
 import { db } from "./db.ts";
 
-export type RegistrationRecord = {
+export type RepoRegistrationRecord = {
     id: number;
     ip: string;
     userId: number;
@@ -22,8 +22,8 @@ const select_event_stmt = db.prepare(
 export function getHistoryEventsRange(
     start: string,
     end: string,
-): RegistrationRecord[] {
-    return select_event_stmt.all(start, end) as RegistrationRecord[];
+): RepoRegistrationRecord[] {
+    return select_event_stmt.all(start, end) as RepoRegistrationRecord[];
 }
 
 const registrationsByIP_prepared = db.prepare(
@@ -33,8 +33,8 @@ const registrationsByIP_prepared = db.prepare(
 /**
  * Fetch all registrations for an IP ordered by most recent.
  */
-export function getRegistrationsByIP(ip: string): RegistrationRecord[] {
-    return registrationsByIP_prepared.all(ip) as RegistrationRecord[];
+export function getRegistrationsByIP(ip: string): RepoRegistrationRecord[] {
+    return registrationsByIP_prepared.all(ip) as RepoRegistrationRecord[];
 }
 
 const registrationsByIPInRange_stmt = db.prepare(
@@ -54,21 +54,25 @@ const registrationsByIPInRange_stmt = db.prepare(
 );
 
 /**
- * Fetch registrations for an IP within a UTC date range.
+ * Fetch registrations by an IP within a UTC date range.
  */
-export function getRegistrationsByIPInRange(
+export function byIPInRange(
     ip: string,
     start: Date,
     end: Date,
-): RegistrationRecord[] {
+): RepoRegistrationRecord[] {
     return registrationsByIPInRange_stmt.all(
         ip,
         start.toISOString(),
         end.toISOString(),
-    ) as RegistrationRecord[];
+    ) as RepoRegistrationRecord[];
 }
 
-export type LatestRegistrationRecord = {
+/**
+ * Fetch registrations by IP and resolve user records.
+ */
+
+export type RepoLatestRegistrationRecord = {
     ip: string;
     userId: number;
     at: string;
@@ -115,7 +119,7 @@ export function latestRegistrationsForIPsInRange(
     ips: string[],
     start: string,
     end: string,
-): LatestRegistrationRecord[] {
+): RepoLatestRegistrationRecord[] {
     if (ips.length === 0) return [];
     const placeholders = ips.map(() => "?").join(",");
     const query = `
@@ -132,7 +136,7 @@ export function latestRegistrationsForIPsInRange(
         ) latest on r.ip = latest.ip and r.at = latest.max_at
     `;
     const stmt = db.prepare(query);
-    return stmt.all(...ips, start, end) as LatestRegistrationRecord[];
+    return stmt.all(...ips, start, end) as RepoLatestRegistrationRecord[];
 }
 
 const latestRegistrationForIP_stmt = db.prepare(
