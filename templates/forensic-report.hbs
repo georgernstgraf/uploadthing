@@ -27,7 +27,7 @@
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_with_name}}
             <div class="col">
-                <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column {{#if this.is_stale}}forensic-stale{{/if}}" style="background: rgba(255,255,255,0.85);">
+                <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column {{#if this.is_stale}}forensic-stale{{/if}} {{#if this.has_submission}}forensic-submitted{{/if}}" style="background: rgba(255,255,255,0.85);">
                     <summary class="fw-bold" style="cursor: pointer; list-style: none;">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">

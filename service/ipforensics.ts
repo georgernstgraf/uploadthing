@@ -11,6 +11,7 @@ export type ServiceIpForensics = {
     registrations: { at: string; user: UserType | null }[]; // sorted desc by at
     is_stale: boolean;
     submissions: { at: string; filename: string }[];
+    has_submission: boolean;
 };
 
 /**
@@ -34,6 +35,7 @@ export async function for_range(
             registrations: [],
             is_stale: false,
             submissions: [],
+            has_submission: false,
         };
         const seen_at_desc = repo.ipfact.getHistoryForIPInRangeDesc(
             ip,
@@ -59,6 +61,7 @@ export async function for_range(
             start,
             end,
         );
+        ip_forensics.has_submission = ip_forensics.submissions.length > 0;
         rv.push(ip_forensics);
     }
     rv.sort((a, b) => {
