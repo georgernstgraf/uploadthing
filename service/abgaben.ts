@@ -1,4 +1,5 @@
 import { RepoAbgabeRecord } from "../repo/abgaben.ts";
+import { localAutoString } from "../lib/timefunc.ts";
 import * as repo from "../repo/repo.ts";
 
 /**
@@ -49,7 +50,7 @@ export function getIPSubmissionsInRange(
 ): { at: string; filename: string }[] {
     const submissions = repo.abgaben.getByIPAndDateRange(ip, start, end);
     return submissions.map((submission) => ({
-        at: submission.at.toISOString(),
+        at: localAutoString(submission.at),
         filename: submission.filename,
     }));
 }
