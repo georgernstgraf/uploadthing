@@ -34,7 +34,11 @@ const getByUser_stmt = db.prepare(
  * Fetch submissions for a user.
  */
 export function getByUserId(userId: number): RepoAbgabeRecord[] {
-    return getByUser_stmt.all(userId) as RepoAbgabeRecord[];
+    const rows = getByUser_stmt.all(userId) as RepoAbgabeRecord[];
+    return rows.map((row) => ({
+        ...row,
+        at: new Date(row.at),
+    }));
 }
 
 const getByUserAndRange_stmt = db.prepare(
@@ -51,11 +55,15 @@ export function getByUserIdAndDateRange(
     start: Date,
     end: Date,
 ): RepoAbgabeRecord[] {
-    return getByUserAndRange_stmt.all(
+    const rows = getByUserAndRange_stmt.all(
         userId,
         start.toISOString(),
         end.toISOString(),
     ) as RepoAbgabeRecord[];
+    return rows.map((row) => ({
+        ...row,
+        at: new Date(row.at),
+    }));
 }
 
 const getByRange_stmt = db.prepare(
@@ -71,10 +79,14 @@ export function getByDateRange(
     start: Date,
     end: Date,
 ): RepoAbgabeRecord[] {
-    return getByRange_stmt.all(
+    const rows = getByRange_stmt.all(
         start.toISOString(),
         end.toISOString(),
     ) as RepoAbgabeRecord[];
+    return rows.map((row) => ({
+        ...row,
+        at: new Date(row.at),
+    }));
 }
 
 const getByIPAndRange_stmt = db.prepare(
@@ -91,9 +103,13 @@ export function getByIPAndDateRange(
     start: Date,
     end: Date,
 ): RepoAbgabeRecord[] {
-    return getByIPAndRange_stmt.all(
+    const rows = getByIPAndRange_stmt.all(
         ip,
         start.toISOString(),
         end.toISOString(),
     ) as RepoAbgabeRecord[];
+    return rows.map((row) => ({
+        ...row,
+        at: new Date(row.at),
+    }));
 }
