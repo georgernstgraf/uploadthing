@@ -2,7 +2,7 @@
          id="report"
          hx-get="/forensic"
          hx-trigger="load, every {{forensic_refresh_seconds}}s"
-         hx-on:htmx:beforeRequest="if (this.querySelector('details[open]')) event.preventDefault()"
+         hx-on:htmx:beforeRequest="if (document.querySelector('#report details[open]')) event.preventDefault()"
          hx-target="#report"
          hx-swap="innerHTML"
          hx-select="#report > *"
