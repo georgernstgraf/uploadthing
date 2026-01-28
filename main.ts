@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/deno";
 import { createHash } from "node:crypto";
 import config from "./lib/config.ts";
-import { get_unterlagen, getVersionedPath } from "./lib/lib.ts";
+import { get_unterlagen, getVersionedPath, safeFileComponent } from "./lib/pathfuncs.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import * as service from "./service/service.ts";
 import * as hbs from "./lib/handlebars.ts";
@@ -230,14 +230,6 @@ Deno.serve(
     },
     (req, info) => app.fetch(req, { info }),
 );
-
-function safeFileComponent(input: string): string {
-    // prevent path traversal + weird separators; keep it simple
-    return input
-        .replace(/[\/\\]/g, "_")
-        .replace(/\.\./g, "_")
-        .replace(/\s+/g, "_");
-}
 
 async function writeAll(f: Deno.FsFile, chunk: Uint8Array): Promise<void> {
     let off = 0;

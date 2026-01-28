@@ -41,3 +41,11 @@ export async function pathExists(path: string): Promise<boolean> {
         throw e;
     }
 }
+
+export function safeFileComponent(input: string): string {
+    // prevent path traversal + weird separators; keep it simple
+    return input
+        .replace(/[\/\\]/g, "_")
+        .replace(/\.\./g, "_")
+        .replace(/\s+/g, "_");
+}
