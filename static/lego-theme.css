@@ -1,32 +1,33 @@
 :root {
-    /* Classic Lego Brick Colors */
-    --lego-red: #e3000b;
-    /* Classic Lego red */
-    --lego-yellow: #ffe24cc9;
-    /* Classic Lego yellow */
-    --lego-blue: #acd5ee;
-    /* Classic Lego blue */
-    --lego-green: #00a800;
-    /* Classic Lego green */
-    --lego-orange: #86324a;
-    /* Classic Lego orange */
-    --lego-black: #222222;
-    /* Lego black */
-    --lego-grey: #555555;
-    /* Lego grey */
-    --lego-white: #ffffff;
+    /* Classic Lego Brick Colors - Updated from bg-lego.png */
+    --lego-red: #B26934;
+    /* Image Brown/Orange */
+    --lego-yellow: #B38F63;
+    /* Image Tan */
+    --lego-blue: #5099A5;
+    /* Image Teal */
+    --lego-green: #5C7D83;
+    /* Image Muted Teal */
+    --lego-orange: #B26934;
+    /* Image Brown/Orange */
+    --lego-black: #191C1C;
+    /* Image Black */
+    --lego-grey: #A2A7A7;
+    /* Image Grey */
+    --lego-white: #F2F5F5;
+    /* Image White */
 
     /* Theme Variables */
-    --lego-primary: #ffc500;
-    /* Yellow for primary actions */
-    --lego-secondary: #ff91d0db;
-    /* Dark grey for secondary elements */
-    --lego-accent: #0055bf;
-    /* Blue for accents */
-    --lego-bg-light: #f5f5f5;
+    --lego-primary: #B38F63;
+    /* Tan for primary actions */
+    --lego-secondary: #BFC4BF;
+    /* Light Grey for secondary elements */
+    --lego-accent: #5099A5;
+    /* Teal for accents */
+    --lego-bg-light: #F2F5F5;
     --lego-bg-white: #ffffff;
-    --lego-text-dark: #1a1a1a;
-    --lego-text-muted: #6b6b6b;
+    --lego-text-dark: #191C1C;
+    --lego-text-muted: #595F60;
 
     /* Shadows & Effects - Playful, brick-like */
     --lego-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
@@ -40,11 +41,11 @@
 }
 
 .text-dark {
-    color: #b39830 !important;
+    color: #B38F63 !important;
 }
 
 .text-white {
-    color: #031321 !important;
+    color: #191C1C !important;
 }
 
 [data-bs-theme="dark"] {
