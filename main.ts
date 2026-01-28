@@ -8,12 +8,14 @@ import * as service from "./service/service.ts";
 import * as hbs from "./lib/handlebars.ts";
 import { Bindings, Variables } from "./lib/types.ts";
 import forensicRouter from "./routes/forensic.ts";
-import { setupShutdown } from "./repo/prismadb.ts";
+import { setupShutdown as setupPrismaShutdown } from "./repo/prismadb.ts";
+import { setupShutdown as setupSqliteShutdown } from "./repo/db.ts";
 
 // ensure ABGABEN_DIR exists
 await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
 
-setupShutdown(); // Setup Prisma graceful shutdown
+setupPrismaShutdown(); // Setup Prisma graceful shutdown
+setupSqliteShutdown(); // Setup SQLite graceful shutdown
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 app.use("*", remoteIPMiddleware);
