@@ -49,16 +49,16 @@
 }
 
 [data-bs-theme="dark"] {
-    --lego-bg-light: #0a0a0a;
-    --lego-bg-white: #1a1a1a;
-    --lego-text-dark: #9e8a57;
-    --lego-text-muted: #888888;
+    --lego-bg-light: #08141E;
+    --lego-bg-white: #183749;
+    --lego-text-dark: #C3A431;
+    --lego-text-muted: #919394;
 }
 
 /* Dark mode overrides */
 [data-bs-theme="dark"] .lego-card {
-    background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
-    border-color: #444444;
+    background: linear-gradient(145deg, #183749, #08141E);
+    border-color: #2A4A5C;
 }
 
 [data-bs-theme="dark"] .text-muted {
@@ -66,9 +66,9 @@
 }
 
 [data-bs-theme="dark"] .user-badge {
-    background: linear-gradient(145deg, #2042564a, #957763cf);
-    border-color: var(--lego-secondary);
-    border-left-color: var(--lego-secondary);
+    background: linear-gradient(145deg, #2A4A5C, #183749);
+    border-color: #A25D3F;
+    border-left-color: #A25D3F;
 }
 
 [data-bs-theme="dark"] .user-badge .text-dark {
@@ -82,27 +82,27 @@
 
 /* Dark mode form controls */
 [data-bs-theme="dark"] input.form-control {
-    background: #2a2a2a;
+    background: #08141E;
     color: var(--lego-text-dark);
-    border-color: var(--lego-dark-grey);
+    border-color: #575A59;
 }
 
 [data-bs-theme="dark"] input.form-control:focus {
-    background: #333333;
-    border-color: var(--lego-accent);
+    background: #183749;
+    border-color: #C3A431;
 }
 
 /* Dark mode badges */
 [data-bs-theme="dark"] .badge.bg-light {
-    background: var(--lego-dark-grey) !important;
+    background: #183749 !important;
     color: var(--lego-text-dark) !important;
-    border: 2px solid var(--lego-silver) !important;
+    border: 2px solid #575A59 !important;
 }
 
 /* Dark mode border colors */
 [data-bs-theme="dark"] .border-top,
 [data-bs-theme="dark"] .border-bottom {
-    border-color: var(--lego-dark-grey) !important;
+    border-color: #575A59 !important;
 }
 
 /* Compact heading styles - Bold and technical */
@@ -315,11 +315,11 @@ h6 {
 
 /* Dark mode adjustments */
 [data-bs-theme="dark"] .lego-card {
-    background: linear-gradient(145deg, #2a2a2a, #1a1a1a) !important;
+    background: linear-gradient(145deg, #183749, #08141E) !important;
 }
 
 [data-bs-theme="dark"] details.lego-card {
-    background: linear-gradient(145deg, #2f2f2f, #202020) !important;
+    background: linear-gradient(145deg, #183749, #08141E) !important;
 }
 
 /* Forensic details - improved contrast */
@@ -328,7 +328,7 @@ details.lego-card {
 }
 
 [data-bs-theme="dark"] details.lego-card {
-    background: rgba(42, 42, 42, 0.95) !important;
+    background: rgba(24, 55, 73, 0.95) !important;
 }
 
 /* Details content background */
@@ -337,7 +337,7 @@ details.lego-card .list-unstyled {
 }
 
 [data-bs-theme="dark"] details.lego-card .list-unstyled {
-    background: rgba(0, 0, 0, 0.2) !important;
+    background: rgba(8, 20, 30, 0.4) !important;
 }
 
 /* Details text contrast */
@@ -346,7 +346,7 @@ details.lego-card .text-muted {
 }
 
 [data-bs-theme="dark"] details.lego-card .text-muted {
-    color: #aaaaaa !important;
+    color: #919394 !important;
 }
 
 /* History item text */
@@ -358,7 +358,7 @@ details.lego-card .history-item-user {
 
 [data-bs-theme="dark"] details.lego-card .history-item-ip,
 [data-bs-theme="dark"] details.lego-card .history-item-user {
-    color: #e0e0e0 !important;
+    color: #C3A431 !important;
     font-weight: 700;
 }
 
@@ -369,7 +369,7 @@ details.lego-card summary .text-truncate {
 }
 
 [data-bs-theme="dark"] details.lego-card summary .text-truncate {
-    color: #888888 !important;
+    color: #919394 !important;
     font-weight: 700;
 }
 
@@ -379,7 +379,7 @@ details.lego-card .fw-bold {
 }
 
 [data-bs-theme="dark"] details.lego-card .fw-bold {
-    color: #777777 !important;
+    color: #A25D3F !important;
 }
 
 /* Form Elements - Brick-style inputs */
