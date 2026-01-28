@@ -1,0 +1,687 @@
+:root {
+    /* Classic Lego Brick Colors */
+    --lego-red: #e3000b;
+    /* Classic Lego red */
+    --lego-yellow: #ffe24cc9;
+    /* Classic Lego yellow */
+    --lego-blue: #acd5ee;
+    /* Classic Lego blue */
+    --lego-green: #00a800;
+    /* Classic Lego green */
+    --lego-orange: #86324a;
+    /* Classic Lego orange */
+    --lego-black: #222222;
+    /* Lego black */
+    --lego-grey: #555555;
+    /* Lego grey */
+    --lego-white: #ffffff;
+
+    /* Theme Variables */
+    --lego-primary: #ffc500;
+    /* Yellow for primary actions */
+    --lego-secondary: #ff91d0db;
+    /* Dark grey for secondary elements */
+    --lego-accent: #0055bf;
+    /* Blue for accents */
+    --lego-bg-light: #f5f5f5;
+    --lego-bg-white: #ffffff;
+    --lego-text-dark: #1a1a1a;
+    --lego-text-muted: #6b6b6b;
+
+    /* Shadows & Effects - Playful, brick-like */
+    --lego-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
+    --lego-shadow-hover: 5px 5px 0 rgba(0, 0, 0, 0.2);
+    --lego-border-thick: 2px solid var(--lego-grey);
+    --lego-radius-brick: 3px;
+    --lego-radius-block: 0px;
+
+    /* Font - Fun, bold */
+    --lego-font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+}
+
+.text-dark {
+    color: #b39830 !important;
+}
+
+.text-white {
+    color: #031321 !important;
+}
+
+[data-bs-theme="dark"] {
+    --lego-bg-light: #0a0a0a;
+    --lego-bg-white: #1a1a1a;
+    --lego-text-dark: #9e8a57;
+    --lego-text-muted: #888888;
+}
+
+/* Dark mode overrides */
+[data-bs-theme="dark"] .lego-card {
+    background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+    border-color: #444444;
+}
+
+[data-bs-theme="dark"] .text-muted {
+    color: var(--lego-text-muted) !important;
+}
+
+[data-bs-theme="dark"] .user-badge {
+    background: linear-gradient(145deg, #2042564a, #957763cf);
+    border-color: var(--lego-secondary);
+    border-left-color: var(--lego-secondary);
+}
+
+[data-bs-theme="dark"] .user-badge .text-dark {
+    color: var(--lego-text-dark) !important;
+}
+
+[data-bs-theme="dark"] body::before {
+    background-image: url('/static/img/bg-lego-dark.png');
+    filter: blur(10px);
+}
+
+/* Dark mode form controls */
+[data-bs-theme="dark"] input.form-control {
+    background: #2a2a2a;
+    color: var(--lego-text-dark);
+    border-color: var(--lego-dark-grey);
+}
+
+[data-bs-theme="dark"] input.form-control:focus {
+    background: #333333;
+    border-color: var(--lego-accent);
+}
+
+/* Dark mode badges */
+[data-bs-theme="dark"] .badge.bg-light {
+    background: var(--lego-dark-grey) !important;
+    color: var(--lego-text-dark) !important;
+    border: 2px solid var(--lego-silver) !important;
+}
+
+/* Dark mode border colors */
+[data-bs-theme="dark"] .border-top,
+[data-bs-theme="dark"] .border-bottom {
+    border-color: var(--lego-dark-grey) !important;
+}
+
+/* Compact heading styles - Bold and technical */
+h1 {
+    font-size: 1.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+h2 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+h5 {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+h6 {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+html,
+body {
+    overflow-x: hidden;
+}
+
+.page-content {
+    padding-top: 4.5rem;
+}
+
+body {
+    background-color: var(--lego-blue);
+    position: relative;
+    color: var(--lego-text-dark);
+    font-family: var(--lego-font-family);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    font-size: 0.9rem;
+}
+
+/* Blurred background layer */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/static/img/bg-lego.png');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    filter: blur(8px);
+    z-index: -1;
+}
+
+/* Typography - Fun and Colorful */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--lego-orange);
+    margin-bottom: 0.3rem;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Brick-style Containers */
+.lego-card {
+    background: var(--lego-bg-white);
+    border: var(--lego-border-thick);
+    border-radius: var(--lego-radius-brick);
+    box-shadow: var(--lego-shadow);
+    padding: 0.5rem;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+/* Colorful top border accent (like stacked bricks) */
+.lego-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 10%;
+    right: 10%;
+    height: 4px;
+    background: linear-gradient(90deg,
+            var(--lego-grey) 0%, var(--lego-grey) 20%,
+            var(--lego-yellow) 20%, var(--lego-yellow) 40%,
+            var(--lego-blue) 40%, var(--lego-blue) 60%,
+            var(--lego-green) 60%, var(--lego-green) 80%,
+            var(--lego-orange) 80%, var(--lego-orange) 100%);
+    border-radius: 2px 2px 0 0;
+    opacity: 0.3;
+}
+
+.lego-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: var(--lego-shadow-hover);
+}
+
+/* Buttons - Brick-style */
+.btn {
+    border-radius: var(--lego-radius-brick);
+    padding: 0.35rem 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
+    font-size: 0.75rem;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary,
+.btn-info {
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0.3) 0%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%), var(--lego-yellow);
+    color: var(--lego-black);
+    border-color: rgba(0, 0, 0, 0.3);
+    font-weight: 800;
+}
+
+.btn-primary:hover,
+.btn-info:hover {
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0.4) 0%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.15) 100%), var(--lego-yellow);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
+    color: var(--lego-black);
+}
+
+.btn-outline-light {
+    background: #041424bf;
+    color: var(--lego-secondary);
+    border-color: var(--lego-secondary);
+}
+
+.btn-outline-light:hover {
+    background: var(--lego-secondary);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Active state - pressed down effect */
+.btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.doc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    padding-left: 0.5rem;
+    padding-right: 0.7rem;
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0.2) 0%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%), var(--lego-blue);
+    border-color: rgba(0, 0, 0, 0.3);
+}
+
+.doc-pill-icon {
+    width: 1rem;
+    height: 1rem;
+    display: inline-block;
+    flex: 0 0 auto;
+    border-radius: 2px;
+    background: var(--lego-yellow);
+}
+
+/* History Items - Colorful highlights */
+.history-item-ip {
+    color: var(--lego-blue) !important;
+    font-weight: 700;
+}
+
+.history-item-user {
+    color: var(--lego-text-dark) !important;
+    font-weight: 700;
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .lego-card {
+    background: linear-gradient(145deg, #2a2a2a, #1a1a1a) !important;
+}
+
+[data-bs-theme="dark"] details.lego-card {
+    background: linear-gradient(145deg, #2f2f2f, #202020) !important;
+}
+
+/* Forensic details - improved contrast */
+details.lego-card {
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+[data-bs-theme="dark"] details.lego-card {
+    background: rgba(42, 42, 42, 0.95) !important;
+}
+
+/* Details content background */
+details.lego-card .list-unstyled {
+    background: rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-bs-theme="dark"] details.lego-card .list-unstyled {
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Details text contrast */
+details.lego-card .text-muted {
+    color: #666666 !important;
+}
+
+[data-bs-theme="dark"] details.lego-card .text-muted {
+    color: #aaaaaa !important;
+}
+
+/* History item text */
+details.lego-card .history-item-ip,
+details.lego-card .history-item-user {
+    color: #1a1a1a !important;
+    font-weight: 700;
+}
+
+[data-bs-theme="dark"] details.lego-card .history-item-ip,
+[data-bs-theme="dark"] details.lego-card .history-item-user {
+    color: #e0e0e0 !important;
+    font-weight: 700;
+}
+
+/* Summary headings - improve contrast */
+details.lego-card summary .text-truncate {
+    color: #333333 !important;
+    font-weight: 700;
+}
+
+[data-bs-theme="dark"] details.lego-card summary .text-truncate {
+    color: #888888 !important;
+    font-weight: 700;
+}
+
+/* Detail section headings */
+details.lego-card .fw-bold {
+    color: #333333 !important;
+}
+
+[data-bs-theme="dark"] details.lego-card .fw-bold {
+    color: #777777 !important;
+}
+
+/* Form Elements - Brick-style inputs */
+input.form-control {
+    border-radius: var(--lego-radius-brick);
+    border: 2px solid var(--lego-grey);
+    background: var(--lego-bg-white);
+    padding: 0.5rem 0.75rem;
+    transition: all 0.15s ease;
+    font-size: 0.85rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+input.form-control:focus {
+    background: white;
+    border-color: var(--lego-blue);
+    box-shadow: 0 0 0 3px rgba(0, 85, 191, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+/* Form Switch - Brick-style toggle */
+.form-check-input {
+    width: 2.5rem;
+    height: 1.25rem;
+    background-color: var(--lego-grey);
+    border: 2px solid var(--lego-grey);
+    border-radius: 12px;
+    position: relative;
+    appearance: none;
+    cursor: pointer;
+}
+
+.form-check-input::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: calc(1.25rem - 4px);
+    height: calc(1.25rem - 4px);
+    background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+    border-radius: 50%;
+    transition: transform 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.form-check-input:checked {
+    background-color: var(--lego-green);
+    border-color: var(--lego-green);
+}
+
+.form-check-input:checked::after {
+    transform: translateX(1.25rem);
+    background: linear-gradient(135deg, #ffffff 0%, #d0f0d0 100%);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(0, 168, 0, 0.3);
+}
+
+/* Form switch alignment fix */
+.form-switch {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: auto !important;
+    padding-left: 0 !important;
+}
+
+.form-switch .form-check-input {
+    margin-top: 0 !important;
+    margin-right: 0.5rem !important;
+    float: none !important;
+    vertical-align: middle !important;
+}
+
+.form-switch .form-check-label {
+    vertical-align: middle !important;
+    line-height: 1.2 !important;
+}
+
+/* Navigation - Colorful brick bar */
+nav {
+    background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+    border: 2px solid var(--lego-grey);
+    border-radius: 16px;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    gap: 1rem;
+}
+
+/* Animations - Playful bounce */
+@keyframes brick-bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+@keyframes color-shift {
+
+    0%,
+    100% {
+        filter: hue-rotate(0deg);
+    }
+
+    50% {
+        filter: hue-rotate(15deg);
+    }
+}
+
+.brick-bounce {
+    animation: brick-bounce 0.6s ease-in-out;
+}
+
+.color-shift {
+    animation: color-shift 3s ease-in-out infinite;
+}
+
+/* User Badge - Colorful brick badge */
+.user-badge {
+    background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+    border: 2px solid var(--lego-grey);
+    border-left: 5px solid var(--lego-secondary);
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--lego-radius-brick);
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    .lego-card {
+        padding: 1.5rem;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        background-attachment: scroll;
+    }
+
+    .lego-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    nav {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+        clip-path: none;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .user-badge {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .user-badge .badge {
+        margin-top: 0.5rem;
+    }
+}
+
+.app-header {
+    background: var(--lego-blue);
+    border-bottom: 2px solid var(--lego-grey);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.theme-toggle-btn {
+    right: 0.5rem;
+    border-radius: var(--lego-radius-brick);
+}
+
+.header-spacer {
+    opacity: 0;
+    pointer-events: none;
+    color: transparent;
+    visibility: hidden;
+    border-color: transparent;
+    background: transparent;
+}
+
+@media (max-width: 576px) {
+    .header-bar {
+        flex-direction: row-reverse;
+        flex-wrap: wrap;
+    }
+
+    .theme-toggle-btn {
+        position: static !important;
+        transform: none !important;
+        margin: 0.5rem 0 0;
+        display: inline-flex;
+        align-self: flex-start;
+    }
+
+    .header-bar .btn {
+        width: auto;
+        margin-bottom: 0;
+    }
+
+    .header-spacer {
+        display: none;
+    }
+}
+
+/* Forensic states - Colorful brick indicators */
+.forensic-stale {
+    animation: brick-alert 1.5s ease-in-out infinite;
+    border: 2px solid var(--lego-orange);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 245, 230, 0.9));
+    box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.2), 0 3px 0 rgba(255, 102, 0, 0.3);
+}
+
+.forensic-submitted {
+    animation: brick-success 1.5s ease-in-out infinite;
+    border: 2px solid var(--lego-green);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 255, 240, 0.9));
+    box-shadow: 0 0 0 4px rgba(0, 168, 0, 0.2), 0 3px 0 rgba(0, 168, 0, 0.3);
+}
+
+@keyframes brick-alert {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.2), 0 3px 0 rgba(255, 102, 0, 0.3);
+        transform: translateY(0);
+    }
+
+    50% {
+        box-shadow: 0 0 0 6px rgba(255, 102, 0, 0.15), 0 4px 0 rgba(255, 102, 0, 0.35);
+        transform: translateY(-2px);
+    }
+}
+
+@keyframes brick-success {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 4px rgba(0, 168, 0, 0.2), 0 3px 0 rgba(0, 168, 0, 0.3);
+        transform: translateY(0);
+    }
+
+    50% {
+        box-shadow: 0 0 0 6px rgba(0, 168, 0, 0.15), 0 4px 0 rgba(0, 168, 0, 0.35);
+        transform: translateY(-2px);
+    }
+}
+
+/* Colorful accent line (brick colors) */
+.brick-line {
+    height: 6px;
+    background: linear-gradient(90deg,
+            var(--lego-grey) 0%, var(--lego-grey) 20%,
+            var(--lego-yellow) 20%, var(--lego-yellow) 40%,
+            var(--lego-blue) 40%, var(--lego-blue) 60%,
+            var(--lego-green) 60%, var(--lego-green) 80%,
+            var(--lego-orange) 80%, var(--lego-orange) 100%);
+    margin: 1rem 0;
+    border: none;
+    border-radius: var(--lego-radius-brick);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* Warning stripe pattern */
+.warning-stripe {
+    background: repeating-linear-gradient(45deg,
+            var(--lego-yellow),
+            var(--lego-yellow) 10px,
+            var(--lego-black) 10px,
+            var(--lego-black) 20px);
+    height: 8px;
+    border-radius: var(--lego-radius-brick);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Override Bootstrap danger color with Lego orange */
+.bg-danger {
+    background-color: var(--lego-orange) !important;
+}
+
+[data-bs-theme="dark"] .bg-danger {
+    background-color: var(--lego-orange) !important;
+}

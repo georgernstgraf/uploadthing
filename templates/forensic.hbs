@@ -33,14 +33,14 @@
             <!-- Toggle for End Time -->
             <div class="row mt-2">
                 <div class="col text-center">
-                    <div class="form-check form-switch d-inline-block p-1 rounded-pill shadow-sm pe-3 ps-4" style="font-size: 0.85rem; background: var(--leisure-glass-bg);">
-                        <input class="form-check-input"
+                    <div class="form-check form-switch d-inline-flex align-items-center gap-2 p-2" style="font-size: 0.85rem; background: rgba(255,255,255,0.9); border: 2px solid var(--lego-grey); border-radius: var(--lego-radius-brick);">
+                        <input class="form-check-input m-0"
                                type="checkbox"
                                id="toggleEndTime"
                                x-model="showEndTime"
                                @change="savePreference()"
                                style="cursor: pointer;">
-                        <label class="form-check-label fw-bold ms-1"
+                        <label class="form-check-label fw-bold m-0"
                                for="toggleEndTime"
                                style="cursor: pointer;">Endzeit festlegen</label>
                     </div>
