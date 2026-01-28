@@ -4,6 +4,8 @@ import type { ServiceIpForensics } from "../service/ipforensics.ts";
 
 // Hier nur Template Types, bitte!
 
+// --- 2. Template Data Type Definitions ---
+
 type DirIndexTemplateData = TopType & {
     files: string[];
     unterlagen_dir: string;
@@ -23,21 +25,6 @@ type WhoamiTemplateData = TopType;
 type LdapTemplateData = {
     users: UserType[];
 };
-export const dirIndexTemplate = Handlebars.compile<DirIndexTemplateData>(
-    Deno.readTextFileSync("templates/dirindex.hbs"),
-);
-export const uploadTemplate = Handlebars.compile<UploadTemplateData>(
-    Deno.readTextFileSync("templates/upload.hbs"),
-);
-export const successTemplate = Handlebars.compile<SuccessTemplateData>(
-    Deno.readTextFileSync("templates/success.hbs"),
-);
-export const ldapTemplate = Handlebars.compile<LdapTemplateData>(
-    Deno.readTextFileSync("templates/ldap.hbs"),
-);
-export const whoamiTemplate = Handlebars.compile<WhoamiTemplateData>(
-    Deno.readTextFileSync("templates/whoami.hbs"),
-);
 
 type ForensicTemplateData = TopType & {
     remote_user: UserType;
@@ -53,6 +40,8 @@ type ForensicTemplateData = TopType & {
     endtimeProvided: boolean;
     forensic_refresh_seconds: number;
 };
+
+// --- 3. Handlebars Helpers ---
 
 Handlebars.registerHelper("eq", function (a, b) {
     return a === b;
@@ -82,6 +71,9 @@ Handlebars.registerHelper("let", function (this: any, value, options) {
         blockParams: [value],
     });
 });
+
+// --- 4. Handlebars Partials ---
+
 Handlebars.registerPartial(
     "top",
     Deno.readTextFileSync("templates/top.hbs"),
@@ -89,6 +81,24 @@ Handlebars.registerPartial(
 Handlebars.registerPartial(
     "forensic-report",
     Deno.readTextFileSync("templates/forensic-report.hbs"),
+);
+
+// --- 5. Handlebars Compiled Templates (Exports) ---
+
+export const dirIndexTemplate = Handlebars.compile<DirIndexTemplateData>(
+    Deno.readTextFileSync("templates/dirindex.hbs"),
+);
+export const uploadTemplate = Handlebars.compile<UploadTemplateData>(
+    Deno.readTextFileSync("templates/upload.hbs"),
+);
+export const successTemplate = Handlebars.compile<SuccessTemplateData>(
+    Deno.readTextFileSync("templates/success.hbs"),
+);
+export const ldapTemplate = Handlebars.compile<LdapTemplateData>(
+    Deno.readTextFileSync("templates/ldap.hbs"),
+);
+export const whoamiTemplate = Handlebars.compile<WhoamiTemplateData>(
+    Deno.readTextFileSync("templates/whoami.hbs"),
 );
 export const forensicTemplate = Handlebars.compile<ForensicTemplateData>(
     Deno.readTextFileSync("templates/forensic.hbs"),
