@@ -9,6 +9,11 @@
               method="get"
               class="container text-center"
               @submit="handleSubmit">
+            <datalist id="spg_times_list">
+                {{#each spg_times}}
+                    <option value="{{this}}"></option>
+                {{/each}}
+            </datalist>
             <div class="row mt-1 g-2 align-items-center">
                 <div class="col-md-6">
                     <label class="form-label fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">
@@ -17,6 +22,7 @@
                                name="starttime"
                                class="form-control form-control-sm text-center"
                                id="timestartselect"
+                               list="spg_times_list"
                                value="{{starttime}}">
                     </label>
                 </div>
@@ -58,6 +64,7 @@
                                name="endtime"
                                class="form-control form-control-sm text-center"
                                id="timeendselect"
+                               list="spg_times_list"
                                value="{{endtime}}">
                     </label>
                 </div>
