@@ -64,5 +64,5 @@ const create_stmt = db.prepare(
  * Insert a registration record for an IP and user.
  */
 export function create(ip: string, userId: number, at: Date): void {
-    create_stmt.run(ip, userId, at);
+    create_stmt.run(ip, userId, at.toISOString());
 }

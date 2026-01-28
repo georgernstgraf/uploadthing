@@ -11,7 +11,7 @@ const registerSeen_stmt = db.prepare(
  * Insert a single IP seen timestamp.
  */
 export function registerSeen(ip: string, seen: Date) {
-    registerSeen_stmt.run(ip, seen);
+    registerSeen_stmt.run(ip, seen.toISOString());
 }
 /**
  * Insert multiple IP seen timestamps in one statement.
@@ -20,7 +20,7 @@ export function registerSeenMany(ips: string[], seen: Date) {
     const placeholders = ips.map(() => "(?, ?)").join(", ");
     const sql = `INSERT INTO ipfact (ip, seen) VALUES ${placeholders}`;
     const stmt = db.prepare(sql);
-    const params = ips.flatMap((ip) => [ip, seen]);
+    const params = ips.flatMap((ip) => [ip, seen.toISOString()]);
     return stmt.run(params);
 }
 /**

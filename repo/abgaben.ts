@@ -21,7 +21,7 @@ export function create(
     filename: string,
     at: Date,
 ): RepoAbgabeRecord {
-    create_stmt.run(userId, ip, filename, at);
+    create_stmt.run(userId, ip, filename, at.toISOString());
     const id = db.lastInsertRowId as number;
     return { id, userId, ip, filename, at };
 }
