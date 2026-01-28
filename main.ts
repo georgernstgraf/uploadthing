@@ -6,7 +6,7 @@ import { get_unterlagen, getVersionedPath } from "./lib/lib.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import * as service from "./service/service.ts";
 import * as hbs from "./lib/handlebars.ts";
-import { Bindings, Variables } from "./lib/types.ts";
+import { Bindings, HonoContextVars } from "./lib/types.ts";
 import forensicRouter from "./routes/forensic.ts";
 import { setupShutdown as setupPrismaShutdown } from "./repo/prismadb.ts";
 import { setupShutdown as setupSqliteShutdown } from "./repo/db.ts";
@@ -17,7 +17,7 @@ await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
 setupPrismaShutdown(); // Setup Prisma graceful shutdown
 setupSqliteShutdown(); // Setup SQLite graceful shutdown
 
-const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+const app = new Hono<{ Bindings: Bindings; Variables: HonoContextVars }>();
 app.use("*", remoteIPMiddleware);
 
 // Mount forensic router

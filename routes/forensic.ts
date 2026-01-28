@@ -1,11 +1,11 @@
 import { Hono } from "hono";
-import { Variables } from "../lib/types.ts";
+import { HonoContextVars } from "../lib/types.ts";
 import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
 import config from "../lib/config.ts";
 
-const forensicRouter = new Hono<{ Variables: Variables }>();
+const forensicRouter = new Hono<{ Variables: HonoContextVars }>();
 const start_ms_earlier = 3.6 * 1.5e6; // 1.5 hours ago
 const one_day_ms = 24 * 3.6e6; // plus one day
 const twelve_hours_ms = 12 * 3.6e6;

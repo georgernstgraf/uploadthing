@@ -1,6 +1,6 @@
 // Hier keine Template Types, bitte!
 
-export type Variables = {
+export type HonoContextVars = {
     remoteip: string;
     remoteuser: UserType | null;
 };
