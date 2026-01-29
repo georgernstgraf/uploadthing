@@ -299,7 +299,7 @@ import * as service from "../service/service.ts";
 4. **Database changes**: Use Prisma commands (`pg`, `pmd`, `pd`)
 5. **Before stopping**: Run full check, lint, and test suite
 6. **handling git**: never commit or push unless asked to do so
-7. **working on issues**: If work on an issue is completed, make a comment containing it.
+7. **working on issues**: If work on an issue is completed, make a comment containing it. It is also permitted and encouraged to update issue descriptions and comment on them during the planning phase to clarify requirements or document decisions.
 
 > **IMPORTANT**: Linting must always succeed before the completion of any task. Run `deno task lint` and fix all issues before marking work as complete.
 
