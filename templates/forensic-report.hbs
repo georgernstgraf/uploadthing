@@ -8,7 +8,7 @@
          hx-include="#timeselector form">
     <h2 class="text-center mb-0" style="font-size: 1.1rem;">SchülerInnen und IP Adressen</h2>
     <h6 class="text-center text-muted mb-2" style="font-size: 0.75rem;">
-        Zeitraum: {{#unless within12hours}}
+        Zeitraum: {{#unless withinTimeCutoff}}
             {{startdate}}
         {{/unless}}
         {{starttime}} -

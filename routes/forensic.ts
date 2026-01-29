@@ -8,7 +8,7 @@ import config from "../lib/config.ts";
 const forensicRouter = new Hono<{ Variables: HonoContextVars }>();
 const start_ms_earlier = 3.6 * 1.5e6; // 1.5 hours ago
 const one_day_ms = 24 * 3.6e6; // plus one day
-const twelve_hours_ms = 12 * 3.6e6;
+const time_cutoff_ms = config.TODAY_HOURS_CUTOFF * 3.6e6;
 
 // Forensic main page
 
@@ -47,10 +47,10 @@ forensicRouter.get("/", async (c) => {
         [startDateTime, endDateTime] = [endDateTime, startDateTime];
     }
 
-    // Calculate if start time is within the last 12 hours
-    const within12hours = Math.abs(
+    // Calculate if start time is within the configured cutoff
+    const withinTimeCutoff = Math.abs(
         new Date().getTime() - startDateTime.getTime(),
-    ) < twelve_hours_ms; // 12 hours in milliseconds
+    ) < time_cutoff_ms;
     const endtimeInFuture = endDateTime.getTime() > new Date().getTime();
 
     const refreshSeconds = config.forensic_refresh_seconds;
@@ -71,7 +71,7 @@ forensicRouter.get("/", async (c) => {
         spg_times: config.spg_times,
         ips_with_name: registered,
         ips_without_name: unregistered,
-        within12hours,
+        withinTimeCutoff,
         endtimeInFuture,
         endtimeProvided,
         forensic_refresh_seconds: refreshSeconds,

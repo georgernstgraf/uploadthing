@@ -35,7 +35,7 @@ type ForensicTemplateData = TopType & {
     enddate: string;
     ips_with_name: ServiceIpForensics[];
     ips_without_name: ServiceIpForensics[];
-    within12hours: boolean;
+    withinTimeCutoff: boolean;
     endtimeInFuture: boolean;
     endtimeProvided: boolean;
     forensic_refresh_seconds: number;
