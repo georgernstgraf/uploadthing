@@ -10,6 +10,7 @@ export async function get_unterlagen() {
     return files;
 }
 
+
 export async function getVersionedPath(
     dir: string,
     filename: string,
@@ -49,3 +50,13 @@ export function safeFileComponent(input: string): string {
         .replace(/\.\./g, "_")
         .replace(/\s+/g, "_");
 }
+
+export async function writeAll(f: Deno.FsFile, chunk: Uint8Array): Promise<void> {
+    let off = 0;
+    while (off < chunk.length) {
+        const n = await f.write(chunk.subarray(off));
+        if (n <= 0) throw new Error("short write");
+        off += n;
+    }
+}
+
