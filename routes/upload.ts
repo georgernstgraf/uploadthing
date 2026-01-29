@@ -6,6 +6,7 @@ import * as service from "../service/service.ts";
 import * as hbs from "../lib/handlebars.ts";
 import { HonoContextVars } from "../lib/types.ts";
 import { AppError } from "../lib/errors.ts";
+import { UploadSchema } from "../lib/schemas.ts";
 
 const uploadRouter = new Hono<{ Variables: HonoContextVars }>();
 
@@ -35,9 +36,14 @@ uploadRouter.post("/", async (c) => {
     }
 
     const formData = await c.req.formData();
-    const file = formData.get("file") as File;
+    const validation = UploadSchema.safeParse(formData);
 
-    if (!file) throw new AppError("No file uploaded", 400);
+    if (!validation.success) {
+        throw new AppError("Keine Datei ausgewählt oder ungültiger Upload", 400);
+    }
+
+    const file = validation.data.file as File;
+
     if (file.size > maxUploadBytes) {
         throw new AppError(
             `Es sind maximal ${config.MAX_UPLOAD_MB} MB möglich.`,

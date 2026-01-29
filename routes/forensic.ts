@@ -4,6 +4,7 @@ import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
 import config from "../lib/config.ts";
+import { ForensicQuerySchema } from "../lib/schemas.ts";
 
 const forensicRouter = new Hono<{ Variables: HonoContextVars }>();
 const start_ms_earlier = 3.6 * 1.5e6; // 1.5 hours ago
@@ -17,6 +18,13 @@ forensicRouter.get("/", async (c) => {
     if (!remote_user) {
         return c.redirect("/whoami");
     }
+
+    const query = c.req.query();
+    const validation = ForensicQuerySchema.safeParse(query);
+    if (!validation.success) {
+        return c.text("Ungültiges Datums- oder Zeitformat. Bitte verwenden Sie YYYY-MM-DD und HH:MM.", 400);
+    }
+
     let startdate = c.req.query("startdate") ||
         localDateString(new Date(Date.now() - start_ms_earlier));
     let starttime = c.req.query("starttime");

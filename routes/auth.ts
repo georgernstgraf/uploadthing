@@ -3,6 +3,7 @@ import * as service from "../service/service.ts";
 import * as hbs from "../lib/handlebars.ts";
 import config from "../lib/config.ts";
 import { HonoContextVars } from "../lib/types.ts";
+import { LdapSearchSchema, RegisterSchema } from "../lib/schemas.ts";
 
 import { AppError } from "../lib/errors.ts";
 
@@ -22,12 +23,22 @@ authRouter.get("/whoami", (c) => {
 
 authRouter.get("/ldap", async (c) => {
     const query = c.req.query();
+    const validation = LdapSearchSchema.safeParse(query);
+
+    if (!validation.success) {
+        return c.html(
+            hbs.ldapTemplate({
+                users: [{ email: "", name: validation.error.format().email?._errors[0] || "Ungültige Eingabe" }],
+            }),
+        );
+    }
+
     try {
-        const users = await service.ldap.searchUserByEmailStart(query.email);
+        const users = await service.ldap.searchUserByEmailStart(validation.data.email);
         if (users.length === 0) {
             users.push({
                 email: "",
-                name: `Keine Email beginnend mit ${query.email} gefunden!`,
+                name: `Keine Email beginnend mit ${validation.data.email} gefunden!`,
             });
         }
         return c.html(hbs.ldapTemplate({ users }));
@@ -43,7 +54,13 @@ authRouter.get("/ldap", async (c) => {
 authRouter.post("/register", async (c) => {
     // try-catch removed, letting global error handler catch exceptions
     const body = await c.req.parseBody();
-    const email = body.email as string;
+    const validation = RegisterSchema.safeParse(body);
+
+    if (!validation.success) {
+        throw new AppError(validation.error.format().email?._errors[0] || "Ungültige Eingabe", 400);
+    }
+
+    const email = validation.data.email;
     const user = await service.user.getUserByEmail(email);
     if (!user) {
         throw new AppError("User not found", 404);
