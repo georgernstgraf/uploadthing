@@ -1,33 +1,33 @@
 :root {
     /* Classic Lego Brick Colors - Updated from bg-lego.png */
-    --lego-red: #B26934;
+    --lego-red: #b26934;
     /* Image Brown/Orange */
-    --lego-yellow: #B38F63;
+    --lego-yellow: #b38f63;
     /* Image Tan */
-    --lego-blue: #5099A5;
+    --lego-blue: #5099a5;
     /* Image Teal */
-    --lego-green: #5C7D83;
+    --lego-green: #5c7d83;
     /* Image Muted Teal */
-    --lego-orange: #B26934;
+    --lego-orange: #b26934;
     /* Image Brown/Orange */
-    --lego-black: #191C1C;
+    --lego-black: #191c1c;
     /* Image Black */
-    --lego-grey: #A2A7A7;
+    --lego-grey: #a2a7a7;
     /* Image Grey */
-    --lego-white: #F2F5F5;
+    --lego-white: #f2f5f5;
     /* Image White */
 
     /* Theme Variables */
-    --lego-primary: #B38F63;
+    --lego-primary: #b38f63;
     /* Tan for primary actions */
-    --lego-secondary: #BFC4BF;
+    --lego-secondary: #bfc4bf;
     /* Light Grey for secondary elements */
-    --lego-accent: #5099A5;
+    --lego-accent: #5099a5;
     /* Teal for accents */
-    --lego-bg-light: #F2F5F5;
+    --lego-bg-light: #f2f5f5;
     --lego-bg-white: #ffffff;
-    --lego-text-dark: #191C1C;
-    --lego-text-muted: #595F60;
+    --lego-text-dark: #191c1c;
+    --lego-text-muted: #595f60;
 
     /* Shadows & Effects - Playful, brick-like */
     --lego-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
@@ -41,24 +41,24 @@
 }
 
 .text-dark {
-    color: #B38F63 !important;
+    color: #b38f63 !important;
 }
 
 .text-white {
-    color: #191C1C !important;
+    color: #191c1c !important;
 }
 
 [data-bs-theme="dark"] {
-    --lego-bg-light: #08141E;
+    --lego-bg-light: #08141e;
     --lego-bg-white: #183749;
-    --lego-text-dark: #C3A431;
+    --lego-text-dark: #c3a431;
     --lego-text-muted: #919394;
 }
 
 /* Dark mode overrides */
 [data-bs-theme="dark"] .lego-card {
-    background: linear-gradient(145deg, #183749, #08141E);
-    border-color: #2A4A5C;
+    background: linear-gradient(145deg, #183749, #08141e);
+    border-color: #2a4a5c;
 }
 
 [data-bs-theme="dark"] .text-muted {
@@ -66,9 +66,9 @@
 }
 
 [data-bs-theme="dark"] .user-badge {
-    background: linear-gradient(145deg, #2A4A5C, #183749);
-    border-color: #A25D3F;
-    border-left-color: #A25D3F;
+    background: linear-gradient(145deg, #2a4a5c, #183749);
+    border-color: #a25d3f;
+    border-left-color: #a25d3f;
 }
 
 [data-bs-theme="dark"] .user-badge .text-dark {
@@ -76,33 +76,33 @@
 }
 
 [data-bs-theme="dark"] body::before {
-    background-image: url('/static/img/bg-lego-dark.png');
+    background-image: url("/static/img/bg-lego-dark.png");
     filter: blur(10px);
 }
 
 /* Dark mode form controls */
 [data-bs-theme="dark"] input.form-control {
-    background: #08141E;
+    background: #08141e;
     color: var(--lego-text-dark);
-    border-color: #575A59;
+    border-color: #575a59;
 }
 
 [data-bs-theme="dark"] input.form-control:focus {
     background: #183749;
-    border-color: #C3A431;
+    border-color: #c3a431;
 }
 
 /* Dark mode badges */
 [data-bs-theme="dark"] .badge.bg-light {
     background: #183749 !important;
     color: var(--lego-text-dark) !important;
-    border: 2px solid #575A59 !important;
+    border: 2px solid #575a59 !important;
 }
 
 /* Dark mode border colors */
 [data-bs-theme="dark"] .border-top,
 [data-bs-theme="dark"] .border-bottom {
-    border-color: #575A59 !important;
+    border-color: #575a59 !important;
 }
 
 /* Compact heading styles - Bold and technical */
@@ -165,13 +165,13 @@ body {
 
 /* Blurred background layer */
 body::before {
-    content: '';
+    content: "";
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('/static/img/bg-lego.png');
+    background-image: url("/static/img/bg-lego.png");
     background-size: cover;
     background-attachment: fixed;
     background-position: center;
@@ -204,18 +204,25 @@ h6 {
 
 /* Colorful top border accent (like stacked bricks) */
 .lego-card::before {
-    content: '';
+    content: "";
     position: absolute;
     top: -2px;
     left: 10%;
     right: 10%;
     height: 4px;
-    background: linear-gradient(90deg,
-            var(--lego-grey) 0%, var(--lego-grey) 20%,
-            var(--lego-yellow) 20%, var(--lego-yellow) 40%,
-            var(--lego-blue) 40%, var(--lego-blue) 60%,
-            var(--lego-green) 60%, var(--lego-green) 80%,
-            var(--lego-orange) 80%, var(--lego-orange) 100%);
+    background: linear-gradient(
+        90deg,
+        var(--lego-grey) 0%,
+        var(--lego-grey) 20%,
+        var(--lego-yellow) 20%,
+        var(--lego-yellow) 40%,
+        var(--lego-blue) 40%,
+        var(--lego-blue) 60%,
+        var(--lego-green) 60%,
+        var(--lego-green) 80%,
+        var(--lego-orange) 80%,
+        var(--lego-orange) 100%
+    );
     border-radius: 2px 2px 0 0;
     opacity: 0.3;
 }
@@ -240,10 +247,14 @@ h6 {
 
 .btn-primary,
 .btn-info {
-    background: linear-gradient(180deg,
+    background:
+        linear-gradient(
+            180deg,
             rgba(255, 255, 255, 0.3) 0%,
             transparent 50%,
-            rgba(0, 0, 0, 0.1) 100%), var(--lego-yellow);
+            rgba(0, 0, 0, 0.1) 100%
+        ),
+        var(--lego-yellow);
     color: var(--lego-black);
     border-color: rgba(0, 0, 0, 0.3);
     font-weight: 800;
@@ -251,10 +262,14 @@ h6 {
 
 .btn-primary:hover,
 .btn-info:hover {
-    background: linear-gradient(180deg,
+    background:
+        linear-gradient(
+            180deg,
             rgba(255, 255, 255, 0.4) 0%,
             transparent 50%,
-            rgba(0, 0, 0, 0.15) 100%), var(--lego-yellow);
+            rgba(0, 0, 0, 0.15) 100%
+        ),
+        var(--lego-yellow);
     transform: translateY(-1px);
     box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
     color: var(--lego-black);
@@ -286,20 +301,24 @@ h6 {
     letter-spacing: 0.02em;
     padding-left: 0.5rem;
     padding-right: 0.7rem;
-    background: linear-gradient(180deg,
+    background:
+        linear-gradient(
+            180deg,
             rgba(255, 255, 255, 0.2) 0%,
             transparent 50%,
-            rgba(0, 0, 0, 0.1) 100%), var(--lego-blue);
+            rgba(0, 0, 0, 0.1) 100%
+        ),
+        var(--lego-blue);
     border-color: rgba(0, 0, 0, 0.3);
 }
 
 .doc-pill-icon {
-    width: 1rem;
-    height: 1rem;
+    width: 1.6rem;
+    height: 1.6rem;
     display: inline-block;
     flex: 0 0 auto;
     border-radius: 2px;
-    background: var(--lego-yellow);
+    /* background: var(--lego-yellow); */
 }
 
 /* History Items - Colorful highlights */
@@ -315,11 +334,11 @@ h6 {
 
 /* Dark mode adjustments */
 [data-bs-theme="dark"] .lego-card {
-    background: linear-gradient(145deg, #183749, #08141E) !important;
+    background: linear-gradient(145deg, #183749, #08141e) !important;
 }
 
 [data-bs-theme="dark"] details.lego-card {
-    background: linear-gradient(145deg, #183749, #08141E) !important;
+    background: linear-gradient(145deg, #183749, #08141e) !important;
 }
 
 /* Forensic details - improved contrast */
@@ -358,7 +377,7 @@ details.lego-card .history-item-user {
 
 [data-bs-theme="dark"] details.lego-card .history-item-ip,
 [data-bs-theme="dark"] details.lego-card .history-item-user {
-    color: #C3A431 !important;
+    color: #c3a431 !important;
     font-weight: 700;
 }
 
@@ -379,7 +398,7 @@ details.lego-card .fw-bold {
 }
 
 [data-bs-theme="dark"] details.lego-card .fw-bold {
-    color: #A25D3F !important;
+    color: #a25d3f !important;
 }
 
 /* Form Elements - Brick-style inputs */
@@ -396,7 +415,9 @@ input.form-control {
 input.form-control:focus {
     background: white;
     border-color: var(--lego-blue);
-    box-shadow: 0 0 0 3px rgba(0, 85, 191, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow:
+        0 0 0 3px rgba(0, 85, 191, 0.2),
+        inset 0 1px 2px rgba(0, 0, 0, 0.1);
     outline: none;
 }
 
@@ -413,7 +434,7 @@ input.form-control:focus {
 }
 
 .form-check-input::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 1px;
     left: 1px;
@@ -472,7 +493,6 @@ nav {
 
 /* Animations - Playful bounce */
 @keyframes brick-bounce {
-
     0%,
     100% {
         transform: translateY(0);
@@ -484,7 +504,6 @@ nav {
 }
 
 @keyframes color-shift {
-
     0%,
     100% {
         filter: hue-rotate(0deg);
@@ -505,7 +524,11 @@ nav {
 
 /* User Badge - Colorful brick badge */
 .user-badge {
-    background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+    background: linear-gradient(
+        135deg,
+        #ffffff88 0%,
+        color-mix(in srgb, var(--lego-accent), transparent 70%) 100%
+    );
     border: 2px solid var(--lego-grey);
     border-left: 5px solid var(--lego-secondary);
     padding: 0.35rem 0.75rem;
@@ -564,7 +587,14 @@ nav {
 }
 
 .app-header {
-    background: var(--lego-blue);
+    background:
+        linear-gradient(
+            5deg,
+            rgba(255, 255, 255, 0.2) 0%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%
+        ),
+        color-mix(in srgb, var(--lego-blue), transparent 70%);
     border-bottom: 2px solid var(--lego-grey);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -612,41 +642,57 @@ nav {
 .forensic-stale {
     animation: brick-alert 1.5s ease-in-out infinite;
     border: 2px solid var(--lego-orange);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 245, 230, 0.9));
-    box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.2), 0 3px 0 rgba(255, 102, 0, 0.3);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.95),
+        rgba(255, 245, 230, 0.9)
+    );
+    box-shadow:
+        0 0 0 4px rgba(255, 102, 0, 0.2),
+        0 3px 0 rgba(255, 102, 0, 0.3);
 }
 
 .forensic-submitted {
     animation: brick-success 1.5s ease-in-out infinite;
     border: 2px solid var(--lego-green);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 255, 240, 0.9));
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.95),
+        rgba(240, 255, 240, 0.9)
+    );
     box-shadow: 0 0 0 4px rgba(0, 168, 0, 0.2), 0 3px 0 rgba(0, 168, 0, 0.3);
 }
 
 @keyframes brick-alert {
-
     0%,
     100% {
-        box-shadow: 0 0 0 4px rgba(255, 102, 0, 0.2), 0 3px 0 rgba(255, 102, 0, 0.3);
+        box-shadow:
+            0 0 0 4px rgba(255, 102, 0, 0.2),
+            0 3px 0 rgba(255, 102, 0, 0.3);
         transform: translateY(0);
     }
 
     50% {
-        box-shadow: 0 0 0 6px rgba(255, 102, 0, 0.15), 0 4px 0 rgba(255, 102, 0, 0.35);
+        box-shadow:
+            0 0 0 6px rgba(255, 102, 0, 0.15),
+            0 4px 0 rgba(255, 102, 0, 0.35);
         transform: translateY(-2px);
     }
 }
 
 @keyframes brick-success {
-
     0%,
     100% {
-        box-shadow: 0 0 0 4px rgba(0, 168, 0, 0.2), 0 3px 0 rgba(0, 168, 0, 0.3);
+        box-shadow:
+            0 0 0 4px rgba(0, 168, 0, 0.2),
+            0 3px 0 rgba(0, 168, 0, 0.3);
         transform: translateY(0);
     }
 
     50% {
-        box-shadow: 0 0 0 6px rgba(0, 168, 0, 0.15), 0 4px 0 rgba(0, 168, 0, 0.35);
+        box-shadow:
+            0 0 0 6px rgba(0, 168, 0, 0.15),
+            0 4px 0 rgba(0, 168, 0, 0.35);
         transform: translateY(-2px);
     }
 }
@@ -654,12 +700,19 @@ nav {
 /* Colorful accent line (brick colors) */
 .brick-line {
     height: 6px;
-    background: linear-gradient(90deg,
-            var(--lego-grey) 0%, var(--lego-grey) 20%,
-            var(--lego-yellow) 20%, var(--lego-yellow) 40%,
-            var(--lego-blue) 40%, var(--lego-blue) 60%,
-            var(--lego-green) 60%, var(--lego-green) 80%,
-            var(--lego-orange) 80%, var(--lego-orange) 100%);
+    background: linear-gradient(
+        90deg,
+        var(--lego-grey) 0%,
+        var(--lego-grey) 20%,
+        var(--lego-yellow) 20%,
+        var(--lego-yellow) 40%,
+        var(--lego-blue) 40%,
+        var(--lego-blue) 60%,
+        var(--lego-green) 60%,
+        var(--lego-green) 80%,
+        var(--lego-orange) 80%,
+        var(--lego-orange) 100%
+    );
     margin: 1rem 0;
     border: none;
     border-radius: var(--lego-radius-brick);
@@ -668,11 +721,13 @@ nav {
 
 /* Warning stripe pattern */
 .warning-stripe {
-    background: repeating-linear-gradient(45deg,
-            var(--lego-yellow),
-            var(--lego-yellow) 10px,
-            var(--lego-black) 10px,
-            var(--lego-black) 20px);
+    background: repeating-linear-gradient(
+        45deg,
+        var(--lego-yellow),
+        var(--lego-yellow) 10px,
+        var(--lego-black) 10px,
+        var(--lego-black) 20px
+    );
     height: 8px;
     border-radius: var(--lego-radius-brick);
     box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);

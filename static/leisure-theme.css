@@ -56,7 +56,7 @@
 
 /* Fix text contrast in dark mode within glass cards */
 [data-bs-theme="dark"] .leisure-card {
-    color: var(--leisure-text-dark);
+    color: var(--leisure-text-dark) !important;
 }
 
 [data-bs-theme="dark"] .text-muted {
@@ -70,6 +70,10 @@
 
 [data-bs-theme="dark"] .user-badge .text-dark {
     color: var(--leisure-text-dark) !important;
+}
+
+[data-bs-theme="dark"] .text-dark {
+    color: #dddddd !important;
 }
 
 [data-bs-theme="dark"] .user-badge .text-muted {
