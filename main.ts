@@ -12,6 +12,8 @@ import authRouter from "./routes/auth.ts";
 import apiRouter from "./routes/api.ts";
 import filesRouter from "./routes/files.ts";
 
+import { errorHandler } from "./middleware/error.ts";
+
 // ensure ABGABEN_DIR exists
 await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
 
@@ -19,6 +21,7 @@ setupPrismaShutdown(); // Setup Prisma graceful shutdown
 setupSqliteShutdown(); // Setup SQLite graceful shutdown
 
 const app = new Hono<{ Bindings: Bindings; Variables: HonoContextVars }>();
+app.onError(errorHandler);
 app.use("*", remoteIPMiddleware);
 
 // Mount routers

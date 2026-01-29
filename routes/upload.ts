@@ -5,6 +5,7 @@ import { getVersionedPath, safeFileComponent, writeAll } from "../lib/pathfuncs.
 import * as service from "../service/service.ts";
 import * as hbs from "../lib/handlebars.ts";
 import { HonoContextVars } from "../lib/types.ts";
+import { AppError } from "../lib/errors.ts";
 
 const uploadRouter = new Hono<{ Variables: HonoContextVars }>();
 
@@ -36,9 +37,9 @@ uploadRouter.post("/", async (c) => {
     const formData = await c.req.formData();
     const file = formData.get("file") as File;
 
-    if (!file) return c.text("No file uploaded", 400);
+    if (!file) throw new AppError("No file uploaded", 400);
     if (file.size > maxUploadBytes) {
-        return c.text(
+        throw new AppError(
             `Es sind maximal ${config.MAX_UPLOAD_MB} MB möglich.`,
             413,
         );
@@ -86,7 +87,7 @@ uploadRouter.post("/", async (c) => {
         } catch {
             // ignore
         }
-        return c.text((e as Error).message, 500);
+        throw new AppError((e as Error).message, 500);
     } finally {
         try {
             out?.close();
