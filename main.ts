@@ -2,22 +2,24 @@ import { Hono } from "hono";
 import config from "./lib/config.ts";
 import { remoteIPMiddleware } from "./middleware/remoteip.ts";
 import { Bindings, HonoContextVars } from "./lib/types.ts";
-import { setupShutdown as setupPrismaShutdown } from "./repo/prismadb.ts";
 import { setupShutdown as setupSqliteShutdown } from "./repo/db.ts";
+import { initDatabase } from "./repo/init_db.ts";
 
-import forensicRouter from "./routes/forensic.ts";
-import homeRouter from "./routes/home.ts";
-import uploadRouter from "./routes/upload.ts";
-import authRouter from "./routes/auth.ts";
-import apiRouter from "./routes/api.ts";
-import filesRouter from "./routes/files.ts";
+// Initialize database schema FIRST before any repo modules load
+initDatabase();
 
-import { errorHandler } from "./middleware/error.ts";
+// Now it's safe to import repo modules
+const { default: forensicRouter } = await import("./routes/forensic.ts");
+const { default: homeRouter } = await import("./routes/home.ts");
+const { default: uploadRouter } = await import("./routes/upload.ts");
+const { default: authRouter } = await import("./routes/auth.ts");
+const { default: apiRouter } = await import("./routes/api.ts");
+const { default: filesRouter } = await import("./routes/files.ts");
+const { errorHandler } = await import("./middleware/error.ts");
 
 // ensure ABGABEN_DIR exists
 await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
 
-setupPrismaShutdown(); // Setup Prisma graceful shutdown
 setupSqliteShutdown(); // Setup SQLite graceful shutdown
 
 const app = new Hono<{ Bindings: Bindings; Variables: HonoContextVars }>();

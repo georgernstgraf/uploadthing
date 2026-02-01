@@ -4,15 +4,17 @@ Zu den Zeiten:
 
 DATENBANK speichert Zeiten in UTC.
 */
-const registerSeen_stmt = db.prepare(
-    "INSERT INTO ipfact (ip, seen) VALUES (?, ?)",
-);
+
 /**
  * Insert a single IP seen timestamp.
  */
 export function registerSeen(ip: string, seen: Date) {
-    registerSeen_stmt.run(ip, seen.toISOString());
+    const stmt = db.prepare(
+        "INSERT INTO ipfact (ip, seen) VALUES (?, ?)",
+    );
+    stmt.run(ip, seen.toISOString());
 }
+
 /**
  * Insert multiple IP seen timestamps in one statement.
  */
@@ -23,16 +25,18 @@ export function registerSeenMany(ips: string[], seen: Date) {
     const params = ips.flatMap((ip) => [ip, seen.toISOString()]);
     return stmt.run(params);
 }
+
 /**
  * List distinct IPs seen within a UTC range.
  */
 export function ips_in_range(start: Date, end: Date): string[] {
     const stmt = db.prepare(
         `SELECT DISTINCT ip FROM ipfact
-        WHERE seen BETWEEN
-        ? AND ?`,
+        WHERE seen BETWEEN ? AND ?`,
     );
-    return stmt.all(start.toISOString(), end.toISOString()).map((row) => row.ip);
+    return stmt.all(start.toISOString(), end.toISOString()).map((row) =>
+        row.ip
+    );
 }
 
 /**
@@ -49,12 +53,13 @@ export function getHistoryForIPInRangeDesc(
 ): Date[] {
     const stmt = db.prepare(
         `SELECT seen FROM ipfact
-        WHERE ip = ? AND seen BETWEEN
-        ? AND ?
+        WHERE ip = ? AND seen BETWEEN ? AND ?
         ORDER BY seen DESC`,
     );
-    const rows = stmt.all(ip, start.toISOString(), end.toISOString()) as {
-        seen: string;
-    }[];
+    const rows = stmt.all(
+        ip,
+        start.toISOString(),
+        end.toISOString(),
+    ) as { seen: string }[];
     return rows.map((row) => new Date(row.seen));
 }

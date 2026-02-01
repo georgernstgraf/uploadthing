@@ -9,13 +9,7 @@
         "check": "deno check *ts lib/*ts routes/*ts ./middleware/*ts repo/*ts service/*ts",
         "lint": "deno lint *.ts lib/ middleware/ repo/ routes/ service/ test/",
         "fullcheck": "deno task check && deno task lint && deno task test",
-        "pg": "deno run -A prisma generate",
-        "pv": "deno run -A prisma validate",
-        "pd": "deno run -A --env-file prisma migrate deploy",
-        "pmd": "deno run -A --env-file prisma migrate dev",
-        "pms": "deno -A prisma migrate status",
-        "pmr": "deno -A prisma migrate reset",
-        "ps": "deno -A --env-file prisma studio"
+        "db:check": "deno run -A --env-file repo/check_db.ts"
     },
     "imports": {
         "@db/sqlite": "jsr:@db/sqlite@0.12.0",
@@ -26,10 +20,7 @@
         "ldapts": "npm:ldapts@^8.1.3",
         "zod": "npm:zod@^3.24.1",
         "zod-form-data": "npm:zod-form-data@^2.0.2",
-        "@prisma/client": "npm:@prisma/client@^6.19.1",
-        "he": "npm:he@^1.2.0",
-        "prisma": "npm:prisma@^6.19.1",
-        "model": "./prisma/client/client.ts"
+        "he": "npm:he@^1.2.0"
     },
     "fmt": {
         "indentWidth": 4
