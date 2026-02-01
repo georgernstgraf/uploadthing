@@ -13,14 +13,13 @@
     "jsr:@std/path@1": "1.1.3",
     "jsr:@std/path@^1.1.3": "1.1.3",
     "jsr:@wildboar/ldap@*": "2.0.1",
-    "npm:@prisma/client@^6.19.1": "6.19.1_prisma@6.19.1",
+    "npm:drizzle-orm@~0.30.10": "0.30.10",
     "npm:handlebars@^4.7.8": "4.7.8",
     "npm:he@^1.2.0": "1.2.0",
     "npm:hono@^4.10.6": "4.11.1",
     "npm:htmx.org@^2.0.8": "2.0.8",
     "npm:ldapts@*": "8.1.3",
     "npm:ldapts@^8.1.3": "8.1.3",
-    "npm:prisma@^6.19.1": "6.19.1",
     "npm:zod-form-data@^2.0.2": "2.0.8_zod@3.25.76",
     "npm:zod@^3.24.1": "3.25.76"
   },
@@ -83,138 +82,11 @@
     }
   },
   "npm": {
-    "@prisma/client@6.19.1_prisma@6.19.1": {
-      "integrity": "sha512-4SXj4Oo6HyQkLUWT8Ke5R0PTAfVOKip5Roo+6+b2EDTkFg5be0FnBWiuRJc0BC0sRQIWGMLKW1XguhVfW/z3/A==",
-      "dependencies": [
-        "prisma"
-      ],
-      "optionalPeers": [
-        "prisma"
-      ],
-      "scripts": true
-    },
-    "@prisma/config@6.19.1": {
-      "integrity": "sha512-bUL/aYkGXLwxVGhJmQMtslLT7KPEfUqmRa919fKI4wQFX4bIFUKiY8Jmio/2waAjjPYrtuDHa7EsNCnJTXxiOw==",
-      "dependencies": [
-        "c12",
-        "deepmerge-ts",
-        "effect",
-        "empathic"
-      ]
-    },
-    "@prisma/debug@6.19.1": {
-      "integrity": "sha512-h1JImhlAd/s5nhY/e9qkAzausWldbeT+e4nZF7A4zjDYBF4BZmKDt4y0jK7EZapqOm1kW7V0e9agV/iFDy3fWw=="
-    },
-    "@prisma/engines-version@7.1.1-3.c2990dca591cba766e3b7ef5d9e8a84796e47ab7": {
-      "integrity": "sha512-03bgb1VD5gvuumNf+7fVGBzfpJPjmqV423l/WxsWk2cNQ42JD0/SsFBPhN6z8iAvdHs07/7ei77SKu7aZfq8bA=="
-    },
-    "@prisma/engines@6.19.1": {
-      "integrity": "sha512-xy95dNJ7DiPf9IJ3oaVfX785nbFl7oNDzclUF+DIiJw6WdWCvPl0LPU0YqQLsrwv8N64uOQkH391ujo3wSo+Nw==",
-      "dependencies": [
-        "@prisma/debug",
-        "@prisma/engines-version",
-        "@prisma/fetch-engine",
-        "@prisma/get-platform"
-      ],
-      "scripts": true
-    },
-    "@prisma/fetch-engine@6.19.1": {
-      "integrity": "sha512-mmgcotdaq4VtAHO6keov3db+hqlBzQS6X7tR7dFCbvXjLVTxBYdSJFRWz+dq7F9p6dvWyy1X0v8BlfRixyQK6g==",
-      "dependencies": [
-        "@prisma/debug",
-        "@prisma/engines-version",
-        "@prisma/get-platform"
-      ]
-    },
-    "@prisma/get-platform@6.19.1": {
-      "integrity": "sha512-zsg44QUiQAnFUyh6Fbt7c9HjMXHwFTqtrgcX7DAZmRgnkPyYT7Sh8Mn8D5PuuDYNtMOYcpLGg576MLfIORsBYw==",
-      "dependencies": [
-        "@prisma/debug"
-      ]
-    },
     "@rvf/set-get@7.0.1": {
       "integrity": "sha512-GkTSn9K1GrTYoTUqlUs36k6nJnzjQaFBTTEIqUYmzBcsGsoJM8xG7EAx2WLHWAA4QzFjcwWUSHQ3vM3Fbw50Tg=="
     },
-    "@standard-schema/spec@1.0.0": {
-      "integrity": "sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA=="
-    },
-    "c12@3.1.0": {
-      "integrity": "sha512-uWoS8OU1MEIsOv8p/5a82c3H31LsWVR5qiyXVfBNOzfffjUWtPnhAb4BYI2uG2HfGmZmFjCtui5XNWaps+iFuw==",
-      "dependencies": [
-        "chokidar",
-        "confbox",
-        "defu",
-        "dotenv",
-        "exsolve",
-        "giget",
-        "jiti",
-        "ohash",
-        "pathe",
-        "perfect-debounce",
-        "pkg-types",
-        "rc9"
-      ]
-    },
-    "chokidar@4.0.3": {
-      "integrity": "sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==",
-      "dependencies": [
-        "readdirp"
-      ]
-    },
-    "citty@0.1.6": {
-      "integrity": "sha512-tskPPKEs8D2KPafUypv2gxwJP8h/OaJmC82QQGGDQcHvXX43xF2VDACcJVmZ0EuSxkpO9Kc4MlrA3q0+FG58AQ==",
-      "dependencies": [
-        "consola"
-      ]
-    },
-    "confbox@0.2.2": {
-      "integrity": "sha512-1NB+BKqhtNipMsov4xI/NnhCKp9XG9NamYp5PVm9klAT0fsrNPjaFICsCFhNhwZJKNh7zB/3q8qXz0E9oaMNtQ=="
-    },
-    "consola@3.4.2": {
-      "integrity": "sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA=="
-    },
-    "deepmerge-ts@7.1.5": {
-      "integrity": "sha512-HOJkrhaYsweh+W+e74Yn7YStZOilkoPb6fycpwNLKzSPtruFs48nYis0zy5yJz1+ktUhHxoRDJ27RQAWLIJVJw=="
-    },
-    "defu@6.1.4": {
-      "integrity": "sha512-mEQCMmwJu317oSz8CwdIOdwf3xMif1ttiM8LTufzc3g6kR+9Pe236twL8j3IYT1F7GfRgGcW6MWxzZjLIkuHIg=="
-    },
-    "destr@2.0.5": {
-      "integrity": "sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA=="
-    },
-    "dotenv@16.6.1": {
-      "integrity": "sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow=="
-    },
-    "effect@3.18.4": {
-      "integrity": "sha512-b1LXQJLe9D11wfnOKAk3PKxuqYshQ0Heez+y5pnkd3jLj1yx9QhM72zZ9uUrOQyNvrs2GZZd/3maL0ZV18YuDA==",
-      "dependencies": [
-        "@standard-schema/spec",
-        "fast-check"
-      ]
-    },
-    "empathic@2.0.0": {
-      "integrity": "sha512-i6UzDscO/XfAcNYD75CfICkmfLedpyPDdozrLMmQc5ORaQcdMoc21OnlEylMIqI7U8eniKrPMxxtj8k0vhmJhA=="
-    },
-    "exsolve@1.0.7": {
-      "integrity": "sha512-VO5fQUzZtI6C+vx4w/4BWJpg3s/5l+6pRQEHzFRM8WFi4XffSP1Z+4qi7GbjWbvRQEbdIco5mIMq+zX4rPuLrw=="
-    },
-    "fast-check@3.23.2": {
-      "integrity": "sha512-h5+1OzzfCC3Ef7VbtKdcv7zsstUQwUDlYpUTvjeUsJAssPgLn7QzbboPtL5ro04Mq0rPOsMzl7q5hIbRs2wD1A==",
-      "dependencies": [
-        "pure-rand"
-      ]
-    },
-    "giget@2.0.0": {
-      "integrity": "sha512-L5bGsVkxJbJgdnwyuheIunkGatUF/zssUoxxjACCseZYAVbaqdh9Tsmmlkl8vYan09H7sbvKt4pS8GqKLBrEzA==",
-      "dependencies": [
-        "citty",
-        "consola",
-        "defu",
-        "node-fetch-native",
-        "nypm",
-        "pathe"
-      ],
-      "bin": true
+    "drizzle-orm@0.30.10": {
+      "integrity": "sha512-IRy/QmMWw9lAQHpwbUh1b8fcn27S/a9zMIzqea1WNOxK9/4EB8gIo+FZWLiPXzl2n9ixGSv8BhsLZiOppWEwBw=="
     },
     "handlebars@4.7.8": {
       "integrity": "sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==",
@@ -239,10 +111,6 @@
     "htmx.org@2.0.8": {
       "integrity": "sha512-fm297iru0iWsNJlBrjvtN7V9zjaxd+69Oqjh4F/Vq9Wwi2kFisLcrLCiv5oBX0KLfOX/zG8AUo9ROMU5XUB44Q=="
     },
-    "jiti@2.6.1": {
-      "integrity": "sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==",
-      "bin": true
-    },
     "ldapts@8.1.3": {
       "integrity": "sha512-kEU3GDh48ZymnyLGsFprai2v4r7Gyxe6niBlUUw3xnOGpq5O+XODmXJ8gBwbPIg35qt5cnYVC80NNSdAkb2dJg==",
       "dependencies": [
@@ -256,70 +124,14 @@
     "neo-async@2.6.2": {
       "integrity": "sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw=="
     },
-    "node-fetch-native@1.6.7": {
-      "integrity": "sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q=="
-    },
-    "nypm@0.6.2": {
-      "integrity": "sha512-7eM+hpOtrKrBDCh7Ypu2lJ9Z7PNZBdi/8AT3AX8xoCj43BBVHD0hPSTEvMtkMpfs8FCqBGhxB+uToIQimA111g==",
-      "dependencies": [
-        "citty",
-        "consola",
-        "pathe",
-        "pkg-types",
-        "tinyexec"
-      ],
-      "bin": true
-    },
-    "ohash@2.0.11": {
-      "integrity": "sha512-RdR9FQrFwNBNXAr4GixM8YaRZRJ5PUWbKYbE5eOsrwAjJW0q2REGcf79oYPsLyskQCZG1PLN+S/K1V00joZAoQ=="
-    },
-    "pathe@2.0.3": {
-      "integrity": "sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w=="
-    },
-    "perfect-debounce@1.0.0": {
-      "integrity": "sha512-xCy9V055GLEqoFaHoC1SoLIaLmWctgCUaBaWxDZ7/Zx4CTyX7cJQLJOok/orfjZAh9kEYpjJa4d0KcJmCbctZA=="
-    },
-    "pkg-types@2.3.0": {
-      "integrity": "sha512-SIqCzDRg0s9npO5XQ3tNZioRY1uK06lA41ynBC1YmFTmnY6FjUjVt6s4LoADmwoig1qqD0oK8h1p/8mlMx8Oig==",
-      "dependencies": [
-        "confbox",
-        "exsolve",
-        "pathe"
-      ]
-    },
-    "prisma@6.19.1": {
-      "integrity": "sha512-XRfmGzh6gtkc/Vq3LqZJcS2884dQQW3UhPo6jNRoiTW95FFQkXFg8vkYEy6og+Pyv0aY7zRQ7Wn1Cvr56XjhQQ==",
-      "dependencies": [
-        "@prisma/config",
-        "@prisma/engines"
-      ],
-      "scripts": true,
-      "bin": true
-    },
     "punycode@2.3.1": {
       "integrity": "sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg=="
-    },
-    "pure-rand@6.1.0": {
-      "integrity": "sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA=="
-    },
-    "rc9@2.1.2": {
-      "integrity": "sha512-btXCnMmRIBINM2LDZoEmOogIZU7Qe7zn4BpomSKZ/ykbLObuBdvG+mFq11DL6fjH1DRwHhrlgtYWG96bJiC7Cg==",
-      "dependencies": [
-        "defu",
-        "destr"
-      ]
-    },
-    "readdirp@4.1.2": {
-      "integrity": "sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg=="
     },
     "source-map@0.6.1": {
       "integrity": "sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g=="
     },
     "strict-event-emitter-types@2.0.0": {
       "integrity": "sha512-Nk/brWYpD85WlOgzw5h173aci0Teyv8YdIAEtV+N88nDB0dLlazZyJMIsN6eo1/AR61l+p6CJTG1JIyFaoNEEA=="
-    },
-    "tinyexec@1.0.1": {
-      "integrity": "sha512-5uC6DDlmeqiOwCPmK9jMSdOuZTh8bU39Ys6yidB+UTt5hfZUPGAypSgFRiEp+jbi9qH40BLDvy85jIU88wKSqw=="
     },
     "tr46@6.0.0": {
       "integrity": "sha512-bLVMLPtstlZ4iMQHpFHTR7GAGj2jxi8Dg0s2h2MafAE4uSWF98FC/3MomU51iQAMf8/qDUbKWf5GxuvvVcXEhw==",
@@ -394,13 +206,12 @@
     "dependencies": [
       "jsr:@db/sqlite@0.12.0",
       "jsr:@std/assert@1",
-      "npm:@prisma/client@^6.19.1",
+      "npm:drizzle-orm@~0.30.10",
       "npm:handlebars@^4.7.8",
       "npm:he@^1.2.0",
       "npm:hono@^4.10.6",
       "npm:htmx.org@^2.0.8",
       "npm:ldapts@^8.1.3",
-      "npm:prisma@^6.19.1",
       "npm:zod-form-data@^2.0.2",
       "npm:zod@^3.24.1"
     ]
