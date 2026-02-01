@@ -20,17 +20,21 @@ model ipfact {
 }
 
 model users {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  klasse    String?
-  updatedat DateTime
+  id                    Int                      @id @default(autoincrement())
+  email                 String                   @unique
+  name                  String
+  klasse                String?
+  updatedat             DateTime
+  registrations         registrations[]
+  forensicRegistrations forensic_registrations[]
+  abgabens              abgaben[]
 }
 
 model registrations {
   id     Int      @id @default(autoincrement())
   ip     String
   userId Int
+  user   users    @relation(fields: [userId], references: [id])
   at     DateTime
 
   @@index([userId])
@@ -38,10 +42,10 @@ model registrations {
 }
 
 model forensic_registrations {
-  id     Int      @id @default(autoincrement())
+  id     Int    @id @default(autoincrement())
   ip     String
   userId Int
-  at     DateTime
+  user   users  @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([ip])
@@ -50,6 +54,7 @@ model forensic_registrations {
 model abgaben {
   id       Int      @id @default(autoincrement())
   userId   Int
+  user     users    @relation(fields: [userId], references: [id])
   ip       String
   filename String
   at       DateTime
