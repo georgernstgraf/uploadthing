@@ -11,7 +11,7 @@
         "fullcheck": "deno task check && deno task lint && deno task test",
         "pg": "deno run -A prisma generate",
         "pv": "deno run -A prisma validate",
-        "pd": "deno run -A --env-file prisma migrate deploy",
+        "pmD": "deno run -A --env-file prisma migrate deploy",
         "pmd": "deno run -A --env-file prisma migrate dev",
         "pms": "deno -A prisma migrate status",
         "pmr": "deno -A prisma migrate reset",
