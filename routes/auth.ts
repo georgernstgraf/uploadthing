@@ -13,11 +13,13 @@ const authRouter = new Hono<{ Variables: HonoContextVars }>();
 authRouter.get("/whoami", (c) => {
     const remote_ip = c.get("remoteip");
     const remote_user = c.get("remoteuser");
+    const is_admin = c.get("is_admin");
 
     return c.html(
         hbs.whoamiTemplate({
             remote_ip,
             remote_user,
+            is_admin,
             page_title: config.page_title,
         }),
     );

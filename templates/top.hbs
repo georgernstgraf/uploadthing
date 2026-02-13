@@ -99,9 +99,10 @@
              style="width: fit-content; max-width: 100%; background: var(--leisure-glass-bg); backdrop-filter: blur(10px); border-radius: 50px; border: 1px solid var(--leisure-glass-border); box-shadow: var(--leisure-shadow-soft);">
             <a href="/"
                class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Home</a>
+            {{#if is_admin}}
             <a href="/forensic"
-               class="btn btn-sm flex-grow-1 flex-sm-grow-0"
-               style="color: transparent; background: transparent; border: none; box-shadow: none;">Forensic</a>
+               class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Forensic</a>
+            {{/if}}
             <a href="/upload"
                class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Zipfile Upload</a>
         </nav>

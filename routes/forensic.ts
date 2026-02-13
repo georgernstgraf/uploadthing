@@ -14,6 +14,11 @@ const time_cutoff_ms = config.TODAY_HOURS_CUTOFF * 3.6e6;
 // Forensic main page
 
 forensicRouter.get("/", async (c) => {
+    const is_admin = c.get("is_admin");
+    if (!is_admin) {
+        return c.text("Forbidden", 403);
+    }
+
     const remote_user = c.get("remoteuser");
     if (!remote_user) {
         return c.redirect("/whoami");
@@ -72,6 +77,7 @@ forensicRouter.get("/", async (c) => {
         // simple data
         remote_ip: c.get("remoteip"),
         remote_user,
+        is_admin,
         startdate,
         starttime,
         endtime,

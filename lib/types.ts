@@ -6,6 +6,7 @@ export type HonoContextVars = {
     remoteip: string;
     remoteuser: UserType | null;
     session: Session;
+    is_admin: boolean;
 };
 
 export type Bindings = {
@@ -16,6 +17,7 @@ export type TopType = {
     remote_ip: string;
     remote_user: UserType | null;
     page_title: string;
+    is_admin: boolean;
 };
 
 export type ForensicIPCount = {

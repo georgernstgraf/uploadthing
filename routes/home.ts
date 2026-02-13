@@ -13,6 +13,7 @@ homeRouter.get("/", async (c) => {
         files,
         remote_user: c.get("remoteuser"),
         remote_ip: c.get("remoteip"),
+        is_admin: c.get("is_admin"),
         page_title: config.page_title,
     }));
 });

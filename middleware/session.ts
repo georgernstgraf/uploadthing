@@ -196,30 +196,38 @@ export const remoteIPMiddleware = createMiddleware<
         : "unix-socket";
     c.set("remoteip", remoteip);
 
-        const session = getSession(c);
-        let remoteuser: UserType | null = null;
+    const session = getSession(c);
+    let remoteuser: UserType | null = null;
+    let is_admin = false;
 
-        if (session.isLoggedIn() && session.email) {
-            const user = await service.user.getUserByEmail(session.email);
-            if (user) {
-                remoteuser = user;
+    if (session.isLoggedIn() && session.email) {
+        const user = await service.user.getUserByEmail(session.email);
+        if (user) {
+            remoteuser = user;
 
-                const createdAt = session.createdAt;
-                const now = Date.now();
-                if (createdAt && now - createdAt > config.SESSION_REFRESH_THRESHOLD_MS) {
-                    session.refreshTimestamp();
-                }
+            const createdAt = session.createdAt;
+            const now = Date.now();
+            if (createdAt && now - createdAt > config.SESSION_REFRESH_THRESHOLD_MS) {
+                session.refreshTimestamp();
+            }
 
-                const existingReg = await service.registrations.getLatestIPForEmail(
-                    session.email,
-                );
-                if (!existingReg || existingReg !== remoteip) {
-                    await service.user.register(user, remoteip);
-                }
+            const existingReg = await service.registrations.getLatestIPForEmail(
+                session.email,
+            );
+            if (!existingReg || existingReg !== remoteip) {
+                await service.user.register(user, remoteip);
+            }
+
+            if (
+                config.ADMINS.includes(session.email.toLowerCase()) ||
+                config.ADMIN_IPS.includes(remoteip)
+            ) {
+                is_admin = true;
             }
         }
+    }
 
-        c.set("remoteuser", remoteuser);
-        await next();
-    },
-);
+    c.set("remoteuser", remoteuser);
+    c.set("is_admin", is_admin);
+    await next();
+});

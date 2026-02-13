@@ -21,6 +21,7 @@ uploadRouter.get("/", (c) => {
         hbs.uploadTemplate({
             remote_ip,
             remote_user,
+            is_admin: c.get("is_admin"),
             page_title: config.page_title,
         }),
     );
@@ -122,6 +123,7 @@ uploadRouter.post("/", async (c) => {
             md5sum,
             duration_seconds: durationSeconds,
             remote_user,
+            is_admin: c.get("is_admin"),
             page_title: config.page_title,
         }),
     );
