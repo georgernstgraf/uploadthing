@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import config from "./lib/config.ts";
-import { remoteIPMiddleware } from "./middleware/remoteip.ts";
+import { sessionMiddleware, remoteIPMiddleware } from "./middleware/session.ts";
 import { Bindings, HonoContextVars } from "./lib/types.ts";
 import { setupShutdown as setupPrismaShutdown } from "./repo/prismadb.ts";
 import { setupShutdown as setupSqliteShutdown } from "./repo/db.ts";
@@ -22,6 +22,7 @@ setupSqliteShutdown(); // Setup SQLite graceful shutdown
 
 const app = new Hono<{ Bindings: Bindings; Variables: HonoContextVars }>();
 app.onError(errorHandler);
+app.use("*", sessionMiddleware);
 app.use("*", remoteIPMiddleware);
 
 // Mount routers

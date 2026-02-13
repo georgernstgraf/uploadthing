@@ -46,9 +46,15 @@ const config = {
         "21:15",
         "22:00",
     ],
+    COOKIE_NAME: Deno.env.get("COOKIE_NAME") || "ut_session",
+    COOKIE_SECRET: Deno.env.get("COOKIE_SECRET") || "",
+    COOKIE_MAX_AGE_MS: 5 * 30 * 24 * 60 * 60 * 1000, // 5 months in ms
+    COOKIE_MAX_AGE_S: 5 * 30 * 24 * 60 * 60, // 5 months in seconds
+    SESSION_REFRESH_THRESHOLD_MS: 7 * 24 * 60 * 60 * 1000, // 1 week in ms
+    DENO_ENV: Deno.env.get("DENO_ENV") || "development",
 };
-export default config;
 
-for (const [key, value] of Object.entries(config)) {
-    console.log(`config: ${key}: ${value}`);
-}
+export const isProduction = config.DENO_ENV === "production";
+export const isDevelopment = config.DENO_ENV === "development";
+
+export default config;

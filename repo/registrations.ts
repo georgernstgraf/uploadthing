@@ -66,3 +66,35 @@ const create_stmt = db.prepare(
 export function create(ip: string, userId: number, at: Date): void {
     create_stmt.run(ip, userId, at.toISOString());
 }
+
+const latestIPForUser_stmt = db.prepare(
+    `SELECT ip FROM registrations WHERE userId = ? ORDER BY at DESC LIMIT 1`,
+);
+
+/**
+ * Fetch the most recent IP registered for a userId.
+ */
+export function getLatestIPForUser(userId: number): string | null {
+    const result = latestIPForUser_stmt.get(userId) as
+        | { ip: string }
+        | undefined;
+    return result?.ip ?? null;
+}
+
+const latestEmailForIP_stmt = db.prepare(
+    `SELECT u.email FROM registrations r
+     JOIN users u ON r.userId = u.id
+     WHERE r.ip = ?
+     ORDER BY r.at DESC
+     LIMIT 1`,
+);
+
+/**
+ * Fetch the most recent email registered for an IP.
+ */
+export function getLatestEmailForIP(ip: string): string | null {
+    const result = latestEmailForIP_stmt.get(ip) as
+        | { email: string }
+        | undefined;
+    return result?.email ?? null;
+}

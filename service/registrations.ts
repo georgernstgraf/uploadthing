@@ -33,3 +33,21 @@ export async function byIPInRange(
     }
     return result;
 }
+
+/**
+ * Get the latest IP address registered for an email.
+ * Returns null if no registration found.
+ */
+export async function getLatestIPForEmail(email: string): Promise<string | null> {
+    const user = await repo.users.getByEmail(email);
+    if (!user) return null;
+    return repo.registrations.getLatestIPForUser(user.id);
+}
+
+/**
+ * Get the latest email registered for an IP.
+ * Returns null if no registration found.
+ */
+export function getEmailForIP(ip: string): string | null {
+    return repo.registrations.getLatestEmailForIP(ip);
+}

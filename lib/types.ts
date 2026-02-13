@@ -1,8 +1,11 @@
 // Hier keine Template Types, bitte!
 
+import type { Session } from "../middleware/session.ts";
+
 export type HonoContextVars = {
     remoteip: string;
     remoteuser: UserType | null;
+    session: Session;
 };
 
 export type Bindings = {
