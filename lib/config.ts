@@ -47,7 +47,8 @@ const config = {
         "22:00",
     ],
     COOKIE_NAME: Deno.env.get("COOKIE_NAME") || "ut_session",
-    COOKIE_SECRET: Deno.env.get("COOKIE_SECRET") || "",
+    COOKIE_SECRET: Deno.env.get("COOKIE_SECRET") ||
+        "dev-secret-do-not-use-in-production-change-me",
     COOKIE_MAX_AGE_MS: 5 * 30 * 24 * 60 * 60 * 1000, // 5 months in ms
     COOKIE_MAX_AGE_S: 5 * 30 * 24 * 60 * 60, // 5 months in seconds
     SESSION_REFRESH_THRESHOLD_MS: 7 * 24 * 60 * 60 * 1000, // 1 week in ms

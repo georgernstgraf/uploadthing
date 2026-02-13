@@ -1,9 +1,9 @@
 {{> top}}
 <div class="leisure-card mx-auto" style="max-width: 600px;">
     <h2 class="my-3 text-center mb-4">Anmelden / Name ändern</h2>
-    {{#if prefill_email}}
+    {{#if remote_user}}
     <div class="alert alert-info mb-3">
-        Bereits angemeldet als: <strong>{{prefill_email}}</strong>
+        Bereits angemeldet als: <strong>{{remote_user.email}}</strong>
     </div>
     {{/if}}
     <!-- 1. Das Suchfeld -->
@@ -12,13 +12,14 @@
         <div class="position-relative">
             <input type="text"
                    class="form-control form-control-lg ps-5"
+                   id="email-search"
                    name="email"
                    placeholder="Anfangsbuchstaben meiner Email..."
-                   value="{{prefill_email}}"
                    hx-get="/ldap"
                    autofocus
                    hx-trigger="keyup changed delay:500ms"
-                   hx-target="#options-select">
+                   hx-target="#options-select"
+                   hx-on:keydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('submit-btn').click()}">
             <span class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted">
                 🔍
             </span>
@@ -42,6 +43,17 @@
                     selected
                     class="p-2 text-muted fst-italic">Bitte oben suchen...</option>
         </select>
+    </div>
+    <div class="d-grid">
+        <button id="submit-btn"
+                class="btn btn-primary btn-lg"
+                hx-post="/register"
+                hx-include="#email-search"
+                hx-target="body"
+                hx-push-url="true"
+                hx-swap="innerHTML">
+            Anmelden
+        </button>
     </div>
 </div>
 </main>

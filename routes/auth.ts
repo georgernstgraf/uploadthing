@@ -10,27 +10,15 @@ import { AppError } from "../lib/errors.ts";
 
 const authRouter = new Hono<{ Variables: HonoContextVars }>();
 
-authRouter.get("/whoami", async (c) => {
+authRouter.get("/whoami", (c) => {
     const remote_ip = c.get("remoteip");
     const remote_user = c.get("remoteuser");
-    const session = getSession(c);
-
-    let prefill_email: string | undefined;
-    if (remote_user) {
-        prefill_email = remote_user.email;
-    } else if (!session.isLoggedIn()) {
-        const registeredEmail = await service.registrations.getEmailForIP(remote_ip);
-        if (registeredEmail) {
-            prefill_email = registeredEmail;
-        }
-    }
 
     return c.html(
         hbs.whoamiTemplate({
             remote_ip,
             remote_user,
             page_title: config.page_title,
-            prefill_email,
         }),
     );
 });

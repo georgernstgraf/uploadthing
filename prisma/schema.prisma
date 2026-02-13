@@ -42,10 +42,11 @@ model registrations {
 }
 
 model forensic_registrations {
-  id     Int    @id @default(autoincrement())
+  id     Int      @id @default(autoincrement())
   ip     String
   userId Int
-  user   users  @relation(fields: [userId], references: [id])
+  user   users    @relation(fields: [userId], references: [id])
+  at     DateTime @default(now())
 
   @@index([userId])
   @@index([ip])

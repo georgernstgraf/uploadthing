@@ -20,9 +20,7 @@ type SuccessTemplateData = TopType & {
     duration_seconds: string;
 };
 
-type WhoamiTemplateData = TopType & {
-    prefill_email?: string;
-};
+type WhoamiTemplateData = TopType;
 
 type LdapTemplateData = {
     users: UserType[];
