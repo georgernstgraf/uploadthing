@@ -15,14 +15,16 @@ authRouter.get("/whoami", (c) => {
     const remote_user = c.get("remoteuser");
     const is_admin = c.get("is_admin");
 
-    return c.html(
-        hbs.whoamiTemplate({
-            remote_ip,
-            remote_user,
-            is_admin,
-            page_title: config.page_title,
-        }),
-    );
+    const is_full = c.req.header("HX-Request") !== "true";
+    const data = {
+        remote_ip,
+        remote_user,
+        is_admin,
+        page_title: config.page_title,
+        is_full,
+    };
+
+    return c.html(hbs.whoamiTemplate(data));
 });
 
 authRouter.get("/ldap", async (c) => {

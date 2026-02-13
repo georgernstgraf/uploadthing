@@ -17,14 +17,16 @@ uploadRouter.get("/", (c) => {
         return c.redirect("/whoami");
     }
 
-    return c.html(
-        hbs.uploadTemplate({
-            remote_ip,
-            remote_user,
-            is_admin: c.get("is_admin"),
-            page_title: config.page_title,
-        }),
-    );
+    const is_full = c.req.header("HX-Request") !== "true";
+    const data = {
+        remote_ip,
+        remote_user,
+        is_admin: c.get("is_admin"),
+        page_title: config.page_title,
+        is_full,
+    };
+
+    return c.html(hbs.uploadTemplate(data));
 });
 
 uploadRouter.post("/", async (c) => {
@@ -125,6 +127,7 @@ uploadRouter.post("/", async (c) => {
             remote_user,
             is_admin: c.get("is_admin"),
             page_title: config.page_title,
+            is_full: true,
         }),
     );
 });

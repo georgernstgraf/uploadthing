@@ -1,4 +1,4 @@
-{{> top}}
+{{#if is_full}}{{> top}}{{/if}}
 <div class="leisure-card mx-auto" style="max-width: 600px;">
     <h2 class="my-3 text-center mb-4">Anmelden / Name ändern</h2>
     {{#if remote_user}}
@@ -6,7 +6,6 @@
         Bereits angemeldet als: <strong>{{remote_user.email}}</strong>
     </div>
     {{/if}}
-    <!-- 1. Das Suchfeld -->
     <div class="mb-4">
         <label class="w-100 fw-bold mb-2">Suche nach Email</label>
         <div class="position-relative">
@@ -25,7 +24,6 @@
             </span>
         </div>
     </div>
-    <!-- 2. Die Select-Box -->
     <div class="mb-3">
         <label class="w-100 fw-bold mb-2">Auswahl</label>
         <select id="options-select"
@@ -38,7 +36,6 @@
                 hx-target="body"
                 hx-push-url="true"
                 hx-swap="innerHTML">
-            <!-- Initialer Inhalt oder leer -->
             <option value=""
                     selected
                     class="p-2 text-muted fst-italic">Bitte oben suchen...</option>
@@ -56,7 +53,10 @@
         </button>
     </div>
 </div>
+{{#if is_full}}
+</div>
 </main>
 </body>
 
 </html>
+{{/if}}

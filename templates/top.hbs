@@ -97,14 +97,20 @@
     <main class="container mt-2 p-2 page-content">
         <nav class="d-flex justify-content-center gap-2 mt-5 mb-2 mx-auto p-1 flex-wrap"
              style="width: fit-content; max-width: 100%; background: var(--leisure-glass-bg); backdrop-filter: blur(10px); border-radius: 50px; border: 1px solid var(--leisure-glass-border); box-shadow: var(--leisure-shadow-soft);">
-            <a href="/"
-               class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Home</a>
+            <button hx-get="/"
+                    hx-target="#main-content"
+                    hx-push-url="true"
+                    class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Home</button>
             {{#if is_admin}}
-            <a href="/forensic"
-               class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Forensic</a>
+            <button hx-get="/forensic"
+                    hx-target="#main-content"
+                    hx-push-url="true"
+                    class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Forensic</button>
             {{/if}}
-            <a href="/upload"
-               class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Zipfile Upload</a>
+            <button hx-get="/upload"
+                    hx-target="#main-content"
+                    hx-push-url="true"
+                    class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Zipfile Upload</button>
         </nav>
         <div class="d-flex justify-content-center mb-2">
             <a href="/whoami"
@@ -135,3 +141,5 @@
             <span class="text-uppercase"
                   style="font-size: 0.7rem; letter-spacing: 2px;">Meine IP: {{remote_ip}}</span>
         </div>
+        <div id="main-content">
+{{! Content will be injected here }}

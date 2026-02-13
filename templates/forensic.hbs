@@ -1,4 +1,4 @@
-{{> top}}
+{{#if is_full}}{{> top}}{{/if}}
 <div x-data="endTimeToggle()"
      x-init="init()">
      <section id="timeselector"
@@ -36,7 +36,6 @@
                     </label>
                 </div>
             </div>
-            <!-- Toggle for End Time -->
             <div class="row mt-2">
                 <div class="col text-center">
                     <div class="form-check form-switch d-inline-flex align-items-center gap-2 p-2" style="font-size: 0.85rem; background: rgba(255,255,255,0.9); border: 2px solid var(--lego-grey); border-radius: var(--lego-radius-brick);">
@@ -52,7 +51,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Conditional End Time Section -->
             <div class="row mt-2 g-2 align-items-center"
                  x-show="showEndTime"
                  x-transition
@@ -88,7 +86,6 @@
             </div>
         </form>
     </section>
-    <!-- Alpine.js Component for End Time Toggle -->
     <script>
         function endTimeToggle() {
             return {
@@ -96,11 +93,9 @@
                 endFields: ["endtime", "enddate"],
 
                 init() {
-                    // Load preference from LocalStorage
                     const saved = localStorage.getItem('forensicShowEndTime');
                     this.showEndTime = saved === 'true';
 
-                    // If no preference saved, default to false (hidden)
                     if (saved === null) {
                         this.showEndTime = false;
                     }
@@ -159,7 +154,10 @@
     </script>
     {{> forensic-report}}
 </div>
+{{#if is_full}}
+</div>
 </main>
 </body>
 
 </html>
+{{/if}}

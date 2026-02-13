@@ -73,6 +73,7 @@ forensicRouter.get("/", async (c) => {
         endDateTime,
         !endtimeProvided,
     );
+    const is_full = c.req.header("HX-Request") !== "true";
     const templateData = {
         // simple data
         remote_ip: c.get("remoteip"),
@@ -90,11 +91,8 @@ forensicRouter.get("/", async (c) => {
         endtimeProvided,
         forensic_refresh_seconds: refreshSeconds,
         page_title: config.page_title,
+        is_full,
     };
-
-    if (c.req.header("HX-Request") === "true") {
-        return c.html(hbs.forensicReportTemplate(templateData));
-    }
 
     return c.html(hbs.forensicTemplate(templateData));
 });
