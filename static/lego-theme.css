@@ -6,121 +6,81 @@
    SECTION 1: GENERATED COLOR VARIABLES
    
    To regenerate:
-   1. Install: pip install -r tools/requirements.txt
-   2. Run: tools/.venv/bin/python3 tools/color-theme.py --output=static/lego-theme-generated.css
+   1. cd tools && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+   2. .venv/bin/python3 color-theme.py --output=../static/lego-theme-generated.css
    3. Paste the content below (between BEGIN/END markers)
    ------------------------------------------------------------ */
 
 /* BEGIN GENERATED COLORS */
 :root {
-    /* Bootstrap theme colors - placeholders, run color-theme.py to generate */
     --bs-primary: #b38f63;
     --bs-primary-rgb: 179, 143, 99;
     --bs-secondary: #5c7d83;
     --bs-secondary-rgb: 92, 125, 131;
     --bs-success: #198754;
     --bs-success-rgb: 25, 135, 84;
-    --bs-info: #0dcaf0;
-    --bs-info-rgb: 13, 202, 240;
-    --bs-warning: #ffc107;
-    --bs-warning-rgb: 255, 193, 7;
+    --bs-info: #5099a5;
+    --bs-info-rgb: 80, 153, 165;
+    --bs-warning: #b38f63;
+    --bs-warning-rgb: 179, 143, 99;
     --bs-danger: #dc3545;
     --bs-danger-rgb: 220, 53, 69;
-    --bs-light: #f8f9fa;
-    --bs-light-rgb: 248, 249, 250;
-    --bs-dark: #212529;
-    --bs-dark-rgb: 33, 37, 41;
+    --bs-light: #f2f5f5;
+    --bs-light-rgb: 242, 245, 245;
+    --bs-dark: #191c1c;
+    --bs-dark-rgb: 25, 28, 28;
     --bs-white: #ffffff;
     --bs-white-rgb: 255, 255, 255;
     --bs-black: #000000;
     --bs-black-rgb: 0, 0, 0;
+    --bs-body-bg: #f2f5f5;
+    --bs-body-bg-rgb: 242, 245, 245;
+    --bs-body-color: #191c1c;
+    --bs-body-color-rgb: 25, 28, 28;
+    --bs-border-color: #a2a7a7;
 }
 
 [data-bs-theme="dark"] {
     --bs-primary: #d4a86a;
     --bs-primary-rgb: 212, 168, 106;
-    --bs-secondary: #6c757d;
-    --bs-secondary-rgb: 108, 117, 125;
-    --bs-success: #198754;
-    --bs-success-rgb: 25, 135, 84;
-    --bs-info: #0dcaf0;
-    --bs-info-rgb: 13, 202, 240;
-    --bs-warning: #ffc107;
-    --bs-warning-rgb: 255, 193, 7;
-    --bs-danger: #dc3545;
-    --bs-danger-rgb: 220, 53, 69;
-    --bs-light: #f8f9fa;
-    --bs-light-rgb: 248, 249, 250;
-    --bs-dark: #212529;
-    --bs-dark-rgb: 33, 37, 41;
+    --bs-body-bg: #08141e;
+    --bs-body-bg-rgb: 8, 20, 30;
+    --bs-body-color: #c3a431;
+    --bs-body-color-rgb: 195, 164, 49;
+    --bs-border-color: #575a59;
 }
 /* END GENERATED COLORS */
 
 /* ------------------------------------------------------------
    SECTION 2: THEME-SPECIFIC CUSTOM PROPERTIES
-   Non-Bootstrap variables for Lego theme
+   Non-color variables for Lego theme (shadows, radius, fonts)
    ------------------------------------------------------------ */
 :root {
-    /* Classic Lego Brick Colors */
-    --lego-red: #b26934;
-    --lego-yellow: #b38f63;
-    --lego-blue: #5099a5;
-    --lego-green: #5c7d83;
-    --lego-orange: #b26934;
-    --lego-black: #191c1c;
-    --lego-grey: #a2a7a7;
-    --lego-white: #f2f5f5;
-
-    /* Theme Variables */
-    --lego-primary: #b38f63;
-    --lego-secondary: #bfc4bf;
-    --lego-accent: #5099a5;
-    --lego-bg-light: #f2f5f5;
-    --lego-bg-white: #ffffff;
-    --lego-text-dark: #191c1c;
-    --lego-text-muted: #595f60;
-
     /* Shadows & Effects - Playful, brick-like */
     --lego-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
     --lego-shadow-hover: 5px 5px 0 rgba(0, 0, 0, 0.2);
-    --lego-border-thick: 2px solid var(--lego-grey);
     --lego-radius-brick: 3px;
-    --lego-radius-block: 0px;
 
     /* Font */
     --lego-font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
 }
 
 /* ------------------------------------------------------------
-   SECTION 3: DARK MODE OVERRIDES
-   ------------------------------------------------------------ */
-[data-bs-theme="dark"] {
-    --lego-bg-light: #08141e;
-    --lego-bg-white: #183749;
-    --lego-text-dark: #c3a431;
-    --lego-text-muted: #919394;
-}
-
-/* ------------------------------------------------------------
-   SECTION 4: COMPONENT STYLES
+   SECTION 3: COMPONENT STYLES
    ------------------------------------------------------------ */
 
 .text-dark {
-    color: #b38f63 !important;
+    color: var(--bs-primary) !important;
 }
 
 .text-white {
-    color: #191c1c !important;
+    color: var(--bs-dark) !important;
 }
 
 /* Dark mode card backgrounds */
 [data-bs-theme="dark"] .lego-card {
     background: linear-gradient(145deg, #183749, #08141e);
     border-color: #2a4a5c;
-}
-
-[data-bs-theme="dark"] .text-muted {
-    color: var(--lego-text-muted) !important;
 }
 
 [data-bs-theme="dark"] .user-badge {
@@ -130,7 +90,7 @@
 }
 
 [data-bs-theme="dark"] .user-badge .text-dark {
-    color: var(--lego-text-dark) !important;
+    color: var(--bs-body-color) !important;
 }
 
 [data-bs-theme="dark"] body::before {
@@ -141,19 +101,19 @@
 /* Dark mode form controls */
 [data-bs-theme="dark"] input.form-control {
     background: #08141e;
-    color: var(--lego-text-dark);
+    color: var(--bs-body-color);
     border-color: #575a59;
 }
 
 [data-bs-theme="dark"] input.form-control:focus {
     background: #183749;
-    border-color: #c3a431;
+    border-color: var(--bs-body-color);
 }
 
 /* Dark mode badges */
 [data-bs-theme="dark"] .badge.bg-light {
     background: #183749 !important;
-    color: var(--lego-text-dark) !important;
+    color: var(--bs-body-color) !important;
     border: 2px solid #575a59 !important;
 }
 
@@ -211,9 +171,9 @@ body {
 }
 
 body {
-    background-color: var(--lego-blue);
+    background-color: var(--bs-info);
     position: relative;
-    color: var(--lego-text-dark);
+    color: var(--bs-body-color);
     font-family: var(--lego-font-family);
     min-height: 100vh;
     margin: 0;
@@ -244,15 +204,15 @@ h3,
 h4,
 h5,
 h6 {
-    color: var(--lego-orange);
+    color: var(--bs-primary);
     margin-bottom: 0.3rem;
     text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* Brick-style Containers */
 .lego-card {
-    background: var(--lego-bg-white);
-    border: var(--lego-border-thick);
+    background: var(--bs-body-bg);
+    border: 2px solid var(--bs-border-color);
     border-radius: var(--lego-radius-brick);
     box-shadow: var(--lego-shadow);
     padding: 0.5rem;
@@ -270,16 +230,16 @@ h6 {
     height: 4px;
     background: linear-gradient(
         90deg,
-        var(--lego-grey) 0%,
-        var(--lego-grey) 20%,
-        var(--lego-yellow) 20%,
-        var(--lego-yellow) 40%,
-        var(--lego-blue) 40%,
-        var(--lego-blue) 60%,
-        var(--lego-green) 60%,
-        var(--lego-green) 80%,
-        var(--lego-orange) 80%,
-        var(--lego-orange) 100%
+        var(--bs-secondary) 0%,
+        var(--bs-secondary) 20%,
+        var(--bs-primary) 20%,
+        var(--bs-primary) 40%,
+        var(--bs-info) 40%,
+        var(--bs-info) 60%,
+        var(--bs-success) 60%,
+        var(--bs-success) 80%,
+        var(--bs-warning) 80%,
+        var(--bs-warning) 100%
     );
     border-radius: 2px 2px 0 0;
     opacity: 0.3;
@@ -312,8 +272,8 @@ h6 {
             transparent 50%,
             rgba(0, 0, 0, 0.1) 100%
         ),
-        var(--lego-yellow);
-    color: var(--lego-black);
+        var(--bs-primary);
+    color: var(--bs-dark);
     border-color: rgba(0, 0, 0, 0.3);
     font-weight: 800;
 }
@@ -327,20 +287,20 @@ h6 {
             transparent 50%,
             rgba(0, 0, 0, 0.15) 100%
         ),
-        var(--lego-yellow);
+        var(--bs-primary);
     transform: translateY(-1px);
     box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
-    color: var(--lego-black);
+    color: var(--bs-dark);
 }
 
 .btn-outline-light {
     background: #041424bf;
-    color: var(--lego-secondary);
-    border-color: var(--lego-secondary);
+    color: var(--bs-secondary);
+    border-color: var(--bs-secondary);
 }
 
 .btn-outline-light:hover {
-    background: var(--lego-secondary);
+    background: var(--bs-secondary);
     color: white;
     transform: translateY(-1px);
 }
@@ -366,7 +326,7 @@ h6 {
             transparent 50%,
             rgba(0, 0, 0, 0.1) 100%
         ),
-        var(--lego-blue);
+        var(--bs-info);
     border-color: rgba(0, 0, 0, 0.3);
 }
 
@@ -380,12 +340,12 @@ h6 {
 
 /* History Items */
 .history-item-ip {
-    color: var(--lego-blue) !important;
+    color: var(--bs-info) !important;
     font-weight: 700;
 }
 
 .history-item-user {
-    color: var(--lego-text-dark) !important;
+    color: var(--bs-body-color) !important;
     font-weight: 700;
 }
 
@@ -461,8 +421,8 @@ details.lego-card .fw-bold {
 /* Form Elements */
 input.form-control {
     border-radius: var(--lego-radius-brick);
-    border: 2px solid var(--lego-grey);
-    background: var(--lego-bg-white);
+    border: 2px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
     padding: 0.5rem 0.75rem;
     transition: all 0.15s ease;
     font-size: 0.85rem;
@@ -471,7 +431,7 @@ input.form-control {
 
 input.form-control:focus {
     background: white;
-    border-color: var(--lego-blue);
+    border-color: var(--bs-info);
     box-shadow:
         0 0 0 3px rgba(0, 85, 191, 0.2),
         inset 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -482,8 +442,8 @@ input.form-control:focus {
 .form-check-input {
     width: 2.5rem;
     height: 1.25rem;
-    background-color: var(--lego-grey);
-    border: 2px solid var(--lego-grey);
+    background-color: var(--bs-secondary);
+    border: 2px solid var(--bs-secondary);
     border-radius: 12px;
     position: relative;
     appearance: none;
@@ -504,8 +464,8 @@ input.form-control:focus {
 }
 
 .form-check-input:checked {
-    background-color: var(--lego-green);
-    border-color: var(--lego-green);
+    background-color: var(--bs-success);
+    border-color: var(--bs-success);
 }
 
 .form-check-input:checked::after {
@@ -540,7 +500,7 @@ input.form-control:focus {
 /* Navigation */
 nav {
     background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
-    border: 2px solid var(--lego-grey);
+    border: 2px solid var(--bs-border-color);
     border-radius: 16px;
     padding: 0.5rem 1rem;
     box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -586,8 +546,8 @@ nav {
         color-mix(in srgb, var(--bs-primary), transparent 30%),
         color-mix(in srgb, var(--bs-secondary), transparent 50%)
     );
-    border: 2px solid var(--lego-grey);
-    border-left: 5px solid var(--lego-secondary);
+    border: 2px solid var(--bs-border-color);
+    border-left: 5px solid var(--bs-secondary);
     padding: 0.35rem 0.75rem;
     border-radius: var(--lego-radius-brick);
     box-shadow: 0 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -651,8 +611,8 @@ nav {
             transparent 50%,
             rgba(0, 0, 0, 0.1) 100%
         ),
-        color-mix(in srgb, var(--lego-blue), transparent 70%);
-    border-bottom: 2px solid var(--lego-grey);
+        color-mix(in srgb, var(--bs-info), transparent 70%);
+    border-bottom: 2px solid var(--bs-border-color);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 }
@@ -698,7 +658,7 @@ nav {
 /* Forensic states */
 .forensic-stale {
     animation: brick-alert 1.5s ease-in-out infinite;
-    border: 2px solid var(--lego-orange);
+    border: 2px solid var(--bs-warning);
     background: linear-gradient(
         135deg,
         rgba(255, 255, 255, 0.95),
@@ -711,7 +671,7 @@ nav {
 
 .forensic-submitted {
     animation: brick-success 1.5s ease-in-out infinite;
-    border: 2px solid var(--lego-green);
+    border: 2px solid var(--bs-success);
     background: linear-gradient(
         135deg,
         rgba(255, 255, 255, 0.95),
@@ -759,16 +719,16 @@ nav {
     height: 6px;
     background: linear-gradient(
         90deg,
-        var(--lego-grey) 0%,
-        var(--lego-grey) 20%,
-        var(--lego-yellow) 20%,
-        var(--lego-yellow) 40%,
-        var(--lego-blue) 40%,
-        var(--lego-blue) 60%,
-        var(--lego-green) 60%,
-        var(--lego-green) 80%,
-        var(--lego-orange) 80%,
-        var(--lego-orange) 100%
+        var(--bs-secondary) 0%,
+        var(--bs-secondary) 20%,
+        var(--bs-primary) 20%,
+        var(--bs-primary) 40%,
+        var(--bs-info) 40%,
+        var(--bs-info) 60%,
+        var(--bs-success) 60%,
+        var(--bs-success) 80%,
+        var(--bs-warning) 80%,
+        var(--bs-warning) 100%
     );
     margin: 1rem 0;
     border: none;
@@ -780,10 +740,10 @@ nav {
 .warning-stripe {
     background: repeating-linear-gradient(
         45deg,
-        var(--lego-yellow),
-        var(--lego-yellow) 10px,
-        var(--lego-black) 10px,
-        var(--lego-black) 20px
+        var(--bs-warning),
+        var(--bs-warning) 10px,
+        var(--bs-dark) 10px,
+        var(--bs-dark) 20px
     );
     height: 8px;
     border-radius: var(--lego-radius-brick);
@@ -792,9 +752,9 @@ nav {
 
 /* Override Bootstrap danger color */
 .bg-danger {
-    background-color: var(--lego-orange) !important;
+    background-color: var(--bs-danger) !important;
 }
 
 [data-bs-theme="dark"] .bg-danger {
-    background-color: var(--lego-orange) !important;
+    background-color: var(--bs-danger) !important;
 }
