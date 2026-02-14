@@ -1,0 +1,4 @@
+colorthief
+colormath
+wcag-contrast-ratio
+Pillow
