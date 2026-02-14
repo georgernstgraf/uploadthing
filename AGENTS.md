@@ -44,6 +44,10 @@ deno task ps           # Open Prisma Studio
 - **github**: use the `gh` command, it is authorized.
 - **browser**: use the `agent-browser` command on `http://localhost:8000/` to test the application. Run `agent-browser -h` for comprehensive usage instructions.
 - **forensic page testing**: To view a good amount of forensic items, use start date December 1, 2025.
+- **color-theme**: extract Bootstrap 5 CSS variables from an image:
+  ```bash
+  scripts/.venv/bin/python3 scripts/color-theme.py <image-path>
+  ```
 
 ## Code Style Guidelines
 
@@ -298,12 +302,13 @@ import * as service from "../service/service.ts";
    - Test with `deno task test` and `deno task testdb`
 4. **Database changes**: Use Prisma commands (`pg`, `pmd`, `pd`)
 5. **Before stopping**: Run full check, lint, and test suite
-6. **handling git**: never commit or push unless asked to do so
-7. **working on issues**: If work on an issue is completed, make a comment containing it. It is also permitted and encouraged to update issue descriptions and comment on them during the planning phase to clarify requirements or document decisions.
+6. **working on issues**: If work on an issue is completed, make a comment containing it. It is also permitted and encouraged to update issue descriptions and comment on them during the planning phase to clarify requirements or document decisions.
 
 > **IMPORTANT**: Linting must always succeed before the completion of any task. Run `deno task lint` and fix all issues before marking work as complete.
 
 > **IMPORTANT**: Every commit message must include a reference to the GitHub issue it addresses (e.g., "issue #13"). If there is no existing issue for the task, ask the user to create one or provide the issue number.
+
+> **CRITICAL**: **NEVER commit or push unless explicitly asked by the user.** After completing work, report the result and STOP. Do not run `git commit` or `git push` on your own. Wait for the user to request it.
 
 ## Special Notes
 
