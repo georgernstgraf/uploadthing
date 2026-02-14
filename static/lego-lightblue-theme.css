@@ -426,6 +426,16 @@ details.lego-card .list-unstyled {
 }
 
 /* Details text contrast */
+.text-muted {
+    color: #495057 !important;
+}
+
+.text-muted.small {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
 details.lego-card .text-muted {
     color: #666666 !important;
 }

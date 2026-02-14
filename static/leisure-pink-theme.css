@@ -176,6 +176,22 @@
     --bs-form-invalid-border-color: #fcf4f4;
 }
 
+:root {
+    --leisure-text-dark: var(--bs-body-color);
+    --leisure-text-muted: #6c757d;
+    --leisure-primary: var(--bs-btn-primary-bg);
+    --leisure-primary-soft: rgba(var(--bs-btn-primary-bg-rgb, 171, 14, 49), 0.15);
+    --leisure-secondary: var(--bs-btn-secondary-bg);
+    --leisure-bg-light: var(--bs-body-bg);
+    --leisure-bg-white: #ffffff;
+    --leisure-font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --leisure-glass-bg: rgba(255, 255, 255, 0.85);
+    --leisure-glass-border: rgba(var(--bs-btn-primary-bg-rgb, 171, 14, 49), 0.1);
+    --leisure-radius-lg: 16px;
+    --leisure-radius-md: 12px;
+    --leisure-shadow-soft: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
 .text-dark {
     color: var(--leisure-text-dark) !important;
 }
@@ -414,6 +430,14 @@ nav {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.user-badge .text-dark {
+    color: var(--leisure-text-dark) !important;
+}
+
+.user-badge .text-muted {
+    color: var(--leisure-text-muted) !important;
 }
 
 /* Responsive Adjustments */
