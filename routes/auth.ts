@@ -89,15 +89,13 @@ authRouter.post("/register", async (c) => {
         files,
     });
 
-    const mainHtml = hbs.mainTemplate({
+    return c.html(hbs.mainTemplate({
         remote_user: user,
         remote_ip: remoteIp,
         is_admin,
         page_title: config.page_title,
         content,
-    }).replace('<main', '<main hx-swap-oob="true"');
-
-    return c.html(mainHtml);
+    }));
 });
 
 export default authRouter;

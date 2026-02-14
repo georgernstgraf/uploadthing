@@ -16,8 +16,7 @@
                    hx-get="/ldap"
                    autofocus
                    hx-trigger="keyup changed delay:500ms"
-                   hx-target="#options-select"
-                   hx-on:keydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('submit-btn').click()}">
+                   hx-target="#options-select">
             <span class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted">
                 🔍
             </span>
@@ -32,9 +31,9 @@
                 size="10"
                 hx-post="/register"
                 hx-trigger="change"
-                hx-target="#main-content"
+                hx-target="#main-wrapper"
                 hx-push-url="true"
-                hx-swap="innerHTML">
+                hx-swap="outerHTML">
             <option value=""
                     selected
                     class="p-2 text-muted fst-italic">Bitte oben suchen...</option>
@@ -45,9 +44,9 @@
                 class="btn btn-primary btn-lg"
                 hx-post="/register"
                 hx-include="#options-select"
-                hx-target="#main-content"
+                hx-target="#main-wrapper"
                 hx-push-url="true"
-                hx-swap="innerHTML">
+                hx-swap="outerHTML">
             Anmelden
         </button>
     </div>
