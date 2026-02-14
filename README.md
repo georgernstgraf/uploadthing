@@ -4,12 +4,11 @@ Webserver on examdns-router
 
 ## Color Theme Generator
 
-The `tools/color-theme.py` script extracts dominant colors from background images and generates Bootstrap 5 CSS variable overrides.
+The `tools/color-theme.py` script extracts dominant colors from an image and generates Bootstrap 5 CSS variables with WCAG AAA compliant contrast ratios (7:1).
 
 ### Setup
 
 ```bash
-# Create virtual environment and install dependencies
 python3 -m venv tools/.venv
 tools/.venv/bin/pip install -r tools/requirements.txt
 ```
@@ -17,37 +16,35 @@ tools/.venv/bin/pip install -r tools/requirements.txt
 ### Usage
 
 ```bash
-# Generate colors (outputs to stdout)
-tools/.venv/bin/python3 tools/color-theme.py
-
-# Specify different images
-tools/.venv/bin/python3 tools/color-theme.py --image=path/to/bg-custom
+# Generate colors from an image
+tools/.venv/bin/python3 tools/color-theme.py path/to/image.png
 
 # Write to file
-tools/.venv/bin/python3 tools/color-theme.py --output=generated-colors.css
+tools/.venv/bin/python3 tools/color-theme.py path/to/image.png -o colors.css
 
 # Skip blur (analyze raw image)
-tools/.venv/bin/python3 tools/color-theme.py --no-blur
+tools/.venv/bin/python3 tools/color-theme.py path/to/image.png --no-blur
 
 # Adjust number of color clusters
-tools/.venv/bin/python3 tools/color-theme.py --clusters=8
+tools/.venv/bin/python3 tools/color-theme.py path/to/image.png -c 8
 ```
 
 ### Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--image` | `static/img/bg-lego` | Base path for images (light: `<path>.png`, dark: `<path>-dark.png`) |
-| `--blur` | `True` | Apply blur before extraction (matches CSS blur effect) |
+| `image` | (required) | Path to source image |
+| `--blur` | `True` | Apply blur before extraction |
 | `--no-blur` | - | Skip blur, analyze raw image |
-| `--output` | stdout | Output file path |
-| `--clusters` | 6 | Number of color clusters to extract |
+| `--output`, `-o` | stdout | Output file path |
+| `--clusters`, `-c` | 6 | Number of color clusters |
 
-### Updating the Theme
+### How It Works
 
-1. Run the tool to generate CSS
-2. Copy the output between `/* BEGIN GENERATED COLORS */` and `/* END GENERATED COLORS */`
-3. Paste into `static/lego-theme.css` Section 1
+1. Extracts dominant colors from the image
+2. Assigns semantic roles (primary, secondary, success, warning, danger, info, light, dark)
+3. Adjusts button colors to ensure 7:1 contrast with text
+4. Generates `--bs-*` CSS variables
 
 ## Time Handling
 
