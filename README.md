@@ -2,6 +2,53 @@
 
 Webserver on examdns-router
 
+## Color Theme Generator
+
+The `tools/color-theme.py` script extracts dominant colors from background images and generates Bootstrap 5 CSS variable overrides.
+
+### Setup
+
+```bash
+# Create virtual environment and install dependencies
+python3 -m venv tools/.venv
+tools/.venv/bin/pip install -r tools/requirements.txt
+```
+
+### Usage
+
+```bash
+# Generate colors (outputs to stdout)
+tools/.venv/bin/python3 tools/color-theme.py
+
+# Specify different images
+tools/.venv/bin/python3 tools/color-theme.py --image=path/to/bg-custom
+
+# Write to file
+tools/.venv/bin/python3 tools/color-theme.py --output=generated-colors.css
+
+# Skip blur (analyze raw image)
+tools/.venv/bin/python3 tools/color-theme.py --no-blur
+
+# Adjust number of color clusters
+tools/.venv/bin/python3 tools/color-theme.py --clusters=8
+```
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--image` | `static/img/bg-lego` | Base path for images (light: `<path>.png`, dark: `<path>-dark.png`) |
+| `--blur` | `True` | Apply blur before extraction (matches CSS blur effect) |
+| `--no-blur` | - | Skip blur, analyze raw image |
+| `--output` | stdout | Output file path |
+| `--clusters` | 6 | Number of color clusters to extract |
+
+### Updating the Theme
+
+1. Run the tool to generate CSS
+2. Copy the output between `/* BEGIN GENERATED COLORS */` and `/* END GENERATED COLORS */`
+3. Paste into `static/lego-theme.css` Section 1
+
 ## Time Handling
 
 This project uses the following conventions for time handling:
