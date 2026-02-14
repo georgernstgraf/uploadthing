@@ -1,23 +1,20 @@
+/* ============================================================
+   LEISURE PINK THEME - Bootstrap 5 Override
+   ============================================================ */
+
 :root {
     /* Base Colors - Warm, Soft, Playful */
     --leisure-primary: #ed1944;
-    /* Original energetic red */
     --leisure-primary-soft: #f15373;
-    /* Softer red/pink */
     --leisure-secondary: #ffb7b2;
-    /* Pale peachy pink */
     --leisure-bg-light: #fff0f5;
-    /* Lavender blush */
     --leisure-bg-white: #ffffff;
     --leisure-text-dark: #4a4a4a;
-    /* Soft charcoal */
     --leisure-text-muted: #888888;
 
     /* Accents */
     --leisure-accent-play: #ffdac1;
-    /* Soft orange/peach */
     --leisure-accent-chill: #e2f0cb;
-    /* Soft green */
 
     /* Shadows & Effects */
     --leisure-shadow-soft:
@@ -43,70 +40,6 @@
 
 .text-white {
     color: #191c1c !important;
-}
-
-[data-bs-theme="dark"] {
-    --leisure-bg-light: #0f0f23;
-    --leisure-bg-white: #1a1a2e;
-    --leisure-text-dark: #ffffff;
-    --leisure-text-muted: #b8b8b8;
-    --leisure-glass-bg: rgba(26, 26, 46, 0.85);
-    --leisure-glass-border: rgba(255, 255, 255, 0.15);
-}
-
-/* Fix text contrast in dark mode within glass cards */
-[data-bs-theme="dark"] .leisure-card {
-    color: var(--leisure-text-dark) !important;
-}
-
-[data-bs-theme="dark"] .text-muted {
-    color: var(--leisure-text-muted) !important;
-}
-
-[data-bs-theme="dark"] .user-badge {
-    background: linear-gradient(to right, #2a2a4e, #2e2e54);
-    color: var(--leisure-text-dark);
-}
-
-[data-bs-theme="dark"] .user-badge .text-dark {
-    color: var(--leisure-text-dark) !important;
-}
-
-[data-bs-theme="dark"] .text-dark {
-    color: #dddddd !important;
-}
-
-[data-bs-theme="dark"] .user-badge .text-muted {
-    color: var(--leisure-text-muted) !important;
-}
-
-[data-bs-theme="dark"] body {
-    background-image: url("/static/img/bg-leisure-dark.svg");
-}
-
-/* Dark mode form controls */
-[data-bs-theme="dark"] input.form-control {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--leisure-text-dark);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-[data-bs-theme="dark"] input.form-control:focus {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: var(--leisure-primary-soft);
-}
-
-/* Dark mode badges */
-[data-bs-theme="dark"] .badge.bg-light {
-    background: rgba(255, 255, 255, 0.15) !important;
-    color: var(--leisure-text-dark) !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-}
-
-/* Dark mode border colors */
-[data-bs-theme="dark"] .border-top,
-[data-bs-theme="dark"] .border-bottom {
-    border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 /* Compact heading styles */
@@ -145,7 +78,7 @@ body {
 
 body {
     background-color: var(--leisure-bg-light);
-    background-image: url("/static/img/bg-leisure.svg");
+    background-image: url("/static/img/bg-leisure-pink.svg");
     background-size: cover;
     background-attachment: fixed;
     background-position: center;
@@ -155,7 +88,6 @@ body {
     margin: 0;
     padding: 0;
     font-size: 0.9rem;
-    /* Smaller base font for compact layout */
 }
 
 /* Typography - Round and Friendly */
@@ -180,7 +112,6 @@ h6 {
     border-radius: var(--leisure-radius-lg);
     box-shadow: var(--leisure-shadow-soft);
     padding: 0.5rem;
-    /* Compact padding */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -194,9 +125,7 @@ h6 {
 /* Buttons - Pill Shaped, Soft Gradients - Improved Colors */
 .btn {
     border-radius: 50rem;
-    /* Pill shape */
     padding: 0.25rem 0.7rem;
-    /* Compact padding */
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -207,9 +136,7 @@ h6 {
 
 .btn-primary,
 .btn-info {
-    /* Re-skinning standard bootstrap classes */
     background: linear-gradient(135deg, #ff6b6b, #ee5253);
-    /* Warmer, softer red/coral */
     color: white;
     box-shadow: 0 4px 6px rgba(238, 82, 83, 0.3);
 }
@@ -262,13 +189,9 @@ h6 {
     font-weight: 600;
 }
 
-/* Dark mode: Use theme background for history lists */
-[data-bs-theme="dark"] .leisure-card {
-    background: var(--leisure-glass-bg) !important;
-}
-
-[data-bs-theme="dark"] details.leisure-card {
-    background: rgba(26, 26, 46, 0.9) !important;
+/* Forensic details */
+details.leisure-card {
+    background: rgba(255, 255, 255, 0.95) !important;
 }
 
 /* Form Elements */
@@ -369,7 +292,6 @@ nav {
 @media (max-width: 768px) {
     body {
         background-attachment: scroll;
-        /* Performance on mobile */
     }
 
     .leisure-card {

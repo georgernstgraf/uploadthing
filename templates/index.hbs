@@ -15,7 +15,7 @@
           href="/static/bootstrap.css">
     <link id="theme-css"
           rel="stylesheet"
-          href="/static/leisure-theme.css">
+          href="/static/leisure-pink-theme.css">
     <style>
         [x-cloak] {
             display: none !important;
@@ -57,10 +57,10 @@
     <script>
         (function () {
             const themes = [
-                ['lego', 'dark'],
-                ['lego', 'light'],
-                ['leisure', 'dark'],
-                ['leisure', 'light']
+                'lego-lightblue',
+                'lego-darkblue',
+                'leisure-pink',
+                'leisure-purple'
             ];
 
             const savedIndex = localStorage.getItem('themeIndex');
@@ -71,12 +71,11 @@
             }
 
             function applyTheme(index) {
-                const [themeName, colorMode] = themes[index];
+                const themeName = themes[index];
                 const themeCss = document.getElementById('theme-css');
 
                 themeCss.href = `/static/${themeName}-theme.css`;
-                document.documentElement.setAttribute('data-bs-theme', colorMode);
-                document.body.classList.remove('theme-leisure', 'theme-lego');
+                document.body.className = '';
                 document.body.classList.add(`theme-${themeName}`);
             }
 

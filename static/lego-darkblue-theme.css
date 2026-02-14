@@ -1,0 +1,945 @@
+/* ============================================================
+   LEGO DARKBLUE THEME - Bootstrap 5 Override
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   SECTION 1: CSS VARIABLES
+   ------------------------------------------------------------ */
+
+:root {
+    /* === THEME COLORS === */
+    --bs-primary: #0a1621;
+    --bs-primary-rgb: 10, 22, 33;
+    --bs-secondary: #65716c;
+    --bs-secondary-rgb: 101, 113, 108;
+    --bs-success: #0a210a;
+    --bs-success-rgb: 10, 33, 10;
+    --bs-info: #0a1621;
+    --bs-info-rgb: 10, 22, 33;
+    --bs-warning: #9d773a;
+    --bs-warning-rgb: 157, 119, 58;
+    --bs-danger: #210a0a;
+    --bs-danger-rgb: 33, 10, 10;
+    --bs-light: #9d773a;
+    --bs-light-rgb: 157, 119, 58;
+    --bs-dark: #0a1621;
+    --bs-dark-rgb: 10, 22, 33;
+    --bs-white: #ffffff;
+    --bs-white-rgb: 255, 255, 255;
+    --bs-black: #000000;
+    --bs-black-rgb: 0, 0, 0;
+
+    /* === TEXT EMPHASIS === */
+    --bs-primary-text-emphasis: #73a6d4;
+    --bs-secondary-text-emphasis: #ffffff;
+    --bs-success-text-emphasis: #3cc43c;
+    --bs-info-text-emphasis: #73a6d4;
+    --bs-warning-text-emphasis: #ffffff;
+    --bs-danger-text-emphasis: #db8b8b;
+    --bs-light-text-emphasis: #f8f9fa;
+    --bs-dark-text-emphasis: #dee2e6;
+
+    /* === BACKGROUND SUBTLE === */
+    --bs-primary-bg-subtle: #000000;
+    --bs-secondary-bg-subtle: #000000;
+    --bs-success-bg-subtle: #000000;
+    --bs-info-bg-subtle: #000000;
+    --bs-warning-bg-subtle: #000000;
+    --bs-danger-bg-subtle: #000000;
+    --bs-light-bg-subtle: #000000;
+    --bs-dark-bg-subtle: #000000;
+
+    /* === BORDER SUBTLE === */
+    --bs-primary-border-subtle: #000000;
+    --bs-secondary-border-subtle: #000000;
+    --bs-success-border-subtle: #000000;
+    --bs-info-border-subtle: #000000;
+    --bs-warning-border-subtle: #000000;
+    --bs-danger-border-subtle: #000000;
+    --bs-light-border-subtle: #000000;
+    --bs-dark-border-subtle: #000000;
+
+    /* === BODY === */
+    --bs-body-bg: #0a1621;
+    --bs-body-bg-rgb: 10, 22, 33;
+    --bs-body-color: #73a6d4;
+    --bs-body-color-rgb: 115, 166, 212;
+
+    /* === EMPHASIS === */
+    --bs-emphasis-color: #ffffff;
+    --bs-emphasis-color-rgb: 255, 255, 255;
+
+    /* === SECONDARY === */
+    --bs-secondary-color: rgba(222, 226, 230, 0.75);
+    --bs-secondary-color-rgb: 222, 226, 230;
+    --bs-secondary-bg: #343a40;
+    --bs-secondary-bg-rgb: 52, 58, 64;
+
+    /* === TERTIARY === */
+    --bs-tertiary-color: rgba(222, 226, 230, 0.5);
+    --bs-tertiary-color-rgb: 222, 226, 230;
+    --bs-tertiary-bg: #2b3035;
+    --bs-tertiary-bg-rgb: 43, 48, 53;
+
+    /* === LINKS === */
+    --bs-link-color: #0a1621;
+    --bs-link-color-rgb: 10, 22, 33;
+    --bs-link-hover-color: #153048;
+    --bs-link-hover-color-rgb: 21, 48, 72;
+
+    /* === BORDERS === */
+    --bs-border-color: #495057;
+    --bs-border-color-translucent: rgba(255, 255, 255, 0.15);
+
+    /* === BUTTONS === */
+
+    /* Primary Button */
+    --bs-btn-primary-color: #ffffff;
+    --bs-btn-primary-bg: #0a1621;
+    --bs-btn-primary-border-color: #000000;
+    --bs-btn-primary-hover-color: #ffffff;
+    --bs-btn-primary-hover-bg: #153048;
+    --bs-btn-primary-hover-border-color: #0f2234;
+    --bs-btn-primary-active-color: #ffffff;
+    --bs-btn-primary-active-bg: #1b3d5b;
+    --bs-btn-primary-active-border-color: #152f47;
+    --bs-btn-primary-disabled-color: #ffffff;
+    --bs-btn-primary-disabled-bg: #0a1621;
+    --bs-btn-primary-disabled-border-color: #000000;
+    --bs-btn-primary-focus-shadow-rgb: 45, 100, 150;
+    --bs-btn-outline-primary-color: #0a1621;
+    --bs-btn-outline-primary-border-color: #0a1621;
+    --bs-btn-outline-primary-hover-color: #ffffff;
+    --bs-btn-outline-primary-hover-bg: #0a1621;
+    --bs-btn-outline-primary-hover-border-color: #0a1621;
+    --bs-btn-outline-primary-active-color: #ffffff;
+    --bs-btn-outline-primary-active-bg: #0a1621;
+    --bs-btn-outline-primary-active-border-color: #0a1621;
+    --bs-btn-outline-primary-disabled-color: #0a1621;
+    --bs-btn-outline-primary-disabled-bg: transparent;
+    --bs-btn-outline-primary-disabled-border-color: #0a1621;
+
+    /* Secondary Button */
+    --bs-btn-secondary-color: #ffffff;
+    --bs-btn-secondary-bg: #65716c;
+    --bs-btn-secondary-border-color: #4c5652;
+    --bs-btn-secondary-hover-color: #ffffff;
+    --bs-btn-secondary-hover-bg: #7d8b85;
+    --bs-btn-secondary-hover-border-color: #707e78;
+    --bs-btn-secondary-active-color: #ffffff;
+    --bs-btn-secondary-active-bg: #8b9792;
+    --bs-btn-secondary-active-border-color: #7d8a85;
+    --bs-btn-secondary-disabled-color: #ffffff;
+    --bs-btn-secondary-disabled-bg: #65716c;
+    --bs-btn-secondary-disabled-border-color: #4c5652;
+    --bs-btn-secondary-focus-shadow-rgb: 179, 187, 184;
+    --bs-btn-outline-secondary-color: #65716c;
+    --bs-btn-outline-secondary-border-color: #65716c;
+    --bs-btn-outline-secondary-hover-color: #ffffff;
+    --bs-btn-outline-secondary-hover-bg: #65716c;
+    --bs-btn-outline-secondary-hover-border-color: #65716c;
+    --bs-btn-outline-secondary-active-color: #ffffff;
+    --bs-btn-outline-secondary-active-bg: #65716c;
+    --bs-btn-outline-secondary-active-border-color: #65716c;
+    --bs-btn-outline-secondary-disabled-color: #65716c;
+    --bs-btn-outline-secondary-disabled-bg: transparent;
+    --bs-btn-outline-secondary-disabled-border-color: #65716c;
+
+    /* Success Button */
+    --bs-btn-success-color: #ffffff;
+    --bs-btn-success-bg: #0a210a;
+    --bs-btn-success-border-color: #000000;
+    --bs-btn-success-hover-color: #ffffff;
+    --bs-btn-success-hover-bg: #154815;
+    --bs-btn-success-hover-border-color: #0f340f;
+    --bs-btn-success-active-color: #ffffff;
+    --bs-btn-success-active-bg: #1b5b1b;
+    --bs-btn-success-active-border-color: #154715;
+    --bs-btn-success-disabled-color: #ffffff;
+    --bs-btn-success-disabled-bg: #0a210a;
+    --bs-btn-success-disabled-border-color: #000000;
+    --bs-btn-success-focus-shadow-rgb: 45, 150, 45;
+    --bs-btn-outline-success-color: #0a210a;
+    --bs-btn-outline-success-border-color: #0a210a;
+    --bs-btn-outline-success-hover-color: #ffffff;
+    --bs-btn-outline-success-hover-bg: #0a210a;
+    --bs-btn-outline-success-hover-border-color: #0a210a;
+    --bs-btn-outline-success-active-color: #ffffff;
+    --bs-btn-outline-success-active-bg: #0a210a;
+    --bs-btn-outline-success-active-border-color: #0a210a;
+    --bs-btn-outline-success-disabled-color: #0a210a;
+    --bs-btn-outline-success-disabled-bg: transparent;
+    --bs-btn-outline-success-disabled-border-color: #0a210a;
+
+    /* Info Button */
+    --bs-btn-info-color: #ffffff;
+    --bs-btn-info-bg: #0a1621;
+    --bs-btn-info-border-color: #000000;
+    --bs-btn-info-hover-color: #ffffff;
+    --bs-btn-info-hover-bg: #153048;
+    --bs-btn-info-hover-border-color: #0f2234;
+    --bs-btn-info-active-color: #ffffff;
+    --bs-btn-info-active-bg: #1b3d5b;
+    --bs-btn-info-active-border-color: #152f47;
+    --bs-btn-info-disabled-color: #ffffff;
+    --bs-btn-info-disabled-bg: #0a1621;
+    --bs-btn-info-disabled-border-color: #000000;
+    --bs-btn-info-focus-shadow-rgb: 45, 100, 150;
+    --bs-btn-outline-info-color: #0a1621;
+    --bs-btn-outline-info-border-color: #0a1621;
+    --bs-btn-outline-info-hover-color: #ffffff;
+    --bs-btn-outline-info-hover-bg: #0a1621;
+    --bs-btn-outline-info-hover-border-color: #0a1621;
+    --bs-btn-outline-info-active-color: #ffffff;
+    --bs-btn-outline-info-active-bg: #0a1621;
+    --bs-btn-outline-info-active-border-color: #0a1621;
+    --bs-btn-outline-info-disabled-color: #0a1621;
+    --bs-btn-outline-info-disabled-bg: transparent;
+    --bs-btn-outline-info-disabled-border-color: #0a1621;
+
+    /* Warning Button */
+    --bs-btn-warning-color: #ffffff;
+    --bs-btn-warning-bg: #9d773a;
+    --bs-btn-warning-border-color: #775a2c;
+    --bs-btn-warning-hover-color: #ffffff;
+    --bs-btn-warning-hover-bg: #bd924c;
+    --bs-btn-warning-hover-border-color: #ae8440;
+    --bs-btn-warning-active-color: #ffffff;
+    --bs-btn-warning-active-bg: #c49d5f;
+    --bs-btn-warning-active-border-color: #bd914c;
+    --bs-btn-warning-disabled-color: #ffffff;
+    --bs-btn-warning-disabled-bg: #9d773a;
+    --bs-btn-warning-disabled-border-color: #775a2c;
+    --bs-btn-warning-focus-shadow-rgb: 216, 191, 151;
+    --bs-btn-outline-warning-color: #9d773a;
+    --bs-btn-outline-warning-border-color: #9d773a;
+    --bs-btn-outline-warning-hover-color: #ffffff;
+    --bs-btn-outline-warning-hover-bg: #9d773a;
+    --bs-btn-outline-warning-hover-border-color: #9d773a;
+    --bs-btn-outline-warning-active-color: #ffffff;
+    --bs-btn-outline-warning-active-bg: #9d773a;
+    --bs-btn-outline-warning-active-border-color: #9d773a;
+    --bs-btn-outline-warning-disabled-color: #9d773a;
+    --bs-btn-outline-warning-disabled-bg: transparent;
+    --bs-btn-outline-warning-disabled-border-color: #9d773a;
+
+    /* Danger Button */
+    --bs-btn-danger-color: #ffffff;
+    --bs-btn-danger-bg: #210a0a;
+    --bs-btn-danger-border-color: #000000;
+    --bs-btn-danger-hover-color: #ffffff;
+    --bs-btn-danger-hover-bg: #481515;
+    --bs-btn-danger-hover-border-color: #340f0f;
+    --bs-btn-danger-active-color: #ffffff;
+    --bs-btn-danger-active-bg: #5b1b1b;
+    --bs-btn-danger-active-border-color: #471515;
+    --bs-btn-danger-disabled-color: #ffffff;
+    --bs-btn-danger-disabled-bg: #210a0a;
+    --bs-btn-danger-disabled-border-color: #000000;
+    --bs-btn-danger-focus-shadow-rgb: 150, 45, 45;
+    --bs-btn-outline-danger-color: #210a0a;
+    --bs-btn-outline-danger-border-color: #210a0a;
+    --bs-btn-outline-danger-hover-color: #ffffff;
+    --bs-btn-outline-danger-hover-bg: #210a0a;
+    --bs-btn-outline-danger-hover-border-color: #210a0a;
+    --bs-btn-outline-danger-active-color: #ffffff;
+    --bs-btn-outline-danger-active-bg: #210a0a;
+    --bs-btn-outline-danger-active-border-color: #210a0a;
+    --bs-btn-outline-danger-disabled-color: #210a0a;
+    --bs-btn-outline-danger-disabled-bg: transparent;
+    --bs-btn-outline-danger-disabled-border-color: #210a0a;
+
+    /* Light Button */
+    --bs-btn-light-color: #ffffff;
+    --bs-btn-light-bg: #9d773a;
+    --bs-btn-light-border-color: #775a2c;
+    --bs-btn-light-hover-color: #ffffff;
+    --bs-btn-light-hover-bg: #bd924c;
+    --bs-btn-light-hover-border-color: #ae8440;
+    --bs-btn-light-active-color: #ffffff;
+    --bs-btn-light-active-bg: #c49d5f;
+    --bs-btn-light-active-border-color: #bd914c;
+    --bs-btn-light-disabled-color: #ffffff;
+    --bs-btn-light-disabled-bg: #9d773a;
+    --bs-btn-light-disabled-border-color: #775a2c;
+    --bs-btn-light-focus-shadow-rgb: 216, 191, 151;
+    --bs-btn-outline-light-color: #9d773a;
+    --bs-btn-outline-light-border-color: #9d773a;
+    --bs-btn-outline-light-hover-color: #ffffff;
+    --bs-btn-outline-light-hover-bg: #9d773a;
+    --bs-btn-outline-light-hover-border-color: #9d773a;
+    --bs-btn-outline-light-active-color: #ffffff;
+    --bs-btn-outline-light-active-bg: #9d773a;
+    --bs-btn-outline-light-active-border-color: #9d773a;
+    --bs-btn-outline-light-disabled-color: #9d773a;
+    --bs-btn-outline-light-disabled-bg: transparent;
+    --bs-btn-outline-light-disabled-border-color: #9d773a;
+
+    /* Dark Button */
+    --bs-btn-dark-color: #ffffff;
+    --bs-btn-dark-bg: #0a1621;
+    --bs-btn-dark-border-color: #000000;
+    --bs-btn-dark-hover-color: #ffffff;
+    --bs-btn-dark-hover-bg: #153048;
+    --bs-btn-dark-hover-border-color: #0f2234;
+    --bs-btn-dark-active-color: #ffffff;
+    --bs-btn-dark-active-bg: #1b3d5b;
+    --bs-btn-dark-active-border-color: #152f47;
+    --bs-btn-dark-disabled-color: #ffffff;
+    --bs-btn-dark-disabled-bg: #0a1621;
+    --bs-btn-dark-disabled-border-color: #000000;
+    --bs-btn-dark-focus-shadow-rgb: 45, 100, 150;
+    --bs-btn-outline-dark-color: #0a1621;
+    --bs-btn-outline-dark-border-color: #0a1621;
+    --bs-btn-outline-dark-hover-color: #ffffff;
+    --bs-btn-outline-dark-hover-bg: #0a1621;
+    --bs-btn-outline-dark-hover-border-color: #0a1621;
+    --bs-btn-outline-dark-active-color: #ffffff;
+    --bs-btn-outline-dark-active-bg: #0a1621;
+    --bs-btn-outline-dark-active-border-color: #0a1621;
+    --bs-btn-outline-dark-disabled-color: #0a1621;
+    --bs-btn-outline-dark-disabled-bg: transparent;
+    --bs-btn-outline-dark-disabled-border-color: #0a1621;
+
+    /* === FORM VALIDATION === */
+    --bs-form-valid-color: #0a210a;
+    --bs-form-valid-border-color: #0a210a;
+    --bs-form-invalid-color: #210a0a;
+    --bs-form-invalid-border-color: #210a0a;
+
+    /* === CODE & HIGHLIGHT === */
+    --bs-code-color: #210a0a;
+    --bs-highlight-color: #73a6d4;
+    --bs-highlight-bg: #9d773a;
+
+    /* === THEME-SPECIFIC CUSTOM PROPERTIES === */
+    /* Shadows & Effects - Playful, brick-like */
+    --lego-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
+    --lego-shadow-hover: 5px 5px 0 rgba(0, 0, 0, 0.2);
+    --lego-radius-brick: 3px;
+
+    /* Font */
+    --lego-font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+}
+
+/* ------------------------------------------------------------
+   SECTION 2: COMPONENT STYLES
+   ------------------------------------------------------------ */
+
+.text-dark {
+    color: var(--bs-body-color) !important;
+}
+
+.text-white {
+    color: var(--bs-body-color) !important;
+}
+
+/* Compact heading styles */
+h1 {
+    font-size: 1.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+h2 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+h5 {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+h6 {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+html,
+body {
+    overflow-x: hidden;
+}
+
+.page-content {
+    padding-top: 4.5rem;
+}
+
+body {
+    background-color: var(--bs-info);
+    position: relative;
+    color: var(--bs-body-color);
+    font-family: var(--lego-font-family);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    font-size: 0.9rem;
+}
+
+/* Blurred background layer */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("/static/img/bg-lego-darkblue.png");
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    filter: blur(10px);
+    z-index: -1;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--bs-body-color);
+    margin-bottom: 0.3rem;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Brick-style Containers */
+.lego-card {
+    background: linear-gradient(145deg, #183749, #08141e);
+    border: 2px solid #2a4a5c;
+    border-radius: var(--lego-radius-brick);
+    box-shadow: var(--lego-shadow);
+    padding: 0.5rem;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+/* Colorful top border accent */
+.lego-card::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: 10%;
+    right: 10%;
+    height: 4px;
+    background: linear-gradient(
+        90deg,
+        var(--bs-secondary) 0%,
+        var(--bs-secondary) 20%,
+        var(--bs-primary) 20%,
+        var(--bs-primary) 40%,
+        var(--bs-info) 40%,
+        var(--bs-info) 60%,
+        var(--bs-success) 60%,
+        var(--bs-success) 80%,
+        var(--bs-warning) 80%,
+        var(--bs-warning) 100%
+    );
+    border-radius: 2px 2px 0 0;
+    opacity: 0.3;
+}
+
+.lego-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: var(--lego-shadow-hover);
+}
+
+/* Buttons - Brick-style */
+.btn {
+    border-radius: var(--lego-radius-brick);
+    padding: 0.35rem 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
+    font-size: 0.75rem;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary,
+.btn-info {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.3) 0%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%
+        ),
+        var(--bs-primary);
+    color: #ffffff;
+    border-color: rgba(0, 0, 0, 0.3);
+    font-weight: 800;
+}
+
+.btn-primary:hover,
+.btn-info:hover {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.4) 0%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.15) 100%
+        ),
+        var(--bs-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
+    color: #ffffff;
+}
+
+.btn-outline-light {
+    background: #041424bf;
+    color: var(--bs-secondary);
+    border-color: var(--bs-secondary);
+}
+
+.btn-outline-light:hover {
+    background: var(--bs-secondary);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Active state - pressed down effect */
+.btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.doc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    padding-left: 0.5rem;
+    padding-right: 0.7rem;
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.2) 0%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%
+        ),
+        var(--bs-info);
+    border-color: rgba(0, 0, 0, 0.3);
+}
+
+.doc-pill-icon {
+    width: 1.6rem;
+    height: 1.6rem;
+    display: inline-block;
+    flex: 0 0 auto;
+    border-radius: 2px;
+}
+
+/* History Items */
+.history-item-ip {
+    color: var(--bs-info) !important;
+    font-weight: 700;
+}
+
+.history-item-user {
+    color: var(--bs-body-color) !important;
+    font-weight: 700;
+}
+
+/* User Badge */
+.user-badge {
+    background: linear-gradient(145deg, #2a4a5c, #183749);
+    border: 2px solid #a25d3f;
+    border-left-color: #a25d3f;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--lego-radius-brick);
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-badge .text-dark {
+    color: var(--bs-body-color) !important;
+}
+
+/* Forensic details */
+details.lego-card {
+    background: rgba(24, 55, 73, 0.95) !important;
+}
+
+/* Details content background */
+details.lego-card .list-unstyled {
+    background: rgba(8, 20, 30, 0.4) !important;
+}
+
+/* Details text contrast */
+details.lego-card .text-muted {
+    color: #919394 !important;
+}
+
+/* History item text */
+details.lego-card .history-item-ip,
+details.lego-card .history-item-user {
+    color: #c3a431 !important;
+    font-weight: 700;
+}
+
+/* Summary headings */
+details.lego-card summary .text-truncate {
+    color: #919394 !important;
+    font-weight: 700;
+}
+
+/* Detail section headings */
+details.lego-card .fw-bold {
+    color: #a25d3f !important;
+}
+
+/* Form Elements */
+input.form-control {
+    border-radius: var(--lego-radius-brick);
+    border: 2px solid #575a59;
+    background: #08141e;
+    color: var(--bs-body-color);
+    padding: 0.5rem 0.75rem;
+    transition: all 0.15s ease;
+    font-size: 0.85rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+input.form-control:focus {
+    background: #183749;
+    border-color: var(--bs-body-color);
+    box-shadow:
+        0 0 0 3px rgba(0, 85, 191, 0.2),
+        inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+/* Badges */
+.badge.bg-light {
+    background: #183749 !important;
+    color: var(--bs-body-color) !important;
+    border: 2px solid #575a59 !important;
+}
+
+/* Border colors */
+.border-top,
+.border-bottom {
+    border-color: #575a59 !important;
+}
+
+/* Form Switch */
+.form-check-input {
+    width: 2.5rem;
+    height: 1.25rem;
+    background-color: var(--bs-secondary);
+    border: 2px solid var(--bs-secondary);
+    border-radius: 12px;
+    position: relative;
+    appearance: none;
+    cursor: pointer;
+}
+
+.form-check-input::after {
+    content: "";
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: calc(1.25rem - 4px);
+    height: calc(1.25rem - 4px);
+    background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+    border-radius: 50%;
+    transition: transform 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.form-check-input:checked {
+    background-color: var(--bs-success);
+    border-color: var(--bs-success);
+}
+
+.form-check-input:checked::after {
+    transform: translateX(1.25rem);
+    background: linear-gradient(135deg, #ffffff 0%, #d0f0d0 100%);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(0, 168, 0, 0.3);
+}
+
+/* Form switch alignment */
+.form-switch {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: auto !important;
+    padding-left: 0 !important;
+}
+
+.form-switch .form-check-input {
+    margin-top: 0 !important;
+    margin-right: 0.5rem !important;
+    float: none !important;
+    vertical-align: middle !important;
+}
+
+.form-switch .form-check-label {
+    vertical-align: middle !important;
+    line-height: 1.2 !important;
+}
+
+/* Navigation */
+nav {
+    background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+    border: 2px solid var(--bs-border-color);
+    border-radius: 16px;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    gap: 1rem;
+}
+
+/* Animations */
+@keyframes brick-bounce {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+@keyframes color-shift {
+    0%,
+    100% {
+        filter: hue-rotate(0deg);
+    }
+
+    50% {
+        filter: hue-rotate(15deg);
+    }
+}
+
+.brick-bounce {
+    animation: brick-bounce 0.6s ease-in-out;
+}
+
+.color-shift {
+    animation: color-shift 3s ease-in-out infinite;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .lego-card {
+        padding: 1.5rem;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        background-attachment: scroll;
+    }
+
+    .lego-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    nav {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+        clip-path: none;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .user-badge {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .user-badge .badge {
+        margin-top: 0.5rem;
+    }
+}
+
+.app-header {
+    background:
+        linear-gradient(
+            5deg,
+            rgba(255, 255, 255, 0.2) 0%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%
+        ),
+        color-mix(in srgb, var(--bs-info), transparent 70%);
+    border-bottom: 2px solid var(--bs-border-color);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.theme-toggle-btn {
+    right: 0.5rem;
+    border-radius: var(--lego-radius-brick);
+}
+
+.header-spacer {
+    opacity: 0;
+    pointer-events: none;
+    color: transparent;
+    visibility: hidden;
+    border-color: transparent;
+    background: transparent;
+}
+
+@media (max-width: 576px) {
+    .header-bar {
+        flex-direction: row-reverse;
+        flex-wrap: wrap;
+    }
+
+    .theme-toggle-btn {
+        position: static !important;
+        transform: none !important;
+        margin: 0.5rem 0 0;
+        display: inline-flex;
+        align-self: flex-start;
+    }
+
+    .header-bar .btn {
+        width: auto;
+        margin-bottom: 0;
+    }
+
+    .header-spacer {
+        display: none;
+    }
+}
+
+/* Forensic states */
+.forensic-stale {
+    animation: brick-alert 1.5s ease-in-out infinite;
+    border: 2px solid var(--bs-warning);
+    background: linear-gradient(
+        145deg,
+        #183749,
+        #08141e
+    );
+    box-shadow:
+        0 0 0 4px rgba(255, 102, 0, 0.2),
+        0 3px 0 rgba(255, 102, 0, 0.3);
+}
+
+.forensic-submitted {
+    animation: brick-success 1.5s ease-in-out infinite;
+    border: 2px solid var(--bs-success);
+    background: linear-gradient(
+        145deg,
+        #183749,
+        #08141e
+    );
+    box-shadow: 0 0 0 4px rgba(0, 168, 0, 0.2), 0 3px 0 rgba(0, 168, 0, 0.3);
+}
+
+@keyframes brick-alert {
+    0%,
+    100% {
+        box-shadow:
+            0 0 0 4px rgba(255, 102, 0, 0.2),
+            0 3px 0 rgba(255, 102, 0, 0.3);
+        transform: translateY(0);
+    }
+
+    50% {
+        box-shadow:
+            0 0 0 6px rgba(255, 102, 0, 0.15),
+            0 4px 0 rgba(255, 102, 0, 0.35);
+        transform: translateY(-2px);
+    }
+}
+
+@keyframes brick-success {
+    0%,
+    100% {
+        box-shadow:
+            0 0 0 4px rgba(0, 168, 0, 0.2),
+            0 3px 0 rgba(0, 168, 0, 0.3);
+        transform: translateY(0);
+    }
+
+    50% {
+        box-shadow:
+            0 0 0 6px rgba(0, 168, 0, 0.15),
+            0 4px 0 rgba(0, 168, 0, 0.35);
+        transform: translateY(-2px);
+    }
+}
+
+/* Colorful accent line */
+.brick-line {
+    height: 6px;
+    background: linear-gradient(
+        90deg,
+        var(--bs-secondary) 0%,
+        var(--bs-secondary) 20%,
+        var(--bs-primary) 20%,
+        var(--bs-primary) 40%,
+        var(--bs-info) 40%,
+        var(--bs-info) 60%,
+        var(--bs-success) 60%,
+        var(--bs-success) 80%,
+        var(--bs-warning) 80%,
+        var(--bs-warning) 100%
+    );
+    margin: 1rem 0;
+    border: none;
+    border-radius: var(--lego-radius-brick);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* Warning stripe pattern */
+.warning-stripe {
+    background: repeating-linear-gradient(
+        45deg,
+        var(--bs-warning),
+        var(--bs-warning) 10px,
+        var(--bs-dark) 10px,
+        var(--bs-dark) 20px
+    );
+    height: 8px;
+    border-radius: var(--lego-radius-brick);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Override Bootstrap danger color */
+.bg-danger {
+    background-color: var(--bs-danger) !important;
+}
