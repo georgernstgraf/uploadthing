@@ -6,9 +6,9 @@
    SECTION 1: GENERATED COLOR VARIABLES
    
    To regenerate:
-   1. cd tools && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-   2. .venv/bin/python3 color-theme.py --output=../static/lego-theme-generated.css
-   3. Paste the content below (between BEGIN/END markers)
+   1. cd scripts && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+   2. .venv/bin/python3 color-theme.py path/to/image.png
+   3. Paste the output below (between BEGIN/END markers)
    ------------------------------------------------------------ */
 
 /* BEGIN GENERATED COLORS */

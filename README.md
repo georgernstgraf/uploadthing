@@ -4,29 +4,26 @@ Webserver on examdns-router
 
 ## Color Theme Generator
 
-The `tools/color-theme.py` script extracts dominant colors from an image and generates Bootstrap 5 CSS variables with WCAG AAA compliant contrast ratios (7:1).
+The `scripts/color-theme.py` script extracts dominant colors from an image and generates Bootstrap 5 CSS variables with WCAG AAA compliant contrast ratios (7:1).
 
 ### Setup
 
 ```bash
-python3 -m venv tools/.venv
-tools/.venv/bin/pip install -r tools/requirements.txt
+python3 -m venv scripts/.venv
+scripts/.venv/bin/pip install -r scripts/requirements.txt
 ```
 
 ### Usage
 
 ```bash
-# Generate colors from an image
-tools/.venv/bin/python3 tools/color-theme.py path/to/image.png
-
 # Write to file
-tools/.venv/bin/python3 tools/color-theme.py path/to/image.png -o colors.css
+scripts/.venv/bin/python3 scripts/color-theme.py path/to/image.png -o colors.css
 
 # Skip blur (analyze raw image)
-tools/.venv/bin/python3 tools/color-theme.py path/to/image.png --no-blur
+scripts/.venv/bin/python3 scripts/color-theme.py path/to/image.png --no-blur
 
 # Adjust number of color clusters
-tools/.venv/bin/python3 tools/color-theme.py path/to/image.png -c 8
+scripts/.venv/bin/python3 scripts/color-theme.py path/to/image.png -c 8
 ```
 
 ### Options
