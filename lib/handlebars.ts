@@ -2,31 +2,44 @@ import Handlebars from "handlebars";
 import { UserType, TopType } from "./types.ts";
 import type { ServiceIpForensics } from "../service/ipforensics.ts";
 
-// Hier nur Template Types, bitte!
-
 // --- 2. Template Data Type Definitions ---
 
-type DirIndexTemplateData = TopType & {
+type DirIndexTemplateData = {
     files: string[];
     unterlagen_dir: string;
 };
 
-type UploadTemplateData = TopType;
+type UploadTemplateData = Record<string, never>;
 
-type SuccessTemplateData = TopType & {
+type SuccessTemplateData = {
     filename: string;
     filesize: string;
     md5sum: string;
     duration_seconds: string;
+    remote_ip: string;
 };
 
-type WhoamiTemplateData = TopType;
+type WhoamiTemplateData = {
+    remote_user: UserType | null;
+};
+
+type NavTemplateData = TopType;
+
+type UserbadgeTemplateData = TopType;
+
+type MainTemplateData = TopType & {
+    content: string;
+};
+
+type IndexTemplateData = TopType & {
+    content: string;
+};
 
 type LdapTemplateData = {
     users: UserType[];
 };
 
-type ForensicTemplateData = TopType & {
+type ForensicTemplateData = {
     remote_user: UserType;
     spg_times: string[];
     starttime: string;
@@ -52,13 +65,10 @@ Handlebars.registerHelper("get", function (map, key) {
     return map.get(key);
 });
 
-// Extract first letter of given name (after first blank in displayname)
-// e.g., "Breuss Moritz Peter" → "M", "Indra Daniel Paul Philipp" → "D"
 Handlebars.registerHelper("givenNameInitial", function (name: string) {
     if (!name || typeof name !== "string") return "?";
     const firstSpace = name.indexOf(" ");
     if (firstSpace === -1 || firstSpace >= name.length - 1) {
-        // No space or space is at the end, use first character
         return name.charAt(0).toUpperCase();
     }
     return name.charAt(firstSpace + 1).toUpperCase();
@@ -75,8 +85,16 @@ Handlebars.registerHelper("let", function (this: any, value, options) {
 // --- 4. Handlebars Partials ---
 
 Handlebars.registerPartial(
-    "top",
-    Deno.readTextFileSync("templates/top.hbs"),
+    "nav",
+    Deno.readTextFileSync("templates/nav.hbs"),
+);
+Handlebars.registerPartial(
+    "userbadge",
+    Deno.readTextFileSync("templates/userbadge.hbs"),
+);
+Handlebars.registerPartial(
+    "main",
+    Deno.readTextFileSync("templates/main.hbs"),
 );
 Handlebars.registerPartial(
     "forensic-report",
@@ -85,6 +103,12 @@ Handlebars.registerPartial(
 
 // --- 5. Handlebars Compiled Templates (Exports) ---
 
+export const indexTemplate = Handlebars.compile<IndexTemplateData>(
+    Deno.readTextFileSync("templates/index.hbs"),
+);
+export const mainTemplate = Handlebars.compile<MainTemplateData>(
+    Deno.readTextFileSync("templates/main.hbs"),
+);
 export const dirIndexTemplate = Handlebars.compile<DirIndexTemplateData>(
     Deno.readTextFileSync("templates/dirindex.hbs"),
 );
@@ -105,4 +129,10 @@ export const forensicTemplate = Handlebars.compile<ForensicTemplateData>(
 );
 export const forensicReportTemplate = Handlebars.compile<ForensicTemplateData>(
     Deno.readTextFileSync("templates/forensic-report.hbs"),
+);
+export const navTemplate = Handlebars.compile<NavTemplateData>(
+    Deno.readTextFileSync("templates/nav.hbs"),
+);
+export const userbadgeTemplate = Handlebars.compile<UserbadgeTemplateData>(
+    Deno.readTextFileSync("templates/userbadge.hbs"),
 );

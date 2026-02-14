@@ -7,11 +7,9 @@ import config from "../lib/config.ts";
 import { ForensicQuerySchema } from "../lib/schemas.ts";
 
 const forensicRouter = new Hono<{ Variables: HonoContextVars }>();
-const start_ms_earlier = 3.6 * 1.5e6; // 1.5 hours ago
-const one_day_ms = 24 * 3.6e6; // plus one day
+const start_ms_earlier = 3.6 * 1.5e6;
+const one_day_ms = 24 * 3.6e6;
 const time_cutoff_ms = config.TODAY_HOURS_CUTOFF * 3.6e6;
-
-// Forensic main page
 
 forensicRouter.get("/", async (c) => {
     const is_admin = c.get("is_admin");
@@ -33,19 +31,17 @@ forensicRouter.get("/", async (c) => {
     let startdate = c.req.query("startdate") ||
         localDateString(new Date(Date.now() - start_ms_earlier));
     let starttime = c.req.query("starttime");
-    // if either startdate or starttime is missing, default to 2 hours ago
     if (!starttime) {
         starttime = localTimeString(new Date(Date.now() - start_ms_earlier));
         const times = [...config.spg_times, starttime];
         times.sort();
         const index = times.indexOf(starttime);
-        times.splice(index, 1); // remove the added time
+        times.splice(index, 1);
         starttime = times.at(index < times.length ? index : -1)!;
     }
     const requestedEndDate = c.req.query("enddate");
     const requestedEndTime = c.req.query("endtime");
 
-    // endtime provided?
     const endtimeProvided = Boolean(requestedEndDate || requestedEndTime);
     let enddate = requestedEndDate ||
         localDateString(new Date(Date.now() + one_day_ms));
@@ -53,14 +49,12 @@ forensicRouter.get("/", async (c) => {
     let startDateTime = new Date(`${startdate} ${starttime}`);
     let endDateTime = new Date(`${enddate} ${endtime}`);
 
-    // end before start => swap
     if (endDateTime.getTime() < startDateTime.getTime()) {
         [startdate, enddate] = [enddate, startdate];
         [starttime, endtime] = [endtime, starttime];
         [startDateTime, endDateTime] = [endDateTime, startDateTime];
     }
 
-    // Calculate if start time is within the configured cutoff
     const withinTimeCutoff = Math.abs(
         new Date().getTime() - startDateTime.getTime(),
     ) < time_cutoff_ms;
@@ -73,12 +67,9 @@ forensicRouter.get("/", async (c) => {
         endDateTime,
         !endtimeProvided,
     );
-    const is_full = c.req.header("HX-Request") !== "true";
-    const templateData = {
-        // simple data
-        remote_ip: c.get("remoteip"),
+
+    const content = hbs.forensicTemplate({
         remote_user,
-        is_admin,
         startdate,
         starttime,
         endtime,
@@ -90,11 +81,19 @@ forensicRouter.get("/", async (c) => {
         endtimeInFuture,
         endtimeProvided,
         forensic_refresh_seconds: refreshSeconds,
-        page_title: config.page_title,
-        is_full,
-    };
+    });
 
-    return c.html(hbs.forensicTemplate(templateData));
+    if (c.req.header("HX-Request") === "true") {
+        return c.html(content);
+    }
+
+    return c.html(hbs.indexTemplate({
+        remote_user,
+        remote_ip: c.get("remoteip"),
+        is_admin,
+        page_title: config.page_title,
+        content,
+    }));
 });
 
 export default forensicRouter;

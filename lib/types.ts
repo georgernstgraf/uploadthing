@@ -18,7 +18,6 @@ export type TopType = {
     remote_user: UserType | null;
     page_title: string;
     is_admin: boolean;
-    is_full: boolean;
 };
 
 export type ForensicIPCount = {

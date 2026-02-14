@@ -5,26 +5,28 @@ import config from "../lib/config.ts";
 import { HonoContextVars } from "../lib/types.ts";
 import { LdapSearchSchema, RegisterSchema } from "../lib/schemas.ts";
 import { getSession } from "../middleware/session.ts";
+import { get_unterlagen } from "../lib/pathfuncs.ts";
 
 import { AppError } from "../lib/errors.ts";
 
 const authRouter = new Hono<{ Variables: HonoContextVars }>();
 
 authRouter.get("/whoami", (c) => {
-    const remote_ip = c.get("remoteip");
-    const remote_user = c.get("remoteuser");
-    const is_admin = c.get("is_admin");
+    const content = hbs.whoamiTemplate({
+        remote_user: c.get("remoteuser"),
+    });
 
-    const is_full = c.req.header("HX-Request") !== "true";
-    const data = {
-        remote_ip,
-        remote_user,
-        is_admin,
+    if (c.req.header("HX-Request") === "true") {
+        return c.html(content);
+    }
+
+    return c.html(hbs.indexTemplate({
+        remote_user: c.get("remoteuser"),
+        remote_ip: c.get("remoteip"),
+        is_admin: c.get("is_admin"),
         page_title: config.page_title,
-        is_full,
-    };
-
-    return c.html(hbs.whoamiTemplate(data));
+        content,
+    }));
 });
 
 authRouter.get("/ldap", async (c) => {
@@ -58,7 +60,6 @@ authRouter.get("/ldap", async (c) => {
 });
 
 authRouter.post("/register", async (c) => {
-    // try-catch removed, letting global error handler catch exceptions
     const body = await c.req.parseBody();
     const validation = RegisterSchema.safeParse(body);
 
@@ -77,7 +78,26 @@ authRouter.post("/register", async (c) => {
     const session = getSession(c);
     session.login(email);
 
-    return c.redirect("/", 303);
+    c.set("remoteuser", user);
+    const is_admin = config.ADMINS.includes(email.toLowerCase()) ||
+        config.ADMIN_IPS.includes(remoteIp);
+    c.set("is_admin", is_admin);
+
+    const files = await get_unterlagen();
+    const content = hbs.dirIndexTemplate({
+        unterlagen_dir: config.UNTERLAGEN_DIR,
+        files,
+    });
+
+    const mainHtml = hbs.mainTemplate({
+        remote_user: user,
+        remote_ip: remoteIp,
+        is_admin,
+        page_title: config.page_title,
+        content,
+    }).replace('<main', '<main hx-swap-oob="true"');
+
+    return c.html(mainHtml);
 });
 
 export default authRouter;

@@ -11,22 +11,24 @@ import { UploadSchema } from "../lib/schemas.ts";
 const uploadRouter = new Hono<{ Variables: HonoContextVars }>();
 
 uploadRouter.get("/", (c) => {
-    const remote_ip = c.get("remoteip");
     const remote_user = c.get("remoteuser");
     if (!remote_user) {
         return c.redirect("/whoami");
     }
 
-    const is_full = c.req.header("HX-Request") !== "true";
-    const data = {
-        remote_ip,
+    const content = hbs.uploadTemplate({});
+
+    if (c.req.header("HX-Request") === "true") {
+        return c.html(content);
+    }
+
+    return c.html(hbs.indexTemplate({
         remote_user,
+        remote_ip: c.get("remoteip"),
         is_admin: c.get("is_admin"),
         page_title: config.page_title,
-        is_full,
-    };
-
-    return c.html(hbs.uploadTemplate(data));
+        content,
+    }));
 });
 
 uploadRouter.post("/", async (c) => {
@@ -79,13 +81,11 @@ uploadRouter.post("/", async (c) => {
             if (done) break;
             if (!value) continue;
 
-            // value is a Uint8Array chunk
             bytesWritten += value.byteLength;
             hash.update(value);
             await writeAll(out, value);
         }
     } catch (e) {
-        // best-effort cleanup of partial file
         try {
             if (out) out.close();
         } catch {
@@ -117,19 +117,25 @@ uploadRouter.post("/", async (c) => {
         );
     }
 
-    return c.html(
-        hbs.successTemplate({
-            remote_ip,
-            filename: real_filename,
-            filesize: bytesWritten.toString(),
-            md5sum,
-            duration_seconds: durationSeconds,
-            remote_user,
-            is_admin: c.get("is_admin"),
-            page_title: config.page_title,
-            is_full: true,
-        }),
-    );
+    const content = hbs.successTemplate({
+        filename: real_filename,
+        filesize: bytesWritten.toString(),
+        md5sum,
+        duration_seconds: durationSeconds,
+        remote_ip,
+    });
+
+    if (c.req.header("HX-Request") === "true") {
+        return c.html(content);
+    }
+
+    return c.html(hbs.indexTemplate({
+        remote_user,
+        remote_ip,
+        is_admin: c.get("is_admin"),
+        page_title: config.page_title,
+        content,
+    }));
 });
 
 export default uploadRouter;

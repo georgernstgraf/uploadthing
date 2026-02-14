@@ -1,38 +1,8 @@
-{{#if is_full}}{{> top}}{{/if}}
-<div x-data="{ uploading: false, errorMessage: '', toastInstance: null }">
-    <form @submit.prevent="
-            const fileInput = $refs.fileInput;
-            if (!fileInput.files || fileInput.files.length === 0) {
-                errorMessage = 'Bitte eine ZIP-Datei auswählen.';
-                if (!toastInstance) toastInstance = new bootstrap.Toast($refs.errorToast);
-                toastInstance.show();
-                return;
-            }
-            uploading = true;
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            try {
-                const response = await fetch('/upload', { method: 'POST', body: formData });
-                if (response.ok) {
-                    const html = await response.text();
-                    document.open();
-                    document.write(html);
-                    document.close();
-                } else {
-                    const errorText = await response.text();
-                    errorMessage = 'Upload fehlgeschlagen: ' + errorText;
-                    if (!toastInstance) toastInstance = new bootstrap.Toast($refs.errorToast);
-                    toastInstance.show();
-                }
-            } catch (err) {
-                errorMessage = 'Upload fehlgeschlagen: ' + err.message;
-                if (!toastInstance) toastInstance = new bootstrap.Toast($refs.errorToast);
-                toastInstance.show();
-            } finally {
-                uploading = false;
-            }
-          "
-          enctype="multipart/form-data"
+<div x-data="{ fileName: 'Datei hier ablegen oder klicken' }">
+    <form hx-post="/upload"
+          hx-encoding="multipart/form-data"
+          hx-target="#main-content"
+          hx-swap="innerHTML"
           class="leisure-card needs-validation mx-auto"
           style="max-width: 600px;"
           novalidate="">
@@ -43,11 +13,11 @@
             <label class="d-block form-label h3 mb-2 fw-bold">Bitte ZIP Datei auswählen</label>
             <p class="text-muted small">Nur .zip Dateien sind erlaubt</p>
             
-             <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all" 
-                  style="border-style: dashed; border-color: var(--leisure-secondary); background: rgba(255,255,255,0.4);"
-                  @dragover.prevent="$el.style.borderColor = 'var(--leisure-primary)'"
-                  @dragleave.prevent="$el.style.borderColor = 'var(--leisure-secondary)'"
-                  @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $refs.fileInput.dispatchEvent(new Event('change', { bubbles: true })); $el.style.borderColor = 'var(--leisure-secondary)'">
+            <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all" 
+                 style="border-style: dashed; border-color: var(--leisure-secondary); background: rgba(255,255,255,0.4);"
+                 @dragover.prevent="$el.style.borderColor = 'var(--leisure-primary)'"
+                 @dragleave.prevent="$el.style.borderColor = 'var(--leisure-secondary)'"
+                 @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--leisure-secondary)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
                 
                 <input type="file"
                        x-ref="fileInput"
@@ -56,11 +26,10 @@
                        name="file"
                        accept=".zip"
                        required
-                       :disabled="uploading"
-                       @change="$el.nextElementSibling.innerText = $el.files[0] ? $el.files[0].name : 'Datei hier ablegen oder klicken'">
+                       @change="fileName = $el.files[0]?.name || 'Datei hier ablegen oder klicken'">
                 
                 <div class="d-flex align-items-center justify-content-center gap-2 text-muted fw-bold">
-                    <span>Datei hier ablegen oder klicken</span>
+                    <span x-text="fileName"></span>
                 </div>
             </div>
             
@@ -69,38 +38,13 @@
         <div class="text-center">
             <button type="submit"
                     class="btn btn-primary btn-lg px-5 py-3 fs-5 shadow-sm"
-                    style="min-width: 200px;"
-                    :disabled="uploading">
-                <span :class="uploading ? 'd-none' : ''">Upload</span>
-                <span x-cloak :class="uploading ? '' : 'd-none'">
+                    style="min-width: 200px;">
+                <span>Upload</span>
+                <span class="htmx-indicator">
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                     Uploading...
                 </span>
             </button>
         </div>
     </form>
-
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
-        <div x-ref="errorToast"
-             class="toast align-items-center text-bg-danger border-0"
-             role="alert"
-             aria-live="assertive"
-             aria-atomic="true"
-             data-bs-autohide="false">
-            <div class="d-flex">
-                <div class="toast-body fs-5" x-text="errorMessage"></div>
-                <button type="button"
-                        class="btn-close btn-close-white me-2 m-auto"
-                        @click="toastInstance?.hide()"
-                        aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
 </div>
-{{#if is_full}}
-</div>
-</main>
-</body>
-
-</html>
-{{/if}}

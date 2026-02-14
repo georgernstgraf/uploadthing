@@ -1,0 +1,18 @@
+<nav id="main-nav"
+     class="d-flex justify-content-center gap-2 mt-5 mb-2 mx-auto p-1 flex-wrap"
+     style="width: fit-content; max-width: 100%; background: var(--leisure-glass-bg); backdrop-filter: blur(10px); border-radius: 50px; border: 1px solid var(--leisure-glass-border); box-shadow: var(--leisure-shadow-soft);">
+    <button hx-get="/"
+            hx-target="#main-content"
+            hx-push-url="true"
+            class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Home</button>
+    {{#if is_admin}}
+    <button hx-get="/forensic"
+            hx-target="#main-content"
+            hx-push-url="true"
+            class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Forensic</button>
+    {{/if}}
+    <button hx-get="/upload"
+            hx-target="#main-content"
+            hx-push-url="true"
+            class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Zipfile Upload</button>
+</nav>

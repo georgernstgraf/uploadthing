@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>{{page_title}}</title>
+    <link rel="icon"
+          type="image/svg+xml"
+          href="/static/favicon.svg">
+    <link rel="stylesheet"
+          href="/static/ibm-plex-sans.css">
+    <link rel="stylesheet"
+          href="/static/bootstrap.css">
+    <link id="theme-css"
+          rel="stylesheet"
+          href="/static/leisure-theme.css">
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator {
+            display: inline;
+        }
+        .htmx-request.htmx-indicator {
+            display: inline;
+        }
+    </style>
+    <script src="/static/htmx.js"></script>
+    <script src="/static/bootstrap.js"></script>
+    <script src="/static/alpine.min.js"
+            defer></script>
+</head>
+
+<body>
+    <header class="position-fixed top-0 start-0 end-0 app-header"
+            style="z-index: 1000;">
+        <div class="position-relative mx-2 mt-2">
+            <div class="leisure-card py-1 d-flex align-items-center gap-2 header-bar"
+                 style="border-radius: 16px;">
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 theme-toggle-btn header-spacer"
+                        type="button"
+                        aria-hidden="true"
+                        tabindex="-1"
+                        disabled> Theme </button>
+                <a class="mb-0 text-center fw-bold h1 flex-grow-1 fs-2"
+                   href="http://{{page_title}}/">http://{{page_title}}/</a>
+                <button id="theme-toggle"
+                        class="btn btn-sm btn-outline-secondary rounded-pill px-3 theme-toggle-btn">Theme</button>
+            </div>
+        </div>
+    </header>
+    <script>
+        (function () {
+            const themes = [
+                ['lego', 'dark'],
+                ['lego', 'light'],
+                ['leisure', 'dark'],
+                ['leisure', 'light']
+            ];
+
+            const savedIndex = localStorage.getItem('themeIndex');
+            let currentIndex = savedIndex !== null ? parseInt(savedIndex, 10) : 0;
+
+            if (currentIndex < 0 || currentIndex >= themes.length) {
+                currentIndex = 0;
+            }
+
+            function applyTheme(index) {
+                const [themeName, colorMode] = themes[index];
+                const themeCss = document.getElementById('theme-css');
+
+                themeCss.href = `/static/${themeName}-theme.css`;
+                document.documentElement.setAttribute('data-bs-theme', colorMode);
+                document.body.classList.remove('theme-leisure', 'theme-lego');
+                document.body.classList.add(`theme-${themeName}`);
+            }
+
+            applyTheme(currentIndex);
+
+            window.addEventListener('load', () => {
+                const toggleBtn = document.getElementById('theme-toggle');
+                toggleBtn.addEventListener('click', () => {
+                    currentIndex = (currentIndex + 1) % themes.length;
+                    applyTheme(currentIndex);
+                    localStorage.setItem('themeIndex', currentIndex);
+                });
+            });
+        })();
+    </script>
+    {{> main}}
+</body>
+
+</html>
