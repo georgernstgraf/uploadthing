@@ -7,16 +7,17 @@
           novalidate="">
         <div class="mb-5 text-center">
             <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm text-leisure-primary">
-                <img src="/static/img/icons/cloud-arrow-up.svg" alt="" width="48" height="48">
+                <img src="/static/img/icons/cloud-arrow-up.svg"
+                     alt=""
+                     width="48"
+                     height="48">
             </div>
             <label class="d-block form-label h3 mb-2 fw-bold">Bitte ZIP Datei auswählen</label>
             <p class="text-muted small">Nur .zip Dateien sind erlaubt</p>
-            
-            <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all upload-dropzone" 
+            <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all upload-dropzone"
                  @dragover.prevent="$el.style.borderColor = 'var(--leisure-primary)'"
                  @dragleave.prevent="$el.style.borderColor = 'var(--leisure-secondary)'"
                  @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--leisure-secondary)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
-                
                 <input type="file"
                        x-ref="fileInput"
                        class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
@@ -24,22 +25,20 @@
                        accept=".zip"
                        required
                        @change="fileName = $el.files[0]?.name || 'Datei hier ablegen oder klicken'">
-                
                 <div class="d-flex align-items-center justify-content-center gap-2 text-muted fw-bold">
                     <span x-text="fileName"></span>
                 </div>
             </div>
-            
             <div class="invalid-feedback">Bitte eine ZIP-Datei auswählen.</div>
         </div>
         <div class="text-center">
             <button type="submit"
-                    class="btn btn-primary btn-lg px-5 py-3 fs-5 shadow-sm min-w-200">
+                    class="btn btn-info btn-lg px-5 py-3 fs-5 shadow-sm min-w-200">
                 <span>Upload</span>
                 <span class="htmx-indicator">
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    Uploading...
-                </span>
+                    <span class="spinner-border spinner-border-sm"
+                          role="status"
+                          aria-hidden="true"></span> Uploading... </span>
             </button>
         </div>
     </form>

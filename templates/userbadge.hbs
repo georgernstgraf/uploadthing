@@ -1,11 +1,12 @@
-<div id="user-badge-wrapper" class="d-flex justify-content-center mb-2">
+<div id="user-badge-wrapper"
+     class="d-flex justify-content-center mb-2">
     <button hx-get="/whoami"
             hx-target="#main-content"
             hx-push-url="true"
             class="user-badge leisure-card">
         {{#if remote_user}}
             <div class="d-flex align-items-center gap-2">
-                <div class="initial-avatar rounded-circle d-flex align-items-center justify-content-center size-36">
+                <div class="initial-avatar rounded-circle d-flex align-self-center size-36">
                     {{givenNameInitial remote_user.name}}
                 </div>
                 <div class="d-flex flex-column text-start">
