@@ -20,12 +20,15 @@
         [x-cloak] {
             display: none !important;
         }
+
         .htmx-indicator {
             display: none;
         }
+
         .htmx-request .htmx-indicator {
             display: inline;
         }
+
         .htmx-request.htmx-indicator {
             display: inline;
         }
@@ -37,11 +40,9 @@
 </head>
 
 <body>
-    <header class="position-fixed top-0 start-0 end-0 app-header"
-            style="z-index: 1000;">
+    <header class="position-fixed top-0 start-0 end-0 app-header z-header">
         <div class="position-relative mx-2 mt-2">
-            <div class="leisure-card py-1 d-flex align-items-center gap-2 header-bar"
-                 style="border-radius: 16px;">
+            <div class="leisure-card py-1 d-flex align-items-center gap-2 header-bar rounded-4-lg">
                 <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 theme-toggle-btn header-spacer"
                         type="button"
                         aria-hidden="true"
@@ -60,7 +61,8 @@
                 'lego-lightblue',
                 'lego-darkblue',
                 'leisure-pink',
-                'leisure-purple'
+                'leisure-purple',
+                'krokus'
             ];
 
             const savedIndex = localStorage.getItem('themeIndex');

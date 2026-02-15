@@ -3,26 +3,23 @@
           hx-encoding="multipart/form-data"
           hx-target="#main-content"
           hx-swap="innerHTML"
-          class="leisure-card needs-validation mx-auto"
-          style="max-width: 600px;"
+          class="leisure-card needs-validation mx-auto mw-600"
           novalidate="">
         <div class="mb-5 text-center">
-            <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm" style="color: var(--leisure-primary);">
+            <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm text-leisure-primary">
                 <img src="/static/img/icons/cloud-arrow-up.svg" alt="" width="48" height="48">
             </div>
             <label class="d-block form-label h3 mb-2 fw-bold">Bitte ZIP Datei auswählen</label>
             <p class="text-muted small">Nur .zip Dateien sind erlaubt</p>
             
-            <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all" 
-                 style="border-style: dashed; border-color: var(--leisure-secondary); background: rgba(255,255,255,0.4);"
+            <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all upload-dropzone" 
                  @dragover.prevent="$el.style.borderColor = 'var(--leisure-primary)'"
                  @dragleave.prevent="$el.style.borderColor = 'var(--leisure-secondary)'"
                  @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--leisure-secondary)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
                 
                 <input type="file"
                        x-ref="fileInput"
-                       class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0"
-                       style="cursor: pointer;"
+                       class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
                        name="file"
                        accept=".zip"
                        required
@@ -37,8 +34,7 @@
         </div>
         <div class="text-center">
             <button type="submit"
-                    class="btn btn-primary btn-lg px-5 py-3 fs-5 shadow-sm"
-                    style="min-width: 200px;">
+                    class="btn btn-primary btn-lg px-5 py-3 fs-5 shadow-sm min-w-200">
                 <span>Upload</span>
                 <span class="htmx-indicator">
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>

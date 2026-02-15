@@ -1,9 +1,8 @@
 <div x-data="endTimeToggle()"
      x-init="init()">
      <section id="timeselector"
-               class="leisure-card mb-2 mx-auto py-2"
-               style="max-width: 800px;">
-        <h2 class="text-center mb-2" style="font-size: 1.1rem;">Zeitauswahl</h2>
+               class="leisure-card mb-2 mx-auto py-2 mw-800">
+        <h2 class="text-center mb-2 fs-2xl">Zeitauswahl</h2>
         <form action="forensic"
               method="get"
               class="container text-center"
@@ -15,7 +14,7 @@
             </datalist>
             <div class="row mt-1 g-2 align-items-center">
                 <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                    <label class="form-label fw-bold text-uppercase fs-sm ls-normal">
                         START Time
                         <input type="text"
                                name="starttime"
@@ -26,7 +25,7 @@
                     </label>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                    <label class="form-label fw-bold text-uppercase fs-sm ls-normal">
                         Start Date
                         <input type="date"
                                name="startdate"
@@ -37,16 +36,14 @@
             </div>
             <div class="row mt-2">
                 <div class="col text-center">
-                    <div class="form-check form-switch d-inline-flex align-items-center gap-2 p-2" style="font-size: 0.85rem; background: rgba(255,255,255,0.9); border: 2px solid var(--lego-grey); border-radius: var(--lego-radius-brick);">
+                    <div class="form-check form-switch d-inline-flex align-items-center gap-2 p-2 fs-lg bg-white-90 border border-2 rounded-4-lg cursor-pointer">
                         <input class="form-check-input m-0"
                                type="checkbox"
                                id="toggleEndTime"
                                x-model="showEndTime"
-                               @change="savePreference()"
-                               style="cursor: pointer;">
-                        <label class="form-check-label fw-bold m-0"
-                               for="toggleEndTime"
-                               style="cursor: pointer;">Endzeit festlegen</label>
+                               @change="savePreference()">
+                        <label class="form-check-label fw-bold m-0 cursor-pointer"
+                               for="toggleEndTime">Endzeit festlegen</label>
                     </div>
                 </div>
             </div>
@@ -55,7 +52,7 @@
                  x-transition
                  x-cloak>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                    <label class="form-label fw-bold text-uppercase fs-sm ls-normal">
                         End Time
                         <input type="text"
                                name="endtime"
@@ -66,7 +63,7 @@
                     </label>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                    <label class="form-label fw-bold text-uppercase fs-sm ls-normal">
                         End Date
                         <input type="date"
                                name="enddate"
@@ -78,8 +75,7 @@
             <div class="row mt-2">
                 <div class="col">
                     <input type="submit"
-                           class="btn btn-primary w-100 py-1"
-                           style="font-size: 0.9rem;"
+                           class="btn btn-primary w-100 py-1 fs-lg"
                            value="Suchen">
                 </div>
             </div>

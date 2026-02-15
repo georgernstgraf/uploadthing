@@ -1,25 +1,19 @@
 <div id="user-badge-wrapper" class="d-flex justify-content-center mb-2">
     <a href="/whoami"
-       class="text-decoration-none user-badge p-2 leisure-card w-100"
-       style="max-width: 500px; justify-content: center;">
+       class="text-decoration-none user-badge p-2 leisure-card w-100 mw-500 justify-content-center">
         {{#if remote_user}}
             <div class="d-flex align-items-center gap-2 justify-content-center flex-wrap text-center text-sm-start">
-                <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center"
-                     style="width: 36px; height: 36px; font-size: 1.1rem;">
+                <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center size-36 fs-2xl">
                     {{givenNameInitial remote_user.name}}
                 </div>
                 <div class="d-flex flex-column text-dark">
-                    <span class="fw-bold text-break"
-                          style="font-size: 0.95rem;">{{remote_user.name}}</span>
-                    <span class="text-muted text-break"
-                          style="font-size: 0.75rem;">{{remote_user.email}} / {{remote_user.klasse}}</span>
+                    <span class="fw-bold text-break fs-xl">{{remote_user.name}}</span>
+                    <span class="text-muted text-break fs-md">{{remote_user.email}} / {{remote_user.klasse}}</span>
                 </div>
-                <span class="badge rounded-pill bg-light text-dark border ms-1"
-                      style="font-size: 0.7rem;">Change</span>
+                <span class="badge rounded-pill bg-light text-dark border ms-1 fs-sm">Change</span>
             </div>
         {{else}}
-            <span class="text-danger fw-bold text-decoration-underline text-center d-block"
-                  style="font-size: 0.95rem;">Bitte Name bekanntgeben!</span>
+            <span class="text-danger fw-bold text-decoration-underline text-center d-block fs-xl">Bitte Name bekanntgeben!</span>
         {{/if}}
     </a>
 </div>
