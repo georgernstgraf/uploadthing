@@ -1,5 +1,5 @@
-<section class="mx-3 d-flex flex-wrap justify-content-center gap-4">
-    <div class="leisure-card flex-fill mw-500">
+<section class="mx-3" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 500px)); gap: 1.5rem; justify-content: center;">
+    <div class="leisure-card">
         <h2 class="text-center mb-4"><span class="border-bottom border-3 border-danger pb-2">Angabe und Unterlagen</span></h2>
         <ul class="list-unstyled text-center d-flex flex-column gap-3">
             {{#each files}}
@@ -12,7 +12,7 @@
             {{/each}}
         </ul>
     </div>
-    <div class="leisure-card flex-fill mw-500">
+    <div class="leisure-card">
         <h2 class="text-center mb-4"><span class="border-bottom border-3 border-danger pb-2">Dokumentation online</span></h2>
         <div class="d-flex flex-wrap gap-2 justify-content-center">
             <a href="https://getbootstrap.com/"
