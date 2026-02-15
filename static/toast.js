@@ -4,13 +4,13 @@
  */
 
 const ToastType = {
-    SUCCESS: 'success',
-    DANGER: 'danger',
-    WARNING: 'warning',
-    INFO: 'info'
+    SUCCESS: "success",
+    DANGER: "danger",
+    WARNING: "warning",
+    INFO: "info",
 };
 
-const toastContainer = Symbol('toastContainer');
+const toastContainer = Symbol("toastContainer");
 
 class Toast {
     constructor(message, type = ToastType.INFO, duration = 5000) {
@@ -21,11 +21,11 @@ class Toast {
     }
 
     createElement() {
-        const toast = document.createElement('div');
+        const toast = document.createElement("div");
         toast.className = `toast toast--${this.type}`;
-        toast.setAttribute('role', 'alert');
-        toast.setAttribute('aria-live', 'assertive');
-        toast.setAttribute('aria-atomic', 'true');
+        toast.setAttribute("role", "alert");
+        toast.setAttribute("aria-live", "assertive");
+        toast.setAttribute("aria-atomic", "true");
 
         toast.innerHTML = `
             <div class="toast__icon">
@@ -41,37 +41,41 @@ class Toast {
             </button>
         `;
 
-        const closeBtn = toast.querySelector('.toast__close');
-        closeBtn.addEventListener('click', () => this.hide());
+        const closeBtn = toast.querySelector(".toast__close");
+        closeBtn.addEventListener("click", () => this.hide());
 
         return toast;
     }
 
     getIcon() {
         const icons = {
-            success: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            success:
+                `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z" fill="currentColor"/>
             </svg>`,
-            danger: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            danger:
+                `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z" fill="currentColor"/>
             </svg>`,
-            warning: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            warning:
+                `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M0 0H20L10 18L0 0ZM10.5 15H9.5V14H10.5V15ZM10.5 12H9.5V8H10.5V12Z" fill="currentColor"/>
             </svg>`,
-            info: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            info:
+                `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V9H11V15ZM11 7H9V5H11V7Z" fill="currentColor"/>
-            </svg>`
+            </svg>`,
         };
         return icons[this.type] || icons.info;
     }
 
     show() {
-        this.ensureContainer();
+        Toast.ensureContainer();
         this.element = this.createElement();
         Toast[toastContainer].appendChild(this.element);
 
         requestAnimationFrame(() => {
-            this.element.classList.add('toast--visible');
+            this.element.classList.add("toast--visible");
         });
 
         if (this.duration > 0) {
@@ -87,8 +91,8 @@ class Toast {
         }
 
         if (this.element) {
-            this.element.classList.remove('toast--visible');
-            this.element.classList.add('toast--hiding');
+            this.element.classList.remove("toast--visible");
+            this.element.classList.add("toast--hiding");
 
             setTimeout(() => {
                 if (this.element && this.element.parentNode) {
@@ -101,13 +105,13 @@ class Toast {
 
     static ensureContainer() {
         if (!Toast[toastContainer]) {
-            const container = document.createElement('div');
-            container.id = 'toast-container';
-            container.className = 'toast-container';
+            const container = document.createElement("div");
+            container.id = "toast-container";
+            container.className = "toast-container";
             document.body.appendChild(container);
             Toast[toastContainer] = container;
 
-            const style = document.createElement('style');
+            const style = document.createElement("style");
             style.textContent = `
                 .toast-container {
                     position: fixed;
@@ -227,7 +231,7 @@ function showInfo(message, duration = 5000) {
     return showToast(message, ToastType.INFO, duration);
 }
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
     window.showToast = showToast;
     window.showSuccess = showSuccess;
     window.showError = showError;
@@ -237,12 +241,14 @@ if (typeof window !== 'undefined') {
     window.ToastType = ToastType;
 
     // Listen for HTMX triggered events
-    document.addEventListener('showToast', function(evt) {
+    document.addEventListener("showToast", function (evt) {
         const detail = evt.detail;
         if (detail && detail.message) {
-            showToast(detail.message, detail.type || 'info', detail.duration || 5000);
+            showToast(
+                detail.message,
+                detail.type || "info",
+                detail.duration || 5000,
+            );
         }
     });
 }
-
-export { showToast, showSuccess, showError, showWarning, showInfo, Toast, ToastType };
