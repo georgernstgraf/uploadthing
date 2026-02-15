@@ -2,16 +2,13 @@
      class="d-flex justify-content-center gap-2 mt-5 mb-2 mx-auto p-1 flex-wrap">
         <button hx-get="/"
                 hx-target="#main-content"
-                hx-push-url="true"
                 class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Home</button>
         {{#if is_admin}}
                 <button hx-get="/forensic"
                         hx-target="#main-content"
-                        hx-push-url="true"
                         class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Forensic</button>
         {{/if}}
         <button hx-get="/upload"
                 hx-target="#main-content"
-                hx-push-url="true"
                 class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Zipfile Upload</button>
 </nav>
