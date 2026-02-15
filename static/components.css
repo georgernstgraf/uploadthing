@@ -578,7 +578,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background-color: var(--color-danger);
+    /* background-color: var(--color-danger); */
     color: var(--color-white);
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-lg);
@@ -588,7 +588,7 @@
    INITIAL AVATAR
    ============================================================ */
 .initial-avatar {
-    background-color: var(--color-danger);
+    background-color: var(--color-dark);
     color: var(--color-white);
     font-weight: var(--font-weight-bold);
 }
@@ -923,6 +923,18 @@
     color: #fff;
     background-color: var(--color-btn-primary-bg, #0d6efd);
     border-color: var(--color-btn-primary-border-color, #0d6efd);
+}
+
+.btn-outline-info {
+    color: var(--color-btn-info-bg, #0dcaf0);
+    background-color: transparent;
+    border-color: var(--color-btn-info-border-color, #0dcaf0);
+}
+
+.btn-outline-info:hover {
+    color: #fff;
+    background-color: var(--color-btn-info-bg, #0dcaf0);
+    border-color: var(--color-btn-info-border-color, #0dcaf0);
 }
 
 /* Badge */
