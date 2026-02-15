@@ -211,53 +211,54 @@ def generate_css(colors: list) -> str:
     body_color = ensure_contrast(body_bg)
     
     lines = []
-    lines.append("/* GENERATED COLOR VARIABLES - Bootstrap 5 */")
+    lines.append("/* GENERATED COLOR VARIABLES */")
     lines.append(f"/* Source: image */")
     lines.append("")
     lines.append(":root {")
     
-    # Theme colors
+    # Theme colors - override base.css --color-* variables
     lines.append("    /* === THEME COLORS === */")
     for name, rgb in [("primary", primary), ("secondary", secondary), ("success", success), 
                        ("info", info), ("warning", warning), ("danger", danger),
                        ("light", light), ("dark", dark)]:
-        lines.append(f"    --bs-{name}: {rgb_to_hex(rgb)};")
-        lines.append(f"    --bs-{name}-rgb: {rgb[0]}, {rgb[1]}, {rgb[2]};")
+        lines.append(f"    --color-{name}: {rgb_to_hex(rgb)};")
+        lines.append(f"    --color-{name}-rgb: {rgb[0]}, {rgb[1]}, {rgb[2]};")
     
-    lines.append("    --bs-white: #ffffff;")
-    lines.append("    --bs-white-rgb: 255, 255, 255;")
-    lines.append("    --bs-black: #000000;")
-    lines.append("    --bs-black-rgb: 0, 0, 0;")
+    lines.append("    --color-white: #ffffff;")
+    lines.append("    --color-white-rgb: 255, 255, 255;")
+    lines.append("    --color-black: #000000;")
+    lines.append("    --color-black-rgb: 0, 0, 0;")
     
     # Body
     lines.append("")
     lines.append("    /* === BODY === */")
-    lines.append(f"    --bs-body-bg: {rgb_to_hex(body_bg)};")
-    lines.append(f"    --bs-body-bg-rgb: {body_bg[0]}, {body_bg[1]}, {body_bg[2]};")
-    lines.append(f"    --bs-body-color: {rgb_to_hex(body_color)};")
-    lines.append(f"    --bs-body-color-rgb: {body_color[0]}, {body_color[1]}, {body_color[2]};")
+    lines.append(f"    --color-bg-body: {rgb_to_hex(body_bg)};")
+    lines.append(f"    --color-bg-body-rgb: {body_bg[0]}, {body_bg[1]}, {body_bg[2]};")
+    lines.append(f"    --color-body: {rgb_to_hex(body_color)};")
+    lines.append(f"    --color-body-rgb: {body_color[0]}, {body_color[1]}, {body_color[2]};")
+    lines.append(f"    --color-bg-light: {rgb_to_hex(light)};")
     
-    # Emphasis
+    # Muted/emphasis
     lines.append("")
     lines.append("    /* === EMPHASIS === */")
     emphasis = (0, 0, 0) if get_luminance(body_bg) > 0.5 else (255, 255, 255)
-    lines.append(f"    --bs-emphasis-color: {rgb_to_hex(emphasis)};")
-    lines.append(f"    --bs-emphasis-color-rgb: {emphasis[0]}, {emphasis[1]}, {emphasis[2]};")
+    lines.append(f"    --color-emphasis: {rgb_to_hex(emphasis)};")
+    lines.append(f"    --color-muted: {rgb_to_hex(darken(light, 30)) if get_luminance(body_bg) > 0.5 else rgb_to_hex(lighten(dark, 30))};")
     
     # Links
     lines.append("")
     lines.append("    /* === LINKS === */")
-    lines.append(f"    --bs-link-color: {rgb_to_hex(primary)};")
-    lines.append(f"    --bs-link-color-rgb: {primary[0]}, {primary[1]}, {primary[2]};")
+    lines.append(f"    --color-link: {rgb_to_hex(primary)};")
+    lines.append(f"    --color-link-rgb: {primary[0]}, {primary[1]}, {primary[2]};")
     link_hover = darken(primary, 10) if get_luminance(body_bg) > 0.5 else lighten(primary, 10)
-    lines.append(f"    --bs-link-hover-color: {rgb_to_hex(link_hover)};")
-    lines.append(f"    --bs-link-hover-color-rgb: {link_hover[0]}, {link_hover[1]}, {link_hover[2]};")
+    lines.append(f"    --color-link-hover: {rgb_to_hex(link_hover)};")
+    lines.append(f"    --color-link-hover-rgb: {link_hover[0]}, {link_hover[1]}, {link_hover[2]};")
     
     # Borders
     lines.append("")
     lines.append("    /* === BORDERS === */")
     border = darken(light, 15) if get_luminance(body_bg) > 0.5 else lighten(dark, 15)
-    lines.append(f"    --bs-border-color: {rgb_to_hex(border)};")
+    lines.append(f"    --color-border: {rgb_to_hex(border)};")
     
     # Buttons with WCAG-compliant colors
     lines.append("")
@@ -274,27 +275,25 @@ def generate_css(colors: list) -> str:
         
         lines.append(f"")
         lines.append(f"    /* {name.capitalize()} Button */")
-        lines.append(f"    --bs-btn-{name}-color: {rgb_to_hex(btn_text)};")
-        lines.append(f"    --bs-btn-{name}-bg: {rgb_to_hex(btn_bg)};")
-        lines.append(f"    --bs-btn-{name}-border-color: {rgb_to_hex(btn_border)};")
-        lines.append(f"    --bs-btn-{name}-hover-color: {rgb_to_hex(btn_text)};")
-        lines.append(f"    --bs-btn-{name}-hover-bg: {rgb_to_hex(btn_hover)};")
-        lines.append(f"    --bs-btn-{name}-hover-border-color: {rgb_to_hex(darken(btn_hover, 5))};")
-        lines.append(f"    --bs-btn-{name}-active-color: {rgb_to_hex(btn_text)};")
-        lines.append(f"    --bs-btn-{name}-active-bg: {rgb_to_hex(btn_active)};")
-        lines.append(f"    --bs-btn-{name}-active-border-color: {rgb_to_hex(darken(btn_active, 5))};")
-        lines.append(f"    --bs-btn-{name}-disabled-color: {rgb_to_hex(btn_text)};")
-        lines.append(f"    --bs-btn-{name}-disabled-bg: {rgb_to_hex(btn_bg)};")
-        lines.append(f"    --bs-btn-{name}-disabled-border-color: {rgb_to_hex(btn_border)};")
-        lines.append(f"    --bs-btn-{name}-focus-shadow-rgb: {btn_focus[0]}, {btn_focus[1]}, {btn_focus[2]};")
+        lines.append(f"    --color-btn-{name}-color: {rgb_to_hex(btn_text)};")
+        lines.append(f"    --color-btn-{name}-bg: {rgb_to_hex(btn_bg)};")
+        lines.append(f"    --color-btn-{name}-border-color: {rgb_to_hex(btn_border)};")
+        lines.append(f"    --color-btn-{name}-hover-color: {rgb_to_hex(btn_text)};")
+        lines.append(f"    --color-btn-{name}-hover-bg: {rgb_to_hex(btn_hover)};")
+        lines.append(f"    --color-btn-{name}-hover-border-color: {rgb_to_hex(darken(btn_hover, 5))};")
+        lines.append(f"    --color-btn-{name}-active-color: {rgb_to_hex(btn_text)};")
+        lines.append(f"    --color-btn-{name}-active-bg: {rgb_to_hex(btn_active)};")
+        lines.append(f"    --color-btn-{name}-active-border-color: {rgb_to_hex(darken(btn_active, 5))};")
+        lines.append(f"    --color-btn-{name}-disabled-color: {rgb_to_hex(btn_text)};")
+        lines.append(f"    --color-btn-{name}-disabled-bg: {rgb_to_hex(btn_bg)};")
+        lines.append(f"    --color-btn-{name}-disabled-border-color: {rgb_to_hex(btn_border)};")
+        lines.append(f"    --color-btn-{name}-focus-shadow-rgb: {btn_focus[0]}, {btn_focus[1]}, {btn_focus[2]};")
     
     # Form validation
     lines.append("")
     lines.append("    /* === FORM VALIDATION === */")
-    lines.append(f"    --bs-form-valid-color: {rgb_to_hex(success)};")
-    lines.append(f"    --bs-form-valid-border-color: {rgb_to_hex(success)};")
-    lines.append(f"    --bs-form-invalid-color: {rgb_to_hex(danger)};")
-    lines.append(f"    --bs-form-invalid-border-color: {rgb_to_hex(danger)};")
+    lines.append(f"    --color-form-valid: {rgb_to_hex(success)};")
+    lines.append(f"    --color-form-invalid: {rgb_to_hex(danger)};")
     
     lines.append("}")
     
