@@ -802,13 +802,13 @@
     border-color: var(--color-btn-secondary-hover-border-color, #565e64);
 }
 .btn-info {
-    color: var(--color-btn-info-color, #fff);
-    background-color: rgba(13, 202, 240, 0.5);
-    border-color: var(--color-btn-info-border-color, #0dcaf0);
+    color: var(--color-btn-info-color);
+    background-color: rgba(var(--color-btn-info-bg-rgb), 0.5);
+    border-color: var(--color-btn-info-border-color);
 }
 .btn-info:hover {
-    background-color: rgba(49, 210, 242, 0.7);
-    border-color: var(--color-btn-info-hover-border-color, #25cff2);
+    background-color: rgba(var(--color-btn-info-bg-rgb), 0.7);
+    border-color: var(--color-btn-info-hover-border-color);
 }
 .btn-success {
     color: var(--color-btn-success-color, #fff);
