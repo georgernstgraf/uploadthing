@@ -114,6 +114,11 @@ class Toast {
         style.id = "toast-dialog-styles";
         style.textContent = `
             .toast-dialog {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                margin: 0;
                 padding: 0;
                 border: none;
                 border-radius: var(--radius-xl, 1rem);
