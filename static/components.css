@@ -803,11 +803,11 @@
 }
 .btn-info {
     color: var(--color-btn-info-color, #fff);
-    background-color: var(--color-btn-info-bg, #0dcaf0);
+    background-color: rgba(13, 202, 240, 0.5);
     border-color: var(--color-btn-info-border-color, #0dcaf0);
 }
 .btn-info:hover {
-    background-color: var(--color-btn-info-hover-bg, #31d2f2);
+    background-color: rgba(49, 210, 242, 0.7);
     border-color: var(--color-btn-info-hover-border-color, #25cff2);
 }
 .btn-success {
