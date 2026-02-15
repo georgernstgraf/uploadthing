@@ -39,6 +39,16 @@
     </style>
     <script src="/static/htmx.js"></script>
     <script src="/static/toast.js"></script>
+    <script>
+        // Handle HTMX errors (4xx responses) and show toast
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            const xhr = evt.detail.xhr;
+            if (xhr.status >= 400 && xhr.status < 500) {
+                // Show error toast with response text
+                showToast(xhr.responseText || 'Ein Fehler ist aufgetreten', 'danger');
+            }
+        });
+    </script>
     <script src="/static/alpine.min.js"
             defer></script>
 </head>
