@@ -1,9 +1,8 @@
 <div class="leisure-card mx-auto mw-600">
     <h2 class="my-3 text-center mb-4">Anmelden / Name ändern</h2>
     {{#if remote_user}}
-    <div class="alert alert-info mb-3">
-        Bereits angemeldet als: <strong>{{remote_user.email}}</strong>
-    </div>
+        <div class="alert alert-info mb-3"> Bereits angemeldet als: <strong>{{remote_user.email}}</strong>
+        </div>
     {{/if}}
     <div class="mb-4">
         <label class="w-100 fw-bold mb-2">Suche nach Email</label>
@@ -17,9 +16,7 @@
                    autofocus
                    hx-trigger="keyup changed delay:500ms"
                    hx-target="#options-select">
-            <span class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted">
-                🔍
-            </span>
+            <span class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"> 🔍 </span>
         </div>
     </div>
     <div class="mb-3">
@@ -31,22 +28,10 @@
                 hx-post="/register"
                 hx-trigger="change"
                 hx-target="#main-wrapper"
-                hx-push-url="true"
                 hx-swap="outerHTML">
             <option value=""
                     selected
                     class="p-2 text-muted fst-italic">Bitte oben suchen...</option>
         </select>
-    </div>
-    <div class="d-grid">
-        <button id="submit-btn"
-                class="btn btn-primary btn-lg"
-                hx-post="/register"
-                hx-include="#options-select"
-                hx-target="#main-wrapper"
-                hx-push-url="true"
-                hx-swap="outerHTML">
-            Anmelden
-        </button>
     </div>
 </div>
