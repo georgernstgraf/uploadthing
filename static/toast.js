@@ -205,26 +205,11 @@ function showInfo(message, duration = 0) {
     return showToast(message, ToastType.INFO, duration);
 }
 
-if (typeof window !== "undefined") {
-    window.showToast = showToast;
-    window.showSuccess = showSuccess;
-    window.showError = showError;
-    window.showWarning = showWarning;
-    window.showInfo = showInfo;
-    window.Toast = Toast;
-    window.ToastType = ToastType;
-
-    // Listen for HTMX triggered events
-    document.addEventListener("showToast", function (evt) {
-        const detail = evt.detail;
-        if (detail && detail.message) {
-            showToast(
-                detail.message,
-                detail.type || "info",
-                0, // Always require click to dismiss
-            );
-        }
-    });
-}
-
-export { showError, showInfo, showSuccess, showToast, showWarning, Toast, ToastType };
+// Make functions globally available
+window.showToast = showToast;
+window.showSuccess = showSuccess;
+window.showError = showError;
+window.showWarning = showWarning;
+window.showInfo = showInfo;
+window.Toast = Toast;
+window.ToastType = ToastType;
