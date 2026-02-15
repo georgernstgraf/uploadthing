@@ -176,24 +176,10 @@
     --color-form-invalid-border-color: #fcf4f4;
 }
 
-:root {
-    --leisure-text-dark: var(--color-body);
-    --leisure-text-muted: var(--color-muted);
-    --leisure-primary: var(--color-btn-primary-bg);
-    --leisure-primary-soft: rgba(var(--color-btn-primary-bg-rgb, 171, 14, 49), 0.15);
-    --leisure-secondary: var(--color-btn-secondary-bg);
-    --leisure-bg-light: var(--color-bg-body);
-    --leisure-bg-white: var(--color-white);
-    --leisure-font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --leisure-glass-bg: rgba(255, 255, 255, 0.85);
-    --leisure-glass-border: rgba(var(--color-btn-primary-bg-rgb, 171, 14, 49), 0.1);
-    --leisure-radius-lg: 16px;
-    --leisure-radius-md: 12px;
-    --leisure-shadow-soft: 0 8px 16px rgba(0, 0, 0, 0.08);
-}
+/* Theme uses --color-* variables directly */
 
 .text-dark {
-    color: var(--leisure-text-dark) !important;
+    color: var(--color-body) !important;
 }
 
 .text-white {
@@ -235,13 +221,13 @@ body {
 }
 
 body {
-    background-color: var(--leisure-bg-light);
+    background-color: var(--color-bg-body);
     background-image: url("/static/img/bg-leisure-pink.svg");
     background-size: cover;
     background-attachment: fixed;
     background-position: center;
-    color: var(--leisure-text-dark);
-    font-family: var(--leisure-font-family);
+    color: var(--color-body);
+    font-family: var(--font-family-base);
     min-height: 100vh;
     margin: 0;
     padding: 0;
@@ -256,7 +242,7 @@ h4,
 h5,
 h6 {
     font-weight: 700;
-    color: var(--leisure-primary);
+    color: var(--color-btn-primary-bg);
     letter-spacing: -0.02em;
     margin-bottom: 0.3rem;
 }
@@ -266,9 +252,9 @@ h6 {
     background: color-mix(in srgb, var(--color-bg-body) 50%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--leisure-glass-border);
-    border-radius: var(--leisure-radius-lg);
-    box-shadow: var(--leisure-shadow-soft);
+    border: 1px solid color-mix(in srgb, var(--color-btn-primary-bg) 10%, transparent);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
     padding: 0.5rem;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -308,7 +294,7 @@ h6 {
 .btn-outline-light {
     border: 2px solid #ee5253;
     color: #ee5253;
-    background: var(--leisure-bg-white);
+    background: var(--color-white);
 }
 
 .btn-outline-light:hover {
@@ -328,12 +314,12 @@ h6 {
 
 /* Specific styling for History Items - Improved contrast */
 .history-item-ip {
-    color: var(--leisure-text-dark) !important;
+    color: var(--color-body) !important;
     font-weight: 600;
 }
 
 .history-item-user {
-    color: var(--leisure-text-dark) !important;
+    color: var(--color-body) !important;
     font-weight: 600;
 }
 
@@ -344,7 +330,7 @@ details.leisure-card {
 
 /* Form Elements */
 input.form-control {
-    border-radius: var(--leisure-radius-md);
+    border-radius: var(--radius-lg);
     border: 2px solid transparent;
     background: rgba(255, 255, 255, 0.6);
     padding: 0.5rem 0.75rem;
@@ -354,29 +340,29 @@ input.form-control {
 
 input.form-control:focus {
     background: white;
-    border-color: var(--leisure-primary-soft);
+    border-color: var(--color-btn-primary-bg);
     box-shadow: 0 0 0 4px rgba(241, 83, 115, 0.1);
     outline: none;
 }
 
 /* Form Switch - Theme colors */
 .form-check-input {
-    background-color: var(--leisure-secondary);
-    border-color: var(--leisure-secondary);
+    background-color: var(--color-btn-secondary-bg);
+    border-color: var(--color-btn-secondary-bg);
 }
 
 .form-check-input:checked {
-    background-color: var(--leisure-primary);
-    border-color: var(--leisure-primary);
+    background-color: var(--color-btn-primary-bg);
+    border-color: var(--color-btn-primary-bg);
 }
 
 .form-check-input:focus {
-    border-color: var(--leisure-primary-soft);
+    border-color: var(--color-btn-primary-bg);
     box-shadow: 0 0 0 0.25rem rgba(237, 25, 68, 0.25);
 }
 
 .form-check-input:checked:focus {
-    border-color: var(--leisure-primary);
+    border-color: var(--color-btn-primary-bg);
     box-shadow: 0 0 0 0.25rem rgba(237, 25, 68, 0.25);
 }
 
@@ -414,11 +400,11 @@ nav {
 /* User badge styling in components.css */
 
 .user-badge .text-dark {
-    color: var(--leisure-text-dark) !important;
+    color: var(--color-body) !important;
 }
 
 .user-badge .text-muted {
-    color: var(--leisure-text-muted) !important;
+    color: var(--color-muted) !important;
 }
 
 /* Responsive Adjustments */
@@ -449,7 +435,7 @@ nav {
     nav {
         flex-direction: column;
         width: 100%;
-        border-radius: var(--leisure-radius-md);
+        border-radius: var(--radius-lg);
         gap: 0.5rem;
     }
 
@@ -513,7 +499,7 @@ nav {
 .forensic-stale {
     animation: forensic-pulse 1.4s ease-in-out infinite;
     border-color: rgba(237, 25, 68, 0.6);
-    box-shadow: 0 0 0 3px rgba(237, 25, 68, 0.2), var(--leisure-shadow-soft);
+    box-shadow: 0 0 0 3px rgba(237, 25, 68, 0.2), var(--shadow-md);
     background: linear-gradient(
         135deg,
         rgba(255, 255, 255, 0.9),
@@ -524,7 +510,7 @@ nav {
 .forensic-submitted {
     animation: forensic-pulse-success 1.4s ease-in-out infinite;
     border-color: rgba(46, 125, 50, 0.6);
-    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.2), var(--leisure-shadow-soft);
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.2), var(--shadow-md);
     background: linear-gradient(
         135deg,
         rgba(255, 255, 255, 0.9),
@@ -538,7 +524,7 @@ nav {
         transform: scale(1);
         box-shadow:
             0 0 0 3px rgba(237, 25, 68, 0.2),
-            var(--leisure-shadow-soft);
+            var(--shadow-md);
         background: linear-gradient(
             135deg,
             rgba(255, 255, 255, 0.9),
@@ -565,7 +551,7 @@ nav {
         transform: scale(1);
         box-shadow:
             0 0 0 3px rgba(46, 125, 50, 0.2),
-            var(--leisure-shadow-soft);
+            var(--shadow-md);
         background: linear-gradient(
             135deg,
             rgba(255, 255, 255, 0.9),
@@ -643,7 +629,7 @@ nav {
 .forensic-list-bg {
     max-height: 80px;
     overflow-y: auto;
-    background: var(--leisure-bg-light);
+    background: var(--color-bg-body);
 }
 
 /* Forensic item font size */
@@ -651,7 +637,7 @@ nav {
 
 /* Glassmorphism card */
 .glass-card {
-    background: var(--leisure-glass-bg);
+    background: rgba(var(--color-white), 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
 }
@@ -660,23 +646,23 @@ nav {
 .pill-nav {
     width: fit-content;
     max-width: 100%;
-    background: var(--leisure-glass-bg);
+    background: rgba(var(--color-white), 0.85);
     backdrop-filter: blur(10px);
     border-radius: 50px;
-    border: 1px solid var(--leisure-glass-border);
-    box-shadow: var(--leisure-shadow-soft);
+    border: 1px solid color-mix(in srgb, var(--color-btn-primary-bg) 10%, transparent);
+    box-shadow: var(--shadow-md);
 }
 
 /* Upload dropzone */
 .upload-dropzone {
     border-style: dashed;
-    border-color: var(--leisure-secondary);
+    border-color: var(--color-btn-secondary-bg);
     background: rgba(255, 255, 255, 0.4);
 }
 
 /* Initial avatar */
 .initial-avatar {
-    background: linear-gradient(135deg, var(--leisure-primary), var(--leisure-primary-soft));
+    background: linear-gradient(135deg, var(--color-btn-primary-bg), var(--color-btn-primary-bg));
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
@@ -694,11 +680,11 @@ nav {
 }
 
 /* Border colored utilities */
-.border-primary { border-color: var(--leisure-primary) !important; }
-.border-secondary { border-color: var(--leisure-secondary) !important; }
+.border-primary { border-color: var(--color-btn-primary-bg) !important; }
+.border-secondary { border-color: var(--color-btn-secondary-bg) !important; }
 
 /* Text colored utilities */
-.text-leisure-primary { color: var(--leisure-primary); }
+.text-leisure-primary { color: var(--color-btn-primary-bg); }
 
 /* Min-width utilities */
 .min-w-200 { min-width: 200px; }

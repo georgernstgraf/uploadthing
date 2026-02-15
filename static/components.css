@@ -200,9 +200,9 @@
 }
 
 .card--glass {
-    background: var(--leisure-glass-bg, rgba(255, 255, 255, 0.85));
-    border: 1px solid var(--leisure-glass-border, rgba(255, 255, 255, 0.2));
-    box-shadow: var(--leisure-shadow-soft, var(--shadow-md));
+    background: color-mix(in srgb, var(--color-bg-body) 85%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-border) 20%, transparent);
+    box-shadow: var(--shadow-md);
 }
 
 /* Legacy leisure-card class */
@@ -219,9 +219,9 @@
 }
 
 .leisure-card--glass {
-    background: var(--leisure-glass-bg, rgba(255, 255, 255, 0.85));
-    border: 1px solid var(--leisure-glass-border, rgba(255, 255, 255, 0.2));
-    box-shadow: var(--leisure-shadow-soft, var(--shadow-md));
+    background: color-mix(in srgb, var(--color-bg-body) 85%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-border) 20%, transparent);
+    box-shadow: var(--shadow-md);
 }
 
 /* ============================================================
