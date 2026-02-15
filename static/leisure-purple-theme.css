@@ -263,7 +263,7 @@ h6 {
 
 /* Glassmorphism Containers */
 .leisure-card {
-    background: var(--leisure-glass-bg);
+    background: rgba(var(--color-bg-body-rgb), 0.5);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--leisure-glass-border);
