@@ -14,6 +14,12 @@ export function errorHandler(err: Error, c: Context) {
     }
 
     if (err instanceof AppError) {
+        // For HTMX requests, trigger a toast notification
+        if (c.req.header("HX-Request") === "true") {
+            c.header("HX-Trigger", JSON.stringify({
+                showToast: { message: err.message, type: "danger" }
+            }));
+        }
         return c.text(err.message, err.statusCode as ContentfulStatusCode);
     }
 

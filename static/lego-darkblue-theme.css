@@ -181,10 +181,6 @@
    SECTION 2: COMPONENT STYLES
    ------------------------------------------------------------ */
 
-.text-dark {
-    color: var(--color-body) !important;
-}
-
 .text-white {
     color: var(--color-body) !important;
 }
@@ -294,19 +290,17 @@ h6 {
     left: 10%;
     right: 10%;
     height: 4px;
-    background: linear-gradient(
-        90deg,
-        var(--color-secondary) 0%,
-        var(--color-secondary) 20%,
-        var(--color-primary) 20%,
-        var(--color-primary) 40%,
-        var(--color-info) 40%,
-        var(--color-info) 60%,
-        var(--color-success) 60%,
-        var(--color-success) 80%,
-        var(--color-warning) 80%,
-        var(--color-warning) 100%
-    );
+    background: linear-gradient(90deg,
+            var(--color-secondary) 0%,
+            var(--color-secondary) 20%,
+            var(--color-primary) 20%,
+            var(--color-primary) 40%,
+            var(--color-info) 40%,
+            var(--color-info) 60%,
+            var(--color-success) 60%,
+            var(--color-success) 80%,
+            var(--color-warning) 80%,
+            var(--color-warning) 100%);
     border-radius: 2px 2px 0 0;
     opacity: 0.3;
 }
@@ -332,12 +326,10 @@ h6 {
 .btn-primary,
 .btn-info {
     background:
-        linear-gradient(
-            180deg,
+        linear-gradient(180deg,
             rgba(255, 255, 255, 0.3) 0%,
             transparent 50%,
-            rgba(0, 0, 0, 0.1) 100%
-        ),
+            rgba(0, 0, 0, 0.1) 100%),
         var(--color-primary);
     color: #ffffff;
     border-color: rgba(0, 0, 0, 0.3);
@@ -347,12 +339,10 @@ h6 {
 .btn-primary:hover,
 .btn-info:hover {
     background:
-        linear-gradient(
-            180deg,
+        linear-gradient(180deg,
             rgba(255, 255, 255, 0.4) 0%,
             transparent 50%,
-            rgba(0, 0, 0, 0.15) 100%
-        ),
+            rgba(0, 0, 0, 0.15) 100%),
         var(--color-primary);
     transform: translateY(-1px);
     box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
@@ -386,17 +376,14 @@ h6 {
     padding-left: 0.5rem;
     padding-right: 0.7rem;
     background:
-        linear-gradient(
-            180deg,
+        linear-gradient(180deg,
             rgba(255, 255, 255, 0.2) 0%,
             transparent 50%,
-            rgba(0, 0, 0, 0.1) 100%
-        ),
+            rgba(0, 0, 0, 0.1) 100%),
         var(--color-info);
     border-color: rgba(0, 0, 0, 0.3);
     color: #ffffff;
 }
-
 
 /* History Items */
 .history-item-ip {
@@ -575,6 +562,7 @@ nav {
 
 /* Animations */
 @keyframes brick-bounce {
+
     0%,
     100% {
         transform: translateY(0);
@@ -586,6 +574,7 @@ nav {
 }
 
 @keyframes color-shift {
+
     0%,
     100% {
         filter: hue-rotate(0deg);
@@ -653,12 +642,10 @@ nav {
 
 .app-header {
     background:
-        linear-gradient(
-            5deg,
+        linear-gradient(5deg,
             rgba(255, 255, 255, 0.2) 0%,
             transparent 50%,
-            rgba(0, 0, 0, 0.1) 100%
-        ),
+            rgba(0, 0, 0, 0.1) 100%),
         color-mix(in srgb, var(--color-info), transparent 70%);
     border-bottom: 2px solid var(--color-border-color);
     backdrop-filter: blur(10px);
@@ -707,11 +694,9 @@ nav {
 .forensic-stale {
     animation: brick-alert 1.5s ease-in-out infinite;
     border: 2px solid var(--color-warning);
-    background: linear-gradient(
-        145deg,
-        #183749,
-        #08141e
-    );
+    background: linear-gradient(145deg,
+            #183749,
+            #08141e);
     box-shadow:
         0 0 0 4px rgba(255, 102, 0, 0.2),
         0 3px 0 rgba(255, 102, 0, 0.3);
@@ -720,15 +705,14 @@ nav {
 .forensic-submitted {
     animation: brick-success 1.5s ease-in-out infinite;
     border: 2px solid var(--color-success);
-    background: linear-gradient(
-        145deg,
-        #183749,
-        #08141e
-    );
+    background: linear-gradient(145deg,
+            #183749,
+            #08141e);
     box-shadow: 0 0 0 4px rgba(0, 168, 0, 0.2), 0 3px 0 rgba(0, 168, 0, 0.3);
 }
 
 @keyframes brick-alert {
+
     0%,
     100% {
         box-shadow:
@@ -746,6 +730,7 @@ nav {
 }
 
 @keyframes brick-success {
+
     0%,
     100% {
         box-shadow:
@@ -765,19 +750,17 @@ nav {
 /* Colorful accent line */
 .brick-line {
     height: 6px;
-    background: linear-gradient(
-        90deg,
-        var(--color-secondary) 0%,
-        var(--color-secondary) 20%,
-        var(--color-primary) 20%,
-        var(--color-primary) 40%,
-        var(--color-info) 40%,
-        var(--color-info) 60%,
-        var(--color-success) 60%,
-        var(--color-success) 80%,
-        var(--color-warning) 80%,
-        var(--color-warning) 100%
-    );
+    background: linear-gradient(90deg,
+            var(--color-secondary) 0%,
+            var(--color-secondary) 20%,
+            var(--color-primary) 20%,
+            var(--color-primary) 40%,
+            var(--color-info) 40%,
+            var(--color-info) 60%,
+            var(--color-success) 60%,
+            var(--color-success) 80%,
+            var(--color-warning) 80%,
+            var(--color-warning) 100%);
     margin: 1rem 0;
     border: none;
     border-radius: var(--lego-radius-brick);
@@ -786,13 +769,11 @@ nav {
 
 /* Warning stripe pattern */
 .warning-stripe {
-    background: repeating-linear-gradient(
-        45deg,
-        var(--color-warning),
-        var(--color-warning) 10px,
-        var(--color-dark) 10px,
-        var(--color-dark) 20px
-    );
+    background: repeating-linear-gradient(45deg,
+            var(--color-warning),
+            var(--color-warning) 10px,
+            var(--color-dark) 10px,
+            var(--color-dark) 20px);
     height: 8px;
     border-radius: var(--lego-radius-brick);
     box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
@@ -806,55 +787,134 @@ nav {
 /* === UTILITY CLASSES === */
 
 /* Max-width utilities */
-.mw-500 { max-width: 500px; }
-.mw-600 { max-width: 600px; }
-.mw-800 { max-width: 800px; }
+.mw-500 {
+    max-width: 500px;
+}
+
+.mw-600 {
+    max-width: 600px;
+}
+
+.mw-800 {
+    max-width: 800px;
+}
 
 /* Font-size utilities */
-.fs-xs { font-size: 0.65rem; }
-.fs-sm { font-size: 0.7rem; }
-.fs-md { font-size: 0.75rem; }
-.fs-base { font-size: 0.85rem; }
-.fs-lg { font-size: 0.9rem; }
-.fs-xl { font-size: 0.95rem; }
-.fs-2xl { font-size: 1.1rem; }
-.fs-3xl { font-size: 1.4rem; }
+.fs-xs {
+    font-size: 0.65rem;
+}
+
+.fs-sm {
+    font-size: 0.7rem;
+}
+
+.fs-md {
+    font-size: 0.75rem;
+}
+
+.fs-base {
+    font-size: 0.85rem;
+}
+
+.fs-lg {
+    font-size: 0.9rem;
+}
+
+.fs-xl {
+    font-size: 0.95rem;
+}
+
+.fs-2xl {
+    font-size: 1.1rem;
+}
+
+.fs-3xl {
+    font-size: 1.4rem;
+}
 
 /* Letter-spacing utilities */
-.ls-tight { letter-spacing: 0.02em; }
-.ls-normal { letter-spacing: 0.05em; }
-.ls-wide { letter-spacing: 2px; }
+.ls-tight {
+    letter-spacing: 0.02em;
+}
+
+.ls-normal {
+    letter-spacing: 0.05em;
+}
+
+.ls-wide {
+    letter-spacing: 2px;
+}
 
 /* Fixed size squares */
-.size-26 { width: 26px; height: 26px; }
-.size-36 { width: 36px; height: 36px; }
-.size-50 { width: 50px; height: 50px; }
+.size-26 {
+    width: 26px;
+    height: 26px;
+}
+
+.size-36 {
+    width: 36px;
+    height: 36px;
+}
+
+.size-50 {
+    width: 50px;
+    height: 50px;
+}
 
 /* Background utilities */
-.bg-white-20 { background: rgba(255, 255, 255, 0.2); }
-.bg-white-40 { background: rgba(255, 255, 255, 0.4); }
-.bg-white-50 { background: rgba(255, 255, 255, 0.5); }
-.bg-white-70 { background: rgba(255, 255, 255, 0.7); }
-.bg-white-90 { background: rgba(255, 255, 255, 0.9); }
+.bg-white-20 {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.bg-white-40 {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.bg-white-50 {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.bg-white-70 {
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.bg-white-90 {
+    background: rgba(255, 255, 255, 0.9);
+}
 
 /* Z-index utilities */
-.z-header { z-index: 1000; }
+.z-header {
+    z-index: 1000;
+}
 
 /* Border-radius utilities */
-.rounded-4-lg { border-radius: 16px; }
+.rounded-4-lg {
+    border-radius: 16px;
+}
 
 /* Cursor utilities */
-.cursor-pointer { cursor: pointer; }
+.cursor-pointer {
+    cursor: pointer;
+}
 
 /* List utilities */
-.list-none { list-style: none; }
+.list-none {
+    list-style: none;
+}
 
 /* Scroll utilities */
-.scroll-y-auto { overflow-y: auto; }
-.max-h-80 { max-height: 80px; }
+.scroll-y-auto {
+    overflow-y: auto;
+}
+
+.max-h-80 {
+    max-height: 80px;
+}
 
 /* Border utilities */
-.border-dashed { border-style: dashed; }
+.border-dashed {
+    border-style: dashed;
+}
 
 /* Forensic list backgrounds */
 .forensic-list-bg {
@@ -864,7 +924,9 @@ nav {
 }
 
 /* Forensic item font size */
-.forensic-item { font-size: 0.7rem; }
+.forensic-item {
+    font-size: 0.7rem;
+}
 
 /* Glassmorphism card */
 .glass-card {
@@ -911,11 +973,20 @@ nav {
 }
 
 /* Border colored utilities */
-.border-primary { border-color: var(--color-primary) !important; }
-.border-secondary { border-color: var(--color-secondary) !important; }
+.border-primary {
+    border-color: var(--color-primary) !important;
+}
+
+.border-secondary {
+    border-color: var(--color-secondary) !important;
+}
 
 /* Text colored utilities */
-.text-leisure-primary { color: var(--color-info); }
+.text-leisure-primary {
+    color: var(--color-info);
+}
 
 /* Min-width utilities */
-.min-w-200 { min-width: 200px; }
+.min-w-200 {
+    min-width: 200px;
+}

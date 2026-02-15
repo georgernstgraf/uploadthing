@@ -235,6 +235,14 @@ if (typeof window !== 'undefined') {
     window.showInfo = showInfo;
     window.Toast = Toast;
     window.ToastType = ToastType;
+
+    // Listen for HTMX triggered events
+    document.addEventListener('showToast', function(evt) {
+        const detail = evt.detail;
+        if (detail && detail.message) {
+            showToast(detail.message, detail.type || 'info', detail.duration || 5000);
+        }
+    });
 }
 
 export { showToast, showSuccess, showError, showWarning, showInfo, Toast, ToastType };
