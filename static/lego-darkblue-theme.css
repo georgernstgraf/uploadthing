@@ -11,150 +11,150 @@
 
 :root {
     /* === THEME COLORS === */
-    --color-primary: #06121e;
-    --color-secondary: #2d2d2b;
-    --color-success: #032003;
-    --color-info: #06121e;
-    --color-warning: #9d793a;
-    --color-danger: #200303;
-    --color-light: #9d793a;
-    --color-dark: #06121e;
+    --color-primary: #0b1822;
+    --color-secondary: #65716c;
+    --color-success: #062606;
+    --color-info: #0b1822;
+    --color-warning: #9d773a;
+    --color-danger: #260606;
+    --color-light: #9d773a;
+    --color-dark: #0b1822;
     --color-white: #ffffff;
     --color-black: #000000;
 
     /* === BODY === */
-    --color-bg-body: #9d793a;
+    --color-bg-body: #9d773a;
     --color-body: #ffffff;
-    --color-bg-light: #9d793a;
+    --color-bg-light: #9d773a;
 
     /* === EMPHASIS === */
     --color-emphasis: #ffffff;
-    --color-muted: #1f5e9d;
+    --color-muted: #306995;
 
     /* === LINKS === */
-    --color-link: #06121e;
-    --color-link-hover: #0e2b48;
+    --color-link: #0b1822;
+    --color-link-hover: #173348;
 
     /* === BORDERS === */
-    --color-border: #12385d;
+    --color-border: #1d405b;
 
     /* === BUTTONS === */
 
     /* Primary Button */
     --color-btn-primary-color: #ffffff;
-    --color-btn-primary-bg: #06111d;
+    --color-btn-primary-bg: #0b1721;
     --color-btn-primary-border-color: #000000;
     --color-btn-primary-hover-color: #ffffff;
-    --color-btn-primary-hover-bg: #000000;
+    --color-btn-primary-hover-bg: #000102;
     --color-btn-primary-hover-border-color: #000000;
     --color-btn-primary-active-color: #ffffff;
     --color-btn-primary-active-bg: #000000;
     --color-btn-primary-active-border-color: #000000;
     --color-btn-primary-disabled-color: #ffffff;
-    --color-btn-primary-disabled-bg: #06111d;
+    --color-btn-primary-disabled-bg: #0b1721;
     --color-btn-primary-disabled-border-color: #000000;
 
     /* Secondary Button */
     --color-btn-secondary-color: #ffffff;
-    --color-btn-secondary-bg: #2c2c2b;
-    --color-btn-secondary-border-color: #050505;
+    --color-btn-secondary-bg: #515b57;
+    --color-btn-secondary-border-color: #2c3230;
     --color-btn-secondary-hover-color: #ffffff;
-    --color-btn-secondary-hover-bg: #171716;
-    --color-btn-secondary-hover-border-color: #090909;
+    --color-btn-secondary-hover-bg: #3d4542;
+    --color-btn-secondary-hover-border-color: #313735;
     --color-btn-secondary-active-color: #ffffff;
-    --color-btn-secondary-active-bg: #0d0d0c;
-    --color-btn-secondary-active-border-color: #000000;
+    --color-btn-secondary-active-bg: #343a38;
+    --color-btn-secondary-active-border-color: #272c2b;
     --color-btn-secondary-disabled-color: #ffffff;
-    --color-btn-secondary-disabled-bg: #2c2c2b;
-    --color-btn-secondary-disabled-border-color: #050505;
+    --color-btn-secondary-disabled-bg: #515b57;
+    --color-btn-secondary-disabled-border-color: #2c3230;
 
     /* Success Button */
     --color-btn-success-color: #ffffff;
-    --color-btn-success-bg: #032003;
+    --color-btn-success-bg: #062606;
     --color-btn-success-border-color: #000000;
     --color-btn-success-hover-color: #ffffff;
-    --color-btn-success-hover-bg: #000000;
+    --color-btn-success-hover-bg: #000200;
     --color-btn-success-hover-border-color: #000000;
     --color-btn-success-active-color: #ffffff;
     --color-btn-success-active-bg: #000000;
     --color-btn-success-active-border-color: #000000;
     --color-btn-success-disabled-color: #ffffff;
-    --color-btn-success-disabled-bg: #032003;
+    --color-btn-success-disabled-bg: #062606;
     --color-btn-success-disabled-border-color: #000000;
 
     /* Info Button */
     --color-btn-info-color: #ffffff;
-    --color-btn-info-bg: #06111d;
+    --color-btn-info-bg: #0b1721;
     --color-btn-info-border-color: #000000;
     --color-btn-info-hover-color: #ffffff;
-    --color-btn-info-hover-bg: #000000;
+    --color-btn-info-hover-bg: #000102;
     --color-btn-info-hover-border-color: #000000;
     --color-btn-info-active-color: #ffffff;
     --color-btn-info-active-bg: #000000;
     --color-btn-info-active-border-color: #000000;
     --color-btn-info-disabled-color: #ffffff;
-    --color-btn-info-disabled-bg: #06111d;
+    --color-btn-info-disabled-bg: #0b1721;
     --color-btn-info-disabled-border-color: #000000;
 
     /* Warning Button */
     --color-btn-warning-color: #ffffff;
-    --color-btn-warning-bg: #685026;
+    --color-btn-warning-bg: #684f26;
     --color-btn-warning-border-color: #2f2411;
     --color-btn-warning-hover-color: #ffffff;
-    --color-btn-warning-hover-bg: #4a391b;
-    --color-btn-warning-hover-border-color: #372a14;
+    --color-btn-warning-hover-bg: #4a381b;
+    --color-btn-warning-hover-border-color: #372914;
     --color-btn-warning-active-color: #ffffff;
-    --color-btn-warning-active-bg: #3b2d15;
-    --color-btn-warning-active-border-color: #281e0e;
+    --color-btn-warning-active-bg: #3b2c15;
+    --color-btn-warning-active-border-color: #281d0e;
     --color-btn-warning-disabled-color: #ffffff;
-    --color-btn-warning-disabled-bg: #685026;
+    --color-btn-warning-disabled-bg: #684f26;
     --color-btn-warning-disabled-border-color: #2f2411;
 
     /* Danger Button */
     --color-btn-danger-color: #ffffff;
-    --color-btn-danger-bg: #200303;
+    --color-btn-danger-bg: #260606;
     --color-btn-danger-border-color: #000000;
     --color-btn-danger-hover-color: #ffffff;
-    --color-btn-danger-hover-bg: #000000;
+    --color-btn-danger-hover-bg: #020000;
     --color-btn-danger-hover-border-color: #000000;
     --color-btn-danger-active-color: #ffffff;
     --color-btn-danger-active-bg: #000000;
     --color-btn-danger-active-border-color: #000000;
     --color-btn-danger-disabled-color: #ffffff;
-    --color-btn-danger-disabled-bg: #200303;
+    --color-btn-danger-disabled-bg: #260606;
     --color-btn-danger-disabled-border-color: #000000;
 
     /* Light Button */
     --color-btn-light-color: #ffffff;
-    --color-btn-light-bg: #685026;
+    --color-btn-light-bg: #684f26;
     --color-btn-light-border-color: #2f2411;
     --color-btn-light-hover-color: #ffffff;
-    --color-btn-light-hover-bg: #4a391b;
-    --color-btn-light-hover-border-color: #372a14;
+    --color-btn-light-hover-bg: #4a381b;
+    --color-btn-light-hover-border-color: #372914;
     --color-btn-light-active-color: #ffffff;
-    --color-btn-light-active-bg: #3b2d15;
-    --color-btn-light-active-border-color: #281e0e;
+    --color-btn-light-active-bg: #3b2c15;
+    --color-btn-light-active-border-color: #281d0e;
     --color-btn-light-disabled-color: #ffffff;
-    --color-btn-light-disabled-bg: #685026;
+    --color-btn-light-disabled-bg: #684f26;
     --color-btn-light-disabled-border-color: #2f2411;
 
     /* Dark Button */
     --color-btn-dark-color: #ffffff;
-    --color-btn-dark-bg: #06111d;
+    --color-btn-dark-bg: #0b1721;
     --color-btn-dark-border-color: #000000;
     --color-btn-dark-hover-color: #ffffff;
-    --color-btn-dark-hover-bg: #000000;
+    --color-btn-dark-hover-bg: #000102;
     --color-btn-dark-hover-border-color: #000000;
     --color-btn-dark-active-color: #ffffff;
     --color-btn-dark-active-bg: #000000;
     --color-btn-dark-active-border-color: #000000;
     --color-btn-dark-disabled-color: #ffffff;
-    --color-btn-dark-disabled-bg: #06111d;
+    --color-btn-dark-disabled-bg: #0b1721;
     --color-btn-dark-disabled-border-color: #000000;
 
     /* === FORM VALIDATION === */
-    --color-form-valid: #032003;
-    --color-form-invalid: #200303;
+    --color-form-valid: #062606;
+    --color-form-invalid: #260606;
 }
 
 /* Blurred background layer */

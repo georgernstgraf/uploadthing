@@ -561,7 +561,7 @@
     text-decoration: none !important;
     cursor: pointer;
     border: none;
-    background: var(--color-bg-body);
+    /* background: var(--color-bg-body); */
     margin: 0 auto;
     min-width: 300px;
 }
