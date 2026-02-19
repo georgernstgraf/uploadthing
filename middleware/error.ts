@@ -5,8 +5,13 @@ import { localTimeString } from "../lib/timefunc.ts";
 
 export function errorHandler(err: Error, c: Context) {
     const timestamp = localTimeString();
-    console.error(`[${timestamp}] Error handling request to ${c.req.path}:`);
-    console.error(err);
+
+    if (err instanceof AppError && err.isOperational && err.statusCode < 500) {
+        console.error(`[${timestamp}] ${err.statusCode} ${c.req.path}: ${err.message}`);
+    } else {
+        console.error(`[${timestamp}] Error handling request to ${c.req.path}:`);
+        console.error(err);
+    }
 
     // Special handling for /activeips to ensure JSON format if it ever bubbles up here
     if (c.req.path === "/activeips") {

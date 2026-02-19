@@ -169,7 +169,7 @@ export const sessionMiddleware = createMiddleware<{ Variables: HonoContextVars }
                 path: "/",
                 httpOnly: true,
                 secure: isProduction,
-                sameSite: "Strict",
+                sameSite: "Lax",
                 maxAge: 0,
             });
         } else if (session.isModified() && session.isLoggedIn()) {
@@ -180,7 +180,7 @@ export const sessionMiddleware = createMiddleware<{ Variables: HonoContextVars }
                 path: "/",
                 httpOnly: true,
                 secure: isProduction,
-                sameSite: "Strict",
+                sameSite: "Lax",
                 maxAge: config.COOKIE_MAX_AGE_S,
             });
         }
