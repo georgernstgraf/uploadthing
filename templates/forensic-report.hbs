@@ -1,7 +1,7 @@
 <section class="container"
          id="report"
          hx-get="/forensic"
-         hx-trigger="load, every {{forensic_refresh_seconds}}s"
+         hx-trigger="every {{forensic_refresh_seconds}}s"
          hx-target="#report"
          hx-swap="innerHTML"
          hx-select="#report > *"

@@ -3,8 +3,9 @@
     <section id="timeselector"
              class="leisure-card mb-2 mx-auto py-2 mw-800">
         <h2 class="text-center mb-2 fs-2xl">Zeitauswahl</h2>
-        <form action="forensic"
-              method="get"
+        <form hx-get="/forensic"
+              hx-target="#main-content"
+              hx-push-url="true"
               class="container text-center"
               @submit="handleSubmit">
             <datalist id="spg_times_list">
