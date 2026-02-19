@@ -1,8 +1,9 @@
 <div id="user-badge-wrapper"
+     hx-boost="true"
+     hx-target="#main-content"
      class="d-flex justify-content-center mb-2">
-    <button hx-get="/whoami"
-            hx-target="#main-content"
-            class="user-badge leisure-card">
+    <a href="/whoami"
+       class="user-badge leisure-card">
         {{#if remote_user}}
             <div class="d-flex align-items-center gap-2">
                 <div class="initial-avatar rounded-circle d-flex align-self-center size-36">
@@ -17,5 +18,5 @@
         {{else}}
             <span class="text-danger fw-bold">Bitte Name bekanntgeben!</span>
         {{/if}}
-    </button>
+    </a>
 </div>

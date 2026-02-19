@@ -1,4 +1,4 @@
-<div class="leisure-card mx-auto text-center p-3 mw-600">
+<div class="leisure-card mx-auto text-center p-3 mw-600" hx-boost="true" hx-target="#main-content">
     <div class="mb-2">
         <div class="d-inline-flex align-center justify-center rounded-circle size-50 initial-avatar">
             <img src="/static/img/icons/check-lg.svg"
@@ -33,9 +33,7 @@
         </div>
     </div>
     <div class="mt-3">
-        <button hx-get="/"
-                hx-target="#main-content"
-                hx-push-url="true"
-                class="btn btn-primary px-4 py-2">Zurück zur Startseite</button>
+        <a href="/"
+           class="btn btn-primary px-4 py-2">Zurück zur Startseite</a>
     </div>
 </div>
