@@ -53,7 +53,6 @@ const config = {
     COOKIE_MAX_AGE_S: 5 * 30 * 24 * 60 * 60, // 5 months in seconds
     SESSION_REFRESH_THRESHOLD_MS: 7 * 24 * 60 * 60 * 1000, // 1 week in ms
     DENO_ENV: Deno.env.get("DENO_ENV") || "development",
-    ADMINS: (Deno.env.get("ADMINS") || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean),
     ADMIN_IPS: (Deno.env.get("ADMIN_IPS") || "").split(",").map((s) => s.trim()).filter(Boolean),
 };
 

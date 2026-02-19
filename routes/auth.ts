@@ -72,15 +72,27 @@ authRouter.post("/register", async (c) => {
     if (!user) {
         throw new AppError("User not found", 404);
     }
+
     const remoteIp = c.get("remoteip");
+
+    if (
+        user.klasse === "LehrendeR" &&
+        config.ADMIN_IPS.length > 0 &&
+        !config.ADMIN_IPS.includes(remoteIp)
+    ) {
+        throw new AppError(
+            "Registrierung als LehrendeR nur von autorisierten IP-Adressen möglich",
+            403,
+        );
+    }
+
     await service.user.register(user, remoteIp);
 
     const session = getSession(c);
     session.login(email);
 
     c.set("remoteuser", user);
-    const is_admin = config.ADMINS.includes(email.toLowerCase()) ||
-        config.ADMIN_IPS.includes(remoteIp);
+    const is_admin = user.klasse === "LehrendeR";
     c.set("is_admin", is_admin);
 
     const files = await get_unterlagen();

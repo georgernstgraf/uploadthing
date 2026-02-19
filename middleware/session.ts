@@ -218,12 +218,7 @@ export const remoteIPMiddleware = createMiddleware<
                 await service.user.register(user, remoteip);
             }
 
-            if (
-                config.ADMINS.includes(session.email.toLowerCase()) ||
-                config.ADMIN_IPS.includes(remoteip)
-            ) {
-                is_admin = true;
-            }
+            is_admin = remoteuser?.klasse === "LehrendeR";
         }
     }
 
