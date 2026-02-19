@@ -57,8 +57,8 @@ uploadRouter.post("/", async (c) => {
     }
 
     const baseFilename = `${safeFileComponent(remote_user.name)}-${
-        safeFileComponent(remote_ip)
-    }-${safeFileComponent(file.name)}`;
+        safeFileComponent(file.name)
+    }`;
     const { filename: real_filename, outPath } = await getVersionedPath(
         config.ABGABEN_DIR,
         baseFilename,
