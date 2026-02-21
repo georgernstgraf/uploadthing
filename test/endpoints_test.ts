@@ -1,7 +1,13 @@
 import { assertEquals, assertExists } from "@std/assert";
+import { createHash } from "node:crypto";
 import endpoints from "./endpoints.json" with { type: "json" };
+import config from "../lib/config.ts";
 
 const BASE_URL = Deno.env.get("TEST_BASE_URL") || endpoints.baseUrl;
+
+function computeMd5(data: Uint8Array): string {
+    return createHash("md5").update(data).digest("hex");
+}
 
 interface Endpoint {
     method: "GET" | "POST";
@@ -84,4 +90,46 @@ Deno.test("All endpoints from endpoints.json respond", async (t) => {
             },
         );
     }
+});
+
+Deno.test("POST /upload - Authenticated upload with MD5 verification", async () => {
+    const testEmail = "grafg@spengergasse.at";
+
+    const registerRes = await fetch(`${BASE_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `email=${encodeURIComponent(testEmail)}`,
+    });
+    await registerRes.text(); // consume body
+    const cookie = registerRes.headers.get("set-cookie");
+    assertExists(cookie);
+
+    const testContent = "Test content for MD5 verification";
+    const formData = new FormData();
+    const file = new Blob([testContent], { type: "application/zip" });
+    formData.append("file", file, "test_md5.zip");
+
+    const uploadRes = await fetch(`${BASE_URL}/upload`, {
+        method: "POST",
+        headers: { "Cookie": cookie! },
+        body: formData,
+    });
+    assertEquals(uploadRes.status, 200);
+
+    const html = await uploadRes.text();
+    const md5Match = html.match(/<span class="font-monospace[^>]*>([a-f0-9]+)<\/span>/);
+    assertExists(md5Match);
+    const responseMd5 = md5Match[1];
+
+    const filenameMatch = html.match(/<span class="fw-bold text-break fs-xl">([^<]+)<\/span>/);
+    assertExists(filenameMatch);
+    const filename = filenameMatch[1];
+
+    const filePath = `${config.ABGABEN_DIR}/${filename}`;
+    const fileContent = await Deno.readFile(filePath);
+    const computedMd5 = computeMd5(fileContent);
+
+    assertEquals(responseMd5, computedMd5);
+
+    await Deno.remove(filePath);
 });
