@@ -12,7 +12,8 @@ type DirIndexTemplateData = {
 type UploadTemplateData = {
     permitted_types?: string[];
     accept_attr?: string;
-    types_display?: string;
+    types_label?: string;
+    types_feedback?: string;
 };
 
 type SuccessTemplateData = {

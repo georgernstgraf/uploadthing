@@ -10,16 +10,32 @@ import { UploadSchema } from "../lib/schemas.ts";
 
 const uploadRouter = new Hono<{ Variables: HonoContextVars }>();
 
+function formatGermanFileTypes(types: string[]): { label: string; feedback: string } {
+    if (types.length === 1) {
+        return { label: types[0], feedback: types[0] };
+    }
+    if (types.length === 2) {
+        return { label: `${types[0]} oder ${types[1]}`, feedback: `${types[0]} oder ${types[1]}` };
+    }
+    const allButLast = types.slice(0, -1).join(", ");
+    const last = types[types.length - 1];
+    return { label: `${allButLast} oder ${last}`, feedback: `${allButLast} oder ${last}` };
+}
+
 uploadRouter.get("/", (c) => {
     const remote_user = c.get("remoteuser");
     if (!remote_user) {
         return c.redirect("/whoami");
     }
 
+    const types = config.PERMITTED_FILETYPES;
+    const germanTypes = formatGermanFileTypes(types);
+
     const content = hbs.uploadTemplate({
-        permitted_types: config.PERMITTED_FILETYPES,
-        accept_attr: "." + config.PERMITTED_FILETYPES.join(",."),
-        types_display: config.PERMITTED_FILETYPES.join(", "),
+        permitted_types: types,
+        accept_attr: "." + types.join(",."),
+        types_label: germanTypes.label,
+        types_feedback: germanTypes.feedback,
     });
 
     if (c.req.header("HX-Request") === "true") {

@@ -13,8 +13,8 @@
                      height="48">
             </div>
             <label class="d-block form-label h3 mb-2 fw-bold">
-{{~#if types_display~}}
-Bitte {{types_display}} Datei auswählen
+{{~#if types_label~}}
+Bitte {{types_label}} Datei auswählen
 {{else}}
 Bitte ZIP Datei auswählen
 {{~/if~}}
@@ -42,8 +42,8 @@ Nur .zip Dateien sind erlaubt
                 </div>
             </div>
             <div class="invalid-feedback">
-{{~#if types_display~}}
-Bitte eine {{types_display}} Datei auswählen.
+{{~#if types_feedback~}}
+Bitte eine {{types_feedback}} Datei auswählen.
 {{else}}
 Bitte eine ZIP-Datei auswählen.
 {{~/if~}}
