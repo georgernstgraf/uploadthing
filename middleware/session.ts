@@ -9,7 +9,7 @@ export type SessionData = {
     createdAt: number;
 };
 
-async function hmacSign(data: string, secret: string): Promise<string> {
+export async function hmacSign(data: string, secret: string): Promise<string> {
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
         "raw",
@@ -22,7 +22,7 @@ async function hmacSign(data: string, secret: string): Promise<string> {
     return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
 
-async function hmacVerify(
+export async function hmacVerify(
     data: string,
     signature: string,
     secret: string,
@@ -36,12 +36,12 @@ async function hmacVerify(
     return result === 0;
 }
 
-function encodeSessionData(data: SessionData): string {
+export function encodeSessionData(data: SessionData): string {
     const json = JSON.stringify(data);
     return btoa(json);
 }
 
-function decodeSessionData(encoded: string): SessionData | null {
+export function decodeSessionData(encoded: string): SessionData | null {
     try {
         const json = atob(encoded);
         return JSON.parse(json) as SessionData;
@@ -50,12 +50,12 @@ function decodeSessionData(encoded: string): SessionData | null {
     }
 }
 
-function signCookieValue(data: SessionData, signature: string): string {
+export function signCookieValue(data: SessionData, signature: string): string {
     const encoded = encodeSessionData(data);
     return `${encoded}.${signature}`;
 }
 
-function parseSignedCookie(
+export function parseSignedCookie(
     cookie: string,
 ): { data: SessionData; signature: string } | null {
     const parts = cookie.split(".");
