@@ -9,7 +9,11 @@ type DirIndexTemplateData = {
     unterlagen_dir: string;
 };
 
-type UploadTemplateData = Record<string, never>;
+type UploadTemplateData = {
+    permitted_types?: string[];
+    accept_attr?: string;
+    types_display?: string;
+};
 
 type SuccessTemplateData = {
     filename: string;

@@ -12,8 +12,20 @@
                      width="48"
                      height="48">
             </div>
-            <label class="d-block form-label h3 mb-2 fw-bold">Bitte ZIP Datei auswählen</label>
-            <p class="text-muted small">Nur .zip Dateien sind erlaubt</p>
+            <label class="d-block form-label h3 mb-2 fw-bold">
+{{~#if types_display~}}
+Bitte {{types_display}} Datei auswählen
+{{else}}
+Bitte ZIP Datei auswählen
+{{~/if~}}
+</label>
+            <p class="text-muted small">{{#if permitted_types}}
+{{~#each permitted_types as |type|~}}
+{{#if @index}}, {{/if}}.{{type}}
+{{~/each~}} Dateien sind erlaubt
+{{else}}
+Nur .zip Dateien sind erlaubt
+{{/if}}</p>
             <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all upload-dropzone"
                  @dragover.prevent="$el.style.borderColor = 'var(--leisure-primary)'"
                  @dragleave.prevent="$el.style.borderColor = 'var(--leisure-secondary)'"
@@ -22,14 +34,20 @@
                        x-ref="fileInput"
                        class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
                        name="file"
-                       accept=".zip"
+                       accept="{{#if accept_attr}}{{accept_attr}}{{else}}.zip{{/if}}"
                        required
                        @change="fileName = $el.files[0]?.name || 'Datei hier ablegen oder klicken'">
                 <div class="d-flex align-items-center justify-content-center gap-2 text-muted fw-bold">
                     <span x-text="fileName"></span>
                 </div>
             </div>
-            <div class="invalid-feedback">Bitte eine ZIP-Datei auswählen.</div>
+            <div class="invalid-feedback">
+{{~#if types_display~}}
+Bitte eine {{types_display}} Datei auswählen.
+{{else}}
+Bitte eine ZIP-Datei auswählen.
+{{~/if~}}
+</div>
         </div>
         <div class="text-center">
             <button type="submit"

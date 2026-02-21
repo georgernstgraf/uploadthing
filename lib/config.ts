@@ -7,6 +7,10 @@ const config = {
         Deno.env.get("LISTEN_PORT")
     }`,
     MAX_UPLOAD_MB: Number(Deno.env.get("MAX_UPLOAD_MB") || "50"),
+    PERMITTED_FILETYPES: (Deno.env.get("PERMITTED_FILETYPES") || "zip")
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean),
     SERVICE_DN: Deno.env.get("SERVICE_DN")!,
     SERVICE_PW: Deno.env.get("SERVICE_PW")!,
     SERVICE_URL: Deno.env.get("SERVICE_URL")!,

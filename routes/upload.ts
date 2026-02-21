@@ -16,7 +16,11 @@ uploadRouter.get("/", (c) => {
         return c.redirect("/whoami");
     }
 
-    const content = hbs.uploadTemplate({});
+    const content = hbs.uploadTemplate({
+        permitted_types: config.PERMITTED_FILETYPES,
+        accept_attr: "." + config.PERMITTED_FILETYPES.join(",."),
+        types_display: config.PERMITTED_FILETYPES.join(", "),
+    });
 
     if (c.req.header("HX-Request") === "true") {
         return c.html(content);
@@ -53,6 +57,15 @@ uploadRouter.post("/", async (c) => {
         throw new AppError(
             `Es sind maximal ${config.MAX_UPLOAD_MB} MB möglich.`,
             413,
+        );
+    }
+
+    const fileExt = file.name.split(".").pop()?.toLowerCase();
+    if (!fileExt || !config.PERMITTED_FILETYPES.includes(fileExt)) {
+        const allowed = config.PERMITTED_FILETYPES.map((ext) => `.${ext}`).join(", ");
+        throw new AppError(
+            `Nur ${allowed} Dateien sind erlaubt.`,
+            415,
         );
     }
 
