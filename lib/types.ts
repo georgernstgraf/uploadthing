@@ -20,7 +20,7 @@ export type TopType = {
     is_admin: boolean;
 };
 
-export type ForensicIPCount = {
+export type AdminIPCount = {
     ip: string;
     count: number; // wie oft
     lastseen: string; // wann zuletzt

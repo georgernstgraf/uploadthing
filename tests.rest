@@ -4,7 +4,7 @@ Content-Type: x-www-form-urlencoded
 email=grafg%40spengergasse.at
 
 ###
-GET http://localhost:8000/forensic/users
+GET http://localhost:8000/admin/users
 
 ###
 GET http://localhost:8000/ldap?email=graf
@@ -20,7 +20,7 @@ Content-Type: application/json
 ###
 GET http://localhost:8000/unterlagen
 ###
-GET http://localhost:8000/forensic
+GET http://localhost:8000/admin
 ###
 GET http://localhost:8000/
 ###

@@ -599,21 +599,21 @@
 }
 
 /* ============================================================
-   FORENSIC COMPONENTS
+   ADMIN COMPONENTS
    ============================================================ */
-.forensic-stale {
+.admin-stale {
     opacity: 0.7;
 }
 
-.forensic-submitted {
+.admin-submitted {
     border-left: 4px solid var(--color-success);
 }
 
-.forensic-list-bg {
+.admin-list-bg {
     background-color: var(--color-bg-light);
 }
 
-.forensic-item {
+.admin-item {
     font-size: var(--font-size-sm);
 }
 

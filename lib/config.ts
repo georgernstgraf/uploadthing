@@ -18,11 +18,11 @@ const config = {
     logdir: Deno.env.get("LOGDIR") || "/var/log/exampy",
     ldap_retry_wait_seconds: 7,
     TODAY_HOURS_CUTOFF: Number(Deno.env.get("TODAY_HOURS_CUTOFF") || "12"),
-    forensic_stale_minutes: Number(
-        Deno.env.get("FORENSIC_STALE_MINUTES") || "3",
+    admin_stale_minutes: Number(
+        Deno.env.get("ADMIN_STALE_MINUTES") || "3",
     ),
-    forensic_refresh_seconds: Number(
-        Deno.env.get("FORENSIC_REFRESH_SECONDS") || "15",
+    admin_refresh_seconds: Number(
+        Deno.env.get("ADMIN_REFRESH_SECONDS") || "15",
     ),
     spg_times: [
         "08:00",

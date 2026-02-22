@@ -5,7 +5,7 @@ import { Bindings, HonoContextVars } from "./lib/types.ts";
 import { setupShutdown as setupPrismaShutdown } from "./repo/prismadb.ts";
 import { setupShutdown as setupSqliteShutdown } from "./repo/db.ts";
 
-import forensicRouter from "./routes/forensic.ts";
+import adminRouter from "./routes/admin.ts";
 import homeRouter from "./routes/home.ts";
 import uploadRouter from "./routes/upload.ts";
 import authRouter from "./routes/auth.ts";
@@ -26,7 +26,7 @@ app.use("*", sessionMiddleware);
 app.use("*", remoteIPMiddleware);
 
 // Mount routers
-app.route("/forensic", forensicRouter);
+app.route("/admin", adminRouter);
 app.route("/upload", uploadRouter);
 app.route("/", homeRouter);
 app.route("/", authRouter);

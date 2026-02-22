@@ -4,7 +4,7 @@ import { UserType } from "../lib/types.ts";
 import { localAutoString } from "../lib/timefunc.ts";
 import config from "../lib/config.ts";
 
-export type ServiceIpForensics = {
+export type ServiceIpAdmin = {
     ip: string;
     seen_count: number;
     seen_at_desc: string[]; // displayable times
@@ -15,20 +15,20 @@ export type ServiceIpForensics = {
 };
 
 /**
- * Aggregate forensic data for all IPs seen in a time range.
+ * Aggregate admin data for all IPs seen in a time range.
  */
 export async function for_range(
     start: Date,
     end: Date,
     calculate_stale: boolean,
 ): Promise<{
-    registered: ServiceIpForensics[];
-    unregistered: ServiceIpForensics[];
+    registered: ServiceIpAdmin[];
+    unregistered: ServiceIpAdmin[];
 }> {
-    const rv: ServiceIpForensics[] = [];
+    const rv: ServiceIpAdmin[] = [];
     const seen_ips = repo.ipfact.ips_in_range(start, end); // start, end: Date
     for (const ip of seen_ips) {
-        const ip_forensics: ServiceIpForensics = {
+        const ip_admin: ServiceIpAdmin = {
             ip,
             seen_count: 0,
             seen_at_desc: [],
@@ -42,27 +42,27 @@ export async function for_range(
             start,
             end,
         );
-        ip_forensics.seen_count = seen_at_desc.length;
-        ip_forensics.seen_at_desc = seen_at_desc.map((dt) =>
+        ip_admin.seen_count = seen_at_desc.length;
+        ip_admin.seen_at_desc = seen_at_desc.map((dt) =>
             localAutoString(new Date(dt))
         );
-        ip_forensics.registrations = await service.registrations.byIPInRange(
+        ip_admin.registrations = await service.registrations.byIPInRange(
             ip,
             start,
             end,
         );
         if (calculate_stale && seen_at_desc.length > 0) {
-            ip_forensics.is_stale = seen_at_desc[0].valueOf() < new Date(
-                Date.now() - config.forensic_stale_minutes * 60 * 1000,
+            ip_admin.is_stale = seen_at_desc[0].valueOf() < new Date(
+                Date.now() - config.admin_stale_minutes * 60 * 1000,
             ).valueOf();
         }
-        ip_forensics.submissions = service.abgaben.getIPSubmissionsInRange(
+        ip_admin.submissions = service.abgaben.getIPSubmissionsInRange(
             ip,
             start,
             end,
         );
-        ip_forensics.has_submission = ip_forensics.submissions.length > 0;
-        rv.push(ip_forensics);
+        ip_admin.has_submission = ip_admin.submissions.length > 0;
+        rv.push(ip_admin);
     }
     rv.sort((a, b) => {
         const left = a.seen_at_desc[0] ?? "";

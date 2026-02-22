@@ -52,10 +52,10 @@ The system does not rely on traditional passwords for students, which minimizes 
 - **Operational Verification (Physical Auth)**: At the beginning of the exam, the supervising teacher visually verifies that the name displayed on each student's screen matches the physical student.
 - **Session Management**: Upon selecting an identity, the server issues an HMAC-SHA256 signed session cookie to the browser. This handles ongoing technical authorization.
 
-### 2. Forensic Auditing (Detective Control)
-To deter and detect impersonation or spoofing after the initial visual check, the system maintains a rigorous forensic audit trail:
+### 2. Admin Auditing (Detective Control)
+To deter and detect impersonation or spoofing after the initial visual check, the system maintains a rigorous admin audit trail:
 - Every action (registration, submission) is strictly logged against the underlying socket IP address (`c.env.info.remoteAddr`), explicitly ignoring easily spoofed headers like `X-Forwarded-For`.
-- The Forensic View allows teachers to audit the history of each IP address and identity. If a student attempts to spoof another student's identity mid-exam, the forensic data will clearly expose the anomaly (multiple identities operating from the same machine/IP).
+- The Admin View allows teachers to audit the history of each IP address and identity. If a student attempts to spoof another student's identity mid-exam, the admin data will clearly expose the anomaly (multiple identities operating from the same machine/IP).
 
 ### 3. Application Hardening
 - **Path Sanitization**: `safeFileComponent` strictly prevents directory traversal attacks during file uploads.

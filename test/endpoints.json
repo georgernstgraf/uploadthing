@@ -3,8 +3,8 @@
     "endpoints": [
         {
             "method": "GET",
-            "path": "/forensic/logs",
-            "description": "Get forensic logs",
+            "path": "/admin/logs",
+            "description": "Get admin logs",
             "expectedOutput": {
                 "type": "Logs array or HTML"
             }
@@ -36,8 +36,8 @@
         },
         {
             "method": "GET",
-            "path": "/forensic",
-            "description": "Serve forensic page",
+            "path": "/admin",
+            "description": "Serve admin page",
             "expectedOutput": {
                 "type": "HTML page"
             }

@@ -1,7 +1,7 @@
 import { assertEquals, assertExists } from "@std/assert";
 import {
     ActiveIpsSchema,
-    ForensicQuerySchema,
+    AdminQuerySchema,
     LdapSearchSchema,
     RegisterSchema,
     UploadSchema,
@@ -67,13 +67,13 @@ Deno.test("ActiveIpsSchema - rejects empty array", () => {
     assertEquals(result.success, false);
 });
 
-Deno.test("ForensicQuerySchema - accepts valid date only", () => {
-    const result = ForensicQuerySchema.safeParse({ startdate: "2025-12-01" });
+Deno.test("AdminQuerySchema - accepts valid date only", () => {
+    const result = AdminQuerySchema.safeParse({ startdate: "2025-12-01" });
     assertEquals(result.success, true);
 });
 
-Deno.test("ForensicQuerySchema - accepts valid date and time", () => {
-    const result = ForensicQuerySchema.safeParse({
+Deno.test("AdminQuerySchema - accepts valid date and time", () => {
+    const result = AdminQuerySchema.safeParse({
         startdate: "2025-12-01",
         starttime: "08:00",
         enddate: "2025-12-01",
@@ -82,23 +82,23 @@ Deno.test("ForensicQuerySchema - accepts valid date and time", () => {
     assertEquals(result.success, true);
 });
 
-Deno.test("ForensicQuerySchema - accepts empty object", () => {
-    const result = ForensicQuerySchema.safeParse({});
+Deno.test("AdminQuerySchema - accepts empty object", () => {
+    const result = AdminQuerySchema.safeParse({});
     assertEquals(result.success, true);
 });
 
-Deno.test("ForensicQuerySchema - rejects invalid date format", () => {
-    const result = ForensicQuerySchema.safeParse({ startdate: "01-12-2025" });
+Deno.test("AdminQuerySchema - rejects invalid date format", () => {
+    const result = AdminQuerySchema.safeParse({ startdate: "01-12-2025" });
     assertEquals(result.success, false);
 });
 
-Deno.test("ForensicQuerySchema - rejects invalid time format", () => {
-    const result = ForensicQuerySchema.safeParse({ starttime: "8:00" });
+Deno.test("AdminQuerySchema - rejects invalid time format", () => {
+    const result = AdminQuerySchema.safeParse({ starttime: "8:00" });
     assertEquals(result.success, false);
 });
 
-Deno.test("ForensicQuerySchema - rejects time without colon", () => {
-    const result = ForensicQuerySchema.safeParse({ starttime: "0800" });
+Deno.test("AdminQuerySchema - rejects time without colon", () => {
+    const result = AdminQuerySchema.safeParse({ starttime: "0800" });
     assertEquals(result.success, false);
 });
 

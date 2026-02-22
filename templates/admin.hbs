@@ -3,7 +3,7 @@
     <section id="timeselector"
              class="leisure-card mb-2 mx-auto py-2 mw-800">
         <h2 class="text-center mb-2 fs-2xl">Zeitauswahl</h2>
-        <form hx-get="/forensic"
+        <form hx-get="/admin"
               hx-target="#main-content"
               hx-push-url="true"
               class="container text-center"
@@ -82,7 +82,7 @@
                 endFields: ["endtime", "enddate"],
 
                 init() {
-                    const saved = localStorage.getItem('forensicShowEndTime');
+                    const saved = localStorage.getItem('adminShowEndTime');
                     this.showEndTime = saved === 'true';
 
                     if (saved === null) {
@@ -96,7 +96,7 @@
                 },
 
                 savePreference() {
-                    localStorage.setItem('forensicShowEndTime', this.showEndTime);
+                    localStorage.setItem('adminShowEndTime', this.showEndTime);
                     if (this.showEndTime) {
                         this.enableEndFields();
                     } else {
@@ -141,5 +141,5 @@
             }
         }
     </script>
-    {{> forensic-report}}
+    {{> admin-report}}
 </div>

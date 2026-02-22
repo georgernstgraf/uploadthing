@@ -25,8 +25,8 @@ Deno.test("GET / - Home page", async () => {
     assertEquals(res.headers.get("content-type")?.includes("text/html"), true);
 });
 
-Deno.test("GET /forensic/logs - Forensic logs", async () => {
-    const res = await fetch(`${BASE_URL}/forensic/logs`);
+Deno.test("GET /admin/logs - Admin logs", async () => {
+    const res = await fetch(`${BASE_URL}/admin/logs`);
     // May return 200 or 404 depending on logs directory existence
     assertEquals([200, 404].includes(res.status), true);
     const text = await res.text();

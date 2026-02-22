@@ -3,6 +3,6 @@ import * as ldap from "./ldapuser.ts";
 import * as registrations from "./registrations.ts";
 import * as user from "./user.ts";
 import * as abgaben from "./abgaben.ts";
-import * as ipforensics from "./ipforensics.ts";
+import * as ipadmin from "./ipadmin.ts";
 
-export { ipfact, ldap, registrations, user, abgaben, ipforensics };
+export { ipfact, ldap, registrations, user, abgaben, ipadmin };

@@ -1,7 +1,7 @@
 <section class="container"
          id="report"
-         hx-get="/forensic"
-         hx-trigger="every {{forensic_refresh_seconds}}s"
+         hx-get="/admin"
+         hx-trigger="every {{admin_refresh_seconds}}s"
          hx-target="#report"
          hx-swap="innerHTML"
          hx-select="#report > *"
@@ -23,7 +23,7 @@
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_with_name}}
             <div class="col">
-                <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column {{#if this.is_stale}}forensic-stale{{/if}} {{#if this.has_submission}}forensic-submitted{{/if}} bg-white-20">
+                <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column {{#if this.is_stale}}admin-stale{{/if}} {{#if this.has_submission}}admin-submitted{{/if}} bg-white-20">
                     <summary class="fw-bold cursor-pointer list-none">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
@@ -54,9 +54,9 @@
                         <div class="row g-1">
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 fs-sm text-leisure-primary">Registrierungen</div>
-                                <ul class="list-unstyled p-1 rounded mb-1 forensic-list-bg">
+                                <ul class="list-unstyled p-1 rounded mb-1 admin-list-bg">
                                     {{#each this.registrations}}
-                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between forensic-item">
+                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between admin-item">
                                             <span class="text-muted">{{this.at}}</span>
                                             <span class="history-item-ip">
                                                 {{#if this.user}}
@@ -70,9 +70,9 @@
                             {{#if this.submissions.length}}
                                 <div class="col-12">
                                     <div class="fw-bold text-center mb-1 fs-sm text-leisure-primary">Abgaben</div>
-                                    <ul class="list-unstyled p-1 rounded mb-1 forensic-list-bg">
+                                    <ul class="list-unstyled p-1 rounded mb-1 admin-list-bg">
                                         {{#each this.submissions}}
-                                            <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between forensic-item">
+                                            <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between admin-item">
                                                 <span class="text-muted">{{this.at}}</span>
                                                 <span class="history-item-ip">{{this.filename}}</span>
                                             </li>
@@ -82,9 +82,9 @@
                             {{/if}}
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 fs-sm text-leisure-primary">IP: {{this.ip}}</div>
-                                <ul class="list-unstyled p-1 rounded forensic-list-bg">
+                                <ul class="list-unstyled p-1 rounded admin-list-bg">
                                     {{#each this.seen_at_desc }}
-                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between forensic-item">
+                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between admin-item">
                                             <span class="text-muted">{{this}}</span>
                                         </li>
                                     {{/each}}
@@ -130,9 +130,9 @@
                             </div>
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 fs-sm text-leisure-primary">IP: {{this.ip}}</div>
-                                <ul class="list-unstyled p-1 rounded forensic-list-bg">
+                                <ul class="list-unstyled p-1 rounded admin-list-bg">
                                     {{#each this.seen_at_desc }}
-                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between forensic-item">
+                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between admin-item">
                                             <span class="text-muted">{{this}}</span>
                                             <span class="history-item-user">Unbekannt</span>
                                         </li>

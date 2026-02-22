@@ -43,7 +43,7 @@ deno task ps           # Open Prisma Studio
 
 - **github**: use the `gh` command, it is authorized.
 - **browser**: use the `agent-browser` command on `http://localhost:8000/` to test the application. Run `agent-browser -h` for comprehensive usage instructions.
-- **forensic page testing**: To view a good amount of forensic items, use start date December 1, 2025.
+- **admin page testing**: To view a good amount of admin items, use start date December 1, 2025.
 - **color-theme**: extract Bootstrap 5 CSS variables from an image:
   ```bash
   scripts/.venv/bin/python3 scripts/color-theme.py <image-path>
@@ -152,7 +152,7 @@ export async function findIPsInTimeRange(startTime: Date, endTime: Date) {
 ### Exam Data Retention
 
 - The `user` table is wiped before each exam.
-- For forensics on older exams, use the `registrations` table to map historical IPs to user data.
+- For admin history on older exams, use the `registrations` table to map historical IPs to user data.
 
 ### Time Zone Handling
 
@@ -314,6 +314,6 @@ import * as service from "../service/service.ts";
 
 - **Prisma Client**: Custom output directory in `lib/prismaclient/`
 - **Time Handling**: Critical distinction between service (local) and repo (UTC) layers
-- **Authentication**: Session management via signed cookies, supplemented by physical/operational screen checks and extensive IP-based forensic tracking.
+- **Authentication**: Session management via signed cookies, supplemented by physical/operational screen checks and extensive IP-based admin tracking.
 - **Templates**: Handlebars with Bootstrap 5 and HTMX integration
 - **File Upload**: Primary feature with security considerations

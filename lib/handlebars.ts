@@ -1,6 +1,6 @@
 import Handlebars from "handlebars";
 import { UserType, TopType } from "./types.ts";
-import type { ServiceIpForensics } from "../service/ipforensics.ts";
+import type { ServiceIpAdmin } from "../service/ipadmin.ts";
 
 // --- 2. Template Data Type Definitions ---
 
@@ -44,19 +44,19 @@ type LdapTemplateData = {
     users: UserType[];
 };
 
-type ForensicTemplateData = {
+type AdminTemplateData = {
     remote_user: UserType;
     spg_times: string[];
     starttime: string;
     endtime: string;
     startdate: string;
     enddate: string;
-    ips_with_name: ServiceIpForensics[];
-    ips_without_name: ServiceIpForensics[];
+    ips_with_name: ServiceIpAdmin[];
+    ips_without_name: ServiceIpAdmin[];
     withinTimeCutoff: boolean;
     endtimeInFuture: boolean;
     endtimeProvided: boolean;
-    forensic_refresh_seconds: number;
+    admin_refresh_seconds: number;
 };
 
 // --- 3. Handlebars Helpers ---
@@ -102,8 +102,8 @@ Handlebars.registerPartial(
     Deno.readTextFileSync("templates/main.hbs"),
 );
 Handlebars.registerPartial(
-    "forensic-report",
-    Deno.readTextFileSync("templates/forensic-report.hbs"),
+    "admin-report",
+    Deno.readTextFileSync("templates/admin-report.hbs"),
 );
 
 // --- 5. Handlebars Compiled Templates (Exports) ---
@@ -129,11 +129,11 @@ export const ldapTemplate = Handlebars.compile<LdapTemplateData>(
 export const whoamiTemplate = Handlebars.compile<WhoamiTemplateData>(
     Deno.readTextFileSync("templates/whoami.hbs"),
 );
-export const forensicTemplate = Handlebars.compile<ForensicTemplateData>(
-    Deno.readTextFileSync("templates/forensic.hbs"),
+export const adminTemplate = Handlebars.compile<AdminTemplateData>(
+    Deno.readTextFileSync("templates/admin.hbs"),
 );
-export const forensicReportTemplate = Handlebars.compile<ForensicTemplateData>(
-    Deno.readTextFileSync("templates/forensic-report.hbs"),
+export const adminReportTemplate = Handlebars.compile<AdminTemplateData>(
+    Deno.readTextFileSync("templates/admin-report.hbs"),
 );
 export const navTemplate = Handlebars.compile<NavTemplateData>(
     Deno.readTextFileSync("templates/nav.hbs"),
