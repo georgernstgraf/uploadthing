@@ -1,6 +1,10 @@
 import { Database } from "@db/sqlite";
 export const db = new Database("uploadthing.db");
 
+export function vacuumInto(path: string) {
+    db.exec(`VACUUM INTO '${path}';`);
+}
+
 db.exec("PRAGMA journal_mode=WAL;");
 console.log("SQLite WAL mode enabled");
 

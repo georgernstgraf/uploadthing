@@ -9,6 +9,14 @@
                 "type": "Logs array or HTML"
             }
         },
+        {
+            "method": "GET",
+            "path": "/admin/download-abgaben",
+            "description": "Download abgaben as ZIP",
+            "expectedOutput": {
+                "type": "application/zip"
+            }
+        },
 
         {
             "method": "GET",

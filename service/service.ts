@@ -4,5 +4,6 @@ import * as registrations from "./registrations.ts";
 import * as user from "./user.ts";
 import * as abgaben from "./abgaben.ts";
 import * as ipadmin from "./ipadmin.ts";
+import * as admin from "./admin.ts";
 
-export { ipfact, ldap, registrations, user, abgaben, ipadmin };
+export { ipfact, ldap, registrations, user, abgaben, ipadmin, admin };
