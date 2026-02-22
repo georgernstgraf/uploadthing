@@ -43,6 +43,25 @@ scripts/.venv/bin/python3 scripts/color-theme.py path/to/image.png -c 8
 3. Adjusts button colors to ensure 7:1 contrast with text
 4. Generates `--bs-*` CSS variables
 
+## Security Architecture
+
+This application employs a hybrid technical-operational security model, tailored specifically for supervised examination environments:
+
+### 1. Hybrid Authentication Model
+The system does not rely on traditional passwords for students, which minimizes friction during time-constrained exams. Instead, it uses a two-pronged approach:
+- **Operational Verification (Physical Auth)**: At the beginning of the exam, the supervising teacher visually verifies that the name displayed on each student's screen matches the physical student.
+- **Session Management**: Upon selecting an identity, the server issues an HMAC-SHA256 signed session cookie to the browser. This handles ongoing technical authorization.
+
+### 2. Forensic Auditing (Detective Control)
+To deter and detect impersonation or spoofing after the initial visual check, the system maintains a rigorous forensic audit trail:
+- Every action (registration, submission) is strictly logged against the underlying socket IP address (`c.env.info.remoteAddr`), explicitly ignoring easily spoofed headers like `X-Forwarded-For`.
+- The Forensic View allows teachers to audit the history of each IP address and identity. If a student attempts to spoof another student's identity mid-exam, the forensic data will clearly expose the anomaly (multiple identities operating from the same machine/IP).
+
+### 3. Application Hardening
+- **Path Sanitization**: `safeFileComponent` strictly prevents directory traversal attacks during file uploads.
+- **SQL Injection Immunity**: Prisma ORM is utilized for all database interactions. Since no raw SQL queries are used, the application is inherently immune to SQL injection.
+- **Environment Isolation**: Service passwords, cookie secrets, and other sensitive configurations are loaded strictly via `.env` files and never committed to version control.
+
 ## Time Handling
 
 This project uses the following conventions for time handling:

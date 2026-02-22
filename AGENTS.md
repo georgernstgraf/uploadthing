@@ -226,8 +226,8 @@ deno run -A --env-file main_test_db.ts
 // Use safeFileComponent for path sanitization
 import { safeFileComponent } from "../lib/utils.ts";
 
-// IP-based authentication via middleware
-const remoteuser = service.user.getbyip(remoteip);
+// Session-based authentication via middleware
+const remoteuser = c.get("remoteuser");
 if (!remoteuser) {
     return c.text("Unauthorized", 401);
 }
@@ -314,6 +314,6 @@ import * as service from "../service/service.ts";
 
 - **Prisma Client**: Custom output directory in `lib/prismaclient/`
 - **Time Handling**: Critical distinction between service (local) and repo (UTC) layers
-- **Authentication**: IP-based via middleware, no session management
+- **Authentication**: Session management via signed cookies, supplemented by physical/operational screen checks and extensive IP-based forensic tracking.
 - **Templates**: Handlebars with Bootstrap 5 and HTMX integration
 - **File Upload**: Primary feature with security considerations
