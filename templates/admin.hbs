@@ -141,7 +141,7 @@
             }
         }
     </script>
-    <div class="container text-center mb-4 mt-2">
+    <div class="container text-center mb-4 mt-2 d-flex justify-content-center gap-3 flex-wrap">
         <a href="/admin/download-abgaben" class="btn btn-success fw-bold fs-lg px-4 py-2 shadow-sm" download>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-file-earmark-zip me-2" viewBox="0 0 16 16">
                 <path d="M5 7.5a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v.938l.4 1.599a1 1 0 0 1-.416 1.074l-.93.62a1 1 0 0 1-1.11 0l-.929-.62a1 1 0 0 1-.415-1.074L5 8.438zm2 0H6v.938a1 1 0 0 1-.03.243l-.4 1.598.93.62.93-.62-.4-1.598a1 1 0 0 1-.03-.243z"/>
@@ -149,6 +149,16 @@
             </svg>
             Abgaben & Datenbank herunterladen (ZIP)
         </a>
+        <button hx-post="/admin/wipe-abgaben"
+                hx-confirm="Sind Sie sicher, dass Sie ALLE Abgaben unwiderruflich löschen möchten?"
+                hx-target="#wipe-result"
+                class="btn btn-danger fw-bold fs-lg px-4 py-2 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-trash3 me-2" viewBox="0 0 16 16">
+                <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
+            </svg>
+            Abgaben-Verzeichnis leeren
+        </button>
     </div>
+    <div id="wipe-result"></div>
     {{> admin-report}}
 </div>

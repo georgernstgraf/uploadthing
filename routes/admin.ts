@@ -128,4 +128,19 @@ adminRouter.get("/download-abgaben", (c) => {
     return c.body(child.stdout);
 });
 
+adminRouter.post("/wipe-abgaben", (c) => {
+    const is_admin = c.get("is_admin");
+    if (!is_admin) {
+        return c.text("Forbidden", 403);
+    }
+
+    try {
+        service.admin.wipeAbgabenDirectory(config.ABGABEN_DIR);
+        return c.html(`<div class="alert alert-success fs-lg mt-2 mx-auto" style="max-width: 800px;">Abgaben-Verzeichnis erfolgreich geleert.</div>`);
+    } catch (e) {
+        console.error("Error wiping abgaben directory:", e);
+        return c.html(`<div class="alert alert-danger fs-lg mt-2 mx-auto" style="max-width: 800px;">Fehler beim Leeren des Abgaben-Verzeichnisses.</div>`, 500);
+    }
+});
+
 export default adminRouter;

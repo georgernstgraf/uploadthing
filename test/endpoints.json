@@ -17,6 +17,14 @@
                 "type": "application/zip"
             }
         },
+        {
+            "method": "POST",
+            "path": "/admin/wipe-abgaben",
+            "description": "Wipe abgaben directory",
+            "expectedOutput": {
+                "type": "HTML page"
+            }
+        },
 
         {
             "method": "GET",

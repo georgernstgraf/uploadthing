@@ -1,6 +1,6 @@
 const config = {
-    ABGABEN_DIR: `${Deno.env.get("HOME")}/abgaben`,
-    UNTERLAGEN_DIR: `${Deno.env.get("HOME")}/unterlagen`,
+    ABGABEN_DIR: Deno.env.get("ABGABEN_DIR") || `${Deno.env.get("HOME")}/abgaben`,
+    UNTERLAGEN_DIR: Deno.env.get("UNTERLAGEN_DIR") || `${Deno.env.get("HOME")}/unterlagen`,
     LISTEN_HOST: Deno.env.get("LISTEN_HOST"),
     LISTEN_PORT: Number(Deno.env.get("LISTEN_PORT")),
     page_title: `${Deno.env.get("LISTEN_HOST") || "localhost"}:${
