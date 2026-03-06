@@ -3,6 +3,7 @@
 ## Current Entry Points
 
 - `main.ts` starts the Hono app with `Deno.serve`.
+- `main.ts` owns centralized SIGINT/SIGTERM shutdown, aborts the HTTP server via `AbortController`, then closes Prisma and SQLite.
 - Middleware order is `sessionMiddleware` first, then `remoteIPMiddleware`.
 - Routers are mounted for admin, upload, auth, API, home, and static/file serving.
 
@@ -66,6 +67,7 @@ deno task ps
 
 ## Operational Notes
 
+- Recent implementation work for runtime file-type configuration and German UI labels shipped in issue `#88`.
 - For admin page testing with more realistic data volume, use start date December 1, 2025.
 - `scripts/color-theme.py` can extract Bootstrap 5 CSS variables from an image.
 - `scripts/startexam.sh` snapshots home, clears the submissions folder, and archives registrations into `forensic_registrations`.

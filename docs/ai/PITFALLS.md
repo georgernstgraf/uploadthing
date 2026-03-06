@@ -37,6 +37,7 @@
 - When a writable test or local database is needed, copy `vacuum.db` to the path referenced by `DATABASE_URL` instead.
 - Some endpoint tests and JSON fixtures still reference routes or behaviors that are stale, permissive, or destructive, such as `/admin/logs` and `/admin/wipe-abgaben`.
 - Read tests before changing behavior and do not assume they perfectly describe the current product surface.
+- If shutdown handling changes, remember that closing Prisma and SQLite alone is not enough; the `Deno.serve` server must also be stopped or the process will keep running after SIGINT.
 
 ## External Dependency Risks
 

@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import config from "./lib/config.ts";
 import { sessionMiddleware, remoteIPMiddleware } from "./middleware/session.ts";
 import { Bindings, HonoContextVars } from "./lib/types.ts";
-import { setupShutdown as setupPrismaShutdown } from "./repo/prismadb.ts";
-import { setupShutdown as setupSqliteShutdown } from "./repo/db.ts";
+import { shutdownPrisma } from "./repo/prismadb.ts";
+import { shutdownSqlite } from "./repo/db.ts";
 
 import adminRouter from "./routes/admin.ts";
 import homeRouter from "./routes/home.ts";
@@ -16,9 +16,6 @@ import { errorHandler } from "./middleware/error.ts";
 
 // ensure ABGABEN_DIR exists
 await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
-
-setupPrismaShutdown(); // Setup Prisma graceful shutdown
-setupSqliteShutdown(); // Setup SQLite graceful shutdown
 
 const app = new Hono<{ Bindings: Bindings; Variables: HonoContextVars }>();
 app.onError(errorHandler);
@@ -33,10 +30,41 @@ app.route("/", authRouter);
 app.route("/", apiRouter);
 app.route("/", filesRouter);
 
-Deno.serve(
+const abortController = new AbortController();
+let shuttingDown = false;
+
+const shutdown = async (signal: Deno.Signal) => {
+    if (shuttingDown) {
+        return;
+    }
+    shuttingDown = true;
+
+    console.log(`Received ${signal}, shutting down HTTP server...`);
+    abortController.abort();
+
+    await shutdownPrisma(signal);
+    shutdownSqlite(signal);
+
+    Deno.removeSignalListener("SIGINT", sigintHandler);
+    Deno.removeSignalListener("SIGTERM", sigtermHandler);
+};
+
+const sigintHandler = () => {
+    void shutdown("SIGINT");
+};
+
+const sigtermHandler = () => {
+    void shutdown("SIGTERM");
+};
+
+Deno.addSignalListener("SIGINT", sigintHandler);
+Deno.addSignalListener("SIGTERM", sigtermHandler);
+
+await Deno.serve(
     {
         hostname: config.LISTEN_HOST,
         port: config.LISTEN_PORT,
+        signal: abortController.signal,
     },
     (req, info) => app.fetch(req, { info }),
 );
