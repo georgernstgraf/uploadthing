@@ -1,6 +1,7 @@
 import { assertEquals, assertExists } from "@std/assert";
 import {
     ActiveIpsSchema,
+    AdminExamModeSchema,
     AdminFileTypesSchema,
     AdminQuerySchema,
     LdapSearchSchema,
@@ -115,6 +116,19 @@ Deno.test("AdminFileTypesSchema - rejects empty file types input", () => {
     formData.set("permitted_filetypes", "");
     const result = AdminFileTypesSchema.safeParse(formData);
     assertEquals(result.success, false);
+});
+
+Deno.test("AdminExamModeSchema - accepts enabled internet toggle", () => {
+    const formData = new FormData();
+    formData.set("internet_active", "on");
+    const result = AdminExamModeSchema.safeParse(formData);
+    assertEquals(result.success, true);
+});
+
+Deno.test("AdminExamModeSchema - accepts disabled internet toggle", () => {
+    const formData = new FormData();
+    const result = AdminExamModeSchema.safeParse(formData);
+    assertEquals(result.success, true);
 });
 
 Deno.test("UploadSchema - accepts FormData with file", () => {

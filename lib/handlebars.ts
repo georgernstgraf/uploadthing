@@ -62,8 +62,13 @@ type AdminTemplateData = {
 type AdminFileTypesTemplateData = {
     permitted_filetypes: string;
     current_filetypes: string[];
+    firewall_toggle_html: string;
     success_message?: string;
     error_message?: string;
+};
+
+type AdminExamModeTemplateData = {
+    internet_active: boolean;
 };
 
 // --- 3. Handlebars Helpers ---
@@ -144,6 +149,9 @@ export const adminReportTemplate = Handlebars.compile<AdminTemplateData>(
 );
 export const adminFileTypesTemplate = Handlebars.compile<AdminFileTypesTemplateData>(
     Deno.readTextFileSync("templates/admin-filetypes.hbs"),
+);
+export const adminExamModeTemplate = Handlebars.compile<AdminExamModeTemplateData>(
+    Deno.readTextFileSync("templates/admin-exammode.hbs"),
 );
 export const navTemplate = Handlebars.compile<NavTemplateData>(
     Deno.readTextFileSync("templates/nav.hbs"),

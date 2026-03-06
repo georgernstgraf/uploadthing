@@ -9,6 +9,15 @@ Deno.test("config - PERMITTED_FILETYPES is an array", () => {
     assertEquals(Array.isArray(config.PERMITTED_FILETYPES), true);
 });
 
+Deno.test("config - INTERNET_ACTIVE is a boolean", () => {
+    assertEquals(typeof config.INTERNET_ACTIVE, "boolean");
+});
+
+Deno.test("config - EXAMMODE_COMMAND is set", () => {
+    assertEquals(typeof config.EXAMMODE_COMMAND, "string");
+    assertEquals(config.EXAMMODE_COMMAND.length > 0, true);
+});
+
 Deno.test("config - parsePermittedFileTypes normalizes input", () => {
     assertEquals(parsePermittedFileTypes(".ZIP, md, zip , PDF"), [
         "zip",

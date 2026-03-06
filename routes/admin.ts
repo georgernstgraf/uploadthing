@@ -24,6 +24,9 @@ function renderFileTypesPage(
     const content = hbs.adminFileTypesTemplate({
         permitted_filetypes: config.PERMITTED_FILETYPES.join(", "),
         current_filetypes: config.PERMITTED_FILETYPES,
+        firewall_toggle_html: hbs.adminExamModeTemplate({
+            internet_active: config.INTERNET_ACTIVE,
+        }),
         success_message,
         error_message,
     });
@@ -147,7 +150,7 @@ adminRouter.post("/filetypes", async (c) => {
         return renderFileTypesPage(
             c,
             undefined,
-            validation.error.issues[0]?.message || "Ungueltige Dateitypen",
+            validation.error.issues[0]?.message || "Ungültige Dateitypen",
         );
     }
 

@@ -43,6 +43,10 @@
 
 - LDAP access can be slow or unavailable; the code includes reconnect logic and retry timing.
 - Do not start LDAP connections at module import time; eager startup causes unrelated tests to leak timers, reads, and TLS handshakes.
+- `POST /api/exammode` depends on a system `exammode` command in `PATH`; non-zero exits should surface as toast-visible HTMX errors and must not silently flip the UI state.
+- Successful `exammode` runs currently return a short stdout message (`internet enabled` or `internet disabled`) and exit `0`.
+- The firewall toggle does not auto-discover the machine's real internet state; it starts from env/config and only changes after successful admin-triggered `exammode` runs.
+- The current dev machine ships a stub `exammode` in `PATH` that only echoes the success text, so local endpoint tests verify UI/backend wiring rather than a real firewall change.
 - Browser-visible flows may also depend on local directories such as `ABGABEN_DIR` and `UNTERLAGEN_DIR` existing and being readable.
 
 ## Generated Artifacts

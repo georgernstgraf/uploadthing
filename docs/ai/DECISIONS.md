@@ -15,6 +15,11 @@
 - The frontend is intentionally server-rendered with Handlebars templates and Bootstrap, with HTMX-style partial responses for lighter interactions.
 - This keeps the exam workflow simple, fast to load, and easy to operate in constrained environments.
 
+## Dual API Mounting
+
+- `apiRouter` is mounted at both `/` and `/api`.
+- This preserves existing root-level endpoints such as `/activeips` while allowing explicit API-style paths such as `/api/exammode` for new HTMX controls.
+
 ## Runtime-Editable Upload Policy
 
 - Allowed upload file types are initialized from env but can be changed by admins while the process is running.

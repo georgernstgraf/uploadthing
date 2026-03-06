@@ -6,16 +6,18 @@
 - `main.ts` owns centralized SIGINT/SIGTERM shutdown, aborts the HTTP server via `AbortController`, then closes Prisma and SQLite.
 - Middleware order is `sessionMiddleware` first, then `remoteIPMiddleware`.
 - Routers are mounted for admin, upload, auth, API, home, and static/file serving.
+- `apiRouter` is mounted at both `/` and `/api`; the firewall toggle uses `/api/exammode`.
 
 ## Route Inventory
 
 - `routes/home.ts`: renders the main page and available `unterlagen` files.
 - `routes/auth.ts`: `GET /whoami`, `GET /ldap`, `POST /register`.
 - `routes/upload.ts`: authenticated upload form and submission handling.
-- `routes/api.ts`: `POST /activeips` for IP activity ingestion.
+- `routes/api.ts`: `POST /activeips` for IP activity ingestion and `POST /exammode` for admin-only internet/firewall toggling.
 - `routes/admin.ts`: admin overview, runtime file type settings for teachers, download of submissions plus DB backup, and a wipe action for the submissions directory.
 - `routes/files.ts`: serves `static/` and authenticated `unterlagen/` files.
 - Admin navigation now shows two teacher-only entries: `Schüler` for the existing admin overview and `Dateitypen` for runtime upload policy settings.
+- The `Dateitypen` page includes a centered Bootstrap `form-switch` that HTMX-posts to `/api/exammode` and swaps itself with the updated fragment.
 
 ## Service And Repo Layout
 
@@ -64,10 +66,15 @@ deno task ps
 - Active tests exist under `test/`, `middleware/`, and `lib/`.
 - `test/endpoints_test.ts` exercises live HTTP behavior against the running server.
 - Teachers can change `PERMITTED_FILETYPES` at runtime through the admin UI; upload validation reads the current in-memory config value on each request.
+- The `Dateitypen` page also contains the documentation-server firewall toggle; successful toggles update in-memory internet state after `exammode on|off` completes.
+- The current `exammode` success contract is simple: print `internet enabled` or `internet disabled` and exit with status `0`.
+- Internet state is initialized from env at process start and then tracked in memory for the rest of the runtime.
+- `templates/index.hbs` now shows toasts for HTMX error responses with any status >= 400, which is how `exammode` execution failures reach admins.
 
 ## Operational Notes
 
 - Recent implementation work for runtime file-type configuration and German UI labels shipped in issue `#88`.
+- On the current dev machine, `exammode` is a harmless stub in `PATH`, so toggling internet there does not change real connectivity.
 - For admin page testing with more realistic data volume, use start date December 1, 2025.
 - `scripts/color-theme.py` can extract Bootstrap 5 CSS variables from an image.
 - `scripts/startexam.sh` snapshots home, clears the submissions folder, and archives registrations into `forensic_registrations`.

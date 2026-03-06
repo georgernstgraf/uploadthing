@@ -72,6 +72,7 @@ Deno.test("GET /unterlagen - Unterlagen directory", async () => {
 
 Deno.test("Admin navigation and live file type updates", async () => {
     const originalTypes = [...config.PERMITTED_FILETYPES];
+    const originalInternetState = config.INTERNET_ACTIVE;
     const testEmail = "grafg@spengergasse.at";
 
     const anonymousRes = await fetch(`${BASE_URL}/whoami`);
@@ -101,6 +102,32 @@ Deno.test("Admin navigation and live file type updates", async () => {
     const settingsHtml = await settingsRes.text();
     assertEquals(settingsRes.status, 200);
     assertEquals(settingsHtml.includes("Erlaubte Dateitypen"), true);
+    assertEquals(settingsHtml.includes("Dokumentationsserver-Firewall-Regel"), true);
+    assertEquals(settingsHtml.includes("Internet aktiv"), true);
+
+    const disableInternetRes = await fetch(`${BASE_URL}/api/exammode`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": cookie,
+        },
+        body: "",
+    });
+    const disableInternetHtml = await disableInternetRes.text();
+    assertEquals(disableInternetRes.status, 200);
+    assertEquals(disableInternetHtml.includes("Internet blockiert"), true);
+
+    const enableInternetRes = await fetch(`${BASE_URL}/api/exammode`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": cookie,
+        },
+        body: "internet_active=on",
+    });
+    const enableInternetHtml = await enableInternetRes.text();
+    assertEquals(enableInternetRes.status, 200);
+    assertEquals(enableInternetHtml.includes("Internet aktiv"), true);
 
     const updateRes = await fetch(`${BASE_URL}/admin/filetypes`, {
         method: "POST",
@@ -130,6 +157,8 @@ Deno.test("Admin navigation and live file type updates", async () => {
     });
     await restoreRes.text();
     assertEquals(restoreRes.status, 200);
+
+    config.INTERNET_ACTIVE = originalInternetState;
 });
 
 // Dynamic test runner for all endpoints from JSON

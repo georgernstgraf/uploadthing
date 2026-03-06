@@ -26,6 +26,10 @@ export const AdminFileTypesSchema = zfd.formData({
     ),
 });
 
+export const AdminExamModeSchema = zfd.formData({
+    internet_active: zfd.text(z.enum(["on"]).optional()),
+});
+
 export const UploadSchema = zfd.formData({
     file: zfd.file(),
 });

@@ -35,6 +35,7 @@
 - Reject invalid input early in routes.
 - Keep user-facing validation text consistent with the existing German UI tone.
 - New user-facing UI text should be German for both student and admin flows.
+- HTMX admin controls should return plain response text with non-2xx status on failure so the global toast handler in `templates/index.hbs` can surface the error.
 
 ## Time Handling
 

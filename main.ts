@@ -28,6 +28,7 @@ app.route("/upload", uploadRouter);
 app.route("/", homeRouter);
 app.route("/", authRouter);
 app.route("/", apiRouter);
+app.route("/api", apiRouter);
 app.route("/", filesRouter);
 
 const abortController = new AbortController();

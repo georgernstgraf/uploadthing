@@ -19,6 +19,8 @@ const config = {
     PERMITTED_FILETYPES: parsePermittedFileTypes(
         Deno.env.get("PERMITTED_FILETYPES") || "zip",
     ),
+    INTERNET_ACTIVE: (Deno.env.get("INTERNET_ACTIVE") || "true") === "true",
+    EXAMMODE_COMMAND: Deno.env.get("EXAMMODE_COMMAND") || "exammode",
     SERVICE_DN: Deno.env.get("SERVICE_DN")!,
     SERVICE_PW: Deno.env.get("SERVICE_PW")!,
     SERVICE_URL: Deno.env.get("SERVICE_URL")!,
