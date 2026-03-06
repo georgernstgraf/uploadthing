@@ -84,7 +84,15 @@ class ServiceClientFactory {
 }
 
 export const serviceClientFactory = new ServiceClientFactory();
-void serviceClientFactory.makeClient();
+
+async function getOrCreateClient(): Promise<Client> {
+    try {
+        return serviceClientFactory.getClient();
+    } catch {
+        await serviceClientFactory.makeClient();
+        return serviceClientFactory.getClient();
+    }
+}
 
 /**
  * Fetch an LDAP user by exact email.
@@ -118,7 +126,7 @@ export async function searchUsers(filter: string): Promise<LdapUserType[]> {
     };
 
     try {
-        const client = serviceClientFactory.getClient();
+        const client = await getOrCreateClient();
         const results = await client.search(cf.SEARCH_BASE, options);
         return results.searchEntries.map(resultFromEntry);
     } catch (e) {

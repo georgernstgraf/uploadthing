@@ -3,11 +3,13 @@
      hx-target="#main-content"
      class="d-flex justify-content-center gap-2 mt-5 mb-2 mx-auto p-1 flex-wrap">
     <a href="/"
-       class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Home</a>
+       class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Start</a>
     {{#if is_admin}}
         <a href="/admin"
-           class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Admin</a>
+           class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Schüler</a>
+        <a href="/admin/filetypes"
+           class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Dateitypen</a>
     {{/if}}
     <a href="/upload"
-       class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Zipfile Upload</a>
+       class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Datei hochladen</a>
 </nav>

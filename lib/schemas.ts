@@ -20,6 +20,12 @@ export const AdminQuerySchema = z.object({
     endtime: z.string().regex(/^\d{2}:\d{2}$/, "Ungültiges Zeitformat (HH:MM)").optional(),
 });
 
+export const AdminFileTypesSchema = zfd.formData({
+    permitted_filetypes: zfd.text(
+        z.string().min(1, "Mindestens ein Dateityp ist erforderlich"),
+    ),
+});
+
 export const UploadSchema = zfd.formData({
     file: zfd.file(),
 });

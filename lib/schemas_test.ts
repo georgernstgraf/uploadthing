@@ -1,6 +1,7 @@
 import { assertEquals, assertExists } from "@std/assert";
 import {
     ActiveIpsSchema,
+    AdminFileTypesSchema,
     AdminQuerySchema,
     LdapSearchSchema,
     RegisterSchema,
@@ -99,6 +100,20 @@ Deno.test("AdminQuerySchema - rejects invalid time format", () => {
 
 Deno.test("AdminQuerySchema - rejects time without colon", () => {
     const result = AdminQuerySchema.safeParse({ starttime: "0800" });
+    assertEquals(result.success, false);
+});
+
+Deno.test("AdminFileTypesSchema - accepts file types input", () => {
+    const formData = new FormData();
+    formData.set("permitted_filetypes", "zip, pdf");
+    const result = AdminFileTypesSchema.safeParse(formData);
+    assertEquals(result.success, true);
+});
+
+Deno.test("AdminFileTypesSchema - rejects empty file types input", () => {
+    const formData = new FormData();
+    formData.set("permitted_filetypes", "");
+    const result = AdminFileTypesSchema.safeParse(formData);
     assertEquals(result.success, false);
 });
 

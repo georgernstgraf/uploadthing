@@ -1,8 +1,20 @@
 import { assertEquals, assertExists } from "@std/assert";
-import config, { isProduction, isDevelopment } from "./config.ts";
+import config, {
+    isDevelopment,
+    isProduction,
+    parsePermittedFileTypes,
+} from "./config.ts";
 
 Deno.test("config - PERMITTED_FILETYPES is an array", () => {
     assertEquals(Array.isArray(config.PERMITTED_FILETYPES), true);
+});
+
+Deno.test("config - parsePermittedFileTypes normalizes input", () => {
+    assertEquals(parsePermittedFileTypes(".ZIP, md, zip , PDF"), [
+        "zip",
+        "md",
+        "pdf",
+    ]);
 });
 
 Deno.test("config - MAX_UPLOAD_MB has default value", () => {

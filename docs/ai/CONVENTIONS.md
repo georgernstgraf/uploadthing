@@ -34,6 +34,7 @@
 - Prefer schema validation with Zod and `zod-form-data` where the project already uses it.
 - Reject invalid input early in routes.
 - Keep user-facing validation text consistent with the existing German UI tone.
+- New user-facing UI text should be German for both student and admin flows.
 
 ## Time Handling
 

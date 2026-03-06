@@ -59,6 +59,13 @@ type AdminTemplateData = {
     admin_refresh_seconds: number;
 };
 
+type AdminFileTypesTemplateData = {
+    permitted_filetypes: string;
+    current_filetypes: string[];
+    success_message?: string;
+    error_message?: string;
+};
+
 // --- 3. Handlebars Helpers ---
 
 Handlebars.registerHelper("eq", function (a, b) {
@@ -134,6 +141,9 @@ export const adminTemplate = Handlebars.compile<AdminTemplateData>(
 );
 export const adminReportTemplate = Handlebars.compile<AdminTemplateData>(
     Deno.readTextFileSync("templates/admin-report.hbs"),
+);
+export const adminFileTypesTemplate = Handlebars.compile<AdminFileTypesTemplateData>(
+    Deno.readTextFileSync("templates/admin-filetypes.hbs"),
 );
 export const navTemplate = Handlebars.compile<NavTemplateData>(
     Deno.readTextFileSync("templates/nav.hbs"),

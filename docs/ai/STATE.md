@@ -12,8 +12,9 @@
 - `routes/auth.ts`: `GET /whoami`, `GET /ldap`, `POST /register`.
 - `routes/upload.ts`: authenticated upload form and submission handling.
 - `routes/api.ts`: `POST /activeips` for IP activity ingestion.
-- `routes/admin.ts`: admin overview, download of submissions plus DB backup, and a wipe action for the submissions directory.
+- `routes/admin.ts`: admin overview, runtime file type settings for teachers, download of submissions plus DB backup, and a wipe action for the submissions directory.
 - `routes/files.ts`: serves `static/` and authenticated `unterlagen/` files.
+- Admin navigation now shows two teacher-only entries: `Schüler` for the existing admin overview and `Dateitypen` for runtime upload policy settings.
 
 ## Service And Repo Layout
 
@@ -21,6 +22,7 @@
 - `repo/repo.ts` re-exports Prisma access, SQLite access, and repository modules.
 - `repo/prismadb.ts` owns Prisma lifecycle.
 - `repo/db.ts` owns the shared SQLite connection and WAL mode.
+- `repo/ldapuser.ts` now creates the LDAP client lazily on first real LDAP access instead of at import time.
 
 ## Data Model
 
@@ -60,6 +62,7 @@ deno task ps
 - That script sources `.env`, starts the server with `deno task start`, then runs `deno test -A --env-file`.
 - Active tests exist under `test/`, `middleware/`, and `lib/`.
 - `test/endpoints_test.ts` exercises live HTTP behavior against the running server.
+- Teachers can change `PERMITTED_FILETYPES` at runtime through the admin UI; upload validation reads the current in-memory config value on each request.
 
 ## Operational Notes
 

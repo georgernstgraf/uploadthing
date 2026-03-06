@@ -15,6 +15,11 @@
 - The frontend is intentionally server-rendered with Handlebars templates and Bootstrap, with HTMX-style partial responses for lighter interactions.
 - This keeps the exam workflow simple, fast to load, and easy to operate in constrained environments.
 
+## Runtime-Editable Upload Policy
+
+- Allowed upload file types are initialized from env but can be changed by admins while the process is running.
+- Upload validation reads the current in-memory config value rather than treating the env-derived startup value as immutable.
+
 ## Hybrid Persistence Strategy
 
 - Prisma is used for the `users` model and client generation.

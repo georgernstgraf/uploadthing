@@ -1,3 +1,12 @@
+export function parsePermittedFileTypes(raw: string): string[] {
+    return [...new Set(
+        raw
+            .split(",")
+            .map((s) => s.trim().toLowerCase().replace(/^\.+/, ""))
+            .filter(Boolean),
+    )];
+}
+
 const config = {
     ABGABEN_DIR: Deno.env.get("ABGABEN_DIR") || `${Deno.env.get("HOME")}/abgaben`,
     UNTERLAGEN_DIR: Deno.env.get("UNTERLAGEN_DIR") || `${Deno.env.get("HOME")}/unterlagen`,
@@ -7,10 +16,9 @@ const config = {
         Deno.env.get("LISTEN_PORT")
     }`,
     MAX_UPLOAD_MB: Number(Deno.env.get("MAX_UPLOAD_MB") || "50"),
-    PERMITTED_FILETYPES: (Deno.env.get("PERMITTED_FILETYPES") || "zip")
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean),
+    PERMITTED_FILETYPES: parsePermittedFileTypes(
+        Deno.env.get("PERMITTED_FILETYPES") || "zip",
+    ),
     SERVICE_DN: Deno.env.get("SERVICE_DN")!,
     SERVICE_PW: Deno.env.get("SERVICE_PW")!,
     SERVICE_URL: Deno.env.get("SERVICE_URL")!,

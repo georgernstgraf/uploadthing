@@ -70,6 +70,68 @@ Deno.test("GET /unterlagen - Unterlagen directory", async () => {
     await res.text(); // consume body
 });
 
+Deno.test("Admin navigation and live file type updates", async () => {
+    const originalTypes = [...config.PERMITTED_FILETYPES];
+    const testEmail = "grafg@spengergasse.at";
+
+    const anonymousRes = await fetch(`${BASE_URL}/whoami`);
+    const anonymousHtml = await anonymousRes.text();
+    assertEquals(anonymousHtml.includes('href="/admin"'), false);
+    assertEquals(anonymousHtml.includes('href="/admin/filetypes"'), false);
+
+    const registerRes = await fetch(`${BASE_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `email=${encodeURIComponent(testEmail)}`,
+    });
+    await registerRes.text();
+    const cookie = registerRes.headers.get("set-cookie");
+    assertExists(cookie);
+
+    const homeRes = await fetch(`${BASE_URL}/`, {
+        headers: { "Cookie": cookie },
+    });
+    const homeHtml = await homeRes.text();
+    assertEquals(homeHtml.includes(">Schüler<"), true);
+    assertEquals(homeHtml.includes('href="/admin/filetypes"'), true);
+
+    const settingsRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+        headers: { "Cookie": cookie },
+    });
+    const settingsHtml = await settingsRes.text();
+    assertEquals(settingsRes.status, 200);
+    assertEquals(settingsHtml.includes("Erlaubte Dateitypen"), true);
+
+    const updateRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": cookie,
+        },
+        body: "permitted_filetypes=.zip,%20pdf",
+    });
+    const updateHtml = await updateRes.text();
+    assertEquals(updateRes.status, 200);
+    assertEquals(updateHtml.includes(".pdf"), true);
+
+    const uploadRes = await fetch(`${BASE_URL}/upload`, {
+        headers: { "Cookie": cookie },
+    });
+    const uploadHtml = await uploadRes.text();
+    assertEquals(uploadHtml.includes(".pdf"), true);
+
+    const restoreRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": cookie,
+        },
+        body: `permitted_filetypes=${encodeURIComponent(originalTypes.join(", "))}`,
+    });
+    await restoreRes.text();
+    assertEquals(restoreRes.status, 200);
+});
+
 // Dynamic test runner for all endpoints from JSON
 Deno.test("All endpoints from endpoints.json respond", async (t) => {
     for (const endpoint of endpoints.endpoints as Endpoint[]) {

@@ -28,6 +28,7 @@
 - Uploaded filenames must go through `safeFileComponent` and versioned path handling.
 - Do not add raw path joins or trust user-provided filenames.
 - Upload behavior is constrained by `MAX_UPLOAD_MB`, `PERMITTED_FILETYPES`, and filesystem directories from env.
+- `PERMITTED_FILETYPES` starts from env but can be changed at runtime by admins, so do not assume it is immutable after process start.
 
 ## Test Suite Sharp Edges
 
@@ -40,6 +41,7 @@
 ## External Dependency Risks
 
 - LDAP access can be slow or unavailable; the code includes reconnect logic and retry timing.
+- Do not start LDAP connections at module import time; eager startup causes unrelated tests to leak timers, reads, and TLS handshakes.
 - Browser-visible flows may also depend on local directories such as `ABGABEN_DIR` and `UNTERLAGEN_DIR` existing and being readable.
 
 ## Generated Artifacts

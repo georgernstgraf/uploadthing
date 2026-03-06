@@ -1,15 +1,45 @@
-import { Hono } from "hono";
+import { Context, Hono } from "hono";
 import { HonoContextVars } from "../lib/types.ts";
 import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
-import config from "../lib/config.ts";
-import { AdminQuerySchema } from "../lib/schemas.ts";
+import config, { parsePermittedFileTypes } from "../lib/config.ts";
+import { AdminFileTypesSchema, AdminQuerySchema } from "../lib/schemas.ts";
 
 const adminRouter = new Hono<{ Variables: HonoContextVars }>();
 const start_ms_earlier = 3.6 * 1.5e6;
 const one_day_ms = 24 * 3.6e6;
 const time_cutoff_ms = config.TODAY_HOURS_CUTOFF * 3.6e6;
+
+function renderFileTypesPage(
+    c: Context<{ Variables: HonoContextVars }>,
+    success_message?: string,
+    error_message?: string,
+) {
+    const remote_user = c.get("remoteuser");
+    if (!remote_user) {
+        return c.redirect("/whoami");
+    }
+
+    const content = hbs.adminFileTypesTemplate({
+        permitted_filetypes: config.PERMITTED_FILETYPES.join(", "),
+        current_filetypes: config.PERMITTED_FILETYPES,
+        success_message,
+        error_message,
+    });
+
+    if (c.req.header("HX-Request") === "true") {
+        return c.html(content, error_message ? 400 : 200);
+    }
+
+    return c.html(hbs.indexTemplate({
+        remote_user,
+        remote_ip: c.get("remoteip"),
+        is_admin: c.get("is_admin"),
+        page_title: config.page_title,
+        content,
+    }), error_message ? 400 : 200);
+}
 
 adminRouter.get("/", async (c) => {
     const is_admin = c.get("is_admin");
@@ -94,6 +124,43 @@ adminRouter.get("/", async (c) => {
         page_title: config.page_title,
         content,
     }));
+});
+
+adminRouter.get("/filetypes", (c) => {
+    const is_admin = c.get("is_admin");
+    if (!is_admin) {
+        return c.text("Forbidden", 403);
+    }
+
+    return renderFileTypesPage(c);
+});
+
+adminRouter.post("/filetypes", async (c) => {
+    const is_admin = c.get("is_admin");
+    if (!is_admin) {
+        return c.text("Forbidden", 403);
+    }
+
+    const formData = await c.req.formData();
+    const validation = AdminFileTypesSchema.safeParse(formData);
+    if (!validation.success) {
+        return renderFileTypesPage(
+            c,
+            undefined,
+            validation.error.issues[0]?.message || "Ungueltige Dateitypen",
+        );
+    }
+
+    const fileTypes = parsePermittedFileTypes(validation.data.permitted_filetypes);
+    if (fileTypes.length === 0) {
+        return renderFileTypesPage(c, undefined, "Mindestens ein Dateityp ist erforderlich");
+    }
+
+    config.PERMITTED_FILETYPES = fileTypes;
+    return renderFileTypesPage(
+        c,
+        `Erlaubte Dateitypen aktualisiert: ${fileTypes.map((type) => "." + type).join(", ")}`,
+    );
 });
 
 adminRouter.get("/download-abgaben", (c) => {

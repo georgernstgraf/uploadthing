@@ -60,6 +60,14 @@
         },
         {
             "method": "GET",
+            "path": "/admin/filetypes",
+            "description": "Serve admin file types page",
+            "expectedOutput": {
+                "type": "HTML page or forbidden"
+            }
+        },
+        {
+            "method": "GET",
             "path": "/",
             "description": "Home page with directory index",
             "expectedOutput": {
