@@ -1,319 +1,74 @@
 # AGENTS.md - Repository Guidelines for Coding Agents
 
-This document provides essential guidelines for coding agents working in this repository.
+This document is the entry point for AI agents working in this repository.
 
-## Project Overview
+## Knowledge Bootstrap
 
-- **Runtime**: Deno with TypeScript
-- **Framework**: Hono web framework
-- **Database**: SQLite with Prisma 6 ORM
-- **Frontend**: Handlebars templates + Bootstrap 5 + HTMX
-- **Architecture**: Layered (middleware → routes → service → repo → database)
+Before starting any task, read the following files in order:
 
-## Build & Development Commands
+1. `docs/ai/HANDOFF.md` - read first and act on it
+2. `docs/ai/CONVENTIONS.md`
+3. `docs/ai/DECISIONS.md`
+4. `docs/ai/PITFALLS.md`
+5. `docs/ai/STATE.md`
+6. `docs/ai/DOMAIN.md` (if the task touches business logic or exam workflows)
 
-### Core Commands
+If the user says "continue", "resume", or "finish where we left off", read and act on `docs/ai/HANDOFF.md` immediately. If it lists open tasks, finish them before starting unrelated work unless the user explicitly says otherwise.
 
-```bash
-deno task dev          # Development server with file watching and env file
-deno task start        # Production server with env file
-deno task check        # TypeScript checking across all modules
-```
+## Project Snapshot
 
-### Testing Commands
+- Runtime: Deno with TypeScript
+- Framework: Hono
+- Frontend: Handlebars templates + Bootstrap 5 + HTMX
+- Database: SQLite with Prisma-generated client plus direct SQLite access
+- Architecture: middleware -> routes -> service -> repo -> database
 
-```bash
-deno task test         # Run integration tests (main_test.ts)
-deno task testdb       # Database-specific tests (main_test_db.ts)
-```
-
-### Database Commands (Prisma)
+## Core Commands
 
 ```bash
-deno task pg           # Generate Prisma client
-deno task pv           # Validate Prisma schema
-deno task pd           # Deploy migrations
-deno task pmd          # Create and run migrations (dev)
-deno task pms          # Migration status
-deno task pmr          # Reset database
-deno task ps           # Open Prisma Studio
+deno task dev        # Development server with file watching
+deno task start      # Production-style local start
+deno task check      # Type checking
+deno task lint       # Linting
+deno task test       # Automated test suite
+deno task fullcheck  # check + lint + test
 ```
 
-### Tool calls
-
-- **github**: use the `gh` command, it is authorized.
-- **browser**: use the `agent-browser` command on `http://localhost:8000/` to test the application. Run `agent-browser -h` for comprehensive usage instructions.
-- **admin page testing**: To view a good amount of admin items, use start date December 1, 2025.
-- **color-theme**: extract Bootstrap 5 CSS variables from an image:
-  ```bash
-  scripts/.venv/bin/python3 scripts/color-theme.py <image-path>
-  ```
-
-## Code Style Guidelines
-
-### Formatting
-
-- **Indentation**: 4 spaces (configured in deno.json; use also for .hbs, .html, and .css files)
-- **Line endings**: LF
-- **File extensions**: Always include `.ts` for imports
-- **Language**: Mixed German (comments/variables) and English (functions/types)
-
-### Import Organization
-
-```typescript
-// External dependencies first
-import { Hono } from "hono";
-import { createMiddleware } from "hono/factory";
-
-// Local lib imports
-import { UserType, Variables } from "../lib/types.ts";
-import { localDateString } from "../lib/timefunc.ts";
-
-// Service/feature imports
-import * as service from "../service/service.ts";
-import cf from "../lib/config.ts";
-```
-
-### Naming Conventions
-
-- **Files**: lowercase with underscores (`remoteip.ts`, `timefunc.ts`)
-- **Variables**: camelCase (`remote_user`, `remote_ip`)
-- **Functions**: camelCase (`get_unterlagen`, `safeFileComponent`)
-- **Types**: PascalCase with descriptive suffixes (`UserType`, `LdapUserType`)
-- **Constants**: SCREAMING_SNAKE_CASE or camelCase based on scope
-
-### Type Definitions
-
-```typescript
-// Use interfaces for complex objects
-export type UserType = {
-    ip?: string;
-    name: string;
-    email: string;
-    klasse: string;
-};
-
-// Use generic Hono types for middleware
-const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
-```
-
-## Error Handling Patterns
-
-### Standard Error Handling
-
-```typescript
-try {
-    // Operation that might fail
-    const result = await someOperation();
-    return c.json(result);
-} catch (e) {
-    console.error("Operation failed:", e);
-    return c.text((e as Error).message, 500);
-} finally {
-    // Cleanup operations
-    await cleanup();
-}
-```
-
-### Resource Management
-
-- Always clean up resources in `finally` blocks
-- Use `Deno.close()` for file handles
-- Properly close database connections
-
-## Database Patterns
-
-### Prisma Usage
-
-```typescript
-// Use the generated client from lib/prismaclient/
-import { PrismaClient } from "../lib/prismaclient/client.ts";
-
-// Service layer: Business logic with local time
-export async function getRecentActivity() {
-    const now = new Date();
-    const localTime = localDateTimeString(now);
-    // Business logic here
-}
-
-// Repository layer: Direct database access
-export async function findIPsInTimeRange(startTime: Date, endTime: Date) {
-    return await prisma.ipfact.findMany({
-        where: {
-            timestamp: {
-                gte: startTime,
-                lte: endTime
-            }
-        }
-    });
-}
-```
-
-### Exam Data Retention
-
-- The `user` table is wiped before each exam.
-- For admin history on older exams, use the `registrations` table to map historical IPs to user data.
-
-### Time Zone Handling
-
-- **Service Layer**: Work with local time for user display
-- **Repository Layer**: Store and query with UTC Date objects
-- **Database**: Store UTC timestamps
-- Use `lib/timefunc.ts` utilities for consistent formatting
-
-## Architecture Patterns
-
-### Technology Constraints
-
-- Avoid calling npm by any means
-- make sure no node_modules directory gets created
-
-### Route Handler Structure
-
-```typescript
-router.get("/endpoint", (c) => {
-    const remote_user = c.get("remoteuser");
-    if (!remote_user) {
-        return c.text("Unauthorized", 401);
-    }
-
-    // Extract and validate query parameters
-    const param = c.req.query("param") || defaultValue;
-
-    // Business logic through service layer
-    const data = service.someMethod(param);
-
-    // Template rendering
-    return c.html(hbs.renderTemplate("template", { data }));
-});
-```
-
-### Middleware Usage
-
-```typescript
-export const someMiddleware = createMiddleware(async (c, next) => {
-    // Pre-processing
-    c.set("variable", value);
-
-    await next();
-
-    // Post-processing if needed
-});
-```
-
-## Testing Guidelines
-
-### Current Testing Approach
-
-- No formal testing framework (use direct script execution)
-- Focus on integration testing over unit testing
-- Test files: `main_test.ts`, `main_test_db.ts`
-- Use environment files for test configuration
-
-### Running Single Tests
+## Database Commands
 
 ```bash
-# Run specific test scenarios
-deno run -A --env-file main_test.ts
-deno run -A --env-file main_test_db.ts
+deno task pg         # Generate Prisma client
+deno task pv         # Validate Prisma schema
+deno task pmD        # Deploy migrations
+deno task pmd        # Create and run migrations (dev)
+deno task pms        # Migration status
+deno task pmr        # Reset database
+deno task ps         # Prisma Studio
 ```
 
-## Security Considerations
+## Completion Criteria
 
-### Input Validation
+- Automated testing is mandatory before a task is considered complete.
+- Before finishing, run `deno task check`, `deno task lint`, and `deno task test`.
+- Do not report success if any of those commands fail.
+- If a required validation step is blocked by missing environment, external services, or another hard dependency, stop and report the blocker explicitly.
 
-```typescript
-// Use safeFileComponent for path sanitization
-import { safeFileComponent } from "../lib/utils.ts";
+## Repository Constraints
 
-// Session-based authentication via middleware
-const remoteuser = c.get("remoteuser");
-if (!remoteuser) {
-    return c.text("Unauthorized", 401);
-}
-```
+- Do not use `npm` commands in this repository.
+- Do not create a `node_modules` directory.
+- Use `gh` for GitHub operations.
+- Use `agent-browser` against `http://localhost:8000/` for browser-based verification when needed.
 
-### Environment Variables
+## Documentation Layout
 
-- Use `Deno.env.get()` for configuration
-- Never commit sensitive data to repository
-- Use `.env` files for local development
+Long-lived project knowledge lives in `docs/ai/`:
 
-## Language & Documentation
+- `docs/ai/HANDOFF.md` - current handoff status and immediate next actions
+- `docs/ai/CONVENTIONS.md` - coding, testing, and workflow conventions
+- `docs/ai/DECISIONS.md` - architectural decisions and rationale
+- `docs/ai/PITFALLS.md` - common mistakes and sharp edges
+- `docs/ai/STATE.md` - current implementation and operational state
+- `docs/ai/DOMAIN.md` - business and exam-domain context
 
-### Mixed Language Usage
-
-- **Code**: English (functions, types, external libraries)
-- **Comments**: German (business logic explanations)
-- **Templates**: German (user-facing content)
-- **Variable Names**: Often German domain-specific terms
-
-### Comment Style
-
-```typescript
-// German comments for domain-specific logic
-// Hier keine Template Types, bitte!
-const start_ms_earlier = 3.6 * 1.5e6; // 1.5 Stunden zuvor
-```
-
-## Module Organization
-
-### Directory Structure
-
-```console
-lib/           # Utilities, types, configuration
-middleware/    # Hono middleware functions
-routes/        # Route handlers
-service/       # Business logic layer
-repo/          # Data access layer
-prisma/        # Database schema and migrations
-static/        # Static assets (CSS, JS)
-templates/     # Handlebars templates
-```
-
-### Module Re-exports
-
-```typescript
-// service/service.ts aggregates all services
-export * from "./user.ts";
-export * from "./ipfact.ts";
-export * from "./history.ts";
-
-// Use star imports for clean boundaries
-import * as service from "../service/service.ts";
-```
-
-## Common Pitfalls to Avoid
-
-1. **Forgetting .ts extensions** in import paths
-2. **Mixing time zones** - always use lib/timefunc.ts utilities
-3. **Missing cleanup** in async operations
-4. **Hardcoding paths** - use safeFileComponent for file operations
-5. **Ignoring middleware order** - auth/compression before routes
-6. **Environment variables** - use Deno.env.get() for populating the config module
-
-## Development Workflow
-
-1. **Before coding**: Run `deno task check` to ensure type safety
-2. **During development**: Use `deno task dev` with file watching
-3. **After changes**:
-   - Check with `deno task check` to ensure type safety
-   - Lint with `deno task lint` to ensure code quality
-   - Test with `deno task test` and `deno task testdb`
-4. **Database changes**: Use Prisma commands (`pg`, `pmd`, `pd`)
-5. **Before stopping**: Run full check, lint, and test suite
-6. **working on issues**: If work on an issue is completed, make a comment containing it. It is also permitted and encouraged to update issue descriptions and comment on them during the planning phase to clarify requirements or document decisions.
-
-> **IMPORTANT**: Linting must always succeed before the completion of any task. Run `deno task lint` and fix all issues before marking work as complete.
-
-> **IMPORTANT**: Every commit message must include a reference to the GitHub issue it addresses (e.g., "issue #13"). If there is no existing issue for the task, ask the user to create one or provide the issue number.
-
-> **CRITICAL**: **NEVER commit or push unless explicitly asked by the user.** After completing work, report the result and STOP. Do not run `git commit` or `git push` on your own. Wait for the user to request it.
-
-## Special Notes
-
-- **Prisma Client**: Custom output directory in `lib/prismaclient/`
-- **Time Handling**: Critical distinction between service (local) and repo (UTC) layers
-- **Authentication**: Session management via signed cookies, supplemented by physical/operational screen checks and extensive IP-based admin tracking.
-- **Templates**: Handlebars with Bootstrap 5 and HTMX integration
-- **File Upload**: Primary feature with security considerations
+`docs/ai/` is the canonical location for agent knowledge in this repository. Keep this file focused on bootstrap and completion rules, and do not duplicate the same guidance under tool-specific folders.
