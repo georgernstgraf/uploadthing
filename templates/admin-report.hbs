@@ -7,7 +7,7 @@
          hx-select="#report > *"
          hx-include="#timeselector form">
     <h2 class="text-center mb-0 fs-4">SchülerInnen und IP Adressen</h2>
-    <h6 class="text-center text-muted mb-2 small"> Zeitraum: {{#unless withinTimeCutoff}}
+    <h6 class="text-center mb-2 small"> Zeitraum: {{#unless withinTimeCutoff}}
             {{startdate}}
         {{/unless}}
         {{starttime}} - {{#if endtimeInFuture}} jetzt {{else}}
@@ -40,25 +40,25 @@
                                             {{this.cookie_presents.[0].user.name}}
                                         {{else}} Unbekannt {{/if}}
                                     </span>
-                                    <span class="text-muted fw-normal d-block text-truncate small">{{this.ip}}</span>
+                                    <span class="fw-normal d-block text-truncate small">{{this.ip}}</span>
                                 </div>
                             </div>
                             <div class="badge bg-light text-dark border ms-1 flex-shrink-0 small">
                                 {{this.seen_count}}x
                             </div>
                         </div>
-                        <div class="text-muted fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}
+                        <div class="fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}
                         </div>
                     </summary>
                     <div class="card-body mt-0 pt-2 border-top flex-grow-1">
-                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold text-muted small">Historie</h6>
+                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold small">Historie</h6>
                         <div class="row g-1">
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 small text-primary">Cookies</div>
                                 <ul class="list-group list-group-flush small rounded overflow-auto mb-1" style="max-height: 80px;">
                                     {{#each this.cookie_presents}}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span class="text-muted">{{this.at}}</span>
+                                            <span>{{this.at}}</span>
                                             <span class="fw-semibold ms-2 text-break">
                                                 {{#if this.user}}
                                                     {{this.user.name}}
@@ -73,7 +73,7 @@
                                 <ul class="list-group list-group-flush small rounded overflow-auto mb-1" style="max-height: 80px;">
                                     {{#each this.registrations}}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span class="text-muted">{{this.at}}</span>
+                                            <span>{{this.at}}</span>
                                             <span class="fw-semibold ms-2 text-break">
                                                 {{#if this.user}}
                                                     {{this.user.name}}
@@ -89,7 +89,7 @@
                                     <ul class="list-group list-group-flush small rounded overflow-auto mb-1" style="max-height: 80px;">
                                         {{#each this.submissions}}
                                             <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                                <span class="text-muted">{{this.at}}</span>
+                                                <span>{{this.at}}</span>
                                                 <span class="fw-semibold ms-2 text-break">{{this.filename}}</span>
                                             </li>
                                         {{/each}}
@@ -101,7 +101,7 @@
                                 <ul class="list-group list-group-flush small rounded overflow-auto" style="max-height: 80px;">
                                     {{#each this.seen_at_desc }}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span class="text-muted">{{this}}</span>
+                                            <span>{{this}}</span>
                                         </li>
                                     {{/each}}
                                 </ul>
@@ -111,7 +111,7 @@
                 </details>
             </div>
         {{else}}
-            <div class="col-12 text-center text-muted fst-italic py-2">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
+            <div class="col-12 text-center fst-italic py-2">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
         {{/each}}
     </div>
     <!-- Table 2: IPs without registered names -->
@@ -128,22 +128,22 @@
                                     ? </div>
                                 <div class="overflow-hidden">
                                     <span class="d-block text-truncate">{{this.ip}}</span>
-                                    <span class="text-muted fw-normal small">Unbekannt</span>
+                                    <span class="fw-normal small">Unbekannt</span>
                                 </div>
                             </div>
                             <div class="badge bg-light text-dark border ms-1 flex-shrink-0 small">
                                 {{this.seen_count}}x
                             </div>
                         </div>
-                        <div class="text-muted fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}
+                        <div class="fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}
                         </div>
                     </summary>
                     <div class="card-body mt-0 pt-2 border-top flex-grow-1">
-                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold text-muted small">Historie</h6>
+                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold small">Historie</h6>
                         <div class="row g-1">
                             <div class="col-12">
-                                <div class="fw-bold text-center mb-1 text-muted small">Kein Benutzer</div>
-                                <p class="text-muted text-center fst-italic mb-1 small">Für diese IP wurde kein aktueller Cookie-Besuch gefunden.</p>
+                                <div class="fw-bold text-center mb-1 small">Kein Benutzer</div>
+                                <p class="text-center fst-italic mb-1 small">Für diese IP wurde kein aktueller Cookie-Besuch gefunden.</p>
                             </div>
                             {{#if this.registrations.length}}
                                 <div class="col-12">
@@ -151,7 +151,7 @@
                                     <ul class="list-group list-group-flush small rounded overflow-auto mb-1" style="max-height: 80px;">
                                         {{#each this.registrations}}
                                             <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                                <span class="text-muted">{{this.at}}</span>
+                                                <span>{{this.at}}</span>
                                                 <span class="fw-semibold ms-2 text-break">
                                                     {{#if this.user}}
                                                         {{this.user.name}}
@@ -167,7 +167,7 @@
                                 <ul class="list-group list-group-flush small rounded overflow-auto" style="max-height: 80px;">
                                     {{#each this.seen_at_desc }}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span class="text-muted">{{this}}</span>
+                                            <span>{{this}}</span>
                                             <span class="text-body-secondary fst-italic ms-2">Unbekannt</span>
                                         </li>
                                     {{/each}}
@@ -178,7 +178,7 @@
                 </details>
             </div>
         {{else}}
-            <div class="col-12 text-center text-muted fst-italic py-2">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
+            <div class="col-12 text-center fst-italic py-2">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
         {{/each}}
     </div>
 </section>

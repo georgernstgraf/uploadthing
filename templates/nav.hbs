@@ -1,18 +1,19 @@
 <nav id="main-nav"
      hx-boost="true"
      hx-target="#main-content"
-     class="card shadow-sm border-0 mt-5 mb-2 mx-auto"
-     style="width: fit-content; max-width: 100%;">
-    <div class="card-body d-flex justify-content-center gap-2 p-2 flex-wrap">
+     class="d-flex justify-content-center gap-2 mt-5 mb-3 mx-auto flex-wrap">
         <a href="/"
-           class="btn btn-info btn-sm">Start</a>
+           class="btn btn-info btn-sm rounded-pill px-4 text-uppercase fw-semibold"
+           style="min-width: 220px;">Start</a>
         {{#if is_admin}}
             <a href="/admin"
-               class="btn btn-info btn-sm">Schüler</a>
+               class="btn btn-info btn-sm rounded-pill px-4 text-uppercase fw-semibold"
+               style="min-width: 220px;">Schüler</a>
             <a href="/admin/filetypes"
-               class="btn btn-info btn-sm">Dateitypen</a>
+               class="btn btn-info btn-sm rounded-pill px-4 text-uppercase fw-semibold"
+               style="min-width: 220px;">Dateitypen</a>
         {{/if}}
         <a href="/upload"
-           class="btn btn-info btn-sm">Datei hochladen</a>
-    </div>
+           class="btn btn-info btn-sm rounded-pill px-4 text-uppercase fw-semibold"
+           style="min-width: 220px;">Datei hochladen</a>
 </nav>

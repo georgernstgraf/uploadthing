@@ -59,6 +59,12 @@
                 showToast(xhr.responseText || 'Ein Fehler ist aufgetreten', 'danger');
             }
         });
+
+        document.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target && evt.detail.target.id === 'main-content') {
+                window.scrollTo({ top: 0, behavior: 'auto' });
+            }
+        });
     </script>
     <script src="/static/alpine.min.js"
             defer></script>

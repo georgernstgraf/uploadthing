@@ -32,7 +32,7 @@ Bitte ZIP Datei auswählen
                        accept="{{#if accept_attr}}{{accept_attr}}{{else}}.zip{{/if}}"
                        required
                        @change="fileName = $el.files[0]?.name || 'Datei hier ablegen oder klicken'">
-                <div class="d-flex align-items-center justify-content-center gap-2 text-muted fw-bold">
+                <div class="d-flex align-items-center justify-content-center gap-2 fw-bold">
                     <span x-text="fileName"></span>
                 </div>
             </div>

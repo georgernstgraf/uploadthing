@@ -3,24 +3,24 @@
      hx-target="#main-content"
      class="d-flex justify-content-center mb-2">
     <a href="/whoami"
-        class="card shadow-sm border-0 text-reset text-decoration-none w-100"
-        style="max-width: 100%; min-width: 300px;">
+        class="card shadow-sm border-0 text-reset text-decoration-none"
+        style="width: min(100%, 320px);">
         {{#if remote_user}}
-            <div class="card-body d-flex align-items-center justify-content-between gap-3 py-3">
+            <div class="card-body d-flex align-items-center justify-content-between gap-3 py-2 px-3">
                 <div class="d-flex align-items-center gap-2">
                     <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-bg-primary fw-bold"
                          style="width: 36px; height: 36px;">
                         {{givenNameInitial remote_user.name}}
                     </div>
                     <div class="d-flex flex-column text-start">
-                        <span class="fw-bold">{{remote_user.name}}</span>
-                        <span class="text-muted small">{{remote_user.email}} / {{remote_user.klasse}}</span>
+                        <span class="fw-bold lh-sm">{{remote_user.name}}</span>
+                        <span class="small">{{remote_user.email}} / {{remote_user.klasse}}</span>
                     </div>
                 </div>
-                <span class="badge text-bg-light">Change</span>
+                <span class="badge text-bg-light rounded-pill">Change</span>
             </div>
         {{else}}
-            <div class="card-body py-3">
+            <div class="card-body py-2 px-3 text-center">
                 <span class="text-danger fw-bold">Bitte Name bekanntgeben!</span>
             </div>
         {{/if}}

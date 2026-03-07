@@ -18,6 +18,7 @@
 ## Manual Theme Deployment
 
 - Uploadthing uses a fixed theme infrastructure derived from `color-tool`, but deployed as static assets inside `uploadthing/static/`.
+- `/static/bootstrap.css` must be the full Bootstrap 5.3.8 stylesheet, not just a generated palette-variable file.
 - Users can only toggle light versus dark mode for the currently installed theme.
 - The active palette is shipped as a generic `/static/theme.css` file that should remain a direct copy of a color-tool theme CSS.
 - Theme replacement is an administrator task: replace `/static/theme.css` plus `/static/img/bg-light.jpg` and `/static/img/bg-dark.jpg`, then recommit.

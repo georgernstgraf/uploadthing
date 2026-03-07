@@ -7,7 +7,7 @@
     <div class="card shadow-sm {{#if internet_active}}border-success-subtle bg-success-subtle{{else}}border-danger-subtle bg-danger-subtle{{/if}}">
         <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
             <h3 class="card-title fw-bold fs-5 mb-1">Dokumentationsserver-Firewall-Regel</h3>
-            <p class="card-text text-muted small mb-0">Schaltet den Internetzugang für die Prüfungsumgebung während des Betriebs um.</p>
+            <p class="card-text small mb-0">Schaltet den Internetzugang für die Prüfungsumgebung während des Betriebs um.</p>
         </div>
         <div class="card-body d-flex flex-column align-items-center text-center gap-3 pt-3">
             <div class="form-check form-switch m-0 d-flex justify-content-center">
@@ -22,10 +22,10 @@
             <div class="badge rounded-pill px-3 py-2 fs-6 {{#if internet_active}}text-bg-success{{else}}text-bg-danger{{/if}}">
                 {{#if internet_active}}Internet aktiv{{else}}Internet blockiert{{/if}}
             </div>
-            <p class="small text-muted mb-0">
+            <p class="small mb-0">
                 {{#if internet_active}}Die Firewall-Regel ist deaktiviert. Voller Internetzugang ist freigegeben.{{else}}Die Firewall-Regel ist aktiviert. Internetzugang ist gesperrt.{{/if}}
             </p>
-            <div class="htmx-indicator small text-muted">Firewall-Regel wird aktualisiert ...</div>
+            <div class="htmx-indicator small">Firewall-Regel wird aktualisiert ...</div>
         </div>
     </div>
 </form>

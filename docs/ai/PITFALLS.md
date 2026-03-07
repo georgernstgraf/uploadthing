@@ -58,6 +58,7 @@
 ## Theme Asset Workflow
 
 - Do not edit `/static/theme.css` when switching visual themes; it is meant to stay a direct copy from `color-tool`.
+- Do not use the old generated variable-only `static/bootstrap.css`; uploadthing needs the full Bootstrap stylesheet or the Bootstrap component classes render almost unstyled.
 - Uploadthing-specific adaptation belongs in `/static/app.css`.
 - The installed theme background images must use the generic filenames `/static/img/bg-light.jpg` and `/static/img/bg-dark.jpg`.
 - The light/dark toggle must not swap CSS files at runtime; only the background image and `data-bs-theme` mode should change.
