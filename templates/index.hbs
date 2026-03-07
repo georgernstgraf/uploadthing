@@ -1,25 +1,37 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de"
+      data-bs-theme="light">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
     <title>{{page_title}}</title>
+    <script>
+        (function () {
+            const savedMode = localStorage.getItem('uploadthing-mode');
+            const mode = savedMode === 'dark' ? 'dark' : 'light';
+            const bg = mode === 'dark' ? "url('/static/img/bg-dark.jpg')" : "url('/static/img/bg-light.jpg')";
+
+            document.documentElement.setAttribute('data-bs-theme', mode);
+            document.documentElement.style.setProperty('--app-background-image', bg);
+        })();
+    </script>
     <link rel="icon"
           type="image/svg+xml"
           href="/static/favicon.svg">
     <link rel="stylesheet"
           href="/static/ibm-plex-sans.css">
     <link rel="stylesheet"
-          href="/static/base.css">
+          href="/static/bootstrap.css">
     <link rel="stylesheet"
-          href="/static/utilities.css">
+          href="/static/ui-config.css">
     <link rel="stylesheet"
-          href="/static/components.css">
-    <link id="theme-css"
-          rel="stylesheet"
-          href="/static/leisure-pink-theme.css">
+          href="/static/theme.css">
+    <link rel="stylesheet"
+          href="/static/bootstrap-overrides.css">
+    <link rel="stylesheet"
+          href="/static/app.css">
     <style>
         [x-cloak] {
             display: none !important;
@@ -60,47 +72,45 @@
                         type="button"
                         aria-hidden="true"
                         tabindex="-1"
-                        disabled> Design </button>
+                        disabled> Dunkel </button>
                 <button class="mb-0 text-center text-dark h1 flex-grow-1 fs-2">http://{{page_title}}/</button>
                 <button id="theme-toggle"
-                        class="btn btn-sm btn-outline-info rounded-pill px-3 theme-toggle-btn">Design</button>
+                        type="button"
+                        aria-label="Hell-Dunkel-Modus wechseln"
+                        class="btn btn-sm btn-outline-info rounded-pill px-3 theme-toggle-btn">Dunkel</button>
             </div>
         </div>
     </header>
     <script>
         (function () {
-            const themes = [
-                'lego-lightblue',
-                'lego-darkblue',
-                'leisure-pink',
-                'leisure-purple',
-                'krokus'
-            ];
+            const storageKey = 'uploadthing-mode';
+            const backgrounds = {
+                light: "url('/static/img/bg-light.jpg')",
+                dark: "url('/static/img/bg-dark.jpg')",
+            };
 
-            const savedIndex = localStorage.getItem('themeIndex');
-            let currentIndex = savedIndex !== null ? parseInt(savedIndex, 10) : 0;
+            function setMode(mode) {
+                const nextMode = mode === 'dark' ? 'dark' : 'light';
+                const toggleBtn = document.getElementById('theme-toggle');
 
-            if (currentIndex < 0 || currentIndex >= themes.length) {
-                currentIndex = 0;
+                document.documentElement.setAttribute('data-bs-theme', nextMode);
+                document.documentElement.style.setProperty('--app-background-image', backgrounds[nextMode]);
+
+                if (toggleBtn) {
+                    toggleBtn.textContent = nextMode === 'light' ? 'Dunkel' : 'Hell';
+                }
+
+                localStorage.setItem(storageKey, nextMode);
             }
 
-            function applyTheme(index) {
-                const themeName = themes[index];
-                const themeCss = document.getElementById('theme-css');
-
-                themeCss.href = `/static/${themeName}-theme.css`;
-                document.body.className = '';
-                document.body.classList.add(`theme-${themeName}`);
-            }
-
-            applyTheme(currentIndex);
+            const savedMode = localStorage.getItem(storageKey);
+            setMode(savedMode === 'dark' ? 'dark' : 'light');
 
             window.addEventListener('load', () => {
                 const toggleBtn = document.getElementById('theme-toggle');
                 toggleBtn.addEventListener('click', () => {
-                    currentIndex = (currentIndex + 1) % themes.length;
-                    applyTheme(currentIndex);
-                    localStorage.setItem('themeIndex', currentIndex);
+                    const currentMode = document.documentElement.getAttribute('data-bs-theme');
+                    setMode(currentMode === 'dark' ? 'light' : 'dark');
                 });
             });
         })();

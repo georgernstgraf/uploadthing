@@ -1,15 +1,15 @@
 <nav id="main-nav"
      hx-boost="true"
      hx-target="#main-content"
-     class="d-flex justify-content-center gap-2 mt-5 mb-2 mx-auto p-1 flex-wrap">
+     class="d-flex justify-content-center gap-2 mt-5 mb-2 mx-auto p-1 flex-wrap pill-nav">
     <a href="/"
-       class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Start</a>
+       class="btn btn-sm btn-info border-0 flex-grow-1 flex-sm-grow-0">Start</a>
     {{#if is_admin}}
         <a href="/admin"
-           class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Schüler</a>
+           class="btn btn-sm btn-info border-0 flex-grow-1 flex-sm-grow-0">Schüler</a>
         <a href="/admin/filetypes"
-           class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Dateitypen</a>
+           class="btn btn-sm btn-info border-0 flex-grow-1 flex-sm-grow-0">Dateitypen</a>
     {{/if}}
     <a href="/upload"
-       class="btn btn-sm btn-info text-white border-0 flex-grow-1 flex-sm-grow-0">Datei hochladen</a>
+       class="btn btn-sm btn-info border-0 flex-grow-1 flex-sm-grow-0">Datei hochladen</a>
 </nav>

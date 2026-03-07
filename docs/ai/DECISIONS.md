@@ -15,6 +15,15 @@
 - The frontend is intentionally server-rendered with Handlebars templates and Bootstrap, with HTMX-style partial responses for lighter interactions.
 - This keeps the exam workflow simple, fast to load, and easy to operate in constrained environments.
 
+## Manual Theme Deployment
+
+- Uploadthing uses a fixed theme infrastructure derived from `color-tool`, but deployed as static assets inside `uploadthing/static/`.
+- Users can only toggle light versus dark mode for the currently installed theme.
+- The active palette is shipped as a generic `/static/theme.css` file that should remain a direct copy of a color-tool theme CSS.
+- Theme replacement is an administrator task: replace `/static/theme.css` plus `/static/img/bg-light.jpg` and `/static/img/bg-dark.jpg`, then recommit.
+- Uploadthing keeps only one small local stylesheet, `/static/app.css`, on top of the color-tool stack.
+- The old multi-file local CSS layer (`base.css`, `theme-bridge.css`, `utilities.css`, `components.css`) is intentionally removed.
+
 ## Dual API Mounting
 
 - `apiRouter` is mounted at both `/` and `/api`.

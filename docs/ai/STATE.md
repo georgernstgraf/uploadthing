@@ -19,6 +19,9 @@
 - Admin navigation now shows two teacher-only entries: `Schüler` for the IP-forensics/admin overview and `Dateitypen` for runtime upload policy settings plus maintenance actions.
 - The `Dateitypen` page includes a centered Bootstrap `form-switch` that HTMX-posts to `/api/exammode` and swaps itself with the updated fragment.
 - The `Schüler` page no longer contains the download and wipe controls; those maintenance actions now live on `Dateitypen` alongside file-type management.
+- `templates/index.hbs` now loads the color-tool-style theme stack in this order: `bootstrap.css`, `ui-config.css`, `theme.css`, `bootstrap-overrides.css`, then one small local layer: `app.css`.
+- Theme mode is persisted in `localStorage` under `uploadthing-mode`; default is light if nothing is stored.
+- Light/dark switching no longer swaps theme CSS files; it keeps `/static/theme.css` loaded and only changes `data-bs-theme` plus the body background image.
 
 ## Service And Repo Layout
 
@@ -73,6 +76,8 @@ deno task ps
 - `templates/index.hbs` now shows toasts for HTMX error responses with any status >= 400, which is how `exammode` execution failures reach admins.
 - The admin forensics page now classifies known versus unknown IPs from `cookiepresents`, not from `registrations`.
 - Explicit registration actions are still shown in the admin forensics history, separate from cookie-presence history.
+- The currently installed visual theme is the Alien theme from `color-tool`, deployed under generic asset names: `/static/theme.css`, `/static/img/bg-light.jpg`, and `/static/img/bg-dark.jpg`.
+- The old uploadthing CSS files `base.css`, `theme-bridge.css`, `utilities.css`, and `components.css` have been removed.
 
 ## Operational Notes
 

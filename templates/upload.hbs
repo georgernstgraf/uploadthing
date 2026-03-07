@@ -20,9 +20,9 @@ Bitte ZIP Datei auswählen
 {{~/if~}}
 </label>
             <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all upload-dropzone"
-                 @dragover.prevent="$el.style.borderColor = 'var(--leisure-primary)'"
-                 @dragleave.prevent="$el.style.borderColor = 'var(--leisure-secondary)'"
-                 @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--leisure-secondary)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
+                 @dragover.prevent="$el.style.borderColor = 'var(--app-accent)'"
+                 @dragleave.prevent="$el.style.borderColor = 'var(--app-border)'"
+                 @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--app-border)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
                 <input type="file"
                        x-ref="fileInput"
                        class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
