@@ -22,6 +22,8 @@
 - `templates/index.hbs` now loads the color-tool-style theme stack in this order: `bootstrap.css`, `ui-config.css`, `theme.css`, `bootstrap-overrides.css`, then one small local layer: `app.css`.
 - Theme mode is persisted in `localStorage` under `uploadthing-mode`; default is light if nothing is stored.
 - Light/dark switching no longer swaps theme CSS files; it keeps `/static/theme.css` loaded and only changes `data-bs-theme` plus the body background image.
+- `static/app.css` is now limited to global glue only: the fixed background-image layer, the app font family, and `details > summary` marker cleanup.
+- Major Handlebars views now use Bootstrap component semantics directly (`card-header`, `card-body`, `card-footer`, `list-group`, `badge`, Bootstrap buttons) so the imported color-tool overrides apply through native Bootstrap classes.
 
 ## Service And Repo Layout
 

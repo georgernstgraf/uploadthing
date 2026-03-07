@@ -1,5 +1,8 @@
-<div class="leisure-card mx-auto mw-600">
-    <h2 class="my-3 text-center mb-4">Anmelden / Name ändern</h2>
+<div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
+    <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
+        <h2 class="card-title mb-0">Anmelden / Name ändern</h2>
+    </div>
+    <div class="card-body pt-4">
     {{#if remote_user}}
         <div class="alert alert-secondary mb-3"> Bereits angemeldet als: <strong>{{remote_user.email}}</strong>
         </div>
@@ -22,7 +25,7 @@
     <div class="mb-3">
         <label class="w-100 fw-bold mb-2">Auswahl</label>
         <select id="options-select"
-                class="form-select form-select-lg mt-1 bg-white-50"
+                class="form-select form-select-lg mt-1 bg-body-tertiary"
                 name="email"
                 size="10"
                 hx-post="/register"
@@ -33,5 +36,6 @@
                     selected
                     class="p-2 text-muted fst-italic">Bitte oben suchen...</option>
         </select>
+    </div>
     </div>
 </div>

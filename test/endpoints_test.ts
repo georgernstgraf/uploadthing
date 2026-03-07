@@ -222,7 +222,7 @@ Deno.test("POST /upload - Authenticated upload with MD5 verification", async () 
     assertExists(md5Match);
     const responseMd5 = md5Match[1];
 
-    const filenameMatch = html.match(/<span class="fw-bold text-break fs-xl">([^<]+)<\/span>/);
+    const filenameMatch = html.match(/<span class="fw-bold text-break[^"]*">([^<]+)<\/span>/);
     assertExists(filenameMatch);
     const filename = filenameMatch[1];
 

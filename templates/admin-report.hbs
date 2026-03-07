@@ -6,8 +6,8 @@
          hx-swap="innerHTML"
          hx-select="#report > *"
          hx-include="#timeselector form">
-    <h2 class="text-center mb-0 fs-2xl">SchülerInnen und IP Adressen</h2>
-    <h6 class="text-center text-muted mb-2 fs-sm"> Zeitraum: {{#unless withinTimeCutoff}}
+    <h2 class="text-center mb-0 fs-4">SchülerInnen und IP Adressen</h2>
+    <h6 class="text-center text-muted mb-2 small"> Zeitraum: {{#unless withinTimeCutoff}}
             {{startdate}}
         {{/unless}}
         {{starttime}} - {{#if endtimeInFuture}} jetzt {{else}}
@@ -19,46 +19,47 @@
         {{/if}}
     </h6>
     <!-- Table 1: IPs with registered names -->
-    <h5 class="text-center mt-2 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto section-heading border-primary">Bekannte IP-Adressen</h5>
+    <h5 class="text-center mt-2 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-primary" style="letter-spacing: 0.05em;">Bekannte IP-Adressen</h5>
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_with_name}}
             <div class="col">
-                <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column {{#if this.is_stale}}admin-stale{{/if}} {{#if this.has_submission}}admin-submitted{{/if}} bg-white-20">
-                    <summary class="fw-bold cursor-pointer list-none">
+                <details class="h-100 card shadow-sm mb-0 d-flex flex-column {{#if this.is_stale}}opacity-75{{/if}} {{#if this.has_submission}}border-success border-3{{/if}}">
+                    <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 size-26 fs-sm fw-bold initial-avatar">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-bg-primary"
+                                     style="width: 26px; height: 26px; font-size: 0.875rem;">
                                     {{#if this.cookie_presents.[0].user}}
                                         {{givenNameInitial this.cookie_presents.[0].user.name}}
                                     {{else}} ? {{/if}}
                                 </div>
                                 <div class="overflow-hidden">
-                                    <span class="d-block text-truncate fs-base"
+                                    <span class="d-block text-truncate"
                                           title="{{this.cookie_presents.[0].user.name}}">
                                         {{#if this.cookie_presents.[0].user}}
                                             {{this.cookie_presents.[0].user.name}}
                                         {{else}} Unbekannt {{/if}}
                                     </span>
-                                    <span class="text-muted fw-normal d-block text-truncate fs-sm">{{this.ip}}</span>
+                                    <span class="text-muted fw-normal d-block text-truncate small">{{this.ip}}</span>
                                 </div>
                             </div>
-                            <div class="badge bg-light text-dark border ms-1 flex-shrink-0 fs-sm">
+                            <div class="badge bg-light text-dark border ms-1 flex-shrink-0 small">
                                 {{this.seen_count}}x
                             </div>
                         </div>
-                        <div class="text-muted fw-normal mt-0 text-end fs-xs"> zuletzt: {{this.seen_at_desc.[0]}}
+                        <div class="text-muted fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}
                         </div>
                     </summary>
-                    <div class="mt-2 pt-2 border-top flex-grow-1">
-                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold text-muted fs-xs">Historie</h6>
+                    <div class="card-body mt-0 pt-2 border-top flex-grow-1">
+                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold text-muted small">Historie</h6>
                         <div class="row g-1">
                             <div class="col-12">
-                                <div class="fw-bold text-center mb-1 fs-sm text-leisure-primary">Cookies</div>
-                                <ul class="list-unstyled p-1 rounded mb-1 admin-list-bg">
+                                <div class="fw-bold text-center mb-1 small text-primary">Cookies</div>
+                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1" style="max-height: 80px;">
                                     {{#each this.cookie_presents}}
-                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between admin-item">
+                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span class="text-muted">{{this.at}}</span>
-                                            <span class="history-item-ip">
+                                            <span class="fw-semibold ms-2 text-break">
                                                 {{#if this.user}}
                                                     {{this.user.name}}
                                                 {{else}} Unbekannt {{/if}}
@@ -68,12 +69,12 @@
                                 </ul>
                             </div>
                             <div class="col-12">
-                                <div class="fw-bold text-center mb-1 fs-sm text-leisure-primary">Registrierungen</div>
-                                <ul class="list-unstyled p-1 rounded mb-1 admin-list-bg">
+                                <div class="fw-bold text-center mb-1 small text-primary">Registrierungen</div>
+                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1" style="max-height: 80px;">
                                     {{#each this.registrations}}
-                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between admin-item">
+                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span class="text-muted">{{this.at}}</span>
-                                            <span class="history-item-ip">
+                                            <span class="fw-semibold ms-2 text-break">
                                                 {{#if this.user}}
                                                     {{this.user.name}}
                                                 {{else}} Unbekannt {{/if}}
@@ -84,22 +85,22 @@
                             </div>
                             {{#if this.submissions.length}}
                                 <div class="col-12">
-                                    <div class="fw-bold text-center mb-1 fs-sm text-leisure-primary">Abgaben</div>
-                                    <ul class="list-unstyled p-1 rounded mb-1 admin-list-bg">
+                                    <div class="fw-bold text-center mb-1 small text-primary">Abgaben</div>
+                                    <ul class="list-group list-group-flush small rounded overflow-auto mb-1" style="max-height: 80px;">
                                         {{#each this.submissions}}
-                                            <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between admin-item">
+                                            <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                                 <span class="text-muted">{{this.at}}</span>
-                                                <span class="history-item-ip">{{this.filename}}</span>
+                                                <span class="fw-semibold ms-2 text-break">{{this.filename}}</span>
                                             </li>
                                         {{/each}}
                                     </ul>
                                 </div>
                             {{/if}}
                             <div class="col-12">
-                                <div class="fw-bold text-center mb-1 fs-sm text-leisure-primary">IP: {{this.ip}}</div>
-                                <ul class="list-unstyled p-1 rounded admin-list-bg">
+                                <div class="fw-bold text-center mb-1 small text-primary">IP: {{this.ip}}</div>
+                                <ul class="list-group list-group-flush small rounded overflow-auto" style="max-height: 80px;">
                                     {{#each this.seen_at_desc }}
-                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between admin-item">
+                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span class="text-muted">{{this}}</span>
                                         </li>
                                     {{/each}}
@@ -110,47 +111,48 @@
                 </details>
             </div>
         {{else}}
-            <div class="col-12 text-center text-muted fst-italic py-2 fs-base">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
+            <div class="col-12 text-center text-muted fst-italic py-2">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
         {{/each}}
     </div>
     <!-- Table 2: IPs without registered names -->
-    <h5 class="text-center mt-3 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto section-heading border-secondary">Unbekannte IP-Adressen</h5>
+    <h5 class="text-center mt-3 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-secondary" style="letter-spacing: 0.05em;">Unbekannte IP-Adressen</h5>
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_without_name}}
             <div class="col">
-                <details class="h-100 leisure-card p-2 mb-0 d-flex flex-column bg-white-70">
-                    <summary class="fw-bold cursor-pointer list-none">
+                <details class="h-100 card shadow-sm mb-0 d-flex flex-column">
+                    <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 size-26 fs-sm fw-bold initial-avatar-muted">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-bg-secondary"
+                                     style="width: 26px; height: 26px; font-size: 0.875rem;">
                                     ? </div>
                                 <div class="overflow-hidden">
-                                    <span class="d-block text-truncate fs-base">{{this.ip}}</span>
-                                    <span class="text-muted fw-normal fs-sm">Unbekannt</span>
+                                    <span class="d-block text-truncate">{{this.ip}}</span>
+                                    <span class="text-muted fw-normal small">Unbekannt</span>
                                 </div>
                             </div>
-                            <div class="badge bg-light text-dark border ms-1 flex-shrink-0 fs-sm">
+                            <div class="badge bg-light text-dark border ms-1 flex-shrink-0 small">
                                 {{this.seen_count}}x
                             </div>
                         </div>
-                        <div class="text-muted fw-normal mt-0 text-end fs-xs"> zuletzt: {{this.seen_at_desc.[0]}}
+                        <div class="text-muted fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}
                         </div>
                     </summary>
-                    <div class="mt-2 pt-2 border-top flex-grow-1">
-                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold text-muted fs-xs">Historie</h6>
+                    <div class="card-body mt-0 pt-2 border-top flex-grow-1">
+                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold text-muted small">Historie</h6>
                         <div class="row g-1">
                             <div class="col-12">
-                                <div class="fw-bold text-center mb-1 text-muted fs-sm">Kein Benutzer</div>
-                                <p class="text-muted text-center fst-italic mb-1 fs-xs">Für diese IP wurde kein aktueller Cookie-Besuch gefunden.</p>
+                                <div class="fw-bold text-center mb-1 text-muted small">Kein Benutzer</div>
+                                <p class="text-muted text-center fst-italic mb-1 small">Für diese IP wurde kein aktueller Cookie-Besuch gefunden.</p>
                             </div>
                             {{#if this.registrations.length}}
                                 <div class="col-12">
-                                    <div class="fw-bold text-center mb-1 fs-sm text-leisure-primary">Registrierungen</div>
-                                    <ul class="list-unstyled p-1 rounded mb-1 admin-list-bg">
+                                    <div class="fw-bold text-center mb-1 small text-primary">Registrierungen</div>
+                                    <ul class="list-group list-group-flush small rounded overflow-auto mb-1" style="max-height: 80px;">
                                         {{#each this.registrations}}
-                                            <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between admin-item">
+                                            <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                                 <span class="text-muted">{{this.at}}</span>
-                                                <span class="history-item-ip">
+                                                <span class="fw-semibold ms-2 text-break">
                                                     {{#if this.user}}
                                                         {{this.user.name}}
                                                     {{else}} Unbekannt {{/if}}
@@ -161,12 +163,12 @@
                                 </div>
                             {{/if}}
                             <div class="col-12">
-                                <div class="fw-bold text-center mb-1 fs-sm text-leisure-primary">IP: {{this.ip}}</div>
-                                <ul class="list-unstyled p-1 rounded admin-list-bg">
+                                <div class="fw-bold text-center mb-1 small text-primary">IP: {{this.ip}}</div>
+                                <ul class="list-group list-group-flush small rounded overflow-auto" style="max-height: 80px;">
                                     {{#each this.seen_at_desc }}
-                                        <li class="mb-0 border-bottom pb-1 px-1 d-flex justify-content-between admin-item">
+                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span class="text-muted">{{this}}</span>
-                                            <span class="history-item-user">Unbekannt</span>
+                                            <span class="text-body-secondary fst-italic ms-2">Unbekannt</span>
                                         </li>
                                     {{/each}}
                                 </ul>
@@ -176,7 +178,7 @@
                 </details>
             </div>
         {{else}}
-            <div class="col-12 text-center text-muted fst-italic py-2 fs-base">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
+            <div class="col-12 text-center text-muted fst-italic py-2">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
         {{/each}}
     </div>
 </section>

@@ -28,6 +28,7 @@
 - Repositories own persistence details and time conversion for stored timestamps.
 - Shared types and helpers belong under `lib/`.
 - Template rendering is server-side via Handlebars in `lib/handlebars.ts` and `templates/`.
+- In Handlebars templates, prefer native Bootstrap component structure (`card-header`, `card-body`, `card-footer`, `list-group`, `badge`, `btn`) over generic wrapper classes when the element already matches a Bootstrap component concept.
 
 ## Validation And Parsing
 

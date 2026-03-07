@@ -65,19 +65,24 @@
 </head>
 
 <body>
-    <header class="position-fixed top-0 start-0 end-0 app-header z-header">
+    <header class="position-fixed top-0 start-0 end-0"
+            style="z-index: 1030; backdrop-filter: blur(var(--CTBS-GlassBlur)); -webkit-backdrop-filter: blur(var(--CTBS-GlassBlur));">
         <div class="position-relative mx-2 mt-2">
-            <div class="leisure-card py-1 d-flex align-items-center gap-2 header-bar rounded-4-lg">
-                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 theme-toggle-btn header-spacer"
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body py-2 px-3 d-flex flex-row-reverse flex-sm-row flex-wrap flex-sm-nowrap align-items-center gap-2">
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
                         type="button"
                         aria-hidden="true"
                         tabindex="-1"
+                        style="min-width: 5.5rem; visibility: hidden; pointer-events: none;"
                         disabled> Dunkel </button>
-                <button class="mb-0 text-center text-dark h1 flex-grow-1 fs-2">http://{{page_title}}/</button>
+                <h1 class="mb-0 text-center text-body flex-grow-1 fs-2">http://{{page_title}}/</h1>
                 <button id="theme-toggle"
                         type="button"
                         aria-label="Hell-Dunkel-Modus wechseln"
-                        class="btn btn-sm btn-outline-info rounded-pill px-3 theme-toggle-btn">Dunkel</button>
+                        class="btn btn-sm btn-outline-info rounded-pill px-3"
+                        style="min-width: 5.5rem;">Dunkel</button>
+                </div>
             </div>
         </div>
     </header>

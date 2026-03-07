@@ -1,8 +1,12 @@
 <div x-data="endTimeToggle()"
      x-init="init()">
     <section id="timeselector"
-             class="leisure-card mb-2 mx-auto py-2 mw-800">
-        <h2 class="text-center mb-2 fs-2xl">Zeitauswahl</h2>
+             class="card shadow-sm border-0 mb-2 mx-auto"
+             style="max-width: 800px;">
+        <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
+            <h2 class="card-title mb-0 fs-4">Zeitauswahl</h2>
+        </div>
+        <div class="card-body py-3">
         <form hx-get="/admin"
               hx-target="#main-content"
               hx-push-url="true"
@@ -15,7 +19,7 @@
             </datalist>
             <div class="row mt-1 g-2 align-items-center">
                 <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase fs-sm ls-normal"> Startzeit <input type="text"
+                    <label class="form-label fw-bold text-uppercase small"> Startzeit <input type="text"
                                name="starttime"
                                class="form-control form-control-sm text-center"
                                id="timestartselect"
@@ -24,7 +28,7 @@
                     </label>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase fs-sm ls-normal"> Startdatum <input type="date"
+                    <label class="form-label fw-bold text-uppercase small"> Startdatum <input type="date"
                                name="startdate"
                                class="form-control form-control-sm text-center"
                                value="{{startdate}}">
@@ -34,13 +38,13 @@
             <div class="row mt-2">
                 <div class="col text-center">
                     <div
-                         class="form-check form-switch d-inline-flex align-items-center gap-2 p-2 fs-lg bg-white-90 border border-2 rounded-4-lg cursor-pointer">
+                         class="form-check form-switch d-inline-flex align-items-center gap-2 p-2 fs-5 bg-body-tertiary border border-2 rounded-4">
                         <input class="form-check-input m-0"
                                type="checkbox"
                                id="toggleEndTime"
                                x-model="showEndTime"
                                @change="savePreference()">
-                        <label class="form-check-label fw-bold m-0 cursor-pointer"
+                        <label class="form-check-label fw-bold m-0"
                                for="toggleEndTime">Endzeit festlegen</label>
                     </div>
                 </div>
@@ -50,7 +54,7 @@
                  x-transition
                  x-cloak>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase fs-sm ls-normal"> Endzeit <input type="text"
+                    <label class="form-label fw-bold text-uppercase small"> Endzeit <input type="text"
                                name="endtime"
                                class="form-control form-control-sm text-center"
                                id="timeendselect"
@@ -59,7 +63,7 @@
                     </label>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase fs-sm ls-normal"> Enddatum <input type="date"
+                    <label class="form-label fw-bold text-uppercase small"> Enddatum <input type="date"
                                name="enddate"
                                class="form-control form-control-sm text-center"
                                value="{{enddate}}">
@@ -69,11 +73,12 @@
             <div class="row mt-2">
                 <div class="col">
                     <input type="submit"
-                           class="btn btn-info w-100 py-1 fs-lg"
+                           class="btn btn-info btn-lg w-100 py-1"
                            value="Suchen">
                 </div>
             </div>
         </form>
+        </div>
     </section>
     <script>
         function endTimeToggle() {

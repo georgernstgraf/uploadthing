@@ -23,6 +23,7 @@
 - Theme replacement is an administrator task: replace `/static/theme.css` plus `/static/img/bg-light.jpg` and `/static/img/bg-dark.jpg`, then recommit.
 - Uploadthing keeps only one small local stylesheet, `/static/app.css`, on top of the color-tool stack.
 - The old multi-file local CSS layer (`base.css`, `theme-bridge.css`, `utilities.css`, `components.css`) is intentionally removed.
+- `app.css` should stay structural and behavioral; palette and contrast decisions should come from Bootstrap variables and the imported color-tool files rather than app-owned color overrides.
 
 ## Dual API Mounting
 

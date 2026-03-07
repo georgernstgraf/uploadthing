@@ -3,29 +3,31 @@
           hx-encoding="multipart/form-data"
           hx-target="#main-content"
           hx-swap="innerHTML"
-          class="leisure-card needs-validation mx-auto mw-600"
+          class="card shadow-sm border-0 needs-validation mx-auto"
+          style="max-width: 600px;"
           novalidate="">
-        <div class="mb-5 text-center">
-            <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm text-leisure-primary">
+        <div class="card-body text-center">
+            <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm text-primary">
                 <img src="/static/img/icons/cloud-arrow-up.svg"
                      alt=""
                      width="48"
                      height="48">
             </div>
-            <label class="d-block form-label h3 mb-2 fw-bold">
+            <h2 class="card-title h3 mb-2 fw-bold">
 {{~#if types_label~}}
 Bitte {{types_label}} Datei auswählen
 {{else}}
 Bitte ZIP Datei auswählen
 {{~/if~}}
-</label>
-            <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all upload-dropzone"
-                 @dragover.prevent="$el.style.borderColor = 'var(--app-accent)'"
-                 @dragleave.prevent="$el.style.borderColor = 'var(--app-border)'"
-                 @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--app-border)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
+</h2>
+            <div class="mt-4 p-4 border border-2 border-dashed rounded-4 position-relative bg-body-tertiary shadow-sm"
+                 @dragover.prevent="$el.style.borderColor = 'var(--bs-primary)'"
+                 @dragleave.prevent="$el.style.borderColor = 'var(--bs-border-color)'"
+                 @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--bs-border-color)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
                 <input type="file"
                        x-ref="fileInput"
-                       class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
+                       class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0"
+                       style="cursor: pointer;"
                        name="file"
                        accept="{{#if accept_attr}}{{accept_attr}}{{else}}.zip{{/if}}"
                        required
@@ -42,9 +44,9 @@ Bitte eine ZIP-Datei auswählen.
 {{~/if~}}
 </div>
         </div>
-        <div class="text-center">
+        <div class="card-footer bg-transparent border-0 text-center pt-0 pb-4">
             <button type="submit"
-                    class="btn btn-info btn-lg px-5 py-3 fs-5 shadow-sm min-w-200">
+                    class="btn btn-info btn-lg px-5 py-3 shadow-sm">
                 <span>Hochladen</span>
                 <span class="htmx-indicator">
                     <span class="spinner-border spinner-border-sm"
