@@ -12,5 +12,3 @@ if [ -z "${pids}" ]; then
 	exit 0
 fi
 kill ${pids}
-sleep 0.5
-kill -9 ${pids}
