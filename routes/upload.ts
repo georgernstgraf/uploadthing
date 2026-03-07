@@ -12,14 +12,11 @@ const uploadRouter = new Hono<{ Variables: HonoContextVars }>();
 
 function formatGermanFileTypes(types: string[]): { label: string; feedback: string } {
     if (types.length === 1) {
-        return { label: types[0], feedback: types[0] };
+        return { label: `.${types[0]}`, feedback: `.${types[0]}` };
     }
-    if (types.length === 2) {
-        return { label: `${types[0]} oder ${types[1]}`, feedback: `${types[0]} oder ${types[1]}` };
-    }
-    const allButLast = types.slice(0, -1).join(", ");
-    const last = types[types.length - 1];
-    return { label: `${allButLast} oder ${last}`, feedback: `${allButLast} oder ${last}` };
+    const allButLast = types.slice(0, -1).map((t) => `.${t}`);
+    const last = `.${types[types.length - 1]}`;
+    return { label: `${allButLast.join(" oder ")} oder ${last}`, feedback: `${allButLast.join(" oder ")} oder ${last}` };
 }
 
 uploadRouter.get("/", (c) => {
@@ -33,7 +30,7 @@ uploadRouter.get("/", (c) => {
 
     const content = hbs.uploadTemplate({
         permitted_types: types,
-        accept_attr: "." + types.join(",."),
+        accept_attr: types.map((t) => `.${t}`).join(","),
         types_label: germanTypes.label,
         types_feedback: germanTypes.feedback,
     });

@@ -104,6 +104,16 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(settingsHtml.includes("Erlaubte Dateitypen"), true);
     assertEquals(settingsHtml.includes("Dokumentationsserver-Firewall-Regel"), true);
     assertEquals(settingsHtml.includes("Internet aktiv"), true);
+    assertEquals(settingsHtml.includes("Abgaben &amp; Datenbank herunterladen (TAR.GZ)"), true);
+    assertEquals(settingsHtml.includes("Abgaben-Verzeichnis leeren"), true);
+
+    const adminRes = await fetch(`${BASE_URL}/admin`, {
+        headers: { "Cookie": cookie },
+    });
+    const adminHtml = await adminRes.text();
+    assertEquals(adminRes.status, 200);
+    assertEquals(adminHtml.includes("Abgaben &amp; Datenbank herunterladen (TAR.GZ)"), false);
+    assertEquals(adminHtml.includes("Abgaben-Verzeichnis leeren"), false);
 
     const disableInternetRes = await fetch(`${BASE_URL}/api/exammode`, {
         method: "POST",

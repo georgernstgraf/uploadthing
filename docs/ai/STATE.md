@@ -16,8 +16,9 @@
 - `routes/api.ts`: `POST /activeips` for IP activity ingestion and `POST /exammode` for admin-only internet/firewall toggling.
 - `routes/admin.ts`: admin overview, runtime file type settings for teachers, download of submissions plus DB backup, and a wipe action for the submissions directory.
 - `routes/files.ts`: serves `static/` and authenticated `unterlagen/` files.
-- Admin navigation now shows two teacher-only entries: `Schüler` for the existing admin overview and `Dateitypen` for runtime upload policy settings.
+- Admin navigation now shows two teacher-only entries: `Schüler` for the IP-forensics/admin overview and `Dateitypen` for runtime upload policy settings plus maintenance actions.
 - The `Dateitypen` page includes a centered Bootstrap `form-switch` that HTMX-posts to `/api/exammode` and swaps itself with the updated fragment.
+- The `Schüler` page no longer contains the download and wipe controls; those maintenance actions now live on `Dateitypen` alongside file-type management.
 
 ## Service And Repo Layout
 

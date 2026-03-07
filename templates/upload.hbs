@@ -19,13 +19,6 @@ Bitte {{types_label}} Datei auswählen
 Bitte ZIP Datei auswählen
 {{~/if~}}
 </label>
-            <p class="text-muted small">{{#if permitted_types}}
-{{~#each permitted_types as |type|~}}
-{{#if @index}}, {{/if}}.{{type}}
-{{~/each~}} Dateien sind erlaubt
-{{else}}
-Nur .zip Dateien sind erlaubt
-{{/if}}</p>
             <div class="mt-4 p-4 border-2 border-dashed rounded-4 position-relative hover-shadow transition-all upload-dropzone"
                  @dragover.prevent="$el.style.borderColor = 'var(--leisure-primary)'"
                  @dragleave.prevent="$el.style.borderColor = 'var(--leisure-secondary)'"

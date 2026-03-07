@@ -12,9 +12,9 @@
         {
             "method": "GET",
             "path": "/admin/download-abgaben",
-            "description": "Download abgaben as ZIP",
+            "description": "Download abgaben as TAR.GZ",
             "expectedOutput": {
-                "type": "application/zip"
+                "type": "application/gzip"
             }
         },
         {

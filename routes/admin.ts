@@ -181,8 +181,8 @@ adminRouter.get("/download-abgaben", (c) => {
         return c.text("Failed to create database backup.", 500);
     }
 
-    const cmd = new Deno.Command("zip", {
-        args: ["-q", "-r", "-", "."],
+    const cmd = new Deno.Command("tar", {
+        args: ["-czf", "-", "."],
         cwd: config.ABGABEN_DIR,
         stdout: "piped",
     });
@@ -190,9 +190,9 @@ adminRouter.get("/download-abgaben", (c) => {
     const child = cmd.spawn();
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").split("T").join("_").slice(0, 15);
-    const filename = `abgaben_${timestamp}.zip`;
+    const filename = `abgaben_${timestamp}.tar.gz`;
 
-    c.header("Content-Type", "application/zip");
+    c.header("Content-Type", "application/gzip");
     c.header("Content-Disposition", `attachment; filename="${filename}"`);
 
     return c.body(child.stdout);
