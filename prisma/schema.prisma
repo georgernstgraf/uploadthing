@@ -20,36 +20,36 @@ model ipfact {
 }
 
 model users {
-  id                    Int                      @id @default(autoincrement())
-  email                 String                   @unique
-  name                  String
-  klasse                String?
-  updatedat             DateTime
-  registrations         registrations[]
-  forensicRegistrations forensic_registrations[]
-  abgabens              abgaben[]
+  id             Int              @id @default(autoincrement())
+  email          String           @unique
+  name           String
+  klasse         String?
+  updatedat      DateTime
+  registrations  registrations[]
+  abgaben        abgaben[]
+  cookiepresents cookiepresents[]
 }
 
 model registrations {
   id     Int      @id @default(autoincrement())
   ip     String
+  at     DateTime @default(now())
   userId Int
   user   users    @relation(fields: [userId], references: [id])
-  at     DateTime
 
   @@index([userId])
   @@index([ip])
 }
 
-model forensic_registrations {
+model cookiepresents {
   id     Int      @id @default(autoincrement())
   ip     String
-  userId Int
-  user   users    @relation(fields: [userId], references: [id])
   at     DateTime @default(now())
+  user   users    @relation(fields: [userId], references: [id])
+  userId Int
 
-  @@index([userId])
   @@index([ip])
+  @@index([userId])
 }
 
 model abgaben {

@@ -31,7 +31,7 @@
 ## Data Model
 
 - Prisma schema lives in `prisma/schema.prisma`.
-- Tables/models in active use: `users`, `ipfact`, `registrations`, `forensic_registrations`, `abgaben`.
+- Tables/models in active use: `users`, `ipfact`, `registrations`, `cookiepresents`, `abgaben`.
 - `users` is accessed through Prisma.
 - The remaining operational tables use direct SQLite queries.
 
@@ -39,7 +39,7 @@
 
 - Session cookies contain `{ email, createdAt }`, encoded and HMAC-signed.
 - Request state in Hono context includes `remoteip`, `remoteuser`, `session`, and `is_admin`.
-- On each request, the session email is resolved back to a user record and registration may be refreshed for the current IP.
+- On each request, the session email is resolved back to a user record and a cookie-presence event is recorded for the current IP.
 
 ## Current Commands
 
@@ -71,6 +71,8 @@ deno task ps
 - The current `exammode` success contract is simple: print `internet enabled` or `internet disabled` and exit with status `0`.
 - Internet state is initialized from env at process start and then tracked in memory for the rest of the runtime.
 - `templates/index.hbs` now shows toasts for HTMX error responses with any status >= 400, which is how `exammode` execution failures reach admins.
+- The admin forensics page now classifies known versus unknown IPs from `cookiepresents`, not from `registrations`.
+- Explicit registration actions are still shown in the admin forensics history, separate from cookie-presence history.
 
 ## Operational Notes
 

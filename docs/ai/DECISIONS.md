@@ -28,7 +28,7 @@
 ## Hybrid Persistence Strategy
 
 - Prisma is used for the `users` model and client generation.
-- Direct SQLite access is still used for `ipfact`, `registrations`, `forensic_registrations`, and `abgaben`.
+- Direct SQLite access is still used for `ipfact`, `registrations`, `cookiepresents`, and `abgaben`.
 - This hybrid approach is intentional for now and should remain unless there is a deliberate migration plan.
 
 ## Exam-Oriented Authentication
@@ -36,6 +36,13 @@
 - The app does not use a conventional username/password flow for students.
 - Authentication is a hybrid of operational verification and a signed session cookie.
 - The session cookie stores minimal data and is re-hydrated into a user record on each request.
+
+## Cookie Presence Versus Explicit Registration
+
+- Explicit registration events and ongoing cookie-based presence are distinct concepts.
+- `registrations` records deliberate registration actions.
+- `cookiepresents` records each request that arrives with a valid cookie and resolved user.
+- The admin forensics view treats cookie presence as the current user attribution for an IP while still showing explicit registration history separately.
 
 ## Socket IP As Ground Truth
 

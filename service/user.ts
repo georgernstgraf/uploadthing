@@ -2,18 +2,13 @@ import { userRecordToUserType } from "../lib/user_mapper.ts";
 import type { UserType } from "../lib/types.ts";
 import * as usersRepo from "../repo/users.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
+import * as cookiepresentsService from "./cookiepresents.ts";
 
 /**
  * Fetch the latest registered user for a single IP.
  */
 export async function getRegisteredByIp(ip: string): Promise<UserType | null> {
-    const userId = registrationsRepo.getLatestRegistrationForIP(ip);
-    if (userId === null) return null;
-
-    const user = await usersRepo.getById(userId);
-    if (!user) return null;
-
-    return userRecordToUserType(user);
+    return await cookiepresentsService.getLatestUserByIp(ip);
 }
 
 /**

@@ -211,12 +211,7 @@ export const remoteIPMiddleware = createMiddleware<
                 session.refreshTimestamp();
             }
 
-            const existingReg = await service.registrations.getLatestIPForEmail(
-                session.email,
-            );
-            if (!existingReg || existingReg !== remoteip) {
-                await service.user.register(user, remoteip);
-            }
+            await service.cookiepresents.recordByEmail(session.email, remoteip);
 
             is_admin = remoteuser?.klasse === "LehrendeR";
         }

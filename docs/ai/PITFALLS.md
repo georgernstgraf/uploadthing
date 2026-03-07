@@ -49,6 +49,12 @@
 - The current dev machine ships a stub `exammode` in `PATH` that only echoes the success text, so local endpoint tests verify UI/backend wiring rather than a real firewall change.
 - Browser-visible flows may also depend on local directories such as `ABGABEN_DIR` and `UNTERLAGEN_DIR` existing and being readable.
 
+## Cookie Presence Semantics
+
+- Do not treat a valid session cookie hit as a new `registrations` event.
+- Current attribution for the admin forensics page comes from `cookiepresents`, while `registrations` remains a history of explicit registration actions.
+- Runtime code should no longer depend on `forensic_registrations`; the current schema uses `cookiepresents` instead.
+
 ## Generated Artifacts
 
 - `lib/prismaclient/` is generated output.

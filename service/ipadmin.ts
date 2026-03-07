@@ -8,6 +8,7 @@ export type ServiceIpAdmin = {
     ip: string;
     seen_count: number;
     seen_at_desc: string[]; // displayable times
+    cookie_presents: { at: string; user: UserType | null }[]; // sorted desc by at
     registrations: { at: string; user: UserType | null }[]; // sorted desc by at
     is_stale: boolean;
     submissions: { at: string; filename: string }[];
@@ -32,6 +33,7 @@ export async function for_range(
             ip,
             seen_count: 0,
             seen_at_desc: [],
+            cookie_presents: [],
             registrations: [],
             is_stale: false,
             submissions: [],
@@ -45,6 +47,11 @@ export async function for_range(
         ip_admin.seen_count = seen_at_desc.length;
         ip_admin.seen_at_desc = seen_at_desc.map((dt) =>
             localAutoString(new Date(dt))
+        );
+        ip_admin.cookie_presents = await service.cookiepresents.byIPInRange(
+            ip,
+            start,
+            end,
         );
         ip_admin.registrations = await service.registrations.byIPInRange(
             ip,
@@ -69,7 +76,7 @@ export async function for_range(
         const right = b.seen_at_desc[0] ?? "";
         return right.localeCompare(left);
     });
-    const registered = rv.filter((ipf) => ipf.registrations.length > 0);
-    const unregistered = rv.filter((ipf) => ipf.registrations.length === 0);
+    const registered = rv.filter((ipf) => ipf.cookie_presents.length > 0);
+    const unregistered = rv.filter((ipf) => ipf.cookie_presents.length === 0);
     return { registered, unregistered };
 }

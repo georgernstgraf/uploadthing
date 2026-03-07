@@ -8,13 +8,8 @@ export type RepoRegistrationRecord = {
 };
 
 const registrationsByIPInRange_stmt = db.prepare(
-    `WITH combined_registrations AS (
-        SELECT userId, ip, at FROM registrations
-        UNION ALL
-        SELECT userId, ip, at FROM forensic_registrations
-    )
-    SELECT userId, ip, at
-    FROM combined_registrations
+    `SELECT userId, ip, at
+    FROM registrations
     WHERE ip = ?
         AND at BETWEEN ? AND ?
     ORDER BY at DESC`,
