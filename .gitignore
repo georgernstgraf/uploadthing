@@ -1,4 +1,7 @@
 *.db
+static/img/bg-dark.jpg
+static/img/bg-light.jpg
+static/theme.css
 /lib/prismaclient/
 /prisma/generated/
 /.Trash-*/
