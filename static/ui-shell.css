@@ -9,8 +9,8 @@
 
     --app-background-image: url("/static/img/bg-light.jpg");
     --app-header-height: 76px;
-    --app-nav-top: 92px;
-    --app-main-offset: 160px;
+    --app-nav-top: 72px;
+    --app-main-offset: 116px;
 }
 
 html,
@@ -60,14 +60,14 @@ details > summary::-webkit-details-marker {
 
 @media (max-width: 991.98px) {
     :root {
-        --app-nav-top: 96px;
-        --app-main-offset: 176px;
+        --app-nav-top: 76px;
+        --app-main-offset: 120px;
     }
 }
 
 @media (max-width: 767.98px) {
     :root {
-        --app-nav-top: 104px;
-        --app-main-offset: 214px;
+        --app-nav-top: 84px;
+        --app-main-offset: 152px;
     }
 }

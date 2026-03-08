@@ -29,7 +29,8 @@
 - `config.THEME_ASSET_VERSION` is bumped whenever an admin applies a theme, and `templates/index.hbs` appends that version to `theme.css` and the two background-image URLs.
 - Major Handlebars views now use Bootstrap component semantics directly (`card-header`, `card-body`, `card-footer`, `list-group`, `badge`, Bootstrap buttons) so the imported color-tool overrides apply through native Bootstrap classes.
 - Most remaining `text-muted` template usages were removed because the app's primary use case is supervised exam operation where readability matters more than subdued secondary text.
-- The nav pills are now fixed directly below the fixed application header while scrolling, and `templates/main.hbs` / `static/ui-shell.css` provide the extra top offset so page content does not slide underneath them.
+- The nav pills are fixed directly below the application header card via `--app-nav-top` in `ui-shell.css`; `#main-wrapper` uses `padding-top: var(--app-main-offset)` (not a Bootstrap `p-*` utility, which would override it with `!important`) to push flow content below the two fixed layers.
+- `templates/main.hbs` uses `px-2 pb-2` instead of `p-2` so Bootstrap does not clobber the top padding.
 
 ## Service And Repo Layout
 

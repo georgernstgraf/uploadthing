@@ -68,6 +68,12 @@
 - Avoid defining app-owned palette variables in `/static/ui-shell.css`; use Bootstrap/color-tool variables directly so the imported theme continues to control color and contrast.
 - Bootstrap-aware theming depends on Bootstrap-aware markup; generic glass wrappers alone do not pick up the intended component styling from `bootstrap-overrides.css`.
 
+## Bootstrap Utility Specificity
+
+- Bootstrap 5 utility classes like `p-2`, `m-3`, etc. use `!important`, so they silently override any custom CSS rule targeting the same property on the same element.
+- Do not combine Bootstrap shorthand padding/margin utilities with axis-specific custom properties on `#main-wrapper` or similar layout elements; prefer axis-specific utilities (`px-2 pb-2`) and let `ui-shell.css` own the remaining axis.
+- When debugging unexpected spacing, check for Bootstrap utility `!important` overrides first.
+
 ## Generated Artifacts
 
 - `lib/prismaclient/` is generated output.
