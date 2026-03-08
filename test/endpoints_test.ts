@@ -2,6 +2,7 @@ import { assertEquals, assertExists } from "@std/assert";
 import { createHash } from "node:crypto";
 import endpoints from "./endpoints.json" with { type: "json" };
 import config from "../lib/config.ts";
+import * as service from "../service/service.ts";
 
 const BASE_URL = Deno.env.get("TEST_BASE_URL") || endpoints.baseUrl;
 
@@ -73,6 +74,7 @@ Deno.test("GET /unterlagen - Unterlagen directory", async () => {
 Deno.test("Admin navigation and live file type updates", async () => {
     const originalTypes = [...config.PERMITTED_FILETYPES];
     const originalInternetState = config.INTERNET_ACTIVE;
+    const originalThemeKey = service.admin.getCurrentThemeKey();
     const testEmail = "grafg@spengergasse.at";
 
     const anonymousRes = await fetch(`${BASE_URL}/whoami`);
@@ -94,7 +96,9 @@ Deno.test("Admin navigation and live file type updates", async () => {
     });
     const homeHtml = await homeRes.text();
     assertEquals(homeHtml.includes(">Schüler<"), true);
+    assertEquals(homeHtml.includes(">Admin<"), true);
     assertEquals(homeHtml.includes('href="/admin/filetypes"'), true);
+    assertEquals(homeHtml.includes(">Dateitypen<"), false);
 
     const settingsRes = await fetch(`${BASE_URL}/admin/filetypes`, {
         headers: { "Cookie": cookie },
@@ -106,6 +110,25 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(settingsHtml.includes("Internet aktiv"), true);
     assertEquals(settingsHtml.includes("Abgaben &amp; Datenbank herunterladen (TAR.GZ)"), true);
     assertEquals(settingsHtml.includes("Abgaben-Verzeichnis leeren"), true);
+    assertEquals(settingsHtml.includes("Theme anwenden"), true);
+    assertEquals(settingsHtml.includes(">Alien<"), true);
+    assertEquals(settingsHtml.includes(">Crocus<"), true);
+
+    const availableThemes = service.admin.listAvailableThemes();
+    const alternateTheme = availableThemes.find((theme) => theme.key !== originalThemeKey) ?? availableThemes[0];
+    assertExists(alternateTheme);
+
+    const themeRes = await fetch(`${BASE_URL}/admin/theme`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": cookie,
+        },
+        body: `theme=${encodeURIComponent(alternateTheme.key)}`,
+    });
+    const themeHtml = await themeRes.text();
+    assertEquals(themeRes.status, 200);
+    assertEquals(themeHtml.includes(`Theme aktiviert: ${alternateTheme.label}`), true);
 
     const adminRes = await fetch(`${BASE_URL}/admin`, {
         headers: { "Cookie": cookie },
@@ -167,6 +190,10 @@ Deno.test("Admin navigation and live file type updates", async () => {
     });
     await restoreRes.text();
     assertEquals(restoreRes.status, 200);
+
+    if (originalThemeKey) {
+        service.admin.applyTheme(originalThemeKey);
+    }
 
     config.INTERNET_ACTIVE = originalInternetState;
 });

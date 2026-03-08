@@ -8,6 +8,9 @@
     --CTBS-GlassBlur: 8px;
 
     --app-background-image: url("/static/img/bg-light.jpg");
+    --app-header-height: 76px;
+    --app-nav-top: 92px;
+    --app-main-offset: 160px;
 }
 
 html,
@@ -18,6 +21,20 @@ body {
 body {
     min-height: 100vh;
     font-family: "IBM Plex Sans", var(--bs-body-font-family), system-ui, sans-serif;
+}
+
+#main-wrapper {
+    padding-top: var(--app-main-offset);
+}
+
+#main-nav {
+    position: fixed;
+    top: var(--app-nav-top);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1020;
+    width: max-content;
+    max-width: calc(100vw - 1rem);
 }
 
 body::before {
@@ -39,4 +56,18 @@ details > summary {
 
 details > summary::-webkit-details-marker {
     display: none;
+}
+
+@media (max-width: 991.98px) {
+    :root {
+        --app-nav-top: 96px;
+        --app-main-offset: 176px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    :root {
+        --app-nav-top: 104px;
+        --app-main-offset: 214px;
+    }
 }

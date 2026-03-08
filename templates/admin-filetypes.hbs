@@ -5,6 +5,31 @@
     </div>
     <div class="card-body py-3 px-3">
 
+    <form action="/admin/theme"
+          method="post"
+          class="mx-auto mb-4"
+          style="max-width: 640px;">
+        <label class="form-label fw-bold" for="theme">Theme</label>
+        <div class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <select id="theme"
+                        name="theme"
+                        class="form-select form-select-lg"
+                        required>
+                    {{#unless current_theme_key}}
+                        <option value="" selected disabled>Bitte Theme auswählen</option>
+                    {{/unless}}
+                    {{#each available_themes}}
+                        <option value="{{this.key}}" {{#if (eq this.key ../current_theme_key)}}selected{{/if}}>{{this.label}}</option>
+                    {{/each}}
+                </select>
+            </div>
+            <div class="col-md-4 d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">Theme anwenden</button>
+            </div>
+        </div>
+    </form>
+
     <div class="mb-4">
         {{{firewall_toggle_html}}}
     </div>

@@ -4,7 +4,7 @@ import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
 import config, { parsePermittedFileTypes } from "../lib/config.ts";
-import { AdminFileTypesSchema, AdminQuerySchema } from "../lib/schemas.ts";
+import { AdminFileTypesSchema, AdminQuerySchema, AdminThemeSchema } from "../lib/schemas.ts";
 
 const adminRouter = new Hono<{ Variables: HonoContextVars }>();
 const start_ms_earlier = 3.6 * 1.5e6;
@@ -27,6 +27,8 @@ function renderFileTypesPage(
         firewall_toggle_html: hbs.adminExamModeTemplate({
             internet_active: config.INTERNET_ACTIVE,
         }),
+        available_themes: service.admin.listAvailableThemes(),
+        current_theme_key: service.admin.getCurrentThemeKey(),
         success_message,
         error_message,
     });
@@ -40,6 +42,7 @@ function renderFileTypesPage(
         remote_ip: c.get("remoteip"),
         is_admin: c.get("is_admin"),
         page_title: config.page_title,
+        theme_asset_version: config.THEME_ASSET_VERSION,
         content,
     }), error_message ? 400 : 200);
 }
@@ -125,6 +128,7 @@ adminRouter.get("/", async (c) => {
         remote_ip: c.get("remoteip"),
         is_admin,
         page_title: config.page_title,
+        theme_asset_version: config.THEME_ASSET_VERSION,
         content,
     }));
 });
@@ -164,6 +168,34 @@ adminRouter.post("/filetypes", async (c) => {
         c,
         `Erlaubte Dateitypen aktualisiert: ${fileTypes.map((type) => "." + type).join(", ")}`,
     );
+});
+
+adminRouter.post("/theme", async (c) => {
+    const is_admin = c.get("is_admin");
+    if (!is_admin) {
+        return c.text("Forbidden", 403);
+    }
+
+    const formData = await c.req.formData();
+    const validation = AdminThemeSchema.safeParse(formData);
+    if (!validation.success) {
+        return renderFileTypesPage(
+            c,
+            undefined,
+            validation.error.issues[0]?.message || "Ungültiges Theme",
+        );
+    }
+
+    try {
+        const theme = service.admin.applyTheme(validation.data.theme);
+        return renderFileTypesPage(c, `Theme aktiviert: ${theme.label}`);
+    } catch (error) {
+        return renderFileTypesPage(
+            c,
+            undefined,
+            `Theme konnte nicht aktiviert werden: ${(error as Error).message}`,
+        );
+    }
 });
 
 adminRouter.get("/download-abgaben", (c) => {

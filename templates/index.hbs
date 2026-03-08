@@ -9,9 +9,12 @@
     <title>{{page_title}}</title>
     <script>
         (function () {
+            const themeAssetVersion = '{{theme_asset_version}}';
             const savedMode = localStorage.getItem('uploadthing-mode');
             const mode = savedMode === 'dark' ? 'dark' : 'light';
-            const bg = mode === 'dark' ? "url('/static/img/bg-dark.jpg')" : "url('/static/img/bg-light.jpg')";
+            const bg = mode === 'dark'
+                ? `url('/static/img/bg-dark.jpg?v=${themeAssetVersion}')`
+                : `url('/static/img/bg-light.jpg?v=${themeAssetVersion}')`;
 
             document.documentElement.setAttribute('data-bs-theme', mode);
             document.documentElement.style.setProperty('--app-background-image', bg);
@@ -27,7 +30,7 @@
     <link rel="stylesheet"
           href="/static/ui-shell.css">
     <link rel="stylesheet"
-          href="/static/theme.css">
+          href="/static/theme.css?v={{theme_asset_version}}">
     <link rel="stylesheet"
           href="/static/bootstrap-overrides.css">
     <style>
@@ -93,9 +96,10 @@
     <script>
         (function () {
             const storageKey = 'uploadthing-mode';
+            const themeAssetVersion = '{{theme_asset_version}}';
             const backgrounds = {
-                light: "url('/static/img/bg-light.jpg')",
-                dark: "url('/static/img/bg-dark.jpg')",
+                light: `url('/static/img/bg-light.jpg?v=${themeAssetVersion}')`,
+                dark: `url('/static/img/bg-dark.jpg?v=${themeAssetVersion}')`,
             };
 
             function setMode(mode) {

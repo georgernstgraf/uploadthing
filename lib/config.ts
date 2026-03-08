@@ -68,6 +68,7 @@ const config = {
     SESSION_REFRESH_THRESHOLD_MS: 7 * 24 * 60 * 60 * 1000, // 1 week in ms
     DENO_ENV: Deno.env.get("DENO_ENV") || "development",
     ADMIN_IPS: (Deno.env.get("ADMIN_IPS") || "").split(",").map((s) => s.trim()).filter(Boolean),
+    THEME_ASSET_VERSION: `${Date.now()}`,
 };
 
 export const isProduction = config.DENO_ENV === "production";

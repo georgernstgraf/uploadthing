@@ -30,6 +30,12 @@ export const AdminExamModeSchema = zfd.formData({
     internet_active: zfd.text(z.enum(["on"]).optional()),
 });
 
+export const AdminThemeSchema = zfd.formData({
+    theme: zfd.text(
+        z.string().min(1, "Bitte ein Theme auswählen"),
+    ),
+});
+
 export const UploadSchema = zfd.formData({
     file: zfd.file(),
 });

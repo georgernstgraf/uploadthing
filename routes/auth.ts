@@ -25,6 +25,7 @@ authRouter.get("/whoami", (c) => {
         remote_ip: c.get("remoteip"),
         is_admin: c.get("is_admin"),
         page_title: config.page_title,
+        theme_asset_version: config.THEME_ASSET_VERSION,
         content,
     }));
 });
@@ -106,6 +107,7 @@ authRouter.post("/register", async (c) => {
         remote_ip: remoteIp,
         is_admin,
         page_title: config.page_title,
+        theme_asset_version: config.THEME_ASSET_VERSION,
         content,
     }));
 });

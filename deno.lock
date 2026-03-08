@@ -875,6 +875,7 @@
     "dependencies": [
       "jsr:@db/sqlite@0.12.0",
       "jsr:@std/assert@1",
+      "jsr:@std/path@1",
       "npm:@prisma/client@^6.19.1",
       "npm:handlebars@^4.7.8",
       "npm:he@^1.2.0",

@@ -1,3 +1,4 @@
+import { fromFileUrl, join } from "@std/path";
 import * as repo from "../repo/repo.ts";
 import config from "../lib/config.ts";
 
@@ -20,6 +21,140 @@ export type ExamModeRunner = (
     command: string,
     args: string[],
 ) => Promise<ExamModeRunnerResult>;
+
+export type ThemeOption = {
+    key: string;
+    label: string;
+};
+
+type ThemePathsOptions = {
+    themesDir?: string;
+    staticDir?: string;
+};
+
+const defaultThemesDir = fromFileUrl(new URL("../themes", import.meta.url));
+const defaultStaticDir = fromFileUrl(new URL("../static", import.meta.url));
+
+function getThemePaths(options: ThemePathsOptions = {}) {
+    return {
+        themesDir: options.themesDir ?? defaultThemesDir,
+        staticDir: options.staticDir ?? defaultStaticDir,
+    };
+}
+
+function getThemeLabel(key: string): string {
+    if (key === "krokus") {
+        return "Crocus";
+    }
+
+    return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+function getThemeSourcePaths(themeKey: string, themesDir: string) {
+    const themeDir = join(themesDir, themeKey);
+    return {
+        themeCss: join(themeDir, "theme.css"),
+        bgLight: join(themeDir, "bg-light.jpg"),
+        bgDark: join(themeDir, "bg-dark.jpg"),
+    };
+}
+
+function getThemeTargetPaths(staticDir: string) {
+    return {
+        themeCss: join(staticDir, "theme.css"),
+        bgLight: join(staticDir, "img", "bg-light.jpg"),
+        bgDark: join(staticDir, "img", "bg-dark.jpg"),
+    };
+}
+
+function fileExists(path: string): boolean {
+    try {
+        Deno.statSync(path);
+        return true;
+    } catch (error) {
+        if (error instanceof Deno.errors.NotFound) {
+            return false;
+        }
+
+        throw error;
+    }
+}
+
+function hasRequiredThemeFiles(themeKey: string, themesDir: string): boolean {
+    const paths = getThemeSourcePaths(themeKey, themesDir);
+    return fileExists(paths.themeCss) && fileExists(paths.bgLight) && fileExists(paths.bgDark);
+}
+
+function filesEqual(pathA: string, pathB: string): boolean {
+    if (!fileExists(pathA) || !fileExists(pathB)) {
+        return false;
+    }
+
+    const fileA = Deno.readFileSync(pathA);
+    const fileB = Deno.readFileSync(pathB);
+
+    if (fileA.length !== fileB.length) {
+        return false;
+    }
+
+    return fileA.every((value, index) => value === fileB[index]);
+}
+
+export function listAvailableThemes(options: ThemePathsOptions = {}): ThemeOption[] {
+    const { themesDir } = getThemePaths(options);
+    const themes: ThemeOption[] = [];
+
+    for (const entry of Deno.readDirSync(themesDir)) {
+        if (!entry.isDirectory) continue;
+        if (!hasRequiredThemeFiles(entry.name, themesDir)) continue;
+
+        themes.push({
+            key: entry.name,
+            label: getThemeLabel(entry.name),
+        });
+    }
+
+    return themes.sort((a, b) => a.label.localeCompare(b.label, "de"));
+}
+
+export function getCurrentThemeKey(options: ThemePathsOptions = {}): string | null {
+    const { themesDir, staticDir } = getThemePaths(options);
+    const targetPaths = getThemeTargetPaths(staticDir);
+
+    for (const theme of listAvailableThemes({ themesDir, staticDir })) {
+        const sourcePaths = getThemeSourcePaths(theme.key, themesDir);
+
+        if (
+            filesEqual(sourcePaths.themeCss, targetPaths.themeCss) &&
+            filesEqual(sourcePaths.bgLight, targetPaths.bgLight) &&
+            filesEqual(sourcePaths.bgDark, targetPaths.bgDark)
+        ) {
+            return theme.key;
+        }
+    }
+
+    return null;
+}
+
+export function applyTheme(themeKey: string, options: ThemePathsOptions = {}): ThemeOption {
+    const { themesDir, staticDir } = getThemePaths(options);
+    const theme = listAvailableThemes({ themesDir, staticDir }).find((entry) => entry.key === themeKey);
+
+    if (!theme) {
+        throw new Error(`Unbekanntes Theme: ${themeKey}`);
+    }
+
+    const sourcePaths = getThemeSourcePaths(theme.key, themesDir);
+    const targetPaths = getThemeTargetPaths(staticDir);
+
+    Deno.mkdirSync(join(staticDir, "img"), { recursive: true });
+    Deno.copyFileSync(sourcePaths.themeCss, targetPaths.themeCss);
+    Deno.copyFileSync(sourcePaths.bgLight, targetPaths.bgLight);
+    Deno.copyFileSync(sourcePaths.bgDark, targetPaths.bgDark);
+    config.THEME_ASSET_VERSION = `${Date.now()}`;
+
+    return theme;
+}
 
 export function getExamModeCommandArg(internet_active: boolean): "on" | "off" {
     return internet_active ? "off" : "on";

@@ -63,6 +63,8 @@ type AdminFileTypesTemplateData = {
     permitted_filetypes: string;
     current_filetypes: string[];
     firewall_toggle_html: string;
+    available_themes: { key: string; label: string }[];
+    current_theme_key: string | null;
     success_message?: string;
     error_message?: string;
 };

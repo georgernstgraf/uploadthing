@@ -62,6 +62,8 @@
 - Uploadthing-specific adaptation belongs in `/static/ui-shell.css`.
 - The installed theme background images must use the generic filenames `/static/img/bg-light.jpg` and `/static/img/bg-dark.jpg`.
 - The light/dark toggle must not swap CSS files at runtime; only the background image and `data-bs-theme` mode should change.
+- The admin theme selector must do a normal full-page POST/response cycle, not an HTMX partial swap, because applying a new theme needs the page head to re-render with the new asset-version query string.
+- Only offer theme directories that contain all three required files: `theme.css`, `bg-light.jpg`, and `bg-dark.jpg`.
 - Do not reintroduce the old local CSS stack unless there is a deliberate architectural reason; the goal is to stay close to Bootstrap plus the color-tool files.
 - Avoid defining app-owned palette variables in `/static/ui-shell.css`; use Bootstrap/color-tool variables directly so the imported theme continues to control color and contrast.
 - Bootstrap-aware theming depends on Bootstrap-aware markup; generic glass wrappers alone do not pick up the intended component styling from `bootstrap-overrides.css`.

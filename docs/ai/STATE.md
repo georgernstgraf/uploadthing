@@ -16,16 +16,20 @@
 - `routes/api.ts`: `POST /activeips` for IP activity ingestion and `POST /exammode` for admin-only internet/firewall toggling.
 - `routes/admin.ts`: admin overview, runtime file type settings for teachers, download of submissions plus DB backup, and a wipe action for the submissions directory.
 - `routes/files.ts`: serves `static/` and authenticated `unterlagen/` files.
-- Admin navigation now shows two teacher-only entries: `Schüler` for the IP-forensics/admin overview and `Dateitypen` for runtime upload policy settings plus maintenance actions.
+- Admin navigation now shows two teacher-only entries: `Schüler` for the IP-forensics/admin overview and `Admin` for runtime upload policy settings, theme switching, and maintenance actions.
 - The `Dateitypen` page includes a centered Bootstrap `form-switch` that HTMX-posts to `/api/exammode` and swaps itself with the updated fragment.
 - The `Schüler` page no longer contains the download and wipe controls; those maintenance actions now live on `Dateitypen` alongside file-type management.
 - `templates/index.hbs` now loads the color-tool-style theme stack in this order: `bootstrap.css`, `ui-shell.css`, `theme.css`, `bootstrap-overrides.css`.
 - `static/bootstrap.css` is now the real Bootstrap 5.3.8 stylesheet copied from `color-tool`; a variable-only replacement left the app rendering almost unstyled despite correct template semantics.
+- The `/admin/filetypes` page now also contains a runtime theme selector fed from the valid subdirectories under `themes/` that contain `theme.css`, `bg-light.jpg`, and `bg-dark.jpg`.
+- Applying a theme copies `themes/<key>/theme.css` to `static/theme.css` and the two background images to `static/img/bg-light.jpg` and `static/img/bg-dark.jpg`.
 - Theme mode is persisted in `localStorage` under `uploadthing-mode`; default is light if nothing is stored.
 - Light/dark switching no longer swaps theme CSS files; it keeps `/static/theme.css` loaded and only changes `data-bs-theme` plus the body background image.
 - `static/ui-shell.css` now combines the old `ui-config.css` knobs and the old `app.css` glue into one file containing the glass/blur knobs, the fixed background-image layer, the app font family, and `details > summary` marker cleanup.
+- `config.THEME_ASSET_VERSION` is bumped whenever an admin applies a theme, and `templates/index.hbs` appends that version to `theme.css` and the two background-image URLs.
 - Major Handlebars views now use Bootstrap component semantics directly (`card-header`, `card-body`, `card-footer`, `list-group`, `badge`, Bootstrap buttons) so the imported color-tool overrides apply through native Bootstrap classes.
 - Most remaining `text-muted` template usages were removed because the app's primary use case is supervised exam operation where readability matters more than subdued secondary text.
+- The nav pills are now fixed directly below the fixed application header while scrolling, and `templates/main.hbs` / `static/ui-shell.css` provide the extra top offset so page content does not slide underneath them.
 
 ## Service And Repo Layout
 
