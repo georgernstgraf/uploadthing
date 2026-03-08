@@ -22,9 +22,9 @@
 - Users can only toggle light versus dark mode for the currently installed theme.
 - The active palette is shipped as a generic `/static/theme.css` file that should remain a direct copy of a color-tool theme CSS.
 - Theme replacement is an administrator task: replace `/static/theme.css` plus `/static/img/bg-light.jpg` and `/static/img/bg-dark.jpg`, then recommit.
-- Uploadthing keeps only one small local stylesheet, `/static/app.css`, on top of the color-tool stack.
+- Uploadthing keeps only one small local shell stylesheet, `/static/ui-shell.css`, on top of the color-tool stack.
 - The old multi-file local CSS layer (`base.css`, `theme-bridge.css`, `utilities.css`, `components.css`) is intentionally removed.
-- `app.css` should stay structural and behavioral; palette and contrast decisions should come from Bootstrap variables and the imported color-tool files rather than app-owned color overrides.
+- `ui-shell.css` should stay structural and behavioral; palette and contrast decisions should come from Bootstrap variables and the imported color-tool files rather than app-owned color overrides.
 
 ## Dual API Mounting
 

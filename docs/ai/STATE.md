@@ -19,11 +19,11 @@
 - Admin navigation now shows two teacher-only entries: `Schüler` for the IP-forensics/admin overview and `Dateitypen` for runtime upload policy settings plus maintenance actions.
 - The `Dateitypen` page includes a centered Bootstrap `form-switch` that HTMX-posts to `/api/exammode` and swaps itself with the updated fragment.
 - The `Schüler` page no longer contains the download and wipe controls; those maintenance actions now live on `Dateitypen` alongside file-type management.
-- `templates/index.hbs` now loads the color-tool-style theme stack in this order: `bootstrap.css`, `ui-config.css`, `theme.css`, `bootstrap-overrides.css`, then one small local layer: `app.css`.
+- `templates/index.hbs` now loads the color-tool-style theme stack in this order: `bootstrap.css`, `ui-shell.css`, `theme.css`, `bootstrap-overrides.css`.
 - `static/bootstrap.css` is now the real Bootstrap 5.3.8 stylesheet copied from `color-tool`; a variable-only replacement left the app rendering almost unstyled despite correct template semantics.
 - Theme mode is persisted in `localStorage` under `uploadthing-mode`; default is light if nothing is stored.
 - Light/dark switching no longer swaps theme CSS files; it keeps `/static/theme.css` loaded and only changes `data-bs-theme` plus the body background image.
-- `static/app.css` is now limited to global glue only: the fixed background-image layer, the app font family, and `details > summary` marker cleanup.
+- `static/ui-shell.css` now combines the old `ui-config.css` knobs and the old `app.css` glue into one file containing the glass/blur knobs, the fixed background-image layer, the app font family, and `details > summary` marker cleanup.
 - Major Handlebars views now use Bootstrap component semantics directly (`card-header`, `card-body`, `card-footer`, `list-group`, `badge`, Bootstrap buttons) so the imported color-tool overrides apply through native Bootstrap classes.
 - Most remaining `text-muted` template usages were removed because the app's primary use case is supervised exam operation where readability matters more than subdued secondary text.
 

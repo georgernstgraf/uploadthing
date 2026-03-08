@@ -59,11 +59,11 @@
 
 - Do not edit `/static/theme.css` when switching visual themes; it is meant to stay a direct copy from `color-tool`.
 - Do not use the old generated variable-only `static/bootstrap.css`; uploadthing needs the full Bootstrap stylesheet or the Bootstrap component classes render almost unstyled.
-- Uploadthing-specific adaptation belongs in `/static/app.css`.
+- Uploadthing-specific adaptation belongs in `/static/ui-shell.css`.
 - The installed theme background images must use the generic filenames `/static/img/bg-light.jpg` and `/static/img/bg-dark.jpg`.
 - The light/dark toggle must not swap CSS files at runtime; only the background image and `data-bs-theme` mode should change.
 - Do not reintroduce the old local CSS stack unless there is a deliberate architectural reason; the goal is to stay close to Bootstrap plus the color-tool files.
-- Avoid defining app-owned palette variables in `/static/app.css`; use Bootstrap/color-tool variables directly so the imported theme continues to control color and contrast.
+- Avoid defining app-owned palette variables in `/static/ui-shell.css`; use Bootstrap/color-tool variables directly so the imported theme continues to control color and contrast.
 - Bootstrap-aware theming depends on Bootstrap-aware markup; generic glass wrappers alone do not pick up the intended component styling from `bootstrap-overrides.css`.
 
 ## Generated Artifacts
