@@ -23,7 +23,7 @@
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_with_name}}
             <div class="col">
-                <details class="h-100 card shadow-sm mb-0 d-flex flex-column {{#if this.is_stale}}opacity-75{{/if}} {{#if this.has_submission}}border-success border-3{{/if}}">
+                <details class="h-100 card shadow-sm mb-0 d-flex flex-column {{#if this.is_stale}}opacity-75{{/if}}">
                     <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
@@ -43,11 +43,18 @@
                                     <span class="fw-normal d-block text-truncate small">{{this.ip}}</span>
                                 </div>
                             </div>
-                            <div class="badge bg-light text-dark border ms-1 flex-shrink-0 small">
-                                {{this.seen_count}}x
+                            <div class="d-flex flex-column align-items-end gap-1 ms-1 flex-shrink-0">
+                                <span class="badge {{#if this.is_stale}}text-bg-danger{{else}}bg-light text-dark border{{/if}} small text-wrap text-end">
+                                    Zuletzt: {{this.seen_at_desc.[0]}}<br>
+                                    {{this.seen_at_desc.length}}x seit Start
+                                </span>
+                                {{#if this.has_submission}}
+                                    <span class="badge text-bg-success small text-wrap text-end"
+                                          title="{{submissionTooltip this.submissions}}">
+                                        Abgabe
+                                    </span>
+                                {{/if}}
                             </div>
-                        </div>
-                        <div class="fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}
                         </div>
                     </summary>
                     <div class="card-body mt-0 pt-2 border-top flex-grow-1">
@@ -97,7 +104,7 @@
                                 </div>
                             {{/if}}
                             <div class="col-12">
-                                <div class="fw-bold text-center mb-1 small text-primary">IP: {{this.ip}}</div>
+                                <div class="fw-bold text-center mb-1 small text-primary">IP: {{this.ip}} ({{this.seen_at_desc.length}}x seit Start)</div>
                                 <ul class="list-group list-group-flush small rounded overflow-auto" style="max-height: 80px;">
                                     {{#each this.seen_at_desc }}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">

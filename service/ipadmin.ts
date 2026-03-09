@@ -1,7 +1,7 @@
 import * as repo from "../repo/repo.ts";
 import * as service from "./service.ts";
 import { UserType } from "../lib/types.ts";
-import { localAutoString } from "../lib/timefunc.ts";
+import { localAdminIpString } from "../lib/timefunc.ts";
 import config from "../lib/config.ts";
 
 export type ServiceIpAdmin = {
@@ -46,7 +46,7 @@ export async function for_range(
         );
         ip_admin.seen_count = seen_at_desc.length;
         ip_admin.seen_at_desc = seen_at_desc.map((dt) =>
-            localAutoString(new Date(dt))
+            localAdminIpString(new Date(dt))
         );
         ip_admin.cookie_presents = await service.cookiepresents.byIPInRange(
             ip,

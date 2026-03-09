@@ -13,12 +13,20 @@ export function localDateTimeString(date: Date): string {
 export function localDateString(date: Date): string {
     return dateFormatter.format(date);
 }
-export function localAutoString(date: Date): string {
-    if ((date.getTime() + config.TODAY_HOURS_CUTOFF * 3600000) >= Date.now()) {
+export function localAutoString(
+    date: Date,
+    cutoffHours = config.TODAY_HOURS_CUTOFF,
+    nowMs = Date.now(),
+): string {
+    if ((date.getTime() + cutoffHours * 3600000) >= nowMs) {
         return localTimeString(date);
     } else {
         return localDateTimeString(date);
     }
+}
+
+export function localAdminIpString(date: Date, nowMs = Date.now()): string {
+    return localAutoString(date, 15, nowMs);
 }
 ///////////////////////////////////////////////////////////
 const timeFormatter = new Intl.DateTimeFormat("en-CA", {

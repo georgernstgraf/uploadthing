@@ -14,6 +14,18 @@ Handlebars.registerHelper("givenNameInitial", function (name: string) {
     return name.charAt(firstSpace + 1).toUpperCase();
 });
 
+Handlebars.registerHelper(
+    "submissionTooltip",
+    function (submissions: { at: string; filename: string }[] = []) {
+        if (!Array.isArray(submissions) || submissions.length === 0) {
+            return "Keine Abgabe";
+        }
+        return submissions.map((submission) => {
+            return `${submission.at} - ${submission.filename}`;
+        }).join("\n");
+    },
+);
+
 Deno.test("eq helper - returns true for equal values", () => {
     const result = Handlebars.helpers.eq("test", "test");
     assertEquals(result, true);
@@ -82,4 +94,22 @@ Deno.test("givenNameInitial - handles three part name", () => {
 Deno.test("givenNameInitial - handles title prefix", () => {
     const result = Handlebars.helpers.givenNameInitial("Dr. Hans Müller");
     assertEquals(result, "H");
+});
+
+Deno.test("submissionTooltip - joins submission details", () => {
+    const result = Handlebars.helpers.submissionTooltip([
+        { at: "2025-12-01 10:00", filename: "essay.pdf" },
+        { at: "2025-12-01 10:05", filename: "essay-v2.pdf" },
+    ]);
+
+    assertEquals(
+        result,
+        "2025-12-01 10:00 - essay.pdf\n2025-12-01 10:05 - essay-v2.pdf",
+    );
+});
+
+Deno.test("submissionTooltip - handles empty submissions", () => {
+    const result = Handlebars.helpers.submissionTooltip([]);
+
+    assertEquals(result, "Keine Abgabe");
 });

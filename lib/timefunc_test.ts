@@ -1,5 +1,7 @@
 import { assertEquals, assertMatch } from "@std/assert";
 import {
+    localAdminIpString,
+    localAutoString,
     localDateString,
     localDateTimeString,
     localTimeString,
@@ -50,4 +52,34 @@ Deno.test("localDateString - formats different dates consistently", () => {
     assertMatch(result1, /^\d{4}-\d{2}-\d{2}$/);
     assertMatch(result2, /^\d{4}-\d{2}-\d{2}$/);
     assertEquals(result1 !== result2, true);
+});
+
+Deno.test("localAutoString - uses time inside cutoff", () => {
+    const now = new Date("2025-12-02T12:00:00.000Z").getTime();
+    const date = new Date("2025-12-02T03:00:00.000Z");
+
+    const result = localAutoString(date, 12, now);
+
+    assertMatch(result, /^\d{2}:\d{2}$/);
+});
+
+Deno.test("localAutoString - uses full datetime outside cutoff", () => {
+    const now = new Date("2025-12-02T12:00:00.000Z").getTime();
+    const date = new Date("2025-12-01T23:59:00.000Z");
+
+    const result = localAutoString(date, 12, now);
+
+    assertMatch(result, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+});
+
+Deno.test("localAdminIpString - uses 15 hour cutoff", () => {
+    const now = new Date("2025-12-02T12:00:00.000Z").getTime();
+    const recentDate = new Date("2025-12-01T22:00:00.000Z");
+    const olderDate = new Date("2025-12-01T20:59:00.000Z");
+
+    const recentResult = localAdminIpString(recentDate, now);
+    const olderResult = localAdminIpString(olderDate, now);
+
+    assertMatch(recentResult, /^\d{2}:\d{2}$/);
+    assertMatch(olderResult, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
 });

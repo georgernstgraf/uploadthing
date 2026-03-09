@@ -1,4 +1,4 @@
-import { localAutoString } from "../lib/timefunc.ts";
+import { localAdminIpString } from "../lib/timefunc.ts";
 import type { UserType } from "../lib/types.ts";
 import { userRecordToUserType } from "../lib/user_mapper.ts";
 import * as repo from "../repo/repo.ts";
@@ -18,7 +18,7 @@ export async function byIPInRange(
     for (const record of records) {
         const user = await repo.users.getById(record.userId);
         result.push({
-            at: localAutoString(record.at),
+            at: localAdminIpString(record.at),
             user: user ? userRecordToUserType(user) : null,
         });
     }

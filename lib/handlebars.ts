@@ -93,6 +93,18 @@ Handlebars.registerHelper("givenNameInitial", function (name: string) {
     return name.charAt(firstSpace + 1).toUpperCase();
 });
 
+Handlebars.registerHelper(
+    "submissionTooltip",
+    function (submissions: { at: string; filename: string }[] = []) {
+        if (!Array.isArray(submissions) || submissions.length === 0) {
+            return "Keine Abgabe";
+        }
+        return submissions.map((submission) => {
+            return `${submission.at} - ${submission.filename}`;
+        }).join("\n");
+    },
+);
+
 // deno-lint-ignore no-explicit-any
 Handlebars.registerHelper("let", function (this: any, value, options) {
     return options.fn(this, {
