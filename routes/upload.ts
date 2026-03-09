@@ -7,6 +7,7 @@ import * as hbs from "../lib/handlebars.ts";
 import { HonoContextVars } from "../lib/types.ts";
 import { AppError } from "../lib/errors.ts";
 import { UploadSchema } from "../lib/schemas.ts";
+import { validateUploadedFileType } from "../lib/upload_filetype.ts";
 
 const uploadRouter = new Hono<{ Variables: HonoContextVars }>();
 
@@ -82,6 +83,8 @@ uploadRouter.post("/", async (c) => {
             415,
         );
     }
+
+    await validateUploadedFileType(file, fileExt);
 
     const baseFilename = `${safeFileComponent(remote_user.name)}-${
         safeFileComponent(file.name)

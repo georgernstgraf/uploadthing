@@ -18,6 +18,27 @@ interface Endpoint {
     expectedOutput?: { type: string };
 }
 
+const uploadZipBytes = Uint8Array.from([
+    0x50,
+    0x4b,
+    0x03,
+    0x04,
+    0x14,
+    0x00,
+    0x00,
+    0x00,
+    0x08,
+    0x00,
+    0xb7,
+    0xac,
+    0xce,
+    0x34,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+]);
+
 Deno.test("GET / - Home page", async () => {
     const res = await fetch(`${BASE_URL}/`);
     assertEquals(res.status, 200);
@@ -232,9 +253,8 @@ Deno.test("POST /upload - Authenticated upload with MD5 verification", async () 
     const cookie = registerRes.headers.get("set-cookie");
     assertExists(cookie);
 
-    const testContent = "Test content for MD5 verification";
     const formData = new FormData();
-    const file = new Blob([testContent], { type: "application/zip" });
+    const file = new Blob([uploadZipBytes], { type: "application/zip" });
     formData.append("file", file, "test_md5.zip");
 
     const uploadRes = await fetch(`${BASE_URL}/upload`, {
@@ -260,4 +280,31 @@ Deno.test("POST /upload - Authenticated upload with MD5 verification", async () 
     assertEquals(responseMd5, computedMd5);
 
     await Deno.remove(filePath);
+});
+
+Deno.test("POST /upload - rejects zip with non-zip content", async () => {
+    const testEmail = "grafg@spengergasse.at";
+
+    const registerRes = await fetch(`${BASE_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `email=${encodeURIComponent(testEmail)}`,
+    });
+    await registerRes.text();
+    const cookie = registerRes.headers.get("set-cookie");
+    assertExists(cookie);
+
+    const formData = new FormData();
+    const file = new Blob(["not really a zip"], { type: "application/zip" });
+    formData.append("file", file, "fake.zip");
+
+    const uploadRes = await fetch(`${BASE_URL}/upload`, {
+        method: "POST",
+        headers: { "Cookie": cookie! },
+        body: formData,
+    });
+
+    assertEquals(uploadRes.status, 415);
+    const html = await uploadRes.text();
+    assertEquals(html.includes("Der Dateiinhalt konnte nicht als .zip erkannt werden."), true);
 });
