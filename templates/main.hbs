@@ -1,5 +1,17 @@
 <main id="main-wrapper"
       class="container px-2 pb-2">
+    <div id="global-htmx-indicator"
+         class="htmx-indicator position-fixed top-50 start-50 translate-middle z-3"
+         aria-hidden="true">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body d-flex align-items-center gap-3 px-4 py-3">
+                <div class="spinner-border text-primary"
+                     role="status"
+                     aria-label="Lädt"></div>
+                <span class="fw-semibold">Wird geladen ...</span>
+            </div>
+        </div>
+    </div>
     {{> nav}}
     {{> userbadge}}
     <div class="text-center mb-2 opacity-50">

@@ -35,7 +35,7 @@
 - Prefer schema validation with Zod and `zod-form-data` where the project already uses it.
 - Reject invalid input early in routes.
 - Keep user-facing validation text consistent with the existing German UI tone.
-- New user-facing UI text should be German for both student and admin flows.
+- User-facing UI text must be German-only for both student and admin flows; do not leave English empty states, headings, helper text, or status labels in templates.
 - HTMX admin controls should return plain response text with non-2xx status on failure so the global toast handler in `templates/index.hbs` can surface the error.
 
 ## Time Handling

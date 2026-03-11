@@ -146,5 +146,71 @@
             }
         }
     </script>
+    {{#if anomalies.by_ip.length}}
+        <section class="accordion mb-2 mx-auto"
+                 id="anomaly-accordion"
+                 style="max-width: 800px;">
+            <div class="accordion-item shadow-sm border-0 overflow-hidden">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed text-bg-warning"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#anomaly-collapse"
+                            aria-expanded="false"
+                            aria-controls="anomaly-collapse">
+                        Anomalien: {{anomalies.by_ip.length}} IPs{{#if anomalies.by_user.length}}, {{anomalies.by_user.length}} Benutzer{{/if}}
+                    </button>
+                </h2>
+                <div id="anomaly-collapse"
+                     class="accordion-collapse collapse"
+                     data-bs-parent="#anomaly-accordion">
+                    <div class="accordion-body py-3 px-3">
+                        <div class="mb-3">
+                            <h3 class="h6 text-uppercase text-body-secondary mb-2">Nach IP-Adresse</h3>
+                            <div class="list-group list-group-flush rounded-3 overflow-hidden shadow-sm">
+                                {{#each anomalies.by_ip}}
+                                    <div class="list-group-item py-3">
+                                        <div class="fw-bold mb-1">{{this.ip}}</div>
+                                        <div class="small">Mehrere Benutzer in diesem Zeitraum:</div>
+                                        <div class="mt-2 d-flex flex-wrap gap-2">
+                                            {{#each this.users}}
+                                                <span class="badge text-bg-danger">{{this.name}}</span>
+                                            {{/each}}
+                                        </div>
+                                    </div>
+                                {{/each}}
+                            </div>
+                        </div>
+
+                        {{#if anomalies.by_user.length}}
+                            <div class="mb-0">
+                                <h3 class="h6 text-uppercase text-body-secondary mb-2">Nach Benutzer</h3>
+                                <div class="list-group list-group-flush rounded-3 overflow-hidden shadow-sm">
+                                    {{#each anomalies.by_user}}
+                                        <div class="list-group-item py-3">
+                                            <div class="fw-bold mb-1">{{this.user.name}}</div>
+                                            <div class="small">Mehrere IP-Adressen in diesem Zeitraum:</div>
+                                            <div class="mt-2 d-flex flex-wrap gap-2">
+                                                {{#each this.ips}}
+                                                    <span class="badge text-bg-warning">{{this}}</span>
+                                                {{/each}}
+                                            </div>
+                                        </div>
+                                    {{/each}}
+                                </div>
+                            </div>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+        </section>
+    {{else}}
+        <section class="card shadow-sm border-0 mb-2 mx-auto"
+                 style="max-width: 800px;">
+            <div class="card-body py-3 px-3 text-center text-body-secondary small">
+                Es gibt keine Anomalien.
+            </div>
+        </section>
+    {{/if}}
     {{> admin-report}}
 </div>

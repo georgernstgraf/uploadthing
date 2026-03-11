@@ -1,6 +1,9 @@
 import Handlebars from "handlebars";
 import { UserType, TopType } from "./types.ts";
-import type { ServiceIpAdmin } from "../service/ipadmin.ts";
+import type {
+    ServiceAdminAnomalies,
+    ServiceIpAdmin,
+} from "../service/ipadmin.ts";
 
 // --- 2. Template Data Type Definitions ---
 
@@ -53,6 +56,7 @@ type AdminTemplateData = {
     enddate: string;
     ips_with_name: ServiceIpAdmin[];
     ips_without_name: ServiceIpAdmin[];
+    anomalies: ServiceAdminAnomalies;
     withinTimeCutoff: boolean;
     endtimeInFuture: boolean;
     endtimeProvided: boolean;

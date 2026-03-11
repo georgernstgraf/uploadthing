@@ -1,9 +1,9 @@
 # Project State
 
-Current status as of 2026-03-09.
+Current status as of 2026-03-11.
 
 ## Current Focus
-Admin forensics card polish for known IPs and persistence of the finished work.
+Admin/student forensics UI polish, anomaly detection, and German-only UI cleanup.
 
 ## Completed (this cycle)
 - [x] Known-IP cards now combine "Zuletzt" and the in-range hit count into one header badge in `templates/admin-report.hbs`.
@@ -12,6 +12,10 @@ Admin forensics card polish for known IPs and persistence of the finished work.
 - [x] Admin IP timestamps now use `localAdminIpString` with a fixed 15-hour cutoff in `lib/timefunc.ts`, and the admin IP services consume that formatter.
 - [x] Known-IP card counts now use the selected time range (`seen_at_desc.length`) rather than an all-time total for the IP in `templates/admin-report.hbs`.
 - [x] `uploadthing.db` was checked directly and confirms that IP `192.168.21.80` has `3772` `ipfact` rows since `2026-03-01T00:00:00.000Z`, with first sighting `2026-03-04T11:37:02.895Z` and last sighting `2026-03-09T06:26:03.016Z`.
+- [x] The Admin subpage now treats theme, firewall, submission directory, and filetype management as equal vertical sections in `templates/admin-filetypes.hbs`.
+- [x] A global Bootstrap-based HTMX loading spinner now appears during active HTMX requests via `templates/main.hbs` and `templates/index.hbs`.
+- [x] The admin forensics page now shows anomaly detection between the time selector and known IPs, with IP-based and user-based anomaly views derived from combined cookie and registration activity in `service/ipadmin.ts` and `templates/admin.hbs`.
+- [x] The anomaly UI now uses German-only text and collapses into a warning-styled Bootstrap accordion when findings exist; otherwise it shows `Es gibt keine Anomalien.`.
 - [x] Validation passed with `deno task check`, `deno task lint`, and `deno task test`.
 
 ## Pending

@@ -15,6 +15,74 @@ export type ServiceIpAdmin = {
     has_submission: boolean;
 };
 
+export type ServiceIpAnomaly = {
+    ip: string;
+    users: UserType[];
+};
+
+export type ServiceUserAnomaly = {
+    user: UserType;
+    ips: string[];
+};
+
+export type ServiceAdminAnomalies = {
+    by_ip: ServiceIpAnomaly[];
+    by_user: ServiceUserAnomaly[];
+};
+
+function detectAnomalies(
+    registered: ServiceIpAdmin[],
+): ServiceAdminAnomalies {
+    const ipAnomalies: ServiceIpAnomaly[] = [];
+    const userToIps = new Map<number, { user: UserType; ips: Set<string> }>();
+
+    for (const entry of registered) {
+        const usersById = new Map<number, UserType>();
+        const observations = [...entry.cookie_presents, ...entry.registrations];
+
+        for (const observation of observations) {
+            const user = observation.user;
+            if (!user?.id) continue;
+
+            usersById.set(user.id, user);
+
+            const existing = userToIps.get(user.id);
+            if (existing) {
+                existing.ips.add(entry.ip);
+            } else {
+                userToIps.set(user.id, {
+                    user,
+                    ips: new Set([entry.ip]),
+                });
+            }
+        }
+
+        if (usersById.size > 1) {
+            ipAnomalies.push({
+                ip: entry.ip,
+                users: [...usersById.values()].sort((a, b) =>
+                    a.name.localeCompare(b.name)
+                ),
+            });
+        }
+    }
+
+    const userAnomalies = [...userToIps.values()]
+        .filter((entry) => entry.ips.size > 1)
+        .map((entry) => ({
+            user: entry.user,
+            ips: [...entry.ips].sort(),
+        }))
+        .sort((a, b) => a.user.name.localeCompare(b.user.name));
+
+    ipAnomalies.sort((a, b) => a.ip.localeCompare(b.ip));
+
+    return {
+        by_ip: ipAnomalies,
+        by_user: userAnomalies,
+    };
+}
+
 /**
  * Aggregate admin data for all IPs seen in a time range.
  */
@@ -25,6 +93,7 @@ export async function for_range(
 ): Promise<{
     registered: ServiceIpAdmin[];
     unregistered: ServiceIpAdmin[];
+    anomalies: ServiceAdminAnomalies;
 }> {
     const rv: ServiceIpAdmin[] = [];
     const seen_ips = repo.ipfact.ips_in_range(start, end); // start, end: Date
@@ -78,5 +147,6 @@ export async function for_range(
     });
     const registered = rv.filter((ipf) => ipf.cookie_presents.length > 0);
     const unregistered = rv.filter((ipf) => ipf.cookie_presents.length === 0);
-    return { registered, unregistered };
+    const anomalies = detectAnomalies(registered);
+    return { registered, unregistered, anomalies };
 }

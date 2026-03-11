@@ -38,16 +38,12 @@
             display: none !important;
         }
 
-        .htmx-indicator {
+        #global-htmx-indicator {
             display: none;
         }
 
-        .htmx-request .htmx-indicator {
-            display: inline;
-        }
-
-        .htmx-request.htmx-indicator {
-            display: inline;
+        body.htmx-request #global-htmx-indicator {
+            display: block;
         }
     </style>
     <script src="/static/htmx.js"></script>
@@ -71,7 +67,7 @@
             defer></script>
 </head>
 
-<body>
+     <body>
     <header class="position-fixed top-0 start-0 end-0"
             style="z-index: 1030; backdrop-filter: blur(var(--CTBS-GlassBlur)); -webkit-backdrop-filter: blur(var(--CTBS-GlassBlur));">
         <div class="position-relative mx-2 mt-2">
@@ -125,6 +121,35 @@
                     const currentMode = document.documentElement.getAttribute('data-bs-theme');
                     setMode(currentMode === 'dark' ? 'light' : 'dark');
                 });
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            let activeHtmxRequests = 0;
+
+            function updateGlobalIndicator() {
+                document.body.classList.toggle('htmx-request', activeHtmxRequests > 0);
+            }
+
+            document.body.addEventListener('htmx:beforeRequest', function () {
+                activeHtmxRequests += 1;
+                updateGlobalIndicator();
+            });
+
+            document.body.addEventListener('htmx:afterRequest', function () {
+                activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);
+                updateGlobalIndicator();
+            });
+
+            document.body.addEventListener('htmx:sendError', function () {
+                activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);
+                updateGlobalIndicator();
+            });
+
+            document.body.addEventListener('htmx:responseError', function () {
+                activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);
+                updateGlobalIndicator();
             });
         })();
     </script>

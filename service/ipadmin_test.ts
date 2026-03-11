@@ -42,12 +42,67 @@ Deno.test("ipadmin classifies IPs by cookie presence and keeps registrations", a
         assertEquals(unknown.cookie_presents.length, 0);
         assertEquals(unknown.registrations.length, 1);
         assertEquals(unknown.registrations[0].user?.email, userEmail);
+        assertEquals(result.anomalies.by_ip.length, 0);
+        assertEquals(result.anomalies.by_user.length, 0);
     } finally {
         db.exec(`DELETE FROM cookiepresents WHERE ip IN ('${knownIp}', '${unknownIp}')`);
         db.exec(`DELETE FROM registrations WHERE ip IN ('${knownIp}', '${unknownIp}')`);
         db.exec(`DELETE FROM ipfact WHERE ip IN ('${knownIp}', '${unknownIp}')`);
         await prisma.users.deleteMany({
             where: { email: userEmail },
+        });
+    }
+});
+
+Deno.test("ipadmin detects IP-based and user-based anomalies", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userOneEmail = `anomaly-one-${suffix}@example.com`;
+    const userTwoEmail = `anomaly-two-${suffix}@example.com`;
+    const sharedIp = `203.0.113.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const secondIp = `198.51.100.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const seenAt = new Date();
+    const start = new Date(seenAt.getTime() - 60_000);
+    const end = new Date(seenAt.getTime() + 60_000);
+
+    try {
+        const userOne = await usersRepo.upsert({
+            email: userOneEmail,
+            name: "Anomaly One",
+            klasse: "5AHITM",
+        });
+        const userTwo = await usersRepo.upsert({
+            email: userTwoEmail,
+            name: "Anomaly Two",
+            klasse: "5AHITM",
+        });
+
+        ipfactRepo.registerSeen(sharedIp, seenAt);
+        ipfactRepo.registerSeen(secondIp, seenAt);
+        registrationsRepo.create(sharedIp, userOne.id, seenAt);
+        registrationsRepo.create(sharedIp, userTwo.id, seenAt);
+        registrationsRepo.create(secondIp, userOne.id, seenAt);
+        await cookiepresentsRepo.create(sharedIp, userOne.id, seenAt);
+        await cookiepresentsRepo.create(sharedIp, userTwo.id, seenAt);
+        await cookiepresentsRepo.create(secondIp, userOne.id, seenAt);
+
+        const result = await for_range(start, end, false);
+
+        assertEquals(result.anomalies.by_ip.length, 1);
+        assertEquals(result.anomalies.by_ip[0].ip, sharedIp);
+        assertEquals(result.anomalies.by_ip[0].users.map((user) => user.email), [
+            userOneEmail,
+            userTwoEmail,
+        ]);
+
+        assertEquals(result.anomalies.by_user.length, 1);
+        assertEquals(result.anomalies.by_user[0].user.email, userOneEmail);
+        assertEquals(result.anomalies.by_user[0].ips, [sharedIp, secondIp].sort());
+    } finally {
+        db.exec(`DELETE FROM cookiepresents WHERE ip IN ('${sharedIp}', '${secondIp}')`);
+        db.exec(`DELETE FROM registrations WHERE ip IN ('${sharedIp}', '${secondIp}')`);
+        db.exec(`DELETE FROM ipfact WHERE ip IN ('${sharedIp}', '${secondIp}')`);
+        await prisma.users.deleteMany({
+            where: { email: { in: [userOneEmail, userTwoEmail] } },
         });
     }
 });

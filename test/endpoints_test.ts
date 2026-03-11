@@ -243,46 +243,131 @@ Deno.test("All endpoints from endpoints.json respond", async (t) => {
 
 Deno.test("POST /upload - Authenticated upload with MD5 verification", async () => {
     const testEmail = "grafg@spengergasse.at";
+    const originalTypes = [...config.PERMITTED_FILETYPES];
+    let cookie: string | null = null;
 
-    const registerRes = await fetch(`${BASE_URL}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `email=${encodeURIComponent(testEmail)}`,
-    });
-    await registerRes.text(); // consume body
-    const cookie = registerRes.headers.get("set-cookie");
-    assertExists(cookie);
+    try {
+        const registerRes = await fetch(`${BASE_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `email=${encodeURIComponent(testEmail)}`,
+        });
+        await registerRes.text(); // consume body
+        cookie = registerRes.headers.get("set-cookie");
+        assertExists(cookie);
 
-    const formData = new FormData();
-    const file = new Blob([uploadZipBytes], { type: "application/zip" });
-    formData.append("file", file, "test_md5.zip");
+        const setTypesRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie!,
+            },
+            body: "permitted_filetypes=zip,%20md",
+        });
+        await setTypesRes.text();
+        assertEquals(setTypesRes.status, 200);
 
-    const uploadRes = await fetch(`${BASE_URL}/upload`, {
-        method: "POST",
-        headers: { "Cookie": cookie! },
-        body: formData,
-    });
-    assertEquals(uploadRes.status, 200);
+        const formData = new FormData();
+        const file = new Blob([uploadZipBytes], { type: "application/zip" });
+        formData.append("file", file, "test_md5.zip");
 
-    const html = await uploadRes.text();
-    const md5Match = html.match(/<span class="font-monospace[^>]*>([a-f0-9]+)<\/span>/);
-    assertExists(md5Match);
-    const responseMd5 = md5Match[1];
+        const uploadRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            headers: { "Cookie": cookie! },
+            body: formData,
+        });
+        assertEquals(uploadRes.status, 200);
 
-    const filenameMatch = html.match(/<span class="fw-bold text-break[^"]*">([^<]+)<\/span>/);
-    assertExists(filenameMatch);
-    const filename = filenameMatch[1];
+        const html = await uploadRes.text();
+        const md5Match = html.match(/<span class="font-monospace[^>]*>([a-f0-9]+)<\/span>/);
+        assertExists(md5Match);
+        const responseMd5 = md5Match[1];
 
-    const filePath = `${config.ABGABEN_DIR}/${filename}`;
-    const fileContent = await Deno.readFile(filePath);
-    const computedMd5 = computeMd5(fileContent);
+        const filenameMatch = html.match(/<span class="fw-bold text-break[^"]*">([^<]+)<\/span>/);
+        assertExists(filenameMatch);
+        const filename = filenameMatch[1];
 
-    assertEquals(responseMd5, computedMd5);
+        const filePath = `${config.ABGABEN_DIR}/${filename}`;
+        const fileContent = await Deno.readFile(filePath);
+        const computedMd5 = computeMd5(fileContent);
 
-    await Deno.remove(filePath);
+        assertEquals(responseMd5, computedMd5);
+
+        await Deno.remove(filePath);
+    } finally {
+        if (cookie) {
+            const restoreRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cookie": cookie,
+                },
+                body: `permitted_filetypes=${encodeURIComponent(originalTypes.join(", "))}`,
+            });
+            await restoreRes.text();
+        } else {
+            config.PERMITTED_FILETYPES = originalTypes;
+        }
+    }
 });
 
 Deno.test("POST /upload - rejects zip with non-zip content", async () => {
+    const testEmail = "grafg@spengergasse.at";
+    const originalTypes = [...config.PERMITTED_FILETYPES];
+    let cookie: string | null = null;
+
+    try {
+        const registerRes = await fetch(`${BASE_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `email=${encodeURIComponent(testEmail)}`,
+        });
+        await registerRes.text();
+        cookie = registerRes.headers.get("set-cookie");
+        assertExists(cookie);
+
+        const setTypesRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie,
+            },
+            body: "permitted_filetypes=zip,%20md",
+        });
+        await setTypesRes.text();
+        assertEquals(setTypesRes.status, 200);
+
+        const formData = new FormData();
+        const file = new Blob(["not really a zip"], { type: "application/zip" });
+        formData.append("file", file, "fake.zip");
+
+        const uploadRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            headers: { "Cookie": cookie! },
+            body: formData,
+        });
+
+        assertEquals(uploadRes.status, 415);
+        const html = await uploadRes.text();
+        assertEquals(html.includes("Der Dateiinhalt konnte nicht als .zip erkannt werden."), true);
+    } finally {
+        if (cookie) {
+            const restoreRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cookie": cookie,
+                },
+                body: `permitted_filetypes=${encodeURIComponent(originalTypes.join(", "))}`,
+            });
+            await restoreRes.text();
+        } else {
+            config.PERMITTED_FILETYPES = originalTypes;
+        }
+    }
+});
+
+Deno.test("GET /admin shows no anomalies empty state", async () => {
     const testEmail = "grafg@spengergasse.at";
 
     const registerRes = await fetch(`${BASE_URL}/register`, {
@@ -294,17 +379,12 @@ Deno.test("POST /upload - rejects zip with non-zip content", async () => {
     const cookie = registerRes.headers.get("set-cookie");
     assertExists(cookie);
 
-    const formData = new FormData();
-    const file = new Blob(["not really a zip"], { type: "application/zip" });
-    formData.append("file", file, "fake.zip");
-
-    const uploadRes = await fetch(`${BASE_URL}/upload`, {
-        method: "POST",
-        headers: { "Cookie": cookie! },
-        body: formData,
+    const res = await fetch(`${BASE_URL}/admin`, {
+        headers: { "Cookie": cookie },
     });
+    const html = await res.text();
 
-    assertEquals(uploadRes.status, 415);
-    const html = await uploadRes.text();
-    assertEquals(html.includes("Der Dateiinhalt konnte nicht als .zip erkannt werden."), true);
+    assertEquals(res.status, 200);
+    assertEquals(html.includes("Es gibt keine Anomalien."), true);
+    assertEquals(html.includes("No anomalies detected."), false);
 });
