@@ -3,7 +3,7 @@
 Current status as of 2026-03-12.
 
 ## Current Focus
-Admin/student forensics UI polish, HTMX stability, and admin maintenance controls.
+Admin forensics query performance, schema/index cleanup, and documentation persistence.
 
 ## Completed (this cycle)
 - [x] Known-IP cards now combine "Zuletzt" and the in-range hit count into one header badge in `templates/admin-report.hbs`.
@@ -18,6 +18,11 @@ Admin/student forensics UI polish, HTMX stability, and admin maintenance control
 - [x] The anomaly UI now uses German-only text and collapses into a warning-styled Bootstrap accordion when findings exist; otherwise it shows `Es gibt keine Anomalien.`.
 - [x] Admin refresh suppression and the global HTMX spinner now stay in sync even when auto-refresh is canceled because anomaly details or IP cards are open.
 - [x] The Admin page now offers `Datenbank bereinigen`, which removes rows older than one month from `cookiepresents`, `registrations`, `ipfact`, and `abgaben` and reports the deletion counts back in the UI.
+- [x] `repo.users.getByIds(...)` now uses direct SQLite instead of Prisma, while Prisma remains the schema/migration authority and still handles ordinary user writes.
+- [x] `service/ipadmin.ts` now aggregates admin forensics data from range-level reads (`ipfact`, `cookiepresents`, `registrations`, `abgaben`) instead of issuing per-IP N+1 queries.
+- [x] Composite reporting indexes were added in `prisma/migrations/20260312120000_admin_forensics_indexes/migration.sql` and mirrored in `prisma/schema.prisma`.
+- [x] Query-shape verification was performed directly against `uploadthing.db` with `sqlite3 "uploadthing.db" "EXPLAIN QUERY PLAN ..."`, covering per-IP history lookups, latest-by-IP lookups, user/range submission queries, and the new range-based admin aggregation reads.
+- [x] After reviewing actual query usage and plans, redundant single-column indexes were removed through the Prisma workflow in `prisma/migrations/20260312155839_drop_redundant_admin_indexes/migration.sql`.
 - [x] Validation passed with `deno task check`, `deno task lint`, and `deno task test`.
 
 ## Pending
@@ -27,4 +32,4 @@ Admin/student forensics UI polish, HTMX stability, and admin maintenance control
 None.
 
 ## Next Session Suggestion
-If admin forensics work continues, start with browser verification of the known-IP badges and tooltip behavior against realistic `/admin` data.
+If admin forensics work continues, start with realistic browser and latency verification of `/admin` on a large time window before adding any more indexes or changing the remaining user-centric query shapes.

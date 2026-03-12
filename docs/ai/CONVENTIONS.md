@@ -12,6 +12,7 @@
 - You may run `deno task` commands without asking for separate approval.
 - Common safe tasks are `deno task check`, `deno task lint`, `deno task test`, `deno task dev`, `deno task start`, `deno task pg`, `deno task pv`, `deno task pmD`, `deno task pmd`, `deno task pms`, `deno task pmr`, and `deno task ps`.
 - Treat `deno.json` as the source of truth if task names change.
+- For schema/index changes, treat `prisma/schema.prisma` as the source of truth and prefer the Prisma workflow: edit the schema first, then run `deno task pmd --name <migration_name>`, then inspect the generated migration instead of hand-authoring migration SQL.
 
 ## Coding Style
 
@@ -50,6 +51,7 @@
 - A task is not complete until `deno task check`, `deno task lint`, and `deno task test` succeed.
 - `deno task test` is the automated test command; ignore older references such as `main_test_db.ts`.
 - If a command cannot run because of missing env, LDAP, filesystem, or another dependency, report that explicitly.
+- For admin forensics database work, verify index usage directly against `uploadthing.db` with `sqlite3 "uploadthing.db" "EXPLAIN QUERY PLAN ..."`; capture the exact hot queries being evaluated and compare plans before and after schema/query changes.
 
 ## Documentation Maintenance
 

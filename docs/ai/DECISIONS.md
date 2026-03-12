@@ -44,6 +44,15 @@
 - Prisma is used for the `users` model and client generation.
 - Direct SQLite access is still used for `ipfact`, `registrations`, `cookiepresents`, and `abgaben`.
 - This hybrid approach is intentional for now and should remain unless there is a deliberate migration plan.
+- Admin forensics reads now lean further toward SQL: `repo.users.getByIds(...)` is SQL-backed to remove Prisma overhead from the hot reporting path, while Prisma remains the migration/schema authority and still handles ordinary user writes.
+- The long-term direction discussed in this cycle is a future move toward Drizzle, so current reporting-path optimizations should prefer SQL/query shapes that are easy to carry forward.
+
+## Admin Forensics Query Strategy
+
+- The admin forensics page was changed from per-IP N+1 reads to range-level table reads aggregated in memory in `service/ipadmin.ts`.
+- Composite indexes were added for the reporting hot path: `cookiepresents(ip, at)`, `registrations(ip, at)`, `abgaben(ip, at)`, and `ipfact(seen, ip)`.
+- After validating actual query plans, redundant single-column indexes `cookiepresents(ip)`, `registrations(ip)`, `ipfact(ip)`, and `ipfact(seen)` were removed through the Prisma migration workflow.
+- Query-shape tuning for the range aggregation now prefers reducing SQL-side global sorting and performing final per-IP ordering in application code when that avoids temp b-tree work without changing behavior.
 
 ## Exam-Oriented Authentication
 

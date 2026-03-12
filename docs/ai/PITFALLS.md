@@ -22,6 +22,8 @@
 - Persistence is hybrid: not everything goes through Prisma.
 - Repositories using direct SQLite prepared statements expect UTC ISO timestamps.
 - Be careful not to document the app as Prisma-only.
+- Do not hand-edit index/drop-index migration SQL when the change belongs in Prisma schema state; remove or add indexes in `prisma/schema.prisma` first and generate the migration with `deno task pmd --name <migration_name>`.
+- If `deno task pmd` appears to pause, check the CLI invocation carefully: Prisma wants `--name <migration_name>` passed through the Deno task, and a malformed argument shape can fall back to an interactive migration-name prompt.
 
 ## Upload Safety
 
@@ -58,6 +60,8 @@
 - Admin forensics timestamps on the IP cards use a fixed 15-hour cutoff via `localAdminIpString`, not the generic `TODAY_HOURS_CUTOFF` value.
 - The admin anomaly panel belongs between the time selector and the known-IP report; if anomalies exist it should default to a collapsed Bootstrap accordion with warning styling in the header, and if none exist it should render the German-only empty state `Es gibt keine Anomalien.`.
 - The Admin page now includes a database cleanup control that deletes rows older than one month from `cookiepresents`, `registrations`, `ipfact`, and `abgaben`; it is intentionally fixed-duration and not runtime-configurable.
+- When validating admin forensics performance work, run `EXPLAIN QUERY PLAN` against the real local `uploadthing.db`, not only against assumptions from the schema. The useful verification commands in this cycle checked these exact query families: `SELECT DISTINCT ip FROM ipfact WHERE seen BETWEEN ...`, `SELECT seen FROM ipfact WHERE ip = ? AND seen BETWEEN ... ORDER BY seen DESC`, latest-by-IP lookups for `cookiepresents` and `registrations`, latest-by-user lookup for `registrations`, user/range queries for `abgaben`, and the range aggregation reads introduced for `service/ipadmin.ts`.
+- The range-based admin aggregation originally used `ORDER BY ip ASC, at/seen DESC`, but `EXPLAIN QUERY PLAN` showed temp b-tree sorting on those shapes; the final implementation removes unnecessary global ordering from `cookiepresents`, `registrations`, and `abgaben` range reads, changes `ipfact` range reads to `ORDER BY seen DESC`, and sorts each per-IP bucket in memory inside `service/ipadmin.ts`.
 
 ## Theme Asset Workflow
 
