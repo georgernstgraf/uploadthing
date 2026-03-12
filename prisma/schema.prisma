@@ -15,8 +15,6 @@ model ipfact {
   seen DateTime
 
   @@unique([ip, seen])
-  @@index([ip])
-  @@index([seen])
   @@index([seen, ip])
 }
 
@@ -39,7 +37,6 @@ model registrations {
   user   users    @relation(fields: [userId], references: [id])
 
   @@index([userId])
-  @@index([ip])
   @@index([ip, at])
 }
 
@@ -50,7 +47,6 @@ model cookiepresents {
   user   users    @relation(fields: [userId], references: [id])
   userId Int
 
-  @@index([ip])
   @@index([userId])
   @@index([ip, at])
 }
