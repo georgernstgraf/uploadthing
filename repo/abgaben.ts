@@ -80,8 +80,7 @@ export function getByDateRange(
 ): RepoAbgabeRecord[] {
     const getByRange_stmt = db.prepare(
         `SELECT id, userId, ip, filename, at FROM abgaben
-        WHERE at BETWEEN ? AND ?
-        ORDER BY at DESC`,
+        WHERE at BETWEEN ? AND ?`,
     );
     const rows = getByRange_stmt.all(
         start.toISOString(),

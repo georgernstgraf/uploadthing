@@ -50,7 +50,7 @@ export function getInRange(
     const stmt = db.prepare(
         `SELECT ip, seen FROM ipfact
         WHERE seen BETWEEN ? AND ?
-        ORDER BY ip ASC, seen DESC`,
+        ORDER BY seen DESC`,
     );
     const rows = stmt.all(start.toISOString(), end.toISOString()) as {
         ip: string;

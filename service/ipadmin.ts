@@ -145,6 +145,22 @@ export async function for_range(
         }
     }
 
+    for (const seenAtDesc of seenByIp.values()) {
+        seenAtDesc.sort((a, b) => b.valueOf() - a.valueOf());
+    }
+
+    for (const records of cookieByIp.values()) {
+        records.sort((a, b) => b.at.valueOf() - a.at.valueOf());
+    }
+
+    for (const records of registrationByIp.values()) {
+        records.sort((a, b) => b.at.valueOf() - a.at.valueOf());
+    }
+
+    for (const submissions of submissionsByIp.values()) {
+        submissions.sort((a, b) => b.at.valueOf() - a.at.valueOf());
+    }
+
     const users = await repo.users.getByIds([...userIds]);
     const usersById = new Map<number, UserType>();
     for (const user of users) {

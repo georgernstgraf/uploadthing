@@ -39,8 +39,7 @@ export function byRange(
     const byRange_stmt = db.prepare(
         `SELECT id, ip, userId, at
         FROM cookiepresents
-        WHERE at BETWEEN ? AND ?
-        ORDER BY ip ASC, at DESC`,
+        WHERE at BETWEEN ? AND ?`,
     );
     const rows = byRange_stmt.all(
         start.toISOString(),

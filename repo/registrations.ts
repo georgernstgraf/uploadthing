@@ -43,8 +43,7 @@ export function byRange(
     const registrationsByRange_stmt = db.prepare(
         `SELECT id, userId, ip, at
         FROM registrations
-        WHERE at BETWEEN ? AND ?
-        ORDER BY ip ASC, at DESC`,
+        WHERE at BETWEEN ? AND ?`,
     );
     const rows = registrationsByRange_stmt.all(
         start.toISOString(),
