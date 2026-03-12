@@ -1,6 +1,5 @@
 import { assertEquals, assertExists } from "@std/assert";
 import { db } from "../repo/db.ts";
-import prisma from "../repo/prismadb.ts";
 import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
@@ -48,9 +47,7 @@ Deno.test("ipadmin classifies IPs by cookie presence and keeps registrations", a
         db.exec(`DELETE FROM cookiepresents WHERE ip IN ('${knownIp}', '${unknownIp}')`);
         db.exec(`DELETE FROM registrations WHERE ip IN ('${knownIp}', '${unknownIp}')`);
         db.exec(`DELETE FROM ipfact WHERE ip IN ('${knownIp}', '${unknownIp}')`);
-        await prisma.users.deleteMany({
-            where: { email: userEmail },
-        });
+        usersRepo.deleteByEmail(userEmail);
     }
 });
 
@@ -101,8 +98,6 @@ Deno.test("ipadmin detects IP-based and user-based anomalies", async () => {
         db.exec(`DELETE FROM cookiepresents WHERE ip IN ('${sharedIp}', '${secondIp}')`);
         db.exec(`DELETE FROM registrations WHERE ip IN ('${sharedIp}', '${secondIp}')`);
         db.exec(`DELETE FROM ipfact WHERE ip IN ('${sharedIp}', '${secondIp}')`);
-        await prisma.users.deleteMany({
-            where: { email: { in: [userOneEmail, userTwoEmail] } },
-        });
+        usersRepo.deleteByEmails([userOneEmail, userTwoEmail]);
     }
 });

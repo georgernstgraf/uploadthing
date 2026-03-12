@@ -1,5 +1,30 @@
 import { db } from "./db.ts";
 
+const registrationsByIPInRangeStmt = db.prepare(
+    `SELECT userId, ip, at
+    FROM registrations
+    WHERE ip = ?
+        AND at BETWEEN ? AND ?
+    ORDER BY at DESC`,
+);
+const registrationsByRangeStmt = db.prepare(
+    `SELECT id, userId, ip, at
+    FROM registrations
+    WHERE at BETWEEN ? AND ?`,
+);
+const latestRegistrationForIPStmt = db.prepare(
+    `select userId from registrations where ip = ? order by at desc limit 1`,
+);
+const createStmt = db.prepare(
+    "INSERT INTO registrations (ip, userId, at) VALUES (?, ?, ?)",
+);
+const deleteOlderThanStmt = db.prepare(
+    "DELETE FROM registrations WHERE at < ?",
+);
+const latestIPForUserStmt = db.prepare(
+    `SELECT ip FROM registrations WHERE userId = ? ORDER BY at DESC LIMIT 1`,
+);
+
 export type RepoRegistrationRecord = {
     id: number;
     ip: string;
@@ -16,14 +41,7 @@ export function byIPInRange(
     start: Date,
     end: Date,
 ): RepoRegistrationRecord[] {
-    const registrationsByIPInRange_stmt = db.prepare(
-        `SELECT userId, ip, at
-        FROM registrations
-        WHERE ip = ?
-            AND at BETWEEN ? AND ?
-        ORDER BY at DESC`,
-    );
-    const rows = registrationsByIPInRange_stmt.all(
+    const rows = registrationsByIPInRangeStmt.all(
         ip,
         start.toISOString(),
         end.toISOString(),
@@ -40,12 +58,7 @@ export function byRange(
     start: Date,
     end: Date,
 ): RepoRegistrationRecord[] {
-    const registrationsByRange_stmt = db.prepare(
-        `SELECT id, userId, ip, at
-        FROM registrations
-        WHERE at BETWEEN ? AND ?`,
-    );
-    const rows = registrationsByRange_stmt.all(
+    const rows = registrationsByRangeStmt.all(
         start.toISOString(),
         end.toISOString(),
     ) as { id: number; userId: number; ip: string; at: string }[];
@@ -61,10 +74,7 @@ export function byRange(
  * Fetch the most recent userId registered for an IP.
  */
 export function getLatestRegistrationForIP(ip: string): number | null {
-    const latestRegistrationForIP_stmt = db.prepare(
-        `select userId from registrations where ip = ? order by at desc limit 1`,
-    );
-    const result = latestRegistrationForIP_stmt.get(ip) as
+    const result = latestRegistrationForIPStmt.get(ip) as
         | { userId: number }
         | undefined;
     return result?.userId ?? null;
@@ -74,17 +84,11 @@ export function getLatestRegistrationForIP(ip: string): number | null {
  * Insert a registration record for an IP and user.
  */
 export function create(ip: string, userId: number, at: Date): void {
-    const create_stmt = db.prepare(
-        "INSERT INTO registrations (ip, userId, at) VALUES (?, ?, ?)",
-    );
-    create_stmt.run(ip, userId, at.toISOString());
+    createStmt.run(ip, userId, at.toISOString());
 }
 
 export function deleteOlderThan(cutoff: Date): number {
-    const deleteOlderThan_stmt = db.prepare(
-        "DELETE FROM registrations WHERE at < ?",
-    );
-    deleteOlderThan_stmt.run(cutoff.toISOString());
+    deleteOlderThanStmt.run(cutoff.toISOString());
     return db.changes;
 }
 
@@ -92,10 +96,7 @@ export function deleteOlderThan(cutoff: Date): number {
  * Fetch the most recent IP registered for a userId.
  */
 export function getLatestIPForUser(userId: number): string | null {
-    const latestIPForUser_stmt = db.prepare(
-        `SELECT ip FROM registrations WHERE userId = ? ORDER BY at DESC LIMIT 1`,
-    );
-    const result = latestIPForUser_stmt.get(userId) as
+    const result = latestIPForUserStmt.get(userId) as
         | { ip: string }
         | undefined;
     return result?.ip ?? null;

@@ -14,7 +14,6 @@ import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as abgabenRepo from "../repo/abgaben.ts";
-import prisma from "../repo/prismadb.ts";
 
 Deno.test("getExamModeCommandArg maps internet state to script arg", () => {
     assertEquals(getExamModeCommandArg(true), "off");
@@ -133,7 +132,7 @@ Deno.test("cleanupDatabaseOlderThanOneMonth deletes only old time-based records"
         db.exec(`DELETE FROM registrations WHERE ip = '${ip}'`);
         db.exec(`DELETE FROM ipfact WHERE ip = '${ip}'`);
         db.exec(`DELETE FROM abgaben WHERE ip = '${ip}'`);
-        await prisma.users.deleteMany({ where: { email } });
+        usersRepo.deleteByEmail(email);
     }
 });
 

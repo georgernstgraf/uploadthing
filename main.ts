@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import config from "./lib/config.ts";
 import { sessionMiddleware, remoteIPMiddleware } from "./middleware/session.ts";
 import { Bindings, HonoContextVars } from "./lib/types.ts";
-import { shutdownPrisma } from "./repo/prismadb.ts";
 import { shutdownSqlite } from "./repo/db.ts";
 
 import adminRouter from "./routes/admin.ts";
@@ -34,7 +33,7 @@ app.route("/", filesRouter);
 const abortController = new AbortController();
 let shuttingDown = false;
 
-const shutdown = async (signal: Deno.Signal) => {
+const shutdown = (signal: Deno.Signal) => {
     if (shuttingDown) {
         return;
     }
@@ -43,7 +42,6 @@ const shutdown = async (signal: Deno.Signal) => {
     console.log(`Received ${signal}, shutting down HTTP server...`);
     abortController.abort();
 
-    await shutdownPrisma(signal);
     shutdownSqlite(signal);
 
     Deno.removeSignalListener("SIGINT", sigintHandler);

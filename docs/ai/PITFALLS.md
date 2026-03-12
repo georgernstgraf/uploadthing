@@ -22,6 +22,7 @@
 - Persistence is hybrid: not everything goes through Prisma.
 - Repositories using direct SQLite prepared statements expect UTC ISO timestamps.
 - Be careful not to document the app as Prisma-only.
+- Do not reintroduce runtime Prisma client usage for `users`; Prisma stays in the project for schema and migrations, while runtime user CRUD is handled in `repo/users.ts`.
 - Do not hand-edit index/drop-index migration SQL when the change belongs in Prisma schema state; remove or add indexes in `prisma/schema.prisma` first and generate the migration with `deno task pmd --name <migration_name>`.
 - If `deno task pmd` appears to pause, check the CLI invocation carefully: Prisma wants `--name <migration_name>` passed through the Deno task, and a malformed argument shape can fall back to an interactive migration-name prompt.
 
@@ -84,5 +85,4 @@
 
 ## Generated Artifacts
 
-- `lib/prismaclient/` is generated output.
-- Avoid hand-editing generated Prisma client files unless the task explicitly requires generated-code changes.
+- `lib/prismaclient/` is no longer used by runtime code after the user-repository refactor; do not reintroduce it unless the project deliberately returns to generated Prisma client usage.

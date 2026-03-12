@@ -1,5 +1,4 @@
 import { db, vacuumInto } from "./db.ts";
-import prismadb from "./prismadb.ts";
 import * as ipfact from "./ipfact.ts";
 import * as registrations from "./registrations.ts";
 import * as cookiepresents from "./cookiepresents.ts";
@@ -12,7 +11,6 @@ export {
     vacuumInto,
     ipfact,
     ldap,
-    prismadb,
     registrations,
     cookiepresents,
     users,

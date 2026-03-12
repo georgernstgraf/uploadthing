@@ -1,5 +1,27 @@
 import { db } from "./db.ts";
 
+const byIPInRangeStmt = db.prepare(
+    `SELECT id, ip, userId, at
+    FROM cookiepresents
+    WHERE ip = ?
+        AND at BETWEEN ? AND ?
+    ORDER BY at DESC`,
+);
+const byRangeStmt = db.prepare(
+    `SELECT id, ip, userId, at
+    FROM cookiepresents
+    WHERE at BETWEEN ? AND ?`,
+);
+const createStmt = db.prepare(
+    "INSERT INTO cookiepresents (ip, userId, at) VALUES (?, ?, ?)",
+);
+const deleteOlderThanStmt = db.prepare(
+    "DELETE FROM cookiepresents WHERE at < ?",
+);
+const latestUserIdForIPStmt = db.prepare(
+    `SELECT userId FROM cookiepresents WHERE ip = ? ORDER BY at DESC LIMIT 1`,
+);
+
 export type RepoCookiePresentRecord = {
     id: number;
     ip: string;
@@ -12,14 +34,7 @@ export function byIPInRange(
     start: Date,
     end: Date,
 ): RepoCookiePresentRecord[] {
-    const byIPInRange_stmt = db.prepare(
-        `SELECT id, ip, userId, at
-        FROM cookiepresents
-        WHERE ip = ?
-            AND at BETWEEN ? AND ?
-        ORDER BY at DESC`,
-    );
-    const rows = byIPInRange_stmt.all(
+    const rows = byIPInRangeStmt.all(
         ip,
         start.toISOString(),
         end.toISOString(),
@@ -36,12 +51,7 @@ export function byRange(
     start: Date,
     end: Date,
 ): RepoCookiePresentRecord[] {
-    const byRange_stmt = db.prepare(
-        `SELECT id, ip, userId, at
-        FROM cookiepresents
-        WHERE at BETWEEN ? AND ?`,
-    );
-    const rows = byRange_stmt.all(
+    const rows = byRangeStmt.all(
         start.toISOString(),
         end.toISOString(),
     ) as { id: number; ip: string; userId: number; at: string }[];
@@ -54,24 +64,15 @@ export function byRange(
 }
 
 export function create(ip: string, userId: number, at: Date): void {
-    const create_stmt = db.prepare(
-        "INSERT INTO cookiepresents (ip, userId, at) VALUES (?, ?, ?)",
-    );
-    create_stmt.run(ip, userId, at.toISOString());
+    createStmt.run(ip, userId, at.toISOString());
 }
 
 export function deleteOlderThan(cutoff: Date): number {
-    const deleteOlderThan_stmt = db.prepare(
-        "DELETE FROM cookiepresents WHERE at < ?",
-    );
-    deleteOlderThan_stmt.run(cutoff.toISOString());
+    deleteOlderThanStmt.run(cutoff.toISOString());
     return db.changes;
 }
 
 export function getLatestUserIdForIP(ip: string): number | null {
-    const latestUserIdForIP_stmt = db.prepare(
-        `SELECT userId FROM cookiepresents WHERE ip = ? ORDER BY at DESC LIMIT 1`,
-    );
-    const result = latestUserIdForIP_stmt.get(ip) as { userId: number } | undefined;
+    const result = latestUserIdForIPStmt.get(ip) as { userId: number } | undefined;
     return result?.userId ?? null;
 }

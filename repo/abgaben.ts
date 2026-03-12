@@ -1,5 +1,29 @@
 import { db } from "./db.ts";
 
+const createStmt = db.prepare(
+    "INSERT INTO abgaben (userId, ip, filename, at) VALUES (?, ?, ?, ?)",
+);
+const deleteOlderThanStmt = db.prepare(
+    "DELETE FROM abgaben WHERE at < ?",
+);
+const getByUserStmt = db.prepare(
+    "SELECT id, userId, ip, filename, at FROM abgaben WHERE userId = ? ORDER BY at DESC",
+);
+const getByUserAndRangeStmt = db.prepare(
+    `SELECT id, userId, ip, filename, at FROM abgaben
+    WHERE userId = ? AND at BETWEEN ? AND ?
+    ORDER BY at DESC`,
+);
+const getByRangeStmt = db.prepare(
+    `SELECT id, userId, ip, filename, at FROM abgaben
+    WHERE at BETWEEN ? AND ?`,
+);
+const getByIPAndRangeStmt = db.prepare(
+    `SELECT id, userId, ip, filename, at FROM abgaben
+    WHERE ip = ? AND at BETWEEN ? AND ?
+    ORDER BY at DESC`,
+);
+
 export type RepoAbgabeRecord = {
     id: number;
     userId: number;
@@ -17,19 +41,13 @@ export function create(
     filename: string,
     at: Date,
 ): RepoAbgabeRecord {
-    const create_stmt = db.prepare(
-        "INSERT INTO abgaben (userId, ip, filename, at) VALUES (?, ?, ?, ?)",
-    );
-    create_stmt.run(userId, ip, filename, at.toISOString());
+    createStmt.run(userId, ip, filename, at.toISOString());
     const id = db.lastInsertRowId as number;
     return { id, userId, ip, filename, at };
 }
 
 export function deleteOlderThan(cutoff: Date): number {
-    const deleteOlderThan_stmt = db.prepare(
-        "DELETE FROM abgaben WHERE at < ?",
-    );
-    deleteOlderThan_stmt.run(cutoff.toISOString());
+    deleteOlderThanStmt.run(cutoff.toISOString());
     return db.changes;
 }
 
@@ -37,10 +55,7 @@ export function deleteOlderThan(cutoff: Date): number {
  * Fetch submissions for a user.
  */
 export function getByUserId(userId: number): RepoAbgabeRecord[] {
-    const getByUser_stmt = db.prepare(
-        "SELECT id, userId, ip, filename, at FROM abgaben WHERE userId = ? ORDER BY at DESC",
-    );
-    const rows = getByUser_stmt.all(userId) as RepoAbgabeRecord[];
+    const rows = getByUserStmt.all(userId) as RepoAbgabeRecord[];
     return rows.map((row) => ({
         ...row,
         at: new Date(row.at),
@@ -55,12 +70,7 @@ export function getByUserIdAndDateRange(
     start: Date,
     end: Date,
 ): RepoAbgabeRecord[] {
-    const getByUserAndRange_stmt = db.prepare(
-        `SELECT id, userId, ip, filename, at FROM abgaben
-        WHERE userId = ? AND at BETWEEN ? AND ?
-        ORDER BY at DESC`,
-    );
-    const rows = getByUserAndRange_stmt.all(
+    const rows = getByUserAndRangeStmt.all(
         userId,
         start.toISOString(),
         end.toISOString(),
@@ -78,11 +88,7 @@ export function getByDateRange(
     start: Date,
     end: Date,
 ): RepoAbgabeRecord[] {
-    const getByRange_stmt = db.prepare(
-        `SELECT id, userId, ip, filename, at FROM abgaben
-        WHERE at BETWEEN ? AND ?`,
-    );
-    const rows = getByRange_stmt.all(
+    const rows = getByRangeStmt.all(
         start.toISOString(),
         end.toISOString(),
     ) as RepoAbgabeRecord[];
@@ -100,12 +106,7 @@ export function getByIPAndDateRange(
     start: Date,
     end: Date,
 ): RepoAbgabeRecord[] {
-    const getByIPAndRange_stmt = db.prepare(
-        `SELECT id, userId, ip, filename, at FROM abgaben
-        WHERE ip = ? AND at BETWEEN ? AND ?
-        ORDER BY at DESC`,
-    );
-    const rows = getByIPAndRange_stmt.all(
+    const rows = getByIPAndRangeStmt.all(
         ip,
         start.toISOString(),
         end.toISOString(),

@@ -3,7 +3,7 @@
 Current status as of 2026-03-12.
 
 ## Current Focus
-Admin forensics query performance, schema/index cleanup, and documentation persistence.
+Runtime persistence cleanup after moving `users` fully to SQLite-backed repositories while keeping Prisma as schema authority.
 
 ## Completed (this cycle)
 - [x] Known-IP cards now combine "Zuletzt" and the in-range hit count into one header badge in `templates/admin-report.hbs`.
@@ -24,6 +24,10 @@ Admin forensics query performance, schema/index cleanup, and documentation persi
 - [x] Query-shape verification was performed directly against `uploadthing.db` with `sqlite3 "uploadthing.db" "EXPLAIN QUERY PLAN ..."`, covering per-IP history lookups, latest-by-IP lookups, user/range submission queries, and the new range-based admin aggregation reads.
 - [x] After reviewing actual query usage and plans, redundant single-column indexes were removed through the Prisma workflow in `prisma/migrations/20260312155839_drop_redundant_admin_indexes/migration.sql`.
 - [x] Validation passed with `deno task check`, `deno task lint`, and `deno task test`.
+- [x] Runtime `users` persistence was fully moved from Prisma client calls to direct SQLite in `repo/users.ts`, while Prisma remained the schema and migration source of truth.
+- [x] Runtime Prisma client wiring was removed from `main.ts`, `repo/repo.ts`, and tests; `repo/prismadb.ts` was deleted.
+- [x] `deno task pg` was removed because generated Prisma client code is no longer used at runtime.
+- [x] Fixed SQLite statements were hoisted to module scope across `repo/users.ts`, `repo/cookiepresents.ts`, `repo/registrations.ts`, `repo/ipfact.ts`, and `repo/abgaben.ts`.
 
 ## Pending
 - [ ] None.
@@ -32,4 +36,4 @@ Admin forensics query performance, schema/index cleanup, and documentation persi
 None.
 
 ## Next Session Suggestion
-If admin forensics work continues, start with realistic browser and latency verification of `/admin` on a large time window before adding any more indexes or changing the remaining user-centric query shapes.
+If more persistence tuning is needed, profile the remaining dynamic SQL paths such as variable-length `IN (...)` queries before adding statement caches or further repository complexity.

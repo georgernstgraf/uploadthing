@@ -10,7 +10,7 @@
 ## Deno Task Execution
 
 - You may run `deno task` commands without asking for separate approval.
-- Common safe tasks are `deno task check`, `deno task lint`, `deno task test`, `deno task dev`, `deno task start`, `deno task pg`, `deno task pv`, `deno task pmD`, `deno task pmd`, `deno task pms`, `deno task pmr`, and `deno task ps`.
+- Common safe tasks are `deno task check`, `deno task lint`, `deno task test`, `deno task dev`, `deno task start`, `deno task pv`, `deno task pmD`, `deno task pmd`, `deno task pms`, `deno task pmr`, and `deno task ps`.
 - Treat `deno.json` as the source of truth if task names change.
 - For schema/index changes, treat `prisma/schema.prisma` as the source of truth and prefer the Prisma workflow: edit the schema first, then run `deno task pmd --name <migration_name>`, then inspect the generated migration instead of hand-authoring migration SQL.
 
@@ -27,6 +27,7 @@
 - Follow the existing layering: middleware -> routes -> service -> repo -> database.
 - Keep route handlers thin; validation and orchestration belong in services.
 - Repositories own persistence details and time conversion for stored timestamps.
+- For direct SQLite repositories, hoist fixed `db.prepare(...)` statements to module scope and only prepare per call when the SQL shape is genuinely dynamic.
 - Shared types and helpers belong under `lib/`.
 - Template rendering is server-side via Handlebars in `lib/handlebars.ts` and `templates/`.
 - In Handlebars templates, prefer native Bootstrap component structure (`card-header`, `card-body`, `card-footer`, `list-group`, `badge`, `btn`) over generic wrapper classes when the element already matches a Bootstrap component concept.

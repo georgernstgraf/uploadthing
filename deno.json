@@ -7,7 +7,6 @@
         "check": "deno check *ts lib/*ts routes/*ts ./middleware/*ts repo/*ts service/*ts",
         "lint": "deno lint *.ts lib/ middleware/ repo/ routes/ service/ test/",
         "fullcheck": "deno task check && deno task lint && deno task test",
-        "pg": "deno run -A prisma generate",
         "pv": "deno run -A prisma validate",
         "pmD": "deno run -A --env-file prisma migrate deploy",
         "pmd": "deno run -A --env-file prisma migrate dev",

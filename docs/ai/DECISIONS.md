@@ -41,10 +41,10 @@
 
 ## Hybrid Persistence Strategy
 
-- Prisma is used for the `users` model and client generation.
+- Prisma remains the schema and migration authority, but runtime persistence no longer uses a generated Prisma client.
 - Direct SQLite access is still used for `ipfact`, `registrations`, `cookiepresents`, and `abgaben`.
 - This hybrid approach is intentional for now and should remain unless there is a deliberate migration plan.
-- Admin forensics reads now lean further toward SQL: `repo.users.getByIds(...)` is SQL-backed to remove Prisma overhead from the hot reporting path, while Prisma remains the migration/schema authority and still handles ordinary user writes.
+- `users` repository operations are now SQL-backed as well, so runtime CRUD for `users` lives in `repo/users.ts` while Prisma stays responsible for schema state and migrations.
 - The long-term direction discussed in this cycle is a future move toward Drizzle, so current reporting-path optimizations should prefer SQL/query shapes that are easy to carry forward.
 
 ## Admin Forensics Query Strategy
