@@ -71,6 +71,7 @@ type AdminFileTypesTemplateData = {
     current_theme_key: string | null;
     success_message?: string;
     error_message?: string;
+    cleanup_result_html?: string;
 };
 
 type AdminExamModeTemplateData = {

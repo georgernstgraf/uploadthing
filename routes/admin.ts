@@ -4,7 +4,12 @@ import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
 import config, { parsePermittedFileTypes } from "../lib/config.ts";
-import { AdminFileTypesSchema, AdminQuerySchema, AdminThemeSchema } from "../lib/schemas.ts";
+import {
+    AdminCleanupDatabaseSchema,
+    AdminFileTypesSchema,
+    AdminQuerySchema,
+    AdminThemeSchema,
+} from "../lib/schemas.ts";
 
 const adminRouter = new Hono<{ Variables: HonoContextVars }>();
 const start_ms_earlier = 3.6 * 1.5e6;
@@ -15,6 +20,7 @@ function renderFileTypesPage(
     c: Context<{ Variables: HonoContextVars }>,
     success_message?: string,
     error_message?: string,
+    cleanup_result_html?: string,
 ) {
     const remote_user = c.get("remoteuser");
     if (!remote_user) {
@@ -31,6 +37,7 @@ function renderFileTypesPage(
         current_theme_key: service.admin.getCurrentThemeKey(),
         success_message,
         error_message,
+        cleanup_result_html,
     });
 
     if (c.req.header("HX-Request") === "true") {
@@ -243,6 +250,28 @@ adminRouter.post("/wipe-abgaben", (c) => {
     } catch (e) {
         console.error("Error wiping abgaben directory:", e);
         return c.html(`<div class="alert alert-danger fs-lg mt-2 mx-auto" style="max-width: 800px;">Fehler beim Leeren des Abgaben-Verzeichnisses.</div>`, 500);
+    }
+});
+
+adminRouter.post("/cleanup-database", async (c) => {
+    const is_admin = c.get("is_admin");
+    if (!is_admin) {
+        return c.text("Forbidden", 403);
+    }
+
+    const formData = await c.req.formData();
+    const validation = AdminCleanupDatabaseSchema.safeParse(formData);
+    if (!validation.success) {
+        return renderFileTypesPage(c, undefined, "Ungültige Anfrage für die Datenbankbereinigung");
+    }
+
+    try {
+        const result = service.admin.cleanupDatabaseOlderThanOneMonth();
+        const html = `<div class="alert alert-success fs-lg mt-2 mx-auto" style="max-width: 720px;">Datenbank bereinigt. Entfernt: ${result.deleted_cookiepresents} Cookies, ${result.deleted_registrations} Registrierungen, ${result.deleted_ipfacts} IP-Logs, ${result.deleted_submissions} Abgaben (gesamt ${result.total_deleted}).</div>`;
+        return renderFileTypesPage(c, undefined, undefined, html);
+    } catch (error) {
+        console.error("Error cleaning up database:", error);
+        return renderFileTypesPage(c, undefined, "Fehler bei der Datenbankbereinigung");
     }
 });
 

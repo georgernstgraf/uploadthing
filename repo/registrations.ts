@@ -55,11 +55,20 @@ const create_stmt = db.prepare(
     "INSERT INTO registrations (ip, userId, at) VALUES (?, ?, ?)",
 );
 
+const deleteOlderThan_stmt = db.prepare(
+    "DELETE FROM registrations WHERE at < ?",
+);
+
 /**
  * Insert a registration record for an IP and user.
  */
 export function create(ip: string, userId: number, at: Date): void {
     create_stmt.run(ip, userId, at.toISOString());
+}
+
+export function deleteOlderThan(cutoff: Date): number {
+    deleteOlderThan_stmt.run(cutoff.toISOString());
+    return db.changes;
 }
 
 const latestIPForUser_stmt = db.prepare(

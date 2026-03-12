@@ -36,6 +36,10 @@ export const AdminThemeSchema = zfd.formData({
     ),
 });
 
+export const AdminCleanupDatabaseSchema = zfd.formData({
+    confirm_cleanup: zfd.text(z.literal("cleanup-db")),
+});
+
 export const UploadSchema = zfd.formData({
     file: zfd.file(),
 });

@@ -1,9 +1,9 @@
 # Project State
 
-Current status as of 2026-03-11.
+Current status as of 2026-03-12.
 
 ## Current Focus
-Admin/student forensics UI polish, anomaly detection, and German-only UI cleanup.
+Admin/student forensics UI polish, HTMX stability, and admin maintenance controls.
 
 ## Completed (this cycle)
 - [x] Known-IP cards now combine "Zuletzt" and the in-range hit count into one header badge in `templates/admin-report.hbs`.
@@ -16,6 +16,8 @@ Admin/student forensics UI polish, anomaly detection, and German-only UI cleanup
 - [x] A global Bootstrap-based HTMX loading spinner now appears during active HTMX requests via `templates/main.hbs` and `templates/index.hbs`.
 - [x] The admin forensics page now shows anomaly detection between the time selector and known IPs, with IP-based and user-based anomaly views derived from combined cookie and registration activity in `service/ipadmin.ts` and `templates/admin.hbs`.
 - [x] The anomaly UI now uses German-only text and collapses into a warning-styled Bootstrap accordion when findings exist; otherwise it shows `Es gibt keine Anomalien.`.
+- [x] Admin refresh suppression and the global HTMX spinner now stay in sync even when auto-refresh is canceled because anomaly details or IP cards are open.
+- [x] The Admin page now offers `Datenbank bereinigen`, which removes rows older than one month from `cookiepresents`, `registrations`, `ipfact`, and `abgaben` and reports the deletion counts back in the UI.
 - [x] Validation passed with `deno task check`, `deno task lint`, and `deno task test`.
 
 ## Pending

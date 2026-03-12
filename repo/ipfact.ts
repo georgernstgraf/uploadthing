@@ -7,11 +7,19 @@ DATENBANK speichert Zeiten in UTC.
 const registerSeen_stmt = db.prepare(
     "INSERT INTO ipfact (ip, seen) VALUES (?, ?)",
 );
+const deleteOlderThan_stmt = db.prepare(
+    "DELETE FROM ipfact WHERE seen < ?",
+);
 /**
  * Insert a single IP seen timestamp.
  */
 export function registerSeen(ip: string, seen: Date) {
     registerSeen_stmt.run(ip, seen.toISOString());
+}
+
+export function deleteOlderThan(cutoff: Date): number {
+    deleteOlderThan_stmt.run(cutoff.toISOString());
+    return db.changes;
 }
 /**
  * Insert multiple IP seen timestamps in one statement.

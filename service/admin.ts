@@ -27,6 +27,15 @@ export type ThemeOption = {
     label: string;
 };
 
+export type DatabaseCleanupResult = {
+    cutoff: Date;
+    deleted_cookiepresents: number;
+    deleted_registrations: number;
+    deleted_ipfacts: number;
+    deleted_submissions: number;
+    total_deleted: number;
+};
+
 type ThemePathsOptions = {
     themesDir?: string;
     staticDir?: string;
@@ -222,4 +231,26 @@ export function wipeAbgabenDirectory(dirPath: string): void {
             throw e;
         }
     }
+}
+
+export function cleanupDatabaseOlderThanOneMonth(
+    now = new Date(),
+): DatabaseCleanupResult {
+    const cutoff = new Date(now);
+    cutoff.setMonth(cutoff.getMonth() - 1);
+
+    const deleted_cookiepresents = repo.cookiepresents.deleteOlderThan(cutoff);
+    const deleted_registrations = repo.registrations.deleteOlderThan(cutoff);
+    const deleted_ipfacts = repo.ipfact.deleteOlderThan(cutoff);
+    const deleted_submissions = repo.abgaben.deleteOlderThan(cutoff);
+
+    return {
+        cutoff,
+        deleted_cookiepresents,
+        deleted_registrations,
+        deleted_ipfacts,
+        deleted_submissions,
+        total_deleted: deleted_cookiepresents + deleted_registrations +
+            deleted_ipfacts + deleted_submissions,
+    };
 }

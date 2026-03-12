@@ -12,6 +12,10 @@ const create_stmt = db.prepare(
     "INSERT INTO abgaben (userId, ip, filename, at) VALUES (?, ?, ?, ?)",
 );
 
+const deleteOlderThan_stmt = db.prepare(
+    "DELETE FROM abgaben WHERE at < ?",
+);
+
 /**
  * Insert a submission record.
  */
@@ -24,6 +28,11 @@ export function create(
     create_stmt.run(userId, ip, filename, at.toISOString());
     const id = db.lastInsertRowId as number;
     return { id, userId, ip, filename, at };
+}
+
+export function deleteOlderThan(cutoff: Date): number {
+    deleteOlderThan_stmt.run(cutoff.toISOString());
+    return db.changes;
 }
 
 const getByUser_stmt = db.prepare(

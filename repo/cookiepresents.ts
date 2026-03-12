@@ -37,8 +37,17 @@ const create_stmt = db.prepare(
     "INSERT INTO cookiepresents (ip, userId, at) VALUES (?, ?, ?)",
 );
 
+const deleteOlderThan_stmt = db.prepare(
+    "DELETE FROM cookiepresents WHERE at < ?",
+);
+
 export function create(ip: string, userId: number, at: Date): void {
     create_stmt.run(ip, userId, at.toISOString());
+}
+
+export function deleteOlderThan(cutoff: Date): number {
+    deleteOlderThan_stmt.run(cutoff.toISOString());
+    return db.changes;
 }
 
 const latestUserIdForIP_stmt = db.prepare(
