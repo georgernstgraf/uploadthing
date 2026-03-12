@@ -17,6 +17,7 @@ model ipfact {
   @@unique([ip, seen])
   @@index([ip])
   @@index([seen])
+  @@index([seen, ip])
 }
 
 model users {
@@ -39,6 +40,7 @@ model registrations {
 
   @@index([userId])
   @@index([ip])
+  @@index([ip, at])
 }
 
 model cookiepresents {
@@ -50,6 +52,7 @@ model cookiepresents {
 
   @@index([ip])
   @@index([userId])
+  @@index([ip, at])
 }
 
 model abgaben {
@@ -62,4 +65,5 @@ model abgaben {
 
   @@index([userId])
   @@index([at])
+  @@index([ip, at])
 }
