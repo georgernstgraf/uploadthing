@@ -1,5 +1,6 @@
 import { userTypeToDbInput } from "../lib/user_mapper.ts";
 import type { UserType } from "../lib/types.ts";
+import { db } from "./db.ts";
 import prisma from "./prismadb.ts";
 
 export type RepoUserRecord = {
@@ -9,6 +10,11 @@ export type RepoUserRecord = {
     klasse: string | null;
     updatedat: Date;
 };
+
+const getUsersByIdsBase = `
+    SELECT id, email, name, klasse, updatedat
+    FROM users
+    WHERE id IN `;
 
 /**
  * Fetch a user by email.
@@ -71,11 +77,21 @@ export async function upsert(user: UserType): Promise<RepoUserRecord> {
 /**
  * Fetch users by id list.
  */
-export async function getByIds(ids: number[]): Promise<RepoUserRecord[]> {
-    if (ids.length === 0) return [];
-    return await prisma.users.findMany({
-        where: { id: { in: ids } },
-    });
+export function getByIds(ids: number[]): Promise<RepoUserRecord[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    const placeholders = ids.map(() => "?").join(", ");
+    const stmt = db.prepare(`${getUsersByIdsBase}(${placeholders})`);
+    const rows = stmt.all(...ids) as {
+        id: number;
+        email: string;
+        name: string;
+        klasse: string | null;
+        updatedat: string;
+    }[];
+    return Promise.resolve(rows.map((row) => ({
+        ...row,
+        updatedat: new Date(row.updatedat),
+    })));
 }
 
 /**

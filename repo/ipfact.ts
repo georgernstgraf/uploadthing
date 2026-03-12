@@ -4,20 +4,20 @@ Zu den Zeiten:
 
 DATENBANK speichert Zeiten in UTC.
 */
-const registerSeen_stmt = db.prepare(
-    "INSERT INTO ipfact (ip, seen) VALUES (?, ?)",
-);
-const deleteOlderThan_stmt = db.prepare(
-    "DELETE FROM ipfact WHERE seen < ?",
-);
 /**
  * Insert a single IP seen timestamp.
  */
 export function registerSeen(ip: string, seen: Date) {
+    const registerSeen_stmt = db.prepare(
+        "INSERT INTO ipfact (ip, seen) VALUES (?, ?)",
+    );
     registerSeen_stmt.run(ip, seen.toISOString());
 }
 
 export function deleteOlderThan(cutoff: Date): number {
+    const deleteOlderThan_stmt = db.prepare(
+        "DELETE FROM ipfact WHERE seen < ?",
+    );
     deleteOlderThan_stmt.run(cutoff.toISOString());
     return db.changes;
 }
@@ -41,6 +41,25 @@ export function ips_in_range(start: Date, end: Date): string[] {
         ? AND ?`,
     );
     return stmt.all(start.toISOString(), end.toISOString()).map((row) => row.ip);
+}
+
+export function getInRange(
+    start: Date,
+    end: Date,
+): { ip: string; seen: Date }[] {
+    const stmt = db.prepare(
+        `SELECT ip, seen FROM ipfact
+        WHERE seen BETWEEN ? AND ?
+        ORDER BY ip ASC, seen DESC`,
+    );
+    const rows = stmt.all(start.toISOString(), end.toISOString()) as {
+        ip: string;
+        seen: string;
+    }[];
+    return rows.map((row) => ({
+        ip: row.ip,
+        seen: new Date(row.seen),
+    }));
 }
 
 /**
