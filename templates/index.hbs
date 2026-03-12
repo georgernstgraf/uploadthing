@@ -128,28 +128,80 @@
         (function () {
             let activeHtmxRequests = 0;
 
+            function trackHtmxRequest(event) {
+                const requestConfig = event.detail?.requestConfig;
+                if (!requestConfig) {
+                    return;
+                }
+                requestConfig._globalSpinnerTracked = true;
+            }
+
+            function untrackHtmxRequest(event) {
+                const requestConfig = event.detail?.requestConfig;
+                if (!requestConfig?._globalSpinnerTracked) {
+                    return false;
+                }
+                requestConfig._globalSpinnerTracked = false;
+                return true;
+            }
+
             function updateGlobalIndicator() {
                 document.body.classList.toggle('htmx-request', activeHtmxRequests > 0);
             }
 
-            document.body.addEventListener('htmx:beforeRequest', function () {
+            document.body.addEventListener('htmx:beforeRequest', function (event) {
+                trackHtmxRequest(event);
                 activeHtmxRequests += 1;
                 updateGlobalIndicator();
             });
 
-            document.body.addEventListener('htmx:afterRequest', function () {
+            document.body.addEventListener('htmx:abort', function (event) {
+                if (!untrackHtmxRequest(event)) {
+                    return;
+                }
                 activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);
                 updateGlobalIndicator();
             });
 
-            document.body.addEventListener('htmx:sendError', function () {
+            document.body.addEventListener('htmx:afterRequest', function (event) {
+                if (!untrackHtmxRequest(event)) {
+                    return;
+                }
                 activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);
                 updateGlobalIndicator();
             });
 
-            document.body.addEventListener('htmx:responseError', function () {
+            document.body.addEventListener('htmx:sendError', function (event) {
+                if (!untrackHtmxRequest(event)) {
+                    return;
+                }
                 activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);
                 updateGlobalIndicator();
+            });
+
+            document.body.addEventListener('htmx:responseError', function (event) {
+                if (!untrackHtmxRequest(event)) {
+                    return;
+                }
+                activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);
+                updateGlobalIndicator();
+            });
+
+            document.body.addEventListener('htmx:beforeRequest', function (event) {
+                const trigger = event.detail?.elt;
+                if (!trigger || !trigger.closest('#report')) {
+                    return;
+                }
+
+                const hasOpenDetails = Boolean(document.querySelector('#report details[open]'));
+                const anomalyAccordionOpen = Boolean(document.querySelector('#anomaly-collapse.show'));
+                if (hasOpenDetails || anomalyAccordionOpen) {
+                    if (untrackHtmxRequest(event)) {
+                        activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);
+                        updateGlobalIndicator();
+                    }
+                    event.preventDefault();
+                }
             });
         })();
     </script>

@@ -157,8 +157,16 @@
                             data-bs-toggle="collapse"
                             data-bs-target="#anomaly-collapse"
                             aria-expanded="false"
-                            aria-controls="anomaly-collapse">
-                        Anomalien: {{anomalies.by_ip.length}} IPs{{#if anomalies.by_user.length}}, {{anomalies.by_user.length}} Benutzer{{/if}}
+                            aria-controls="anomaly-collapse"
+                            onclick="window.toggleAnomalyAccordion(this)">
+                        <span class="d-flex flex-wrap align-items-center gap-2 w-100 pe-3">
+                            <span>Anomalien: {{anomalies.by_ip.length}} IPs{{#if anomalies.by_user.length}}, {{anomalies.by_user.length}} Benutzer{{/if}}</span>
+                            <span class="d-flex flex-wrap gap-1">
+                                {{#each anomalies.by_ip}}
+                                    <span class="badge text-bg-danger">{{this.ip}}</span>
+                                {{/each}}
+                            </span>
+                        </span>
                     </button>
                 </h2>
                 <div id="anomaly-collapse"
@@ -212,5 +220,19 @@
             </div>
         </section>
     {{/if}}
+    <script>
+        window.toggleAnomalyAccordion = function (button) {
+            const targetSelector = button.getAttribute('data-bs-target');
+            if (!targetSelector) return;
+
+            const target = document.querySelector(targetSelector);
+            if (!target) return;
+
+            const isOpen = target.classList.contains('show');
+            target.classList.toggle('show', !isOpen);
+            button.classList.toggle('collapsed', isOpen);
+            button.setAttribute('aria-expanded', String(!isOpen));
+        };
+    </script>
     {{> admin-report}}
 </div>
