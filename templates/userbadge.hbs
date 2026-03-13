@@ -3,12 +3,12 @@
      hx-target="#main-content"
      class="d-flex justify-content-center mb-2">
     <a href="/whoami"
-        class="card shadow-sm border-0 text-reset text-decoration-none"
-        style="width: min(100%, 320px);">
+       class="card shadow-sm border-0 text-reset text-decoration-none"
+       style="width: min(100%, 320px);">
         {{#if remote_user}}
             <div class="card-body d-flex align-items-center justify-content-between gap-3 py-2 px-3">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-bg-primary fw-bold"
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle flex-shrink-0 d-inline-flex align-items-center justify-content-center text-bg-primary fw-bold"
                          style="width: 36px; height: 36px;">
                         {{givenNameInitial remote_user.name}}
                     </div>
