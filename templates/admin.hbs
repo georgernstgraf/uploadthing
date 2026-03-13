@@ -7,77 +7,77 @@
             <h2 class="card-title mb-0 fs-4">Zeitauswahl</h2>
         </div>
         <div class="card-body py-3">
-        <form hx-get="/admin"
-              hx-target="#main-content"
-              hx-push-url="true"
-              class="container text-center"
-              @submit="handleSubmit">
-            <datalist id="spg_times_list">
-                {{#each spg_times}}
-                    <option value="{{this}}"></option>
-                {{/each}}
-            </datalist>
-            <div class="row mt-1 g-2 align-items-center">
-                <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase small"> Startzeit <input type="text"
-                               name="starttime"
-                               class="form-control form-control-sm text-center"
-                               id="timestartselect"
-                               list="spg_times_list"
-                               value="{{starttime}}">
-                    </label>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase small"> Startdatum <input type="date"
-                               name="startdate"
-                               class="form-control form-control-sm text-center"
-                               value="{{startdate}}">
-                    </label>
-                </div>
-            </div>
-            <div class="row mt-2">
-                <div class="col text-center">
-                    <div
-                         class="form-check form-switch d-inline-flex align-items-center gap-2 p-2 fs-5 bg-body-tertiary border border-2 rounded-4">
-                        <input class="form-check-input m-0"
-                               type="checkbox"
-                               id="toggleEndTime"
-                               x-model="showEndTime"
-                               @change="savePreference()">
-                        <label class="form-check-label fw-bold m-0"
-                               for="toggleEndTime">Endzeit festlegen</label>
+            <form hx-get="/admin"
+                  hx-target="#main-content"
+                  hx-push-url="true"
+                  class="container text-center"
+                  @submit="handleSubmit">
+                <datalist id="spg_times_list">
+                    {{#each spg_times}}
+                        <option value="{{this}}"></option>
+                    {{/each}}
+                </datalist>
+                <div class="row mt-1 g-2 align-items-center">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-uppercase small"> Startzeit <input type="text"
+                                   name="starttime"
+                                   class="form-control form-control-sm text-center"
+                                   id="timestartselect"
+                                   list="spg_times_list"
+                                   value="{{starttime}}">
+                        </label>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-uppercase small"> Startdatum <input type="date"
+                                   name="startdate"
+                                   class="form-control form-control-sm text-center"
+                                   value="{{startdate}}">
+                        </label>
                     </div>
                 </div>
-            </div>
-            <div class="row mt-2 g-2 align-items-center"
-                 x-show="showEndTime"
-                 x-transition
-                 x-cloak>
-                <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase small"> Endzeit <input type="text"
-                               name="endtime"
-                               class="form-control form-control-sm text-center"
-                               id="timeendselect"
-                               list="spg_times_list"
-                               value="{{endtime}}">
-                    </label>
+                <div class="row mt-2">
+                    <div class="col text-center">
+                        <div
+                             class="form-check form-switch d-inline-flex align-items-center gap-2 p-2 fs-5 bg-body-tertiary border border-2 rounded-4">
+                            <input class="form-check-input m-0"
+                                   type="checkbox"
+                                   id="toggleEndTime"
+                                   x-model="showEndTime"
+                                   @change="savePreference()">
+                            <label class="form-check-label fw-bold m-0"
+                                   for="toggleEndTime">Endzeit festlegen</label>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-bold text-uppercase small"> Enddatum <input type="date"
-                               name="enddate"
-                               class="form-control form-control-sm text-center"
-                               value="{{enddate}}">
-                    </label>
+                <div class="row mt-2 g-2 align-items-center"
+                     x-show="showEndTime"
+                     x-transition
+                     x-cloak>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-uppercase small"> Endzeit <input type="text"
+                                   name="endtime"
+                                   class="form-control form-control-sm text-center"
+                                   id="timeendselect"
+                                   list="spg_times_list"
+                                   value="{{endtime}}">
+                        </label>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-uppercase small"> Enddatum <input type="date"
+                                   name="enddate"
+                                   class="form-control form-control-sm text-center"
+                                   value="{{enddate}}">
+                        </label>
+                    </div>
                 </div>
-            </div>
-            <div class="row mt-2">
-                <div class="col">
-                    <input type="submit"
-                           class="btn btn-info btn-lg w-100 py-1"
-                           value="Suchen">
+                <div class="row mt-2">
+                    <div class="col">
+                        <input type="submit"
+                               class="btn btn-info btn-lg w-100 py-1"
+                               value="Suchen">
+                    </div>
                 </div>
-            </div>
-        </form>
+            </form>
         </div>
     </section>
     <script>
@@ -147,10 +147,10 @@
         }
     </script>
     {{#if anomalies.by_ip.length}}
-        <section class="accordion mb-2 mx-auto"
+        <section class="accordion mb-2 mx-auto card"
                  id="anomaly-accordion"
                  style="max-width: 800px;">
-            <div class="accordion-item shadow-sm border-0 overflow-hidden">
+            <div class="accordion-item shadow-sm border-0 bg-transparent overflow-hidden">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed text-bg-warning"
                             type="button"
@@ -160,7 +160,8 @@
                             aria-controls="anomaly-collapse"
                             onclick="window.toggleAnomalyAccordion(this)">
                         <span class="d-flex flex-wrap align-items-center gap-2 w-100 pe-3">
-                            <span>Anomalien: {{anomalies.by_ip.length}} IPs{{#if anomalies.by_user.length}}, {{anomalies.by_user.length}} Benutzer{{/if}}</span>
+                            <span>Anomalien: {{anomalies.by_ip.length}} IPs{{#if anomalies.by_user.length}}, {{anomalies.by_user.length}}
+                                    Benutzer{{/if}}</span>
                             <span class="d-flex flex-wrap gap-1">
                                 {{#each anomalies.by_ip}}
                                     <span class="badge text-bg-danger">{{this.ip}}</span>
@@ -189,7 +190,6 @@
                                 {{/each}}
                             </div>
                         </div>
-
                         {{#if anomalies.by_user.length}}
                             <div class="mb-0">
                                 <h3 class="h6 text-uppercase text-body-secondary mb-2">Nach Benutzer</h3>
@@ -213,11 +213,9 @@
             </div>
         </section>
     {{else}}
-        <section class="card shadow-sm border-0 mb-2 mx-auto"
+        <section class="card shadow-sm border-0 bg-body-tertiary bg-opacity-50 mb-2 mx-auto"
                  style="max-width: 800px;">
-            <div class="card-body py-3 px-3 text-center text-body-secondary small">
-                Es gibt keine Anomalien.
-            </div>
+            <div class="card-body py-3 px-3 text-center text-body-secondary small"> Es gibt keine Anomalien. </div>
         </section>
     {{/if}}
     <script>
