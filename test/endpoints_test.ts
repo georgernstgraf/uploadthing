@@ -7,6 +7,13 @@ import { db } from "../repo/db.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
 import * as usersRepo from "../repo/users.ts";
+import {
+    LOCAL_TEST_IP,
+    clearForensicsByIp,
+    clearForensicsByUserEmail,
+    resetLocalhostForensics,
+    seedRegistration,
+} from "./helpers/forensics_fixture.ts";
 
 const BASE_URL = Deno.env.get("TEST_BASE_URL") || endpoints.baseUrl;
 
@@ -373,25 +380,41 @@ Deno.test("POST /upload - rejects zip with non-zip content", async () => {
 });
 
 Deno.test("GET /admin/students shows no anomalies empty state", async () => {
-    const testEmail = "grafg@spengergasse.at";
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const adminEmail = `empty-admin-${suffix}@example.com`;
 
-    const registerRes = await fetch(`${BASE_URL}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `email=${encodeURIComponent(testEmail)}`,
-    });
-    await registerRes.text();
-    const cookie = registerRes.headers.get("set-cookie");
-    assertExists(cookie);
+    try {
+        await resetLocalhostForensics();
+        await seedRegistration({
+            ip: LOCAL_TEST_IP,
+            email: adminEmail,
+            name: "Empty State Admin",
+            klasse: "LehrendeR",
+            at: new Date(),
+            withCookiePresent: true,
+        });
 
-    const res = await fetch(`${BASE_URL}/admin/students`, {
-        headers: { "Cookie": cookie },
-    });
-    const html = await res.text();
+        const registerRes = await fetch(`${BASE_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `email=${encodeURIComponent(adminEmail)}`,
+        });
+        await registerRes.text();
+        const cookie = registerRes.headers.get("set-cookie");
+        assertExists(cookie);
 
-    assertEquals(res.status, 200);
-    assertEquals(html.includes("Es gibt keine Anomalien."), true);
-    assertEquals(html.includes("No anomalies detected."), false);
+        const res = await fetch(`${BASE_URL}/admin/students`, {
+            headers: { "Cookie": cookie },
+        });
+        const html = await res.text();
+
+        assertEquals(res.status, 200);
+        assertEquals(html.includes("Es gibt keine Anomalien."), true);
+        assertEquals(html.includes("No anomalies detected."), false);
+    } finally {
+        await clearForensicsByIp(LOCAL_TEST_IP);
+        await clearForensicsByUserEmail(adminEmail);
+    }
 });
 
 Deno.test("GET /admin/students shows user anomalies without shared-IP anomalies", async () => {
