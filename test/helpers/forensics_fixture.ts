@@ -67,6 +67,110 @@ export async function seedRegistration(params: {
     return { userId: user.id, ip };
 }
 
+export async function seedNoAnomaliesScenario(params: {
+    email: string;
+    name: string;
+    klasse: string;
+    at?: Date;
+    ip?: string;
+    withSeen?: boolean;
+    withCookiePresent?: boolean;
+}): Promise<{ userId: number; ip: string }> {
+    const ip = params.ip ?? LOCAL_TEST_IP;
+    clearForensicsByIp(ip);
+    await clearForensicsByUserEmail(params.email);
+
+    return await seedRegistration({
+        ip,
+        email: params.email,
+        name: params.name,
+        klasse: params.klasse,
+        at: params.at ?? new Date(),
+        withSeen: params.withSeen,
+        withCookiePresent: params.withCookiePresent ?? true,
+    });
+}
+
+export async function seedUserAnomalyScenario(params: {
+    email: string;
+    name: string;
+    klasse: string;
+    firstIp: string;
+    secondIp: string;
+    at?: Date;
+    withCookiePresent?: boolean;
+}): Promise<void> {
+    const at = params.at ?? new Date();
+    clearForensicsByIp(params.firstIp);
+    clearForensicsByIp(params.secondIp);
+    await clearForensicsByUserEmail(params.email);
+
+    await seedRegistration({
+        ip: params.firstIp,
+        email: params.email,
+        name: params.name,
+        klasse: params.klasse,
+        at,
+        withCookiePresent: params.withCookiePresent,
+    });
+    await seedRegistration({
+        ip: params.secondIp,
+        email: params.email,
+        name: params.name,
+        klasse: params.klasse,
+        at,
+        withCookiePresent: params.withCookiePresent,
+    });
+}
+
+export async function seedSharedIpAnomalyScenario(params: {
+    sharedIp: string;
+    primaryUser: FixtureUserInput;
+    secondaryUser: FixtureUserInput;
+    secondaryIp?: string;
+    at?: Date;
+}): Promise<void> {
+    const at = params.at ?? new Date();
+    const secondaryIp = params.secondaryIp;
+
+    clearForensicsByIp(params.sharedIp);
+    if (secondaryIp) {
+        clearForensicsByIp(secondaryIp);
+    }
+    await clearForensicsByUserEmail(params.primaryUser.email);
+    await clearForensicsByUserEmail(params.secondaryUser.email);
+
+    await seedRegistration({
+        ip: params.sharedIp,
+        email: params.primaryUser.email,
+        name: params.primaryUser.name,
+        klasse: params.primaryUser.klasse,
+        at,
+        withCookiePresent: true,
+    });
+
+    if (secondaryIp) {
+        await seedRegistration({
+            ip: secondaryIp,
+            email: params.primaryUser.email,
+            name: params.primaryUser.name,
+            klasse: params.primaryUser.klasse,
+            at,
+            withCookiePresent: true,
+        });
+    }
+
+    await seedRegistration({
+        ip: params.sharedIp,
+        email: params.secondaryUser.email,
+        name: params.secondaryUser.name,
+        klasse: params.secondaryUser.klasse,
+        at,
+        withSeen: false,
+        withCookiePresent: true,
+    });
+}
+
 export function seedSubmission(params: {
     userId: number;
     ip?: string;

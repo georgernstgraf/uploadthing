@@ -11,8 +11,7 @@ import {
     LOCAL_TEST_IP,
     clearForensicsByIp,
     clearForensicsByUserEmail,
-    resetLocalhostForensics,
-    seedRegistration,
+    seedNoAnomaliesScenario,
 } from "./helpers/forensics_fixture.ts";
 
 const BASE_URL = Deno.env.get("TEST_BASE_URL") || endpoints.baseUrl;
@@ -384,8 +383,7 @@ Deno.test("GET /admin/students shows no anomalies empty state", async () => {
     const adminEmail = `empty-admin-${suffix}@example.com`;
 
     try {
-        await resetLocalhostForensics();
-        await seedRegistration({
+        await seedNoAnomaliesScenario({
             ip: LOCAL_TEST_IP,
             email: adminEmail,
             name: "Empty State Admin",

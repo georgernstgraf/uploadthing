@@ -3,7 +3,10 @@ import { for_range } from "./ipadmin.ts";
 import {
     clearForensicsByIp,
     clearForensicsByUserEmail,
+    seedNoAnomaliesScenario,
     seedRegistration,
+    seedSharedIpAnomalyScenario,
+    seedUserAnomalyScenario,
 } from "../test/helpers/forensics_fixture.ts";
 
 Deno.test("ipadmin classifies IPs by cookie presence and keeps registrations", async () => {
@@ -16,7 +19,7 @@ Deno.test("ipadmin classifies IPs by cookie presence and keeps registrations", a
     const end = new Date(seenAt.getTime() + 60_000);
 
     try {
-        await seedRegistration({
+        await seedNoAnomaliesScenario({
             ip: knownIp,
             email: userEmail,
             name: "Cookie Present Test",
@@ -69,30 +72,20 @@ Deno.test("ipadmin detects IP-based and user-based anomalies", async () => {
     const end = new Date(seenAt.getTime() + 60_000);
 
     try {
-        await seedRegistration({
-            ip: sharedIp,
-            email: userOneEmail,
-            name: "Anomaly One",
-            klasse: "5AHITM",
+        await seedSharedIpAnomalyScenario({
+            sharedIp,
+            secondaryIp: secondIp,
             at: seenAt,
-            withCookiePresent: true,
-        });
-        await seedRegistration({
-            ip: secondIp,
-            email: userOneEmail,
-            name: "Anomaly One",
-            klasse: "5AHITM",
-            at: seenAt,
-            withCookiePresent: true,
-        });
-        await seedRegistration({
-            ip: sharedIp,
-            email: userTwoEmail,
-            name: "Anomaly Two",
-            klasse: "5AHITM",
-            at: seenAt,
-            withSeen: false,
-            withCookiePresent: true,
+            primaryUser: {
+                email: userOneEmail,
+                name: "Anomaly One",
+                klasse: "5AHITM",
+            },
+            secondaryUser: {
+                email: userTwoEmail,
+                name: "Anomaly Two",
+                klasse: "5AHITM",
+            },
         });
 
         const result = await for_range(start, end, false);
@@ -124,7 +117,7 @@ Deno.test("ipadmin includes cookie-only IPs as known reported addresses", async 
     const end = new Date(seenAt.getTime() + 60_000);
 
     try {
-        await seedRegistration({
+        await seedNoAnomaliesScenario({
             ip: cookieOnlyIp,
             email: userEmail,
             name: "Cookie Only Test",
@@ -161,19 +154,13 @@ Deno.test("ipadmin detects user anomalies from registrations without cookie pres
     const end = new Date(seenAt.getTime() + 60_000);
 
     try {
-        await seedRegistration({
-            ip: firstIp,
+        await seedUserAnomalyScenario({
             email: userEmail,
             name: "Registration Anomaly",
             klasse: "5AHITM",
             at: seenAt,
-        });
-        await seedRegistration({
-            ip: secondIp,
-            email: userEmail,
-            name: "Registration Anomaly",
-            klasse: "5AHITM",
-            at: seenAt,
+            firstIp,
+            secondIp,
         });
 
         const result = await for_range(start, end, false);
