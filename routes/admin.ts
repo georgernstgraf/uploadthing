@@ -16,7 +16,7 @@ const start_ms_earlier = 3.6 * 1.5e6;
 const one_day_ms = 24 * 3.6e6;
 const time_cutoff_ms = config.TODAY_HOURS_CUTOFF * 3.6e6;
 
-function renderFileTypesPage(
+function renderApplicationPage(
     c: Context<{ Variables: HonoContextVars }>,
     success_message?: string,
     error_message?: string,
@@ -54,7 +54,7 @@ function renderFileTypesPage(
     }), error_message ? 400 : 200);
 }
 
-adminRouter.get("/", async (c) => {
+adminRouter.get("/students", async (c) => {
     const is_admin = c.get("is_admin");
     if (!is_admin) {
         return c.text("Forbidden", 403);
@@ -141,16 +141,16 @@ adminRouter.get("/", async (c) => {
     }));
 });
 
-adminRouter.get("/filetypes", (c) => {
+adminRouter.get("/application", (c) => {
     const is_admin = c.get("is_admin");
     if (!is_admin) {
         return c.text("Forbidden", 403);
     }
 
-    return renderFileTypesPage(c);
+    return renderApplicationPage(c);
 });
 
-adminRouter.post("/filetypes", async (c) => {
+adminRouter.post("/application", async (c) => {
     const is_admin = c.get("is_admin");
     if (!is_admin) {
         return c.text("Forbidden", 403);
@@ -159,7 +159,7 @@ adminRouter.post("/filetypes", async (c) => {
     const formData = await c.req.formData();
     const validation = AdminFileTypesSchema.safeParse(formData);
     if (!validation.success) {
-        return renderFileTypesPage(
+        return renderApplicationPage(
             c,
             undefined,
             validation.error.issues[0]?.message || "Ungültige Dateitypen",
@@ -168,11 +168,11 @@ adminRouter.post("/filetypes", async (c) => {
 
     const fileTypes = parsePermittedFileTypes(validation.data.permitted_filetypes);
     if (fileTypes.length === 0) {
-        return renderFileTypesPage(c, undefined, "Mindestens ein Dateityp ist erforderlich");
+        return renderApplicationPage(c, undefined, "Mindestens ein Dateityp ist erforderlich");
     }
 
     config.PERMITTED_FILETYPES = fileTypes;
-    return renderFileTypesPage(
+    return renderApplicationPage(
         c,
         `Erlaubte Dateitypen aktualisiert: ${fileTypes.map((type) => "." + type).join(", ")}`,
     );
@@ -187,7 +187,7 @@ adminRouter.post("/theme", async (c) => {
     const formData = await c.req.formData();
     const validation = AdminThemeSchema.safeParse(formData);
     if (!validation.success) {
-        return renderFileTypesPage(
+        return renderApplicationPage(
             c,
             undefined,
             validation.error.issues[0]?.message || "Ungültiges Theme",
@@ -196,9 +196,9 @@ adminRouter.post("/theme", async (c) => {
 
     try {
         const theme = service.admin.applyTheme(validation.data.theme);
-        return renderFileTypesPage(c, `Theme aktiviert: ${theme.label}`);
+        return renderApplicationPage(c, `Theme aktiviert: ${theme.label}`);
     } catch (error) {
-        return renderFileTypesPage(
+        return renderApplicationPage(
             c,
             undefined,
             `Theme konnte nicht aktiviert werden: ${(error as Error).message}`,
@@ -262,16 +262,16 @@ adminRouter.post("/cleanup-database", async (c) => {
     const formData = await c.req.formData();
     const validation = AdminCleanupDatabaseSchema.safeParse(formData);
     if (!validation.success) {
-        return renderFileTypesPage(c, undefined, "Ungültige Anfrage für die Datenbankbereinigung");
+        return renderApplicationPage(c, undefined, "Ungültige Anfrage für die Datenbankbereinigung");
     }
 
     try {
         const result = service.admin.cleanupDatabaseOlderThanOneMonth();
         const html = `<div class="alert alert-success fs-lg mt-2 mx-auto" style="max-width: 720px;">Datenbank bereinigt. Entfernt: ${result.deleted_cookiepresents} Cookies, ${result.deleted_registrations} Registrierungen, ${result.deleted_ipfacts} IP-Logs, ${result.deleted_submissions} Abgaben (gesamt ${result.total_deleted}).</div>`;
-        return renderFileTypesPage(c, undefined, undefined, html);
+        return renderApplicationPage(c, undefined, undefined, html);
     } catch (error) {
         console.error("Error cleaning up database:", error);
-        return renderFileTypesPage(c, undefined, "Fehler bei der Datenbankbereinigung");
+        return renderApplicationPage(c, undefined, "Fehler bei der Datenbankbereinigung");
     }
 });
 

@@ -49,12 +49,23 @@
     <script src="/static/htmx.js"></script>
     <script src="/static/toast.js"></script>
     <script>
-        // Handle HTMX errors and show toast notifications
+        function showNetworkErrorToast() {
+            showToast('Der Server ist derzeit nicht erreichbar. Bitte versuchen Sie es erneut.', 'danger');
+        }
+
         document.addEventListener('htmx:responseError', function(evt) {
             const xhr = evt.detail.xhr;
             if (xhr.status >= 400) {
                 showToast(xhr.responseText || 'Ein Fehler ist aufgetreten', 'danger');
             }
+        });
+
+        document.addEventListener('htmx:sendError', function() {
+            showNetworkErrorToast();
+        });
+
+        document.addEventListener('htmx:timeout', function() {
+            showNetworkErrorToast();
         });
 
         document.addEventListener('htmx:afterSwap', function(evt) {

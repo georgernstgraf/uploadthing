@@ -52,16 +52,16 @@
         },
         {
             "method": "GET",
-            "path": "/admin",
-            "description": "Serve admin page",
+            "path": "/admin/students",
+            "description": "Serve students admin page",
             "expectedOutput": {
                 "type": "HTML page"
             }
         },
         {
             "method": "GET",
-            "path": "/admin/filetypes",
-            "description": "Serve admin file types page",
+            "path": "/admin/application",
+            "description": "Serve admin application page",
             "expectedOutput": {
                 "type": "HTML page or forbidden"
             }

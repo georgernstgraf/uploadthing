@@ -100,8 +100,8 @@ Deno.test("Admin navigation and live file type updates", async () => {
 
     const anonymousRes = await fetch(`${BASE_URL}/whoami`);
     const anonymousHtml = await anonymousRes.text();
-    assertEquals(anonymousHtml.includes('href="/admin"'), false);
-    assertEquals(anonymousHtml.includes('href="/admin/filetypes"'), false);
+    assertEquals(anonymousHtml.includes('href="/admin/students"'), false);
+    assertEquals(anonymousHtml.includes('href="/admin/application"'), false);
 
     const registerRes = await fetch(`${BASE_URL}/register`, {
         method: "POST",
@@ -118,10 +118,11 @@ Deno.test("Admin navigation and live file type updates", async () => {
     const homeHtml = await homeRes.text();
     assertEquals(homeHtml.includes(">Schüler<"), true);
     assertEquals(homeHtml.includes(">Admin<"), true);
-    assertEquals(homeHtml.includes('href="/admin/filetypes"'), true);
+    assertEquals(homeHtml.includes('href="/admin/students"'), true);
+    assertEquals(homeHtml.includes('href="/admin/application"'), true);
     assertEquals(homeHtml.includes(">Dateitypen<"), false);
 
-    const settingsRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+    const settingsRes = await fetch(`${BASE_URL}/admin/application`, {
         headers: { "Cookie": cookie },
     });
     const settingsHtml = await settingsRes.text();
@@ -151,7 +152,7 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(themeRes.status, 200);
     assertEquals(themeHtml.includes(`Theme aktiviert: ${alternateTheme.label}`), true);
 
-    const adminRes = await fetch(`${BASE_URL}/admin`, {
+    const adminRes = await fetch(`${BASE_URL}/admin/students`, {
         headers: { "Cookie": cookie },
     });
     const adminHtml = await adminRes.text();
@@ -183,7 +184,7 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(enableInternetRes.status, 200);
     assertEquals(enableInternetHtml.includes("Internet aktiv"), true);
 
-    const updateRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+    const updateRes = await fetch(`${BASE_URL}/admin/application`, {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -201,7 +202,7 @@ Deno.test("Admin navigation and live file type updates", async () => {
     const uploadHtml = await uploadRes.text();
     assertEquals(uploadHtml.includes(".pdf"), true);
 
-    const restoreRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+    const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -256,7 +257,7 @@ Deno.test("POST /upload - Authenticated upload with MD5 verification", async () 
         cookie = registerRes.headers.get("set-cookie");
         assertExists(cookie);
 
-        const setTypesRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+        const setTypesRes = await fetch(`${BASE_URL}/admin/application`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -296,7 +297,7 @@ Deno.test("POST /upload - Authenticated upload with MD5 verification", async () 
         await Deno.remove(filePath);
     } finally {
         if (cookie) {
-            const restoreRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+            const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -326,7 +327,7 @@ Deno.test("POST /upload - rejects zip with non-zip content", async () => {
         cookie = registerRes.headers.get("set-cookie");
         assertExists(cookie);
 
-        const setTypesRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+        const setTypesRes = await fetch(`${BASE_URL}/admin/application`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -352,7 +353,7 @@ Deno.test("POST /upload - rejects zip with non-zip content", async () => {
         assertEquals(html.includes("Der Dateiinhalt konnte nicht als .zip erkannt werden."), true);
     } finally {
         if (cookie) {
-            const restoreRes = await fetch(`${BASE_URL}/admin/filetypes`, {
+            const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -367,7 +368,7 @@ Deno.test("POST /upload - rejects zip with non-zip content", async () => {
     }
 });
 
-Deno.test("GET /admin shows no anomalies empty state", async () => {
+Deno.test("GET /admin/students shows no anomalies empty state", async () => {
     const testEmail = "grafg@spengergasse.at";
 
     const registerRes = await fetch(`${BASE_URL}/register`, {
@@ -379,7 +380,7 @@ Deno.test("GET /admin shows no anomalies empty state", async () => {
     const cookie = registerRes.headers.get("set-cookie");
     assertExists(cookie);
 
-    const res = await fetch(`${BASE_URL}/admin`, {
+    const res = await fetch(`${BASE_URL}/admin/students`, {
         headers: { "Cookie": cookie },
     });
     const html = await res.text();
