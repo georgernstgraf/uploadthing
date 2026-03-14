@@ -31,6 +31,7 @@
 - Shared types and helpers belong under `lib/`.
 - Template rendering is server-side via Handlebars in `lib/handlebars.ts` and `templates/`.
 - In Handlebars templates, prefer native Bootstrap component structure (`card-header`, `card-body`, `card-footer`, `list-group`, `badge`, `btn`) over generic wrapper classes when the element already matches a Bootstrap component concept.
+- For repeated shell/layout sizing in Handlebars templates, move the rule into `static/ui-shell.css` and reuse scoped classes instead of inline `style="..."` attributes.
 - Admin route naming is now split by responsibility: use `/admin/students` for the student/IP forensics page and `/admin/application` for runtime admin settings such as themes, file types, downloads, and cleanup.
 
 ## Validation And Parsing

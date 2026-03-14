@@ -23,6 +23,115 @@ body {
     font-family: "IBM Plex Sans", var(--bs-body-font-family), system-ui, sans-serif;
 }
 
+.app-header-shell {
+    z-index: 1030;
+    backdrop-filter: blur(var(--CTBS-GlassBlur));
+    -webkit-backdrop-filter: blur(var(--CTBS-GlassBlur));
+}
+
+#user-badge-wrapper {
+    width: 100%;
+}
+
+.shell-card-md {
+    max-width: 600px;
+}
+
+.shell-card-lg {
+    max-width: 840px;
+}
+
+.shell-stack-md {
+    max-width: 720px;
+}
+
+.shell-form-md {
+    max-width: 640px;
+}
+
+.admin-shell-card {
+    max-width: 800px;
+}
+
+.nav-button {
+    min-width: 220px;
+}
+
+.dirindex-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 500px));
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+.theme-toggle-button,
+.theme-toggle-placeholder {
+    min-width: 5.5rem;
+}
+
+.theme-toggle-placeholder {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.user-badge-card {
+    width: fit-content;
+    max-width: 100%;
+}
+
+.user-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-badge-avatar {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    aspect-ratio: 1 / 1;
+}
+
+.user-badge-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.user-badge-action {
+    flex: 0 0 auto;
+}
+
+.success-icon {
+    width: 50px;
+    height: 50px;
+}
+
+.exam-switch {
+    width: 3.5rem;
+    height: 1.75rem;
+}
+
+.report-avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 0.875rem;
+}
+
+.report-avatar-primary {
+    color: var(--bs-primary-text-emphasis);
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.report-avatar-secondary {
+    color: var(--bs-secondary-text-emphasis);
+    background-color: var(--bs-secondary-bg-subtle);
+}
+
+.admin-history-list {
+    max-height: 80px;
+}
+
 #main-wrapper {
     padding-top: var(--app-main-offset);
 }
@@ -69,5 +178,21 @@ details > summary::-webkit-details-marker {
     :root {
         --app-nav-top: 84px;
         --app-main-offset: 152px;
+    }
+
+    .user-badge-card {
+        width: 100%;
+    }
+
+    .user-badge-row {
+        flex-wrap: wrap;
+    }
+
+    .user-badge-body {
+        flex: 1 1 0;
+    }
+
+    .user-badge-action {
+        margin-left: auto;
     }
 }

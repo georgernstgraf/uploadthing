@@ -19,8 +19,7 @@
         {{/if}}
     </h6>
     <!-- Table 1: IPs with registered names -->
-    <h5 class="text-center mt-2 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-primary"
-        style="letter-spacing: 0.05em;">Bekannte IP-Adressen</h5>
+    <h5 class="section-heading text-center mt-2 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-primary">Bekannte IP-Adressen</h5>
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_with_name}}
             <div class="col">
@@ -28,8 +27,7 @@
                     <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-bg-primary"
-                                     style="width: 26px; height: 26px; font-size: 0.875rem;">
+                                <div class="report-avatar report-avatar-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold">
                                     {{#if this.cookie_presents.[0].user}}
                                         {{givenNameInitial this.cookie_presents.[0].user.name}}
                                     {{else}} ? {{/if}}
@@ -61,8 +59,7 @@
                         <div class="row g-1">
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 small text-primary">Cookies</div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                    style="max-height: 80px;">
+                                <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto mb-1">
                                     {{#each this.cookie_presents}}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span>{{this.at}}</span>
@@ -77,8 +74,7 @@
                             </div>
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 small text-primary">Registrierungen</div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                    style="max-height: 80px;">
+                                <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto mb-1">
                                     {{#each this.registrations}}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span>{{this.at}}</span>
@@ -94,8 +90,7 @@
                             {{#if this.submissions.length}}
                                 <div class="col-12">
                                     <div class="fw-bold text-center mb-1 small text-primary">Abgaben</div>
-                                    <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                        style="max-height: 80px;">
+                                    <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto mb-1">
                                         {{#each this.submissions}}
                                             <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                                 <span>{{this.at}}</span>
@@ -108,8 +103,7 @@
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 small text-primary">IP-Fact: {{this.ip}} ({{this.seen_at_desc.length}}x)
                                  </div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto"
-                                    style="max-height: 80px;">
+                                <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto">
                                     {{#each this.seen_at_desc }}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span>{{this}}</span>
@@ -126,8 +120,7 @@
         {{/each}}
     </div>
     <!-- Table 2: IPs without registered names -->
-    <h5 class="text-center mt-3 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-secondary"
-        style="letter-spacing: 0.05em;">Unbekannte IP-Adressen</h5>
+    <h5 class="section-heading text-center mt-3 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-secondary">Unbekannte IP-Adressen</h5>
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_without_name}}
             <div class="col">
@@ -135,8 +128,7 @@
                     <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-bg-secondary"
-                                     style="width: 26px; height: 26px; font-size: 0.875rem;"> ? </div>
+                                <div class="report-avatar report-avatar-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold"> ? </div>
                                 <div class="overflow-hidden">
                                     <span class="d-block text-truncate">{{this.ip}}</span>
                                     <span class="fw-normal small">Unbekannt</span>
@@ -159,8 +151,7 @@
                             {{#if this.registrations.length}}
                                 <div class="col-12">
                                     <div class="fw-bold text-center mb-1 small text-primary">Registrierungen</div>
-                                    <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                        style="max-height: 80px;">
+                                    <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto mb-1">
                                         {{#each this.registrations}}
                                             <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                                 <span>{{this.at}}</span>
@@ -176,8 +167,7 @@
                             {{/if}}
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 small text-primary">IP: {{this.ip}}</div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto"
-                                    style="max-height: 80px;">
+                                <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto">
                                     {{#each this.seen_at_desc }}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span>{{this}}</span>

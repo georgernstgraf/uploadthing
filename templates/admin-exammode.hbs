@@ -2,8 +2,7 @@
       hx-trigger="change"
       hx-target="this"
       hx-swap="outerHTML"
-      class="mx-auto"
-      style="max-width: 640px;">
+      class="shell-form-md mx-auto">
     <div class="card shadow-sm {{#if internet_active}}border-success-subtle bg-success-subtle{{else}}border-danger-subtle bg-danger-subtle{{/if}}">
         <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
             <h3 class="card-title fw-bold fs-5 mb-1">Dokumentationsserver-Firewall-Regel</h3>
@@ -15,8 +14,7 @@
                        name="internet_active"
                        type="checkbox"
                        role="switch"
-                       class="form-check-input mt-0 {{#if internet_active}}bg-success border-success{{else}}bg-danger border-danger{{/if}}"
-                       style="width: 3.5rem; height: 1.75rem;"
+                       class="exam-switch form-check-input mt-0 {{#if internet_active}}bg-success border-success{{else}}bg-danger border-danger{{/if}}"
                        {{#if internet_active}}checked{{/if}}>
             </div>
             <div class="badge rounded-pill px-3 py-2 fs-6 {{#if internet_active}}text-bg-success{{else}}text-bg-danger{{/if}}">

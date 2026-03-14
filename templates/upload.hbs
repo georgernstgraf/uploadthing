@@ -3,8 +3,7 @@
           hx-encoding="multipart/form-data"
           hx-target="#main-content"
           hx-swap="innerHTML"
-          class="card shadow-sm border-0 needs-validation mx-auto"
-          style="max-width: 600px;"
+          class="card shell-card-md shadow-sm border-0 needs-validation mx-auto"
           novalidate="">
         <div class="card-body text-center">
             <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm text-primary">
@@ -23,8 +22,7 @@
                  @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--bs-border-color)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
                 <input type="file"
                        x-ref="fileInput"
-                       class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0"
-                       style="cursor: pointer;"
+                       class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
                        name="file"
                        accept="{{#if accept_attr}}{{accept_attr}}{{else}}.zip{{/if}}"
                        required

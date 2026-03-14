@@ -1,10 +1,10 @@
-<section class="card shadow-sm border-0 mx-auto" style="max-width: 840px;">
+<section class="card shell-card-lg shadow-sm border-0 mx-auto">
     <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
         <h2 class="card-title fs-4 mb-2">Admin</h2>
     </div>
     <div class="card-body py-3 px-3">
 
-    <div class="vstack gap-3 mx-auto" style="max-width: 720px;">
+    <div class="vstack gap-3 shell-stack-md mx-auto">
         <section class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
@@ -15,8 +15,7 @@
 
                 <form action="/admin/theme"
                       method="post"
-                      class="mx-auto"
-                      style="max-width: 640px;">
+                      class="shell-form-md mx-auto">
                     <label class="form-label fw-bold" for="theme">Auswahl</label>
                     <div class="row g-2 align-items-end">
                         <div class="col-md-8">
@@ -92,8 +91,7 @@
                 <form hx-post="/admin/application"
                       hx-target="#main-content"
                       hx-swap="innerHTML"
-                      class="mx-auto"
-                      style="max-width: 640px;">
+                      class="shell-form-md mx-auto">
                     <label class="form-label fw-bold" for="permitted_filetypes">Dateiendungen (kommagetrennt)</label>
                     <input id="permitted_filetypes"
                            name="permitted_filetypes"
@@ -111,7 +109,7 @@
                 </form>
 
                 <div class="mt-4 text-center">
-                    <div class="small text-uppercase mb-1" style="letter-spacing: 0.1em;">Aktiv</div>
+                    <div class="section-heading text-uppercase mb-1">Aktiv</div>
                     <div class="fs-5 fw-bold">
                         {{#each current_filetypes}}
                             {{#if @index}}, {{/if}}.{{this}}
@@ -132,8 +130,7 @@
                 <form hx-post="/admin/cleanup-database"
                       hx-target="#main-content"
                       hx-swap="innerHTML"
-                      class="mx-auto"
-                      style="max-width: 640px;">
+                      class="shell-form-md mx-auto">
                     <input type="hidden"
                            name="confirm_cleanup"
                            value="cleanup-db">
@@ -157,10 +154,10 @@
     </div>
 
     {{#if success_message}}
-        <div class="alert alert-success mx-auto mt-3 mb-0" style="max-width: 720px;">{{success_message}}</div>
+        <div class="alert alert-success shell-stack-md mx-auto mt-3 mb-0">{{success_message}}</div>
     {{/if}}
     {{#if error_message}}
-        <div class="alert alert-danger mx-auto mt-3 mb-0" style="max-width: 720px;">{{error_message}}</div>
+        <div class="alert alert-danger shell-stack-md mx-auto mt-3 mb-0">{{error_message}}</div>
     {{/if}}
     </div>
 </section>

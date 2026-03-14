@@ -86,6 +86,7 @@
 - Bootstrap 5 utility classes like `p-2`, `m-3`, etc. use `!important`, so they silently override any custom CSS rule targeting the same property on the same element.
 - Do not combine Bootstrap shorthand padding/margin utilities with axis-specific custom properties on `#main-wrapper` or similar layout elements; prefer axis-specific utilities (`px-2 pb-2`) and let `ui-shell.css` own the remaining axis.
 - When debugging unexpected spacing, check for Bootstrap utility `!important` overrides first.
+- Flex rows with fixed-size avatar/badge elements need an explicit flexible text region or content-driven card width; otherwise non-shrinking items can push trailing badges outside the card.
 
 ## Generated Artifacts
 
