@@ -64,6 +64,23 @@ body {
     justify-content: center;
 }
 
+.doc-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75em;
+}
+
+.doc-link-icon {
+    flex: 0 0 auto;
+    width: 1.5em;
+    height: 1.5em;
+}
+
+.doc-link-label {
+    min-width: 0;
+}
+
 .theme-toggle-button,
 .theme-toggle-placeholder {
     min-width: 5.5rem;

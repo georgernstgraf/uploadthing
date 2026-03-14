@@ -1,132 +1,100 @@
 <section class="dirindex-grid mx-3">
     <div class="card shadow-sm border-0">
         <div class="card-header bg-transparent border-0 text-center pt-4 pb-2">
-            <h2 class="card-title mb-0"><span class="border-bottom border-3 pb-2">Angabe und Unterlagen</span></h2>
+            <h2 class="card-title mb-0"><span class="border-bottom border-3 pb-2">Angaben</span></h2>
         </div>
         <div class="card-body pt-3">
-        <ul class="list-group list-group-flush text-center gap-3">
-            {{#each files}}
-                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                    <a href="../unterlagen/{{this}}"
-                        class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100">
-                        {{this}}
-                    </a>
-                </li>
-            {{/each}}
-        </ul>
+            <ul class="list-group list-group-flush text-center gap-3">
+                {{#each files}}
+                    <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                        <a href="../unterlagen/{{this}}"
+                           class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100">
+                            {{this}}
+                        </a>
+                    </li>
+                {{/each}}
+            </ul>
         </div>
     </div>
     <div class="card shadow-sm border-0">
         <div class="card-header bg-transparent border-0 text-center pt-4 pb-2">
-            <h2 class="card-title mb-0"><span class="border-bottom border-3 border-danger pb-2">Dokumentation online</span></h2>
+            <h2 class="card-title mb-0"><span class="border-bottom border-3 border-danger pb-2">Dokumentationen</span></h2>
         </div>
         <div class="card-body pt-3">
-        <ul class="list-group list-group-flush text-center gap-3">
-            <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                <a href="https://getbootstrap.com/"
-                   class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    <img src="/static/img/doc-bootstrap.svg"
-                         alt=""
-                         width="16"
-                         height="16"
-                         class="d-inline-block flex-shrink-0 rounded-1">
-                    Bootstrap
-                </a>
-            </li>
-            <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                <a href="https://learn.microsoft.com/en-us/dotnet/"
-                   class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    <img src="/static/img/doc-dotnet.ico"
-                         alt=""
-                         width="16"
-                         height="16"
-                         class="d-inline-block flex-shrink-0 rounded-1">
-                    C# / .NET
-                </a>
-            </li>
-            <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                <a href="https://css-tricks.com/"
-                   class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    <img src="/static/img/doc-css-tricks.svg"
-                         alt=""
-                         width="16"
-                         height="16"
-                         class="d-inline-block flex-shrink-0 rounded-1">
-                    CSS Tricks
-                </a>
-            </li>
-            <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                <a href="https://fakerjs.dev/"
-                   class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    <img src="/static/img/doc-faker.svg"
-                         alt=""
-                         width="16"
-                         height="16"
-                         class="d-inline-block flex-shrink-0 rounded-1">
-                    Faker JS
-                </a>
-            </li>
-            <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                <a href="https://docs.oracle.com/en/java/javase/21/docs/api/index.html"
-                   class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    <img src="/static/img/doc-java.svg"
-                         alt=""
-                         width="16"
-                         height="16"
-                         class="d-inline-block flex-shrink-0 rounded-1">
-                    Javadoc
-                </a>
-            </li>
-            <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                <a href="https://developer.mozilla.org/"
-                   class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    <img src="/static/img/doc-mdn.svg"
-                         alt=""
-                         width="16"
-                         height="16"
-                         class="d-inline-block flex-shrink-0 rounded-1">
-                    Mozilla Developer Network
-                </a>
-            </li>
-            <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                <a href="https://www.prisma.io/docs/orm"
-                   class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    <img src="/static/img/doc-prisma.svg"
-                         alt=""
-                         width="16"
-                         height="16"
-                         class="d-inline-block flex-shrink-0 rounded-1">
-                    Prisma
-                </a>
-            </li>
-            <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                <a href="https://www.w3schools.com/"
-                   class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    <img src="/static/img/doc-w3schools.svg"
-                         alt=""
-                         width="16"
-                         height="16"
-                         class="d-inline-block flex-shrink-0 rounded-1">
-                    W3Schools
-                </a>
-            </li>
-        </ul>
+            <ul class="list-group list-group-flush text-center gap-3">
+                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                    <a href="https://getbootstrap.com/"
+                       class="doc-link btn btn-info py-2 shadow-sm fw-bold w-100"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        <img src="/static/img/doc-bootstrap.svg"
+                             alt=""
+                             class="doc-link-icon rounded-1"> <span class="doc-link-label">Bootstrap</span> </a>
+                </li>
+                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                    <a href="https://learn.microsoft.com/en-us/dotnet/"
+                       class="doc-link btn btn-info py-2 shadow-sm fw-bold w-100"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        <img src="/static/img/doc-dotnet.ico"
+                             alt=""
+                             class="doc-link-icon rounded-1"> <span class="doc-link-label">C# / .NET</span> </a>
+                </li>
+                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                    <a href="https://css-tricks.com/"
+                       class="doc-link btn btn-info py-2 shadow-sm fw-bold w-100"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        <img src="/static/img/doc-css-tricks.svg"
+                             alt=""
+                             class="doc-link-icon rounded-1"> <span class="doc-link-label">CSS Tricks</span> </a>
+                </li>
+                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                    <a href="https://fakerjs.dev/"
+                       class="doc-link btn btn-info py-2 shadow-sm fw-bold w-100"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        <img src="/static/img/doc-faker.svg"
+                             alt=""
+                             class="doc-link-icon rounded-1"> <span class="doc-link-label">Faker JS</span> </a>
+                </li>
+                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                    <a href="https://docs.oracle.com/en/java/javase/21/docs/api/index.html"
+                       class="doc-link btn btn-info py-2 shadow-sm fw-bold w-100"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        <img src="/static/img/doc-java.svg"
+                             alt=""
+                             class="doc-link-icon rounded-1"> <span class="doc-link-label">Javadoc</span> </a>
+                </li>
+                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                    <a href="https://developer.mozilla.org/"
+                       class="doc-link btn btn-info py-2 shadow-sm fw-bold w-100"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        <img src="/static/img/doc-mdn.svg"
+                             alt=""
+                             class="doc-link-icon rounded-1"> <span class="doc-link-label">Mozilla Developer Network</span> </a>
+                </li>
+                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                    <a href="https://www.prisma.io/docs/orm"
+                       class="doc-link btn btn-info py-2 shadow-sm fw-bold w-100"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        <img src="/static/img/doc-prisma.svg"
+                             alt=""
+                             class="doc-link-icon rounded-1"> <span class="doc-link-label">Prisma</span> </a>
+                </li>
+                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                    <a href="https://www.w3schools.com/"
+                       class="doc-link btn btn-info py-2 shadow-sm fw-bold w-100"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        <img src="/static/img/doc-w3schools.svg"
+                             alt=""
+                             class="doc-link-icon rounded-1"> <span class="doc-link-label">W3Schools</span> </a>
+                </li>
+            </ul>
         </div>
     </div>
 </section>
