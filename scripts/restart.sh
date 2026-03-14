@@ -14,4 +14,5 @@ if [ -z "${pids}" ]; then
 fi
 
 kill ${pids}
+git pull
 sleep 1
