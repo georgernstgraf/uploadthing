@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+cd
+cd uploadthing
+
+
 pids=$(fuser -f uploadthing.db 2>/dev/null | tr -d "\n")
 
 if [ -z "${pids}" ]; then
@@ -10,5 +14,4 @@ if [ -z "${pids}" ]; then
 fi
 
 kill ${pids}
-sleep 0.5
-kill -9 ${pids}
+sleep 1
