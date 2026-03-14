@@ -41,6 +41,7 @@
 - Some endpoint tests and JSON fixtures still reference routes or behaviors that are stale, permissive, or destructive, such as `/admin/logs` and `/admin/wipe-abgaben`.
 - Read tests before changing behavior and do not assume they perfectly describe the current product surface.
 - If shutdown handling changes, remember that closing Prisma and SQLite alone is not enough; the `Deno.serve` server must also be stopped or the process will keep running after SIGINT.
+- Local developer activity mutates `uploadthing.db`, so forensic endpoint tests that depend on localhost state become flaky unless they explicitly clear and reseed `127.0.0.1` through shared fixtures first.
 
 ## External Dependency Risks
 
@@ -63,6 +64,7 @@
 - The Admin page now includes a database cleanup control that deletes rows older than one month from `cookiepresents`, `registrations`, `ipfact`, and `abgaben`; it is intentionally fixed-duration and not runtime-configurable.
 - The anomaly panel must not be gated only by `anomalies.by_ip.length`; user-only anomalies are valid and the UI should treat `anomalies.by_user.length` as sufficient to render the panel.
 - Registration-only multi-IP anomalies are expected on `/admin/students`; do not restrict anomaly detection to IPs that also have cookie presence in the selected range.
+- The deterministic localhost forensic fixture helpers now live in `test/helpers/forensics_fixture.ts`; prefer named scenario setup there over ad-hoc SQL cleanup embedded directly in each test.
 - HTMX network failures such as connection refused, DNS errors, and timeouts surface through `htmx:sendError` / `htmx:timeout`, not `htmx:responseError`, so toast handling in `templates/index.hbs` must listen to both paths.
 - When using `gh issue comment` or `gh issue close --comment` from the shell, use a heredoc or `--body-file`/careful quoting; unescaped backticks in inline shell strings trigger command substitution and produce noisy but harmless shell errors.
 - When validating admin forensics performance work, run `EXPLAIN QUERY PLAN` against the real local `uploadthing.db`, not only against assumptions from the schema. The useful verification commands in this cycle checked these exact query families: `SELECT DISTINCT ip FROM ipfact WHERE seen BETWEEN ...`, `SELECT seen FROM ipfact WHERE ip = ? AND seen BETWEEN ... ORDER BY seen DESC`, latest-by-IP lookups for `cookiepresents` and `registrations`, latest-by-user lookup for `registrations`, user/range queries for `abgaben`, and the range aggregation reads introduced for `service/ipadmin.ts`.
@@ -87,6 +89,7 @@
 - Do not combine Bootstrap shorthand padding/margin utilities with axis-specific custom properties on `#main-wrapper` or similar layout elements; prefer axis-specific utilities (`px-2 pb-2`) and let `ui-shell.css` own the remaining axis.
 - When debugging unexpected spacing, check for Bootstrap utility `!important` overrides first.
 - Flex rows with fixed-size avatar/badge elements need an explicit flexible text region or content-driven card width; otherwise non-shrinking items can push trailing badges outside the card.
+- Renaming template IDs is easy to miss because HTMX targets/includes, JS selectors in `templates/index.hbs`, and shell CSS selectors can all depend on them; always grep for `#old-id` before changing a one-off element ID.
 
 ## Generated Artifacts
 

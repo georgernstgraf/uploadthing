@@ -1,108 +1,114 @@
-<section class="dirindex-grid mx-3">
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-transparent border-0 text-center pt-4 pb-2">
-            <h2 class="card-title mb-0"><span class="border-bottom border-3 pb-2">Angaben</span></h2>
+<section class="container-fluid px-3">
+    <div class="row justify-content-center g-4">
+        <div class="col-12 col-xl-6 col-xxl-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 text-center pt-4 pb-2">
+                    <h2 class="card-title mb-0"><span class="border-bottom border-3 pb-2">Angaben</span></h2>
+                </div>
+                <div class="card-body pt-3">
+                    <ul class="list-group list-group-flush text-center gap-3">
+                        {{#each files}}
+                            <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                                <a href="../unterlagen/{{this}}"
+                                   class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100">
+                                    {{this}}
+                                </a>
+                            </li>
+                        {{/each}}
+                    </ul>
+                </div>
+            </div>
         </div>
-        <div class="card-body pt-3">
-            <ul class="list-group list-group-flush text-center gap-3">
-                {{#each files}}
-                    <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                        <a href="../unterlagen/{{this}}"
-                           class="btn btn-info py-2 text-truncate shadow-sm fw-bold w-100">
-                            {{this}}
-                        </a>
-                    </li>
-                {{/each}}
-            </ul>
-        </div>
-    </div>
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-transparent border-0 text-center pt-4 pb-2">
-            <h2 class="card-title mb-0"><span class="border-bottom border-3 border-danger pb-2">Dokumentationen</span></h2>
-        </div>
-        <div class="card-body pt-3">
-            <ul class="list-group list-group-flush text-center gap-3">
-                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                    <a href="https://getbootstrap.com/"
-                       class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        <img src="/static/img/doc-bootstrap.svg"
-                             alt=""
-                             class="rounded-1 flex-shrink-0"
-                             style="width: 1.5em; height: 1.5em;"> <span>Bootstrap</span> </a>
-                </li>
-                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                    <a href="https://learn.microsoft.com/en-us/dotnet/"
-                       class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        <img src="/static/img/doc-dotnet.ico"
-                             alt=""
-                             class="rounded-1 flex-shrink-0"
-                             style="width: 1.5em; height: 1.5em;"> <span>C# / .NET</span> </a>
-                </li>
-                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                    <a href="https://css-tricks.com/"
-                       class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        <img src="/static/img/doc-css-tricks.svg"
-                             alt=""
-                             class="rounded-1 flex-shrink-0"
-                             style="width: 1.5em; height: 1.5em;"> <span>CSS Tricks</span> </a>
-                </li>
-                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                    <a href="https://fakerjs.dev/"
-                       class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        <img src="/static/img/doc-faker.svg"
-                             alt=""
-                             class="rounded-1 flex-shrink-0"
-                             style="width: 1.5em; height: 1.5em;"> <span>Faker JS</span> </a>
-                </li>
-                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                    <a href="https://docs.oracle.com/en/java/javase/21/docs/api/index.html"
-                       class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        <img src="/static/img/doc-java.svg"
-                             alt=""
-                             class="rounded-1 flex-shrink-0"
-                             style="width: 1.5em; height: 1.5em;"> <span>Javadoc</span> </a>
-                </li>
-                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                    <a href="https://developer.mozilla.org/"
-                       class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        <img src="/static/img/doc-mdn.svg"
-                             alt=""
-                             class="rounded-1 flex-shrink-0"
-                             style="width: 1.5em; height: 1.5em;"> <span>Mozilla Developer Network</span> </a>
-                </li>
-                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                    <a href="https://www.prisma.io/docs/orm"
-                       class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        <img src="/static/img/doc-prisma.svg"
-                             alt=""
-                             class="rounded-1 flex-shrink-0"
-                             style="width: 1.5em; height: 1.5em;"> <span>Prisma</span> </a>
-                </li>
-                <li class="list-group-item border-0 px-0 py-0 bg-transparent">
-                    <a href="https://www.w3schools.com/"
-                       class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        <img src="/static/img/doc-w3schools.svg"
-                             alt=""
-                             class="rounded-1 flex-shrink-0"
-                             style="width: 1.5em; height: 1.5em;"> <span>W3Schools</span> </a>
-                </li>
-            </ul>
+        <div class="col-12 col-xl-6 col-xxl-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-0 text-center pt-4 pb-2">
+                    <h2 class="card-title mb-0"><span class="border-bottom border-3 border-danger pb-2">Dokumentationen</span></h2>
+                </div>
+                <div class="card-body pt-3">
+                    <ul class="list-group list-group-flush text-center gap-3">
+                        <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                            <a href="https://getbootstrap.com/"
+                               class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <img src="/static/img/doc-bootstrap.svg"
+                                     alt=""
+                                     class="rounded-1 flex-shrink-0"
+                                     style="width: 1.5em; height: 1.5em;"> <span>Bootstrap</span> </a>
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                            <a href="https://learn.microsoft.com/en-us/dotnet/"
+                               class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <img src="/static/img/doc-dotnet.ico"
+                                     alt=""
+                                     class="rounded-1 flex-shrink-0"
+                                     style="width: 1.5em; height: 1.5em;"> <span>C# / .NET</span> </a>
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                            <a href="https://css-tricks.com/"
+                               class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <img src="/static/img/doc-css-tricks.svg"
+                                     alt=""
+                                     class="rounded-1 flex-shrink-0"
+                                     style="width: 1.5em; height: 1.5em;"> <span>CSS Tricks</span> </a>
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                            <a href="https://fakerjs.dev/"
+                               class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <img src="/static/img/doc-faker.svg"
+                                     alt=""
+                                     class="rounded-1 flex-shrink-0"
+                                     style="width: 1.5em; height: 1.5em;"> <span>Faker JS</span> </a>
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                            <a href="https://docs.oracle.com/en/java/javase/21/docs/api/index.html"
+                               class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <img src="/static/img/doc-java.svg"
+                                     alt=""
+                                     class="rounded-1 flex-shrink-0"
+                                     style="width: 1.5em; height: 1.5em;"> <span>Javadoc</span> </a>
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                            <a href="https://developer.mozilla.org/"
+                               class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <img src="/static/img/doc-mdn.svg"
+                                     alt=""
+                                     class="rounded-1 flex-shrink-0"
+                                     style="width: 1.5em; height: 1.5em;"> <span>Mozilla Developer Network</span> </a>
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                            <a href="https://www.prisma.io/docs/orm"
+                               class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <img src="/static/img/doc-prisma.svg"
+                                     alt=""
+                                     class="rounded-1 flex-shrink-0"
+                                     style="width: 1.5em; height: 1.5em;"> <span>Prisma</span> </a>
+                        </li>
+                        <li class="list-group-item border-0 px-0 py-0 bg-transparent">
+                            <a href="https://www.w3schools.com/"
+                               class="btn btn-info py-2 shadow-sm fw-bold w-100 d-inline-flex align-items-center justify-content-center gap-3"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <img src="/static/img/doc-w3schools.svg"
+                                     alt=""
+                                     class="rounded-1 flex-shrink-0"
+                                     style="width: 1.5em; height: 1.5em;"> <span>W3Schools</span> </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 </section>

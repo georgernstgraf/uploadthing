@@ -33,6 +33,7 @@
 - In Handlebars templates, prefer native Bootstrap component structure (`card-header`, `card-body`, `card-footer`, `list-group`, `badge`, `btn`) over generic wrapper classes when the element already matches a Bootstrap component concept.
 - For repeated shell/layout sizing in Handlebars templates, move the rule into `static/ui-shell.css` and reuse scoped classes instead of inline `style="..."` attributes.
 - For icon-and-label buttons in templates, prefer a small reusable flex wrapper with text-relative icon sizing (`em`) over fixed pixel `width`/`height` attributes on the image.
+- Give meaningful one-off structural UI elements in Handlebars templates a clear unique `id`, and update any HTMX targets, CSS selectors, JS selectors, `aria-controls`, or anchor references when those IDs change.
 - Admin route naming is now split by responsibility: use `/admin/students` for the student/IP forensics page and `/admin/application` for runtime admin settings such as themes, file types, downloads, and cleanup.
 
 ## Validation And Parsing
@@ -57,6 +58,8 @@
 - If a command cannot run because of missing env, LDAP, filesystem, or another dependency, report that explicitly.
 - For admin forensics database work, verify index usage directly against `uploadthing.db` with `sqlite3 "uploadthing.db" "EXPLAIN QUERY PLAN ..."`; capture the exact hot queries being evaluated and compare plans before and after schema/query changes.
 - For admin/student forensics bugs, prefer both a service-level regression in `service/ipadmin_test.ts` and a rendered-page regression in `test/endpoints_test.ts` when the failure is visible in the HTML.
+- For localhost-dependent forensic tests, use the shared helpers in `test/helpers/forensics_fixture.ts` to reset and seed deterministic DB state instead of relying on ambient rows already present in `uploadthing.db`.
+- Keep `127.0.0.1` as the canonical local test IP for forensic endpoint scenarios unless the project intentionally changes that policy.
 
 ## Documentation Maintenance
 

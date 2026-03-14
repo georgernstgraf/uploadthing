@@ -198,12 +198,12 @@
 
             document.body.addEventListener('htmx:beforeRequest', function (event) {
                 const trigger = event.detail?.elt;
-                if (!trigger || !trigger.closest('#report')) {
+                if (!trigger || !trigger.closest('#admin-report-panel')) {
                     return;
                 }
 
-                const hasOpenDetails = Boolean(document.querySelector('#report details[open]'));
-                const anomalyAccordionOpen = Boolean(document.querySelector('#anomaly-collapse.show'));
+                const hasOpenDetails = Boolean(document.querySelector('#admin-report-panel details[open]'));
+                const anomalyAccordionOpen = Boolean(document.querySelector('#admin-anomaly-collapse.show'));
                 if (hasOpenDetails || anomalyAccordionOpen) {
                     if (untrackHtmxRequest(event)) {
                         activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);

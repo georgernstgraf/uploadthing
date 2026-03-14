@@ -1,11 +1,11 @@
 <section class="container"
-         id="report"
+         id="admin-report-panel"
          hx-get="/admin/students"
          hx-trigger="every {{admin_refresh_seconds}}s"
-         hx-target="#report"
+         hx-target="#admin-report-panel"
          hx-swap="innerHTML"
-         hx-select="#report > *"
-         hx-include="#timeselector form">
+         hx-select="#admin-report-panel > *"
+         hx-include="#admin-time-filter form">
     <h2 class="text-center mb-0 fs-4">SchülerInnen und IP Adressen</h2>
     <h6 class="text-center mb-2 small"> Zeitraum: {{#unless withinTimeCutoff}}
             {{startdate}}

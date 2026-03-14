@@ -1,6 +1,6 @@
-<main id="main-wrapper"
+<main id="app-main"
       class="container px-2 pb-2">
-    <div id="global-htmx-indicator"
+    <div id="app-loading-indicator"
          class="htmx-indicator position-fixed top-50 start-50 translate-middle z-3"
          aria-hidden="true">
         <div class="card shadow-sm border-0 rounded-4">
@@ -14,8 +14,8 @@
     </div>
     {{> nav}}
     {{> userbadge}}
-    <div class="text-center mb-2 opacity-50">
+    <div id="app-ip-banner" class="text-center mb-2 opacity-50">
         <span class="small text-uppercase text-body-secondary">Meine IP: {{remote_ip}}</span>
     </div>
-    <div id="main-content">{{{content}}}</div>
+    <div id="app-content">{{{content}}}</div>
 </main>

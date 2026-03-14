@@ -1,11 +1,11 @@
-<div id="user-badge-wrapper"
+<div id="user-badge-panel"
      hx-boost="true"
-     hx-target="#main-content"
+     hx-target="#app-content"
      class="d-flex justify-content-center mb-2">
     <a href="/whoami"
        class="user-badge-card card shadow-sm border-0 text-reset text-decoration-none">
         {{#if remote_user}}
-            <div class="card-body py-2 px-3 d-flex align-items-center gap-3 user-badge-row-mobile">
+            <div class="card-body py-2 px-3 d-flex align-items-center gap-3 user-badge-wrap-sm">
                 <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-bg-primary fw-bold flex-shrink-0 user-badge-avatar-size">
                     {{givenNameInitial remote_user.name}}
                 </div>
@@ -13,7 +13,7 @@
                     <span class="fw-bold lh-sm">{{remote_user.name}}</span>
                     <span class="small">{{remote_user.email}} / {{remote_user.klasse}}</span>
                 </div>
-                <span class="badge text-bg-light rounded-pill flex-shrink-0 user-badge-action-mobile">Ändern</span>
+                <span class="badge text-bg-light rounded-pill flex-shrink-0 user-badge-action-end-sm">Ändern</span>
             </div>
         {{else}}
             <div class="card-body py-2 px-3 text-center">

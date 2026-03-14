@@ -1,13 +1,13 @@
 <div x-data="endTimeToggle()"
      x-init="init()">
-    <section id="timeselector"
-             class="card admin-shell-card shadow-sm border-0 mb-2 mx-auto w-100">
+    <section id="admin-time-filter"
+             class="card shadow-sm border-0 mb-2 mx-auto w-100 col-xxl-10">
         <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
             <h2 class="card-title mb-0 fs-4">Zeitauswahl</h2>
         </div>
         <div class="card-body py-3">
             <form hx-get="/admin/students"
-                  hx-target="#main-content"
+                  hx-target="#app-content"
                   hx-push-url="true"
                   class="container text-center"
                   @submit="handleSubmit">
@@ -19,11 +19,11 @@
                 <div class="row mt-1 g-2 align-items-center">
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-uppercase small"> Startzeit <input type="text"
-                                   name="starttime"
-                                   class="form-control form-control-sm text-center"
-                                   id="timestartselect"
-                                   list="spg_times_list"
-                                   value="{{starttime}}">
+                                    name="starttime"
+                                    class="form-control form-control-sm text-center"
+                                    id="admin-start-time"
+                                    list="spg_times_list"
+                                    value="{{starttime}}">
                         </label>
                     </div>
                     <div class="col-md-6">
@@ -39,12 +39,12 @@
                         <div
                              class="form-check form-switch d-inline-flex align-items-center gap-2 p-2 fs-5 bg-body-tertiary border border-2 rounded-4">
                             <input class="form-check-input m-0"
-                                   type="checkbox"
-                                   id="toggleEndTime"
-                                   x-model="showEndTime"
-                                   @change="savePreference()">
+                                    type="checkbox"
+                                    id="admin-endtime-toggle"
+                                    x-model="showEndTime"
+                                    @change="savePreference()">
                             <label class="form-check-label fw-bold m-0"
-                                   for="toggleEndTime">Endzeit festlegen</label>
+                                   for="admin-endtime-toggle">Endzeit festlegen</label>
                         </div>
                     </div>
                 </div>
@@ -54,11 +54,11 @@
                      x-cloak>
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-uppercase small"> Endzeit <input type="text"
-                                   name="endtime"
-                                   class="form-control form-control-sm text-center"
-                                   id="timeendselect"
-                                   list="spg_times_list"
-                                   value="{{endtime}}">
+                                    name="endtime"
+                                    class="form-control form-control-sm text-center"
+                                    id="admin-end-time"
+                                    list="spg_times_list"
+                                    value="{{endtime}}">
                         </label>
                     </div>
                     <div class="col-md-6">
@@ -146,16 +146,16 @@
         }
     </script>
     {{#if (or anomalies.by_ip.length anomalies.by_user.length)}}
-        <section id="anomaly-accordion"
-                 class="accordion admin-shell-card mb-2 mx-auto card w-100">
+        <section id="admin-anomaly-panel"
+                 class="accordion mb-2 mx-auto card w-100 col-xxl-10">
             <div class="accordion-item shadow-sm border-0 bg-transparent overflow-hidden">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed text-bg-warning"
                             type="button"
                             data-bs-toggle="collapse"
-                            data-bs-target="#anomaly-collapse"
+                            data-bs-target="#admin-anomaly-collapse"
                             aria-expanded="false"
-                            aria-controls="anomaly-collapse"
+                            aria-controls="admin-anomaly-collapse"
                             onclick="window.toggleAnomalyAccordion(this)">
                         <span class="d-flex flex-wrap align-items-center gap-2 w-100 pe-3">
                             <span>Anomalien: {{anomalies.by_ip.length}} IPs{{#if anomalies.by_user.length}}, {{anomalies.by_user.length}}
@@ -168,9 +168,9 @@
                         </span>
                     </button>
                 </h2>
-                <div id="anomaly-collapse"
+                <div id="admin-anomaly-collapse"
                      class="accordion-collapse collapse"
-                     data-bs-parent="#anomaly-accordion">
+                     data-bs-parent="#admin-anomaly-panel">
                     <div class="accordion-body py-3 px-3">
                         <div class="mb-3">
                             <h3 class="h6 text-uppercase text-body-secondary mb-2">Nach IP-Adresse</h3>
@@ -211,7 +211,7 @@
             </div>
         </section>
     {{else}}
-        <section class="card admin-shell-card shadow-sm border-0 bg-body-tertiary bg-opacity-50 mb-2 mx-auto w-100">
+        <section class="card shadow-sm border-0 bg-body-tertiary bg-opacity-50 mb-2 mx-auto w-100 col-xxl-10">
             <div class="card-body py-3 px-3 text-center text-body-secondary small"> Es gibt keine Anomalien. </div>
         </section>
     {{/if}}

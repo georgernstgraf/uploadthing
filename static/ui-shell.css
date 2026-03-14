@@ -23,35 +23,8 @@ body {
     font-family: "IBM Plex Sans", var(--bs-body-font-family), system-ui, sans-serif;
 }
 
-#user-badge-wrapper {
+#user-badge-panel {
     width: 100%;
-}
-
-.shell-card-md {
-    max-width: 600px;
-}
-
-.shell-card-lg {
-    max-width: 840px;
-}
-
-.shell-stack-md {
-    max-width: 720px;
-}
-
-.shell-form-md {
-    max-width: 640px;
-}
-
-.admin-shell-card {
-    max-width: 800px;
-}
-
-.dirindex-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 500px));
-    gap: 1.5rem;
-    justify-content: center;
 }
 
 .user-badge-card {
@@ -69,7 +42,7 @@ body {
     min-width: 0;
 }
 
-#main-wrapper {
+#app-main {
     padding-top: var(--app-main-offset);
 }
 
@@ -121,7 +94,7 @@ details > summary::-webkit-details-marker {
         width: 100%;
     }
 
-    .user-badge-row-mobile {
+    .user-badge-wrap-sm {
         flex-wrap: wrap;
     }
 
@@ -129,7 +102,7 @@ details > summary::-webkit-details-marker {
         flex: 1 1 0;
     }
 
-    .user-badge-action-mobile {
+    .user-badge-action-end-sm {
         margin-left: auto;
     }
 }

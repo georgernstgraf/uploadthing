@@ -1,9 +1,9 @@
 <div x-data="{ fileName: 'Datei hier ablegen oder klicken' }">
     <form hx-post="/upload"
           hx-encoding="multipart/form-data"
-          hx-target="#main-content"
+          hx-target="#app-content"
           hx-swap="innerHTML"
-          class="card shell-card-md shadow-sm border-0 needs-validation mx-auto w-100"
+          class="card shadow-sm border-0 needs-validation mx-auto w-100 col-lg-8 col-xl-6"
           novalidate="">
         <div class="card-body text-center">
             <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm text-primary">
