@@ -27,7 +27,8 @@
                     <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
-                                <div class="report-avatar report-avatar-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-primary-emphasis bg-primary-subtle"
+                                     style="width: 26px; height: 26px; font-size: 0.875rem;">
                                     {{#if this.cookie_presents.[0].user}}
                                         {{givenNameInitial this.cookie_presents.[0].user.name}}
                                     {{else}} ? {{/if}}
@@ -59,7 +60,8 @@
                         <div class="row g-1">
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 small text-primary">Cookies</div>
-                                <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto mb-1">
+                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
+                                    style="max-height: 80px;">
                                     {{#each this.cookie_presents}}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span>{{this.at}}</span>
@@ -74,7 +76,8 @@
                             </div>
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 small text-primary">Registrierungen</div>
-                                <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto mb-1">
+                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
+                                    style="max-height: 80px;">
                                     {{#each this.registrations}}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span>{{this.at}}</span>
@@ -90,7 +93,8 @@
                             {{#if this.submissions.length}}
                                 <div class="col-12">
                                     <div class="fw-bold text-center mb-1 small text-primary">Abgaben</div>
-                                    <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto mb-1">
+                                    <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
+                                        style="max-height: 80px;">
                                         {{#each this.submissions}}
                                             <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                                 <span>{{this.at}}</span>
@@ -103,7 +107,8 @@
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 small text-primary">IP-Fact: {{this.ip}} ({{this.seen_at_desc.length}}x)
                                  </div>
-                                <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto">
+                                <ul class="list-group list-group-flush small rounded overflow-auto"
+                                    style="max-height: 80px;">
                                     {{#each this.seen_at_desc }}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span>{{this}}</span>
@@ -128,7 +133,8 @@
                     <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
-                                <div class="report-avatar report-avatar-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold"> ? </div>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-secondary-emphasis bg-secondary-subtle"
+                                     style="width: 26px; height: 26px; font-size: 0.875rem;"> ? </div>
                                 <div class="overflow-hidden">
                                     <span class="d-block text-truncate">{{this.ip}}</span>
                                     <span class="fw-normal small">Unbekannt</span>
@@ -151,7 +157,8 @@
                             {{#if this.registrations.length}}
                                 <div class="col-12">
                                     <div class="fw-bold text-center mb-1 small text-primary">Registrierungen</div>
-                                    <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto mb-1">
+                                    <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
+                                        style="max-height: 80px;">
                                         {{#each this.registrations}}
                                             <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                                 <span>{{this.at}}</span>
@@ -167,7 +174,8 @@
                             {{/if}}
                             <div class="col-12">
                                 <div class="fw-bold text-center mb-1 small text-primary">IP: {{this.ip}}</div>
-                                <ul class="admin-history-list list-group list-group-flush small rounded overflow-auto">
+                                <ul class="list-group list-group-flush small rounded overflow-auto"
+                                    style="max-height: 80px;">
                                     {{#each this.seen_at_desc }}
                                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                                             <span>{{this}}</span>

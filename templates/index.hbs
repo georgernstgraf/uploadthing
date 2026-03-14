@@ -79,7 +79,7 @@
 </head>
 
      <body>
-    <header class="app-header-shell position-fixed top-0 start-0 end-0">
+    <header class="position-fixed top-0 start-0 end-0 z-3" style="backdrop-filter: blur(var(--CTBS-GlassBlur)); -webkit-backdrop-filter: blur(var(--CTBS-GlassBlur));">
         <div class="position-relative mx-2 mt-2">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-body py-2 px-3 d-flex flex-row-reverse flex-sm-row flex-wrap flex-sm-nowrap align-items-center gap-2">
@@ -87,13 +87,13 @@
                         type="button"
                         aria-hidden="true"
                         tabindex="-1"
-                        class="theme-toggle-placeholder btn btn-sm btn-outline-secondary rounded-3 px-3"
+                        class="btn btn-sm btn-outline-secondary rounded-3 px-3 invisible pe-none"
                         disabled> Dunkel </button>
                 <h1 class="mb-0 text-center text-body flex-grow-1 fs-2">http://{{page_title}}/</h1>
                 <button id="theme-toggle"
                         type="button"
                         aria-label="Hell-Dunkel-Modus wechseln"
-                        class="theme-toggle-button btn btn-sm btn-outline-info rounded-3 px-3">Dunkel</button>
+                        class="btn btn-sm btn-outline-info rounded-3 px-3">Dunkel</button>
                 </div>
             </div>
         </div>

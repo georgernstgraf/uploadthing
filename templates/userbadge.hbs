@@ -5,15 +5,15 @@
     <a href="/whoami"
        class="user-badge-card card shadow-sm border-0 text-reset text-decoration-none">
         {{#if remote_user}}
-            <div class="user-badge-row card-body py-2 px-3">
-                <div class="user-badge-avatar rounded-circle d-inline-flex align-items-center justify-content-center text-bg-primary fw-bold">
+            <div class="card-body py-2 px-3 d-flex align-items-center gap-3 user-badge-row-mobile">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-bg-primary fw-bold flex-shrink-0 user-badge-avatar-size">
                     {{givenNameInitial remote_user.name}}
                 </div>
-                <div class="user-badge-body text-start">
+                <div class="d-flex flex-column text-start user-badge-body-min">
                     <span class="fw-bold lh-sm">{{remote_user.name}}</span>
                     <span class="small">{{remote_user.email}} / {{remote_user.klasse}}</span>
                 </div>
-                <span class="user-badge-action badge text-bg-light rounded-pill">Ändern</span>
+                <span class="badge text-bg-light rounded-pill flex-shrink-0 user-badge-action-mobile">Ändern</span>
             </div>
         {{else}}
             <div class="card-body py-2 px-3 text-center">

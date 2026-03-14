@@ -23,12 +23,6 @@ body {
     font-family: "IBM Plex Sans", var(--bs-body-font-family), system-ui, sans-serif;
 }
 
-.app-header-shell {
-    z-index: 1030;
-    backdrop-filter: blur(var(--CTBS-GlassBlur));
-    -webkit-backdrop-filter: blur(var(--CTBS-GlassBlur));
-}
-
 #user-badge-wrapper {
     width: 100%;
 }
@@ -53,10 +47,6 @@ body {
     max-width: 800px;
 }
 
-.nav-button {
-    min-width: 220px;
-}
-
 .dirindex-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 500px));
@@ -64,89 +54,19 @@ body {
     justify-content: center;
 }
 
-.doc-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75em;
-}
-
-.doc-link-icon {
-    flex: 0 0 auto;
-    width: 1.5em;
-    height: 1.5em;
-}
-
-.doc-link-label {
-    min-width: 0;
-}
-
-.theme-toggle-button,
-.theme-toggle-placeholder {
-    min-width: 5.5rem;
-}
-
-.theme-toggle-placeholder {
-    visibility: hidden;
-    pointer-events: none;
-}
-
 .user-badge-card {
     width: fit-content;
     max-width: 100%;
 }
 
-.user-badge-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.user-badge-avatar {
-    flex: 0 0 auto;
+.user-badge-avatar-size {
     width: 36px;
     height: 36px;
     aspect-ratio: 1 / 1;
 }
 
-.user-badge-body {
-    display: flex;
-    flex-direction: column;
+.user-badge-body-min {
     min-width: 0;
-}
-
-.user-badge-action {
-    flex: 0 0 auto;
-}
-
-.success-icon {
-    width: 50px;
-    height: 50px;
-}
-
-.exam-switch {
-    width: 3.5rem;
-    height: 1.75rem;
-}
-
-.report-avatar {
-    width: 26px;
-    height: 26px;
-    font-size: 0.875rem;
-}
-
-.report-avatar-primary {
-    color: var(--bs-primary-text-emphasis);
-    background-color: var(--bs-primary-bg-subtle);
-}
-
-.report-avatar-secondary {
-    color: var(--bs-secondary-text-emphasis);
-    background-color: var(--bs-secondary-bg-subtle);
-}
-
-.admin-history-list {
-    max-height: 80px;
 }
 
 #main-wrapper {
@@ -201,15 +121,15 @@ details > summary::-webkit-details-marker {
         width: 100%;
     }
 
-    .user-badge-row {
+    .user-badge-row-mobile {
         flex-wrap: wrap;
     }
 
-    .user-badge-body {
+    .user-badge-body-min {
         flex: 1 1 0;
     }
 
-    .user-badge-action {
+    .user-badge-action-mobile {
         margin-left: auto;
     }
 }
