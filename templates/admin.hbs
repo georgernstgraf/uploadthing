@@ -146,7 +146,7 @@
             }
         }
     </script>
-    {{#if anomalies.by_ip.length}}
+    {{#if (or anomalies.by_ip.length anomalies.by_user.length)}}
         <section class="accordion mb-2 mx-auto card"
                  id="anomaly-accordion"
                  style="max-width: 800px;">

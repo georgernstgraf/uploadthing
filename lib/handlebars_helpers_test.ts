@@ -5,6 +5,10 @@ Handlebars.registerHelper("eq", function <T>(a: T, b: T) {
     return a === b;
 });
 
+Handlebars.registerHelper("or", function (a, b) {
+    return Boolean(a || b);
+});
+
 Handlebars.registerHelper("givenNameInitial", function (name: string) {
     if (!name || typeof name !== "string") return "?";
     const firstSpace = name.indexOf(" ");
@@ -44,6 +48,21 @@ Deno.test("eq helper - works with numbers", () => {
 Deno.test("eq helper - works with booleans", () => {
     const result = Handlebars.helpers.eq(true, true);
     assertEquals(result, true);
+});
+
+Deno.test("or helper - returns true when first value is truthy", () => {
+    const result = Handlebars.helpers.or(true, false);
+    assertEquals(result, true);
+});
+
+Deno.test("or helper - returns true when second value is truthy", () => {
+    const result = Handlebars.helpers.or(0, 2);
+    assertEquals(result, true);
+});
+
+Deno.test("or helper - returns false when both values are falsy", () => {
+    const result = Handlebars.helpers.or(0, "");
+    assertEquals(result, false);
 });
 
 Deno.test("givenNameInitial - returns first char for single name", () => {

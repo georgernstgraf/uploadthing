@@ -84,6 +84,10 @@ Handlebars.registerHelper("eq", function (a, b) {
     return a === b;
 });
 
+Handlebars.registerHelper("or", function (a, b) {
+    return Boolean(a || b);
+});
+
 Handlebars.registerHelper("get", function (map, key) {
     if (!map) return undefined;
     return map.get(key);

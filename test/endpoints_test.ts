@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import endpoints from "./endpoints.json" with { type: "json" };
 import config from "../lib/config.ts";
 import * as service from "../service/service.ts";
+import { db } from "../repo/db.ts";
+import * as ipfactRepo from "../repo/ipfact.ts";
+import * as registrationsRepo from "../repo/registrations.ts";
+import * as usersRepo from "../repo/users.ts";
 
 const BASE_URL = Deno.env.get("TEST_BASE_URL") || endpoints.baseUrl;
 
@@ -388,4 +392,50 @@ Deno.test("GET /admin/students shows no anomalies empty state", async () => {
     assertEquals(res.status, 200);
     assertEquals(html.includes("Es gibt keine Anomalien."), true);
     assertEquals(html.includes("No anomalies detected."), false);
+});
+
+Deno.test("GET /admin/students shows user anomalies without shared-IP anomalies", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `students-anomaly-${suffix}@example.com`;
+    const firstIp = `203.0.113.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const secondIp = `198.51.100.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const seenAt = new Date();
+
+    try {
+        const adminRegisterRes = await fetch(`${BASE_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `email=${encodeURIComponent("grafg@spengergasse.at")}`,
+        });
+        await adminRegisterRes.text();
+        const cookie = adminRegisterRes.headers.get("set-cookie");
+        assertExists(cookie);
+
+        const user = await usersRepo.upsert({
+            email: userEmail,
+            name: "Students Anomaly",
+            klasse: "5AHITM",
+        });
+
+        ipfactRepo.registerSeen(firstIp, seenAt);
+        ipfactRepo.registerSeen(secondIp, seenAt);
+        registrationsRepo.create(firstIp, user.id, seenAt);
+        registrationsRepo.create(secondIp, user.id, seenAt);
+
+        const res = await fetch(`${BASE_URL}/admin/students`, {
+            headers: { "Cookie": cookie },
+        });
+        const html = await res.text();
+
+        assertEquals(res.status, 200);
+        assertEquals(html.includes("Es gibt keine Anomalien."), false);
+        assertEquals(html.includes("Nach Benutzer"), true);
+        assertEquals(html.includes("Students Anomaly"), true);
+        assertEquals(html.includes(firstIp), true);
+        assertEquals(html.includes(secondIp), true);
+    } finally {
+        db.exec(`DELETE FROM registrations WHERE ip IN ('${firstIp}', '${secondIp}')`);
+        db.exec(`DELETE FROM ipfact WHERE ip IN ('${firstIp}', '${secondIp}')`);
+        usersRepo.deleteByEmail(userEmail);
+    }
 });

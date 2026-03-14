@@ -36,13 +36,17 @@ Deno.test("ipadmin classifies IPs by cookie presence and keeps registrations", a
         assertExists(known);
         assertExists(unknown);
         assertEquals(known.cookie_presents.length, 1);
+        assertEquals(known.report_count, 2);
         assertEquals(known.registrations.length, 1);
         assertEquals(known.cookie_presents[0].user?.email, userEmail);
         assertEquals(unknown.cookie_presents.length, 0);
+        assertEquals(unknown.report_count, 1);
         assertEquals(unknown.registrations.length, 1);
         assertEquals(unknown.registrations[0].user?.email, userEmail);
         assertEquals(result.anomalies.by_ip.length, 0);
-        assertEquals(result.anomalies.by_user.length, 0);
+        assertEquals(result.anomalies.by_user.length, 1);
+        assertEquals(result.anomalies.by_user[0].user.email, userEmail);
+        assertEquals(result.anomalies.by_user[0].ips, [knownIp, unknownIp].sort());
     } finally {
         db.exec(`DELETE FROM cookiepresents WHERE ip IN ('${knownIp}', '${unknownIp}')`);
         db.exec(`DELETE FROM registrations WHERE ip IN ('${knownIp}', '${unknownIp}')`);
@@ -128,9 +132,44 @@ Deno.test("ipadmin includes cookie-only IPs as known reported addresses", async 
         assertEquals(known.cookie_presents.length, 1);
         assertEquals(known.cookie_presents[0].user?.email, userEmail);
         assertEquals(known.seen_count, 0);
+        assertEquals(known.report_count, 1);
         assertEquals(known.seen_at_desc.length, 0);
     } finally {
         db.exec(`DELETE FROM cookiepresents WHERE ip = '${cookieOnlyIp}'`);
+        usersRepo.deleteByEmail(userEmail);
+    }
+});
+
+Deno.test("ipadmin detects user anomalies from registrations without cookie presence", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `registration-anomaly-${suffix}@example.com`;
+    const firstIp = `203.0.113.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const secondIp = `198.51.100.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const seenAt = new Date();
+    const start = new Date(seenAt.getTime() - 60_000);
+    const end = new Date(seenAt.getTime() + 60_000);
+
+    try {
+        const user = await usersRepo.upsert({
+            email: userEmail,
+            name: "Registration Anomaly",
+            klasse: "5AHITM",
+        });
+
+        ipfactRepo.registerSeen(firstIp, seenAt);
+        ipfactRepo.registerSeen(secondIp, seenAt);
+        registrationsRepo.create(firstIp, user.id, seenAt);
+        registrationsRepo.create(secondIp, user.id, seenAt);
+
+        const result = await for_range(start, end, false);
+
+        assertEquals(result.anomalies.by_ip.length, 0);
+        assertEquals(result.anomalies.by_user.length, 1);
+        assertEquals(result.anomalies.by_user[0].user.email, userEmail);
+        assertEquals(result.anomalies.by_user[0].ips, [firstIp, secondIp].sort());
+    } finally {
+        db.exec(`DELETE FROM registrations WHERE ip IN ('${firstIp}', '${secondIp}')`);
+        db.exec(`DELETE FROM ipfact WHERE ip IN ('${firstIp}', '${secondIp}')`);
         usersRepo.deleteByEmail(userEmail);
     }
 });

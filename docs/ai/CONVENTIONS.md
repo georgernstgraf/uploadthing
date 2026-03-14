@@ -31,6 +31,7 @@
 - Shared types and helpers belong under `lib/`.
 - Template rendering is server-side via Handlebars in `lib/handlebars.ts` and `templates/`.
 - In Handlebars templates, prefer native Bootstrap component structure (`card-header`, `card-body`, `card-footer`, `list-group`, `badge`, `btn`) over generic wrapper classes when the element already matches a Bootstrap component concept.
+- Admin route naming is now split by responsibility: use `/admin/students` for the student/IP forensics page and `/admin/application` for runtime admin settings such as themes, file types, downloads, and cleanup.
 
 ## Validation And Parsing
 
@@ -53,6 +54,7 @@
 - `deno task test` is the automated test command; ignore older references such as `main_test_db.ts`.
 - If a command cannot run because of missing env, LDAP, filesystem, or another dependency, report that explicitly.
 - For admin forensics database work, verify index usage directly against `uploadthing.db` with `sqlite3 "uploadthing.db" "EXPLAIN QUERY PLAN ..."`; capture the exact hot queries being evaluated and compare plans before and after schema/query changes.
+- For admin/student forensics bugs, prefer both a service-level regression in `service/ipadmin_test.ts` and a rendered-page regression in `test/endpoints_test.ts` when the failure is visible in the HTML.
 
 ## Documentation Maintenance
 

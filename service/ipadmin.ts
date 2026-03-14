@@ -7,6 +7,7 @@ import { userRecordToUserType } from "../lib/user_mapper.ts";
 export type ServiceIpAdmin = {
     ip: string;
     seen_count: number;
+    report_count: number;
     seen_at_desc: string[]; // displayable times
     cookie_presents: { at: string; user: UserType | null }[]; // sorted desc by at
     registrations: { at: string; user: UserType | null }[]; // sorted desc by at
@@ -192,6 +193,7 @@ export async function for_range(
         const ip_admin: ServiceIpAdmin = {
             ip,
             seen_count: seenAtDesc.length,
+            report_count: seenAtDesc.length + cookiePresents.length,
             seen_at_desc: seenAtDesc.map((dt) => localAdminIpString(dt)),
             cookie_presents: cookiePresents,
             registrations,
@@ -215,6 +217,6 @@ export async function for_range(
     });
     const registered = rv.filter((ipf) => ipf.cookie_presents.length > 0);
     const unregistered = rv.filter((ipf) => ipf.cookie_presents.length === 0);
-    const anomalies = detectAnomalies(registered);
+    const anomalies = detectAnomalies(rv);
     return { registered, unregistered, anomalies };
 }

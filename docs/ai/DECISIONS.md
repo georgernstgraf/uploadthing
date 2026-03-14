@@ -66,6 +66,9 @@
 - `registrations` records deliberate registration actions.
 - `cookiepresents` records each request that arrives with a valid cookie and resolved user.
 - The admin forensics view treats cookie presence as the current user attribution for an IP while still showing explicit registration history separately.
+- The student/admin overview IP set is derived from the union of `ipfact`, `cookiepresents`, `registrations`, and submissions so cookie-only IPs are not dropped from the report.
+- The overview's displayed report count now combines in-range `ipfact` hits with in-range `cookiepresents` hits, while the detailed IP history list remains an `ipfact`-only breakdown.
+- Anomaly detection runs over all aggregated IP entries, not only IPs with current cookie presence, so registration-only multi-IP users still surface as anomalies.
 
 ## Socket IP As Ground Truth
 

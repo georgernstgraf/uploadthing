@@ -1,33 +1,22 @@
 # Project State
 
-Current status as of 2026-03-12.
+Current status as of 2026-03-14.
 
 ## Current Focus
-Runtime persistence cleanup after moving `users` fully to SQLite-backed repositories while keeping Prisma as schema authority.
+Admin/student forensics correctness fixes around route naming, HTMX error reporting, combined report counts, and anomaly detection coverage.
 
 ## Completed (this cycle)
-- [x] Known-IP cards now combine "Zuletzt" and the in-range hit count into one header badge in `templates/admin-report.hbs`.
-- [x] Stale known-IP cards now render that header badge as a danger badge instead of using a success border highlight in `templates/admin-report.hbs`.
-- [x] Submission presence on known-IP cards now appears as a separate success badge with a tooltip built from `submissionTooltip` in `lib/handlebars.ts`.
-- [x] Admin IP timestamps now use `localAdminIpString` with a fixed 15-hour cutoff in `lib/timefunc.ts`, and the admin IP services consume that formatter.
-- [x] Known-IP card counts now use the selected time range (`seen_at_desc.length`) rather than an all-time total for the IP in `templates/admin-report.hbs`.
-- [x] `uploadthing.db` was checked directly and confirms that IP `192.168.21.80` has `3772` `ipfact` rows since `2026-03-01T00:00:00.000Z`, with first sighting `2026-03-04T11:37:02.895Z` and last sighting `2026-03-09T06:26:03.016Z`.
-- [x] The Admin subpage now treats theme, firewall, submission directory, and filetype management as equal vertical sections in `templates/admin-filetypes.hbs`.
-- [x] A global Bootstrap-based HTMX loading spinner now appears during active HTMX requests via `templates/main.hbs` and `templates/index.hbs`.
-- [x] The admin forensics page now shows anomaly detection between the time selector and known IPs, with IP-based and user-based anomaly views derived from combined cookie and registration activity in `service/ipadmin.ts` and `templates/admin.hbs`.
-- [x] The anomaly UI now uses German-only text and collapses into a warning-styled Bootstrap accordion when findings exist; otherwise it shows `Es gibt keine Anomalien.`.
-- [x] Admin refresh suppression and the global HTMX spinner now stay in sync even when auto-refresh is canceled because anomaly details or IP cards are open.
-- [x] The Admin page now offers `Datenbank bereinigen`, which removes rows older than one month from `cookiepresents`, `registrations`, `ipfact`, and `abgaben` and reports the deletion counts back in the UI.
-- [x] `repo.users.getByIds(...)` now uses direct SQLite instead of Prisma, while Prisma remains the schema/migration authority and still handles ordinary user writes.
-- [x] `service/ipadmin.ts` now aggregates admin forensics data from range-level reads (`ipfact`, `cookiepresents`, `registrations`, `abgaben`) instead of issuing per-IP N+1 queries.
-- [x] Composite reporting indexes were added in `prisma/migrations/20260312120000_admin_forensics_indexes/migration.sql` and mirrored in `prisma/schema.prisma`.
-- [x] Query-shape verification was performed directly against `uploadthing.db` with `sqlite3 "uploadthing.db" "EXPLAIN QUERY PLAN ..."`, covering per-IP history lookups, latest-by-IP lookups, user/range submission queries, and the new range-based admin aggregation reads.
-- [x] After reviewing actual query usage and plans, redundant single-column indexes were removed through the Prisma workflow in `prisma/migrations/20260312155839_drop_redundant_admin_indexes/migration.sql`.
-- [x] Validation passed with `deno task check`, `deno task lint`, and `deno task test`.
-- [x] Runtime `users` persistence was fully moved from Prisma client calls to direct SQLite in `repo/users.ts`, while Prisma remained the schema and migration source of truth.
-- [x] Runtime Prisma client wiring was removed from `main.ts`, `repo/repo.ts`, and tests; `repo/prismadb.ts` was deleted.
-- [x] `deno task pg` was removed because generated Prisma client code is no longer used at runtime.
-- [x] Fixed SQLite statements were hoisted to module scope across `repo/users.ts`, `repo/cookiepresents.ts`, `repo/registrations.ts`, `repo/ipfact.ts`, and `repo/abgaben.ts`.
+- [x] Student/IP forensics moved to `/admin/students`, and the runtime admin settings page moved from `/admin/filetypes` to `/admin/application`.
+- [x] Navbar links, HTMX form targets, and endpoint tests were updated to use the new `/admin/students` and `/admin/application` paths.
+- [x] The shared HTMX shell in `templates/index.hbs` now shows a danger toast for `htmx:sendError` and `htmx:timeout`, so unreachable-backend failures surface to the UI in addition to normal HTTP `htmx:responseError` cases.
+- [x] The admin/student IP overview now includes cookie-only IPs by aggregating the union of `ipfact`, `cookiepresents`, `registrations`, and submissions in `service/ipadmin.ts`.
+- [x] The student overview badge count now uses a combined `report_count` (`ipfact` hits + cookie presence hits) while the detailed IP history section remains explicitly labeled as `IP-Fact` only.
+- [x] Anomaly detection now runs across all aggregated IP entries, including registration-only IPs without cookie presence, so multi-IP users are still flagged.
+- [x] The anomaly accordion on `templates/admin.hbs` now renders whenever user anomalies exist, not only when IP anomalies exist.
+- [x] Added regression coverage for cookie-only known IPs, registration-only user anomalies, and rendered `/admin/students` user-anomaly visibility in `service/ipadmin_test.ts` and `test/endpoints_test.ts`.
+- [x] GitHub issue `#106` was created, commented, committed, pushed, and closed for the cookie-presence IP inclusion work.
+- [x] GitHub issue `#104` was reused, commented, committed, pushed, and closed for the network-error toast fix.
+- [x] Validation passed with `deno task check`, `deno task lint`, and `deno task test` after each completed change set in this session.
 
 ## Pending
 - [ ] None.
@@ -36,4 +25,4 @@ Runtime persistence cleanup after moving `users` fully to SQLite-backed reposito
 None.
 
 ## Next Session Suggestion
-If more persistence tuning is needed, profile the remaining dynamic SQL paths such as variable-length `IN (...)` queries before adding statement caches or further repository complexity.
+If more admin forensics work continues, review whether the known/unknown split and anomaly model should also incorporate submissions or other signals beyond cookie presence and explicit registrations.

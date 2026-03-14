@@ -19,7 +19,7 @@ This application supports supervised exam workflows where students identify them
 2. A user is searched in LDAP and selected through `/ldap` and `/register`.
 3. Registration binds that identity to the current socket IP and creates a session.
 4. The authenticated user can access `unterlagen` and upload an exam file.
-5. Teachers use `/admin` to correlate sightings, registrations, and submissions.
+5. Teachers use `/admin/students` to correlate sightings, registrations, cookie presence, anomalies, and submissions, and `/admin/application` for runtime administration settings.
 
 ## Security Model
 
