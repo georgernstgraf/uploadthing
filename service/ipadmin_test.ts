@@ -101,3 +101,36 @@ Deno.test("ipadmin detects IP-based and user-based anomalies", async () => {
         usersRepo.deleteByEmails([userOneEmail, userTwoEmail]);
     }
 });
+
+Deno.test("ipadmin includes cookie-only IPs as known reported addresses", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `cookie-only-${suffix}@example.com`;
+    const cookieOnlyIp = `203.0.113.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const seenAt = new Date();
+    const start = new Date(seenAt.getTime() - 60_000);
+    const end = new Date(seenAt.getTime() + 60_000);
+
+    try {
+        const user = await usersRepo.upsert({
+            email: userEmail,
+            name: "Cookie Only Test",
+            klasse: "5AHITM",
+        });
+
+        await cookiepresentsRepo.create(cookieOnlyIp, user.id, seenAt);
+
+        const result = await for_range(start, end, false);
+
+        const known = result.registered.find((entry) => entry.ip === cookieOnlyIp);
+
+        assertExists(known);
+        assertEquals(result.unregistered.find((entry) => entry.ip === cookieOnlyIp), undefined);
+        assertEquals(known.cookie_presents.length, 1);
+        assertEquals(known.cookie_presents[0].user?.email, userEmail);
+        assertEquals(known.seen_count, 0);
+        assertEquals(known.seen_at_desc.length, 0);
+    } finally {
+        db.exec(`DELETE FROM cookiepresents WHERE ip = '${cookieOnlyIp}'`);
+        usersRepo.deleteByEmail(userEmail);
+    }
+});

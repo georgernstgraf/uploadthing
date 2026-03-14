@@ -95,7 +95,6 @@ export async function for_range(
     unregistered: ServiceIpAdmin[];
     anomalies: ServiceAdminAnomalies;
 }> {
-    const rv: ServiceIpAdmin[] = [];
     const seenRows = repo.ipfact.getInRange(start, end);
     const cookieRows = repo.cookiepresents.byRange(start, end);
     const registrationRows = repo.registrations.byRange(start, end);
@@ -167,7 +166,16 @@ export async function for_range(
         usersById.set(user.id, userRecordToUserType(user));
     }
 
-    for (const [ip, seenAtDesc] of seenByIp.entries()) {
+    const ips = new Set<string>([
+        ...seenByIp.keys(),
+        ...cookieByIp.keys(),
+        ...registrationByIp.keys(),
+        ...submissionsByIp.keys(),
+    ]);
+    const rv: ServiceIpAdmin[] = [];
+
+    for (const ip of ips) {
+        const seenAtDesc = seenByIp.get(ip) ?? [];
         const cookiePresents = (cookieByIp.get(ip) ?? []).map((record) => ({
             at: localAdminIpString(record.at),
             user: usersById.get(record.userId) ?? null,
