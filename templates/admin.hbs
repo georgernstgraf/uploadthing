@@ -1,7 +1,7 @@
 <div x-data="endTimeToggle()"
      x-init="init()">
     <section id="timeselector"
-             class="card admin-shell-card shadow-sm border-0 mb-2 mx-auto">
+             class="card admin-shell-card shadow-sm border-0 mb-2 mx-auto w-100">
         <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
             <h2 class="card-title mb-0 fs-4">Zeitauswahl</h2>
         </div>
@@ -147,7 +147,7 @@
     </script>
     {{#if (or anomalies.by_ip.length anomalies.by_user.length)}}
         <section id="anomaly-accordion"
-                 class="accordion admin-shell-card mb-2 mx-auto card">
+                 class="accordion admin-shell-card mb-2 mx-auto card w-100">
             <div class="accordion-item shadow-sm border-0 bg-transparent overflow-hidden">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed text-bg-warning"
@@ -211,7 +211,7 @@
             </div>
         </section>
     {{else}}
-        <section class="card admin-shell-card shadow-sm border-0 bg-body-tertiary bg-opacity-50 mb-2 mx-auto">
+        <section class="card admin-shell-card shadow-sm border-0 bg-body-tertiary bg-opacity-50 mb-2 mx-auto w-100">
             <div class="card-body py-3 px-3 text-center text-body-secondary small"> Es gibt keine Anomalien. </div>
         </section>
     {{/if}}
