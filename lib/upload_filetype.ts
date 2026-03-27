@@ -78,7 +78,13 @@ export async function validateUploadedFileType(
     }
 
     const declaredMimeType = normalizeMimeType(file.type);
-    if (!declaredMimeType || !allowedMimeTypes.includes(declaredMimeType)) {
+
+    // For text-based formats (md, txt), browsers often send empty or application/octet-stream
+    // We allow these and rely on content detection instead
+    const isTextBased = normalizedExtension === "md" || normalizedExtension === "txt";
+    const isEmptyMimeType = !declaredMimeType || declaredMimeType === "application/octet-stream";
+
+    if (!isEmptyMimeType && !allowedMimeTypes.includes(declaredMimeType)) {
         throw new AppError(
             `Falscher Content-Type für .${normalizedExtension}. Erlaubt: ${formatAllowedMimeTypes(allowedMimeTypes)}.`,
             415,
@@ -91,6 +97,12 @@ export async function validateUploadedFileType(
             `Der Dateiinhalt passt nicht zu .${normalizedExtension}. Erkannter Typ: ${detectedMimeType}.`,
             415,
         );
+    }
+
+    // For text files with no detected type, allow if declared type is acceptable
+    if (!detectedMimeType && isTextBased && isEmptyMimeType) {
+        // Text files often have no detectable magic bytes - allow them
+        return;
     }
 
     if (!detectedMimeType && contentDetectionRequired.has(normalizedExtension)) {
