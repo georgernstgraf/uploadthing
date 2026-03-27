@@ -9,8 +9,6 @@ export type ServiceIpAdmin = {
     seen_count: number;
     report_count: number;
     missed_count: number; // scans where IP was absent after first appearance
-    first_seen: string; // first time IP was seen in range (displayable)
-    last_seen: string; // last time IP was seen in range (displayable)
     seen_at_desc: string[]; // displayable times
     cookie_presents: { at: string; user: UserType | null }[]; // sorted desc by at
     registrations: { at: string; user: UserType | null }[]; // sorted desc by at
@@ -32,6 +30,14 @@ export type ServiceUserAnomaly = {
 export type ServiceAdminAnomalies = {
     by_ip: ServiceIpAnomaly[];
     by_user: ServiceUserAnomaly[];
+};
+
+export type ServiceAdminResult = {
+    registered: ServiceIpAdmin[];
+    unregistered: ServiceIpAdmin[];
+    anomalies: ServiceAdminAnomalies;
+    range_first_seen: string; // earliest scan time across all IPs
+    range_last_seen: string; // latest scan time across all IPs
 };
 
 function detectAnomalies(
@@ -94,11 +100,7 @@ export async function for_range(
     start: Date,
     end: Date,
     calculate_stale: boolean,
-): Promise<{
-    registered: ServiceIpAdmin[];
-    unregistered: ServiceIpAdmin[];
-    anomalies: ServiceAdminAnomalies;
-}> {
+): Promise<ServiceAdminResult> {
     const seenRows = repo.ipfact.getInRange(start, end);
     const cookieRows = repo.cookiepresents.byRange(start, end);
     const registrationRows = repo.registrations.byRange(start, end);
@@ -198,22 +200,16 @@ export async function for_range(
 
         // Calculate missed_count: scans where IP was absent after first appearing
         let missed_count = 0;
-        let first_seen = "";
-        let last_seen = "";
 
-        if (seenAtDesc.length > 0) {
-            // seenAtDesc is sorted descending, so first element is most recent (last_seen)
-            last_seen = localAdminIpString(seenAtDesc[0]);
-            // Last element is earliest (first_seen)
+        if (seenAtDesc.length > 0 && allScans.length > 0) {
+            // seenAtDesc is sorted descending, so last element is earliest (first_seen)
             const seenTimesAsc = [...seenAtDesc].sort((a, b) => a.valueOf() - b.valueOf());
-            first_seen = localAdminIpString(seenTimesAsc[0]);
+            const firstSeen = seenTimesAsc[0];
 
-            if (allScans.length > 0) {
-                // Count scans after firstSeen where this IP was absent
-                const scansAfterFirst = allScans.filter((scan) => scan.valueOf() >= seenTimesAsc[0].valueOf());
-                const seenTimesSet = new Set(seenAtDesc.map((d) => d.toISOString()));
-                missed_count = scansAfterFirst.filter((scan) => !seenTimesSet.has(scan.toISOString())).length;
-            }
+            // Count scans after firstSeen where this IP was absent
+            const scansAfterFirst = allScans.filter((scan) => scan.valueOf() >= firstSeen.valueOf());
+            const seenTimesSet = new Set(seenAtDesc.map((d) => d.toISOString()));
+            missed_count = scansAfterFirst.filter((scan) => !seenTimesSet.has(scan.toISOString())).length;
         }
 
         const ip_admin: ServiceIpAdmin = {
@@ -221,8 +217,6 @@ export async function for_range(
             seen_count: seenAtDesc.length,
             report_count: seenAtDesc.length + cookiePresents.length,
             missed_count,
-            first_seen,
-            last_seen,
             seen_at_desc: seenAtDesc.map((dt) => localAdminIpString(dt)),
             cookie_presents: cookiePresents,
             registrations,
@@ -247,5 +241,14 @@ export async function for_range(
     const registered = rv.filter((ipf) => ipf.cookie_presents.length > 0);
     const unregistered = rv.filter((ipf) => ipf.cookie_presents.length === 0);
     const anomalies = detectAnomalies(rv);
-    return { registered, unregistered, anomalies };
+
+    // Calculate overall range from all scans
+    const range_first_seen = allScans.length > 0
+        ? localAdminIpString(allScans[0]) // allScans is sorted ascending
+        : "";
+    const range_last_seen = allScans.length > 0
+        ? localAdminIpString(allScans[allScans.length - 1])
+        : "";
+
+    return { registered, unregistered, anomalies, range_first_seen, range_last_seen };
 }

@@ -105,7 +105,7 @@ adminRouter.get("/students", async (c) => {
 
     const refreshSeconds = config.admin_refresh_seconds;
 
-    const { registered, unregistered, anomalies } = await service.ipadmin.for_range(
+    const { registered, unregistered, anomalies, range_first_seen, range_last_seen } = await service.ipadmin.for_range(
         startDateTime,
         endDateTime,
         !endtimeProvided,
@@ -121,6 +121,8 @@ adminRouter.get("/students", async (c) => {
         ips_with_name: registered,
         ips_without_name: unregistered,
         anomalies,
+        range_first_seen,
+        range_last_seen,
         withinTimeCutoff,
         endtimeInFuture,
         endtimeProvided,

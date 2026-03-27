@@ -180,52 +180,12 @@ Deno.test("ipadmin missed_count zero for IP never seen", async () => {
         assertExists(found);
         // testIp has no seen records, so missed_count = 0
         assertEquals(found.missed_count, 0);
-        // first_seen and last_seen should be empty for IPs with no scans
-        assertEquals(found.first_seen, "");
-        assertEquals(found.last_seen, "");
+        // range_first_seen and range_last_seen come from otherIp's scans
+        assertEquals(result.range_first_seen.includes("10:00"), true);
+        assertEquals(result.range_last_seen.includes("10:01"), true);
     } finally {
         await clearForensicsByIp(testIp);
         await clearForensicsByIp(otherIp);
-        await clearForensicsByUserEmail(userEmail);
-    }
-});
-
-Deno.test("ipadmin first_seen and last_seen are set correctly", async () => {
-    const suffix = crypto.randomUUID().slice(0, 8);
-    const userEmail = `firstlast-${suffix}@example.com`;
-    const testIp = `203.0.120.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
-    const baseTime = new Date("2026-03-27T10:00:00Z");
-    const t1 = new Date(baseTime.getTime());
-    const t2 = new Date(baseTime.getTime() + 60000);
-    const t3 = new Date(baseTime.getTime() + 120000);
-    const start = new Date(baseTime.getTime() - 60000);
-    const end = new Date(baseTime.getTime() + 180000);
-
-    try {
-        await seedNoAnomaliesScenario({
-            ip: testIp,
-            email: userEmail,
-            name: "First Last Test",
-            klasse: "5AHITM",
-            at: t1,
-            withSeen: false,
-            withCookiePresent: true,
-        });
-
-        // Register scans at t1, t2, t3
-        ipfactRepo.registerSeen(testIp, t1);
-        ipfactRepo.registerSeen(testIp, t2);
-        ipfactRepo.registerSeen(testIp, t3);
-
-        const result = await for_range(start, end, false);
-        const found = result.registered.find((entry) => entry.ip === testIp);
-
-        assertExists(found);
-        // first_seen should be t1 (earliest), last_seen should be t3 (most recent)
-        assertEquals(found.first_seen.includes("10:00"), true);
-        assertEquals(found.last_seen.includes("10:02"), true);
-    } finally {
-        await clearForensicsByIp(testIp);
         await clearForensicsByUserEmail(userEmail);
     }
 });

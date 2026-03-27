@@ -19,7 +19,12 @@
         {{/if}}
     </h6>
     <!-- Table 1: IPs with registered names -->
-    <h5 class="section-heading text-center mt-2 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-primary">Bekannte IP-Adressen</h5>
+    <h5 class="section-heading text-center mt-2 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-primary">
+        Bekannte IP-Adressen
+        {{#if range_first_seen}}
+        <span class="fw-normal text-body-secondary ms-2">{{range_first_seen}} – {{range_last_seen}}</span>
+        {{/if}}
+    </h5>
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_with_name}}
             <div class="col">
@@ -41,9 +46,6 @@
                                         {{else}} Unbekannt {{/if}}
                                     </span>
                                     <span class="fw-normal d-block text-truncate small">{{this.ip}}</span>
-                                    {{#if this.first_seen}}
-                                    <span class="text-body-secondary small">{{this.first_seen}} – {{this.last_seen}}</span>
-                                    {{/if}}
                                 </div>
                             </div>
                             <div class="d-flex flex-column align-items-end gap-1 ms-1 flex-shrink-0">
