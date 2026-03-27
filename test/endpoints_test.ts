@@ -378,6 +378,136 @@ Deno.test("POST /upload - rejects zip with non-zip content", async () => {
     }
 });
 
+Deno.test("POST /upload - multipart .md with empty MIME type (Chrome-style)", async () => {
+    const testEmail = "grafg@spengergasse.at";
+    const originalTypes = [...config.PERMITTED_FILETYPES];
+    let cookie: string | null = null;
+
+    try {
+        const registerRes = await fetch(`${BASE_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `email=${encodeURIComponent(testEmail)}`,
+        });
+        await registerRes.text();
+        cookie = registerRes.headers.get("set-cookie");
+        assertExists(cookie);
+
+        const setTypesRes = await fetch(`${BASE_URL}/admin/application`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie!,
+            },
+            body: "permitted_filetypes=md",
+        });
+        await setTypesRes.text();
+        assertEquals(setTypesRes.status, 200);
+
+        // Chrome often sends file.type = "" for .md files
+        const formData = new FormData();
+        const file = new Blob(["# Test Markdown\n\nThis is a test."], { type: "" });
+        formData.append("file", file, "test.md");
+
+        const uploadRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            headers: { "Cookie": cookie! },
+            body: formData,
+        });
+
+        assertEquals(uploadRes.status, 200, "Upload with empty MIME type should succeed");
+        const html = await uploadRes.text();
+        assertEquals(html.includes("test.md") || html.includes("Erfolgreich"), true);
+
+        // Cleanup
+        const files = Deno.readDir(config.ABGABEN_DIR);
+        for await (const f of files) {
+            if (f.name.includes("test.md")) {
+                await Deno.remove(`${config.ABGABEN_DIR}/${f.name}`);
+            }
+        }
+    } finally {
+        if (cookie) {
+            const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cookie": cookie,
+                },
+                body: `permitted_filetypes=${encodeURIComponent(originalTypes.join(", "))}`,
+            });
+            await restoreRes.text();
+        } else {
+            config.PERMITTED_FILETYPES = originalTypes;
+        }
+    }
+});
+
+Deno.test("POST /upload - multipart .md with text/plain MIME type", async () => {
+    const testEmail = "grafg@spengergasse.at";
+    const originalTypes = [...config.PERMITTED_FILETYPES];
+    let cookie: string | null = null;
+
+    try {
+        const registerRes = await fetch(`${BASE_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `email=${encodeURIComponent(testEmail)}`,
+        });
+        await registerRes.text();
+        cookie = registerRes.headers.get("set-cookie");
+        assertExists(cookie);
+
+        const setTypesRes = await fetch(`${BASE_URL}/admin/application`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie!,
+            },
+            body: "permitted_filetypes=md",
+        });
+        await setTypesRes.text();
+        assertEquals(setTypesRes.status, 200);
+
+        // Some browsers send text/plain for .md files
+        const formData = new FormData();
+        const file = new Blob(["# Another Test\n\nMore content."], { type: "text/plain" });
+        formData.append("file", file, "another.md");
+
+        const uploadRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            headers: { "Cookie": cookie! },
+            body: formData,
+        });
+
+        assertEquals(uploadRes.status, 200, "Upload with text/plain MIME type should succeed");
+        const html = await uploadRes.text();
+        assertEquals(html.includes("another.md") || html.includes("Erfolgreich"), true);
+
+        // Cleanup
+        const files = Deno.readDir(config.ABGABEN_DIR);
+        for await (const f of files) {
+            if (f.name.includes("another.md")) {
+                await Deno.remove(`${config.ABGABEN_DIR}/${f.name}`);
+            }
+        }
+    } finally {
+        if (cookie) {
+            const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cookie": cookie,
+                },
+                body: `permitted_filetypes=${encodeURIComponent(originalTypes.join(", "))}`,
+            });
+            await restoreRes.text();
+        } else {
+            config.PERMITTED_FILETYPES = originalTypes;
+        }
+    }
+});
+
 Deno.test("GET /admin/students shows no anomalies empty state", async () => {
     const suffix = crypto.randomUUID().slice(0, 8);
     const adminEmail = `empty-admin-${suffix}@example.com`;
