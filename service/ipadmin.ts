@@ -8,6 +8,7 @@ export type ServiceIpAdmin = {
     ip: string;
     seen_count: number;
     report_count: number;
+    missed_count: number; // scans where IP was absent after first appearance
     seen_at_desc: string[]; // displayable times
     cookie_presents: { at: string; user: UserType | null }[]; // sorted desc by at
     registrations: { at: string; user: UserType | null }[]; // sorted desc by at
@@ -101,6 +102,9 @@ export async function for_range(
     const registrationRows = repo.registrations.byRange(start, end);
     const submissionRows = repo.abgaben.getByDateRange(start, end);
 
+    // Get all unique scan timestamps in the range (for missed_count calculation)
+    const allScans = repo.ipfact.getUniqueScanTimestamps(start, end);
+
     const seenByIp = new Map<string, Date[]>();
     const cookieByIp = new Map<string, { at: Date; userId: number }[]>();
     const registrationByIp = new Map<string, { at: Date; userId: number }[]>();
@@ -190,10 +194,24 @@ export async function for_range(
             filename: submission.filename,
         }));
 
+        // Calculate missed_count: scans where IP was absent after first appearing
+        let missed_count = 0;
+        if (seenAtDesc.length > 0 && allScans.length > 0) {
+            // Find first seen time for this IP (seenAtDesc is sorted desc, so last element is earliest)
+            const seenTimesAsc = [...seenAtDesc].sort((a, b) => a.valueOf() - b.valueOf());
+            const firstSeen = seenTimesAsc[0];
+
+            // Count scans after firstSeen where this IP was absent
+            const scansAfterFirst = allScans.filter((scan) => scan.valueOf() >= firstSeen.valueOf());
+            const seenTimesSet = new Set(seenAtDesc.map((d) => d.toISOString()));
+            missed_count = scansAfterFirst.filter((scan) => !seenTimesSet.has(scan.toISOString())).length;
+        }
+
         const ip_admin: ServiceIpAdmin = {
             ip,
             seen_count: seenAtDesc.length,
             report_count: seenAtDesc.length + cookiePresents.length,
+            missed_count,
             seen_at_desc: seenAtDesc.map((dt) => localAdminIpString(dt)),
             cookie_presents: cookiePresents,
             registrations,

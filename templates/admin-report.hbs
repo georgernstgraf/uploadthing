@@ -46,8 +46,7 @@
                             <div class="d-flex flex-column align-items-end gap-1 ms-1 flex-shrink-0">
                                      <span
                                            class="badge {{#if this.is_stale}}text-bg-danger{{else}}bg-light text-dark border{{/if}} small text-wrap text-end">
-                                     Zuletzt: {{this.seen_at_desc.[0]}}<br>
-                                     {{this.report_count}}x seit Start </span>
+                                     Fehlte {{this.missed_count}}-mal </span>
                                 {{#if this.has_submission}}
                                     <span class="badge text-bg-success small text-wrap text-end"
                                           title="{{submissionTooltip this.submissions}}"> Abgabe </span>

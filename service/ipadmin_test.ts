@@ -1,5 +1,6 @@
 import { assertEquals, assertExists } from "@std/assert";
 import { for_range } from "./ipadmin.ts";
+import * as ipfactRepo from "../repo/ipfact.ts";
 import {
     clearForensicsByIp,
     clearForensicsByUserEmail,
@@ -8,6 +9,183 @@ import {
     seedSharedIpAnomalyScenario,
     seedUserAnomalyScenario,
 } from "../test/helpers/forensics_fixture.ts";
+
+Deno.test("ipadmin missed_count is zero when IP present at all scans", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `missed-all-${suffix}@example.com`;
+    const testIp = `203.0.113.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const baseTime = new Date("2026-03-27T10:00:00Z");
+    const t1 = new Date(baseTime.getTime());
+    const t2 = new Date(baseTime.getTime() + 60000);
+    const t3 = new Date(baseTime.getTime() + 120000);
+    const start = new Date(baseTime.getTime() - 60000);
+    const end = new Date(baseTime.getTime() + 180000);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Missed Zero Test",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        // IP present at all scans
+        ipfactRepo.registerSeen(testIp, t1);
+        ipfactRepo.registerSeen(testIp, t2);
+        ipfactRepo.registerSeen(testIp, t3);
+
+        const result = await for_range(start, end, false);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        assertEquals(found.missed_count, 0);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByUserEmail(userEmail);
+    }
+});
+
+Deno.test("ipadmin missed_count correct when IP absent for some scans", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `missed-some-${suffix}@example.com`;
+    const testIp = `203.0.114.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const otherIp = `203.0.115.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const baseTime = new Date("2026-03-27T10:00:00Z");
+    const t1 = new Date(baseTime.getTime());
+    const t2 = new Date(baseTime.getTime() + 60000);
+    const t3 = new Date(baseTime.getTime() + 120000);
+    const t4 = new Date(baseTime.getTime() + 180000);
+    const start = new Date(baseTime.getTime() - 60000);
+    const end = new Date(baseTime.getTime() + 240000);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Missed Some Test",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        // testIp present at t1, t2, t4 but NOT t3
+        ipfactRepo.registerSeen(testIp, t1);
+        ipfactRepo.registerSeen(testIp, t2);
+        // t3 - testIp absent
+        ipfactRepo.registerSeen(otherIp, t3); // other IP to create the scan
+        ipfactRepo.registerSeen(testIp, t4);
+
+        const result = await for_range(start, end, false);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        // 4 scans total (t1, t2, t3, t4)
+        // testIp first seen at t1
+        // scans after first: 4 (t1, t2, t3, t4)
+        // testIp present at: 3 (t1, t2, t4)
+        // missed: 1 (t3)
+        assertEquals(found.missed_count, 1);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByIp(otherIp);
+        await clearForensicsByUserEmail(userEmail);
+    }
+});
+
+Deno.test("ipadmin missed_count counts only after first appearance", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `missed-after-${suffix}@example.com`;
+    const testIp = `203.0.116.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const otherIp = `203.0.117.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const baseTime = new Date("2026-03-27T10:00:00Z");
+    const t1 = new Date(baseTime.getTime());
+    const t2 = new Date(baseTime.getTime() + 60000);
+    const t3 = new Date(baseTime.getTime() + 120000);
+    const t4 = new Date(baseTime.getTime() + 180000);
+    const t5 = new Date(baseTime.getTime() + 240000);
+    const start = new Date(baseTime.getTime() - 60000);
+    const end = new Date(baseTime.getTime() + 300000);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Missed After Test",
+            klasse: "5AHITM",
+            at: t3, // IP first appears at t3
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        // Scans at t1, t2: testIp not yet present (only otherIp)
+        ipfactRepo.registerSeen(otherIp, t1);
+        ipfactRepo.registerSeen(otherIp, t2);
+        // Scans at t3, t4: testIp present
+        ipfactRepo.registerSeen(testIp, t3);
+        ipfactRepo.registerSeen(testIp, t4);
+        ipfactRepo.registerSeen(otherIp, t3);
+        ipfactRepo.registerSeen(otherIp, t4);
+        // Scan at t5: testIp absent
+        ipfactRepo.registerSeen(otherIp, t5);
+
+        const result = await for_range(start, end, false);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        // testIp first seen at t3
+        // scans at/after t3: t3, t4, t5 (3 scans)
+        // testIp present at: t3, t4 (2 scans)
+        // missed: 1 (t5)
+        assertEquals(found.missed_count, 1);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByIp(otherIp);
+        await clearForensicsByUserEmail(userEmail);
+    }
+});
+
+Deno.test("ipadmin missed_count zero for IP never seen", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `missed-never-${suffix}@example.com`;
+    const testIp = `203.0.118.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const otherIp = `203.0.119.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const baseTime = new Date("2026-03-27T10:00:00Z");
+    const t1 = new Date(baseTime.getTime());
+    const t2 = new Date(baseTime.getTime() + 60000);
+    const start = new Date(baseTime.getTime() - 60000);
+    const end = new Date(baseTime.getTime() + 120000);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Missed Never Test",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false, // No ipfact record
+            withCookiePresent: true,
+        });
+
+        // Only otherIp has scans
+        ipfactRepo.registerSeen(otherIp, t1);
+        ipfactRepo.registerSeen(otherIp, t2);
+
+        const result = await for_range(start, end, false);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        // testIp has no seen records, so missed_count = 0
+        assertEquals(found.missed_count, 0);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByIp(otherIp);
+        await clearForensicsByUserEmail(userEmail);
+    }
+});
 
 Deno.test("ipadmin classifies IPs by cookie presence and keeps registrations", async () => {
     const suffix = crypto.randomUUID().slice(0, 8);

@@ -86,3 +86,23 @@ export function getHistoryForIPInRangeDesc(
     }[];
     return rows.map((row) => new Date(row.seen));
 }
+
+const getUniqueScanTimestampsStmt = db.prepare(
+    `SELECT DISTINCT seen FROM ipfact
+    WHERE seen BETWEEN ? AND ?
+    ORDER BY seen ASC`,
+);
+
+/**
+ * Get all unique scan timestamps within a time range.
+ * Each timestamp represents one network scan that recorded active IPs.
+ * @param start - Range start (inclusive).
+ * @param end - Range end (inclusive).
+ * @returns Array of unique scan timestamps in ascending order.
+ */
+export function getUniqueScanTimestamps(start: Date, end: Date): Date[] {
+    const rows = getUniqueScanTimestampsStmt.all(start.toISOString(), end.toISOString()) as {
+        seen: string;
+    }[];
+    return rows.map((row) => new Date(row.seen));
+}
