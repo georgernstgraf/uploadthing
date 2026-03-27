@@ -1,6 +1,6 @@
 <div x-data="{ fileName: 'Datei hier ablegen oder klicken' }">
     <form hx-post="/upload"
-          hx-encoding="multipart/form-data"
+          enctype="multipart/form-data"
           hx-target="#app-content"
           hx-swap="innerHTML"
           class="card shadow-sm border-0 needs-validation mx-auto w-100 col-lg-8 col-xl-6"
