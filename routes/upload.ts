@@ -59,14 +59,28 @@ uploadRouter.post("/", async (c) => {
         return c.redirect("/whoami");
     }
 
-    const formData = await c.req.formData();
+    let formData: FormData;
+    try {
+        formData = await c.req.formData();
+    } catch (e) {
+        console.error(`[UPLOAD] FormData parse error from ${remote_ip}: ${(e as Error).message}`);
+        throw new AppError(
+            `Fehler beim Parsen des Formulars. Bitte versuchen Sie einen anderen Browser (Edge/Firefox) oder laden Sie die Seite neu.`,
+            400,
+        );
+    }
+
     const validation = UploadSchema.safeParse(formData);
 
     if (!validation.success) {
+        console.error(`[UPLOAD] Schema validation failed from ${remote_ip}:`, validation.error.errors);
         throw new AppError("Keine Datei ausgewählt oder ungültiger Upload", 400);
     }
 
     const file = validation.data.file as File;
+
+    // Log MIME type for debugging Chrome issues
+    console.log(`[UPLOAD] ${remote_user.email} uploading "${file.name}" (${file.size} bytes, type="${file.type}")`);
 
     if (file.size > maxUploadBytes) {
         throw new AppError(
@@ -84,7 +98,12 @@ uploadRouter.post("/", async (c) => {
         );
     }
 
-    await validateUploadedFileType(file, fileExt);
+    try {
+        await validateUploadedFileType(file, fileExt);
+    } catch (e) {
+        console.error(`[UPLOAD] File validation failed for ${file.name}: ${(e as Error).message}`);
+        throw e;
+    }
 
     const baseFilename = `${safeFileComponent(remote_user.name)}-${
         safeFileComponent(file.name)
