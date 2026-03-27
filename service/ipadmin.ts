@@ -9,6 +9,8 @@ export type ServiceIpAdmin = {
     seen_count: number;
     report_count: number;
     missed_count: number; // scans where IP was absent after first appearance
+    first_seen: string; // first time IP was seen in range (displayable)
+    last_seen: string; // last time IP was seen in range (displayable)
     seen_at_desc: string[]; // displayable times
     cookie_presents: { at: string; user: UserType | null }[]; // sorted desc by at
     registrations: { at: string; user: UserType | null }[]; // sorted desc by at
@@ -196,15 +198,22 @@ export async function for_range(
 
         // Calculate missed_count: scans where IP was absent after first appearing
         let missed_count = 0;
-        if (seenAtDesc.length > 0 && allScans.length > 0) {
-            // Find first seen time for this IP (seenAtDesc is sorted desc, so last element is earliest)
-            const seenTimesAsc = [...seenAtDesc].sort((a, b) => a.valueOf() - b.valueOf());
-            const firstSeen = seenTimesAsc[0];
+        let first_seen = "";
+        let last_seen = "";
 
-            // Count scans after firstSeen where this IP was absent
-            const scansAfterFirst = allScans.filter((scan) => scan.valueOf() >= firstSeen.valueOf());
-            const seenTimesSet = new Set(seenAtDesc.map((d) => d.toISOString()));
-            missed_count = scansAfterFirst.filter((scan) => !seenTimesSet.has(scan.toISOString())).length;
+        if (seenAtDesc.length > 0) {
+            // seenAtDesc is sorted descending, so first element is most recent (last_seen)
+            last_seen = localAdminIpString(seenAtDesc[0]);
+            // Last element is earliest (first_seen)
+            const seenTimesAsc = [...seenAtDesc].sort((a, b) => a.valueOf() - b.valueOf());
+            first_seen = localAdminIpString(seenTimesAsc[0]);
+
+            if (allScans.length > 0) {
+                // Count scans after firstSeen where this IP was absent
+                const scansAfterFirst = allScans.filter((scan) => scan.valueOf() >= seenTimesAsc[0].valueOf());
+                const seenTimesSet = new Set(seenAtDesc.map((d) => d.toISOString()));
+                missed_count = scansAfterFirst.filter((scan) => !seenTimesSet.has(scan.toISOString())).length;
+            }
         }
 
         const ip_admin: ServiceIpAdmin = {
@@ -212,6 +221,8 @@ export async function for_range(
             seen_count: seenAtDesc.length,
             report_count: seenAtDesc.length + cookiePresents.length,
             missed_count,
+            first_seen,
+            last_seen,
             seen_at_desc: seenAtDesc.map((dt) => localAdminIpString(dt)),
             cookie_presents: cookiePresents,
             registrations,

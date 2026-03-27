@@ -41,6 +41,9 @@
                                         {{else}} Unbekannt {{/if}}
                                     </span>
                                     <span class="fw-normal d-block text-truncate small">{{this.ip}}</span>
+                                    {{#if this.first_seen}}
+                                    <span class="text-body-secondary small">{{this.first_seen}} – {{this.last_seen}}</span>
+                                    {{/if}}
                                 </div>
                             </div>
                             <div class="d-flex flex-column align-items-end gap-1 ms-1 flex-shrink-0">
