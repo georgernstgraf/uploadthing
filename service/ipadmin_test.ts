@@ -181,8 +181,9 @@ Deno.test("ipadmin missed_count zero for IP never seen", async () => {
         // testIp has no seen records, so missed_count = 0
         assertEquals(found.missed_count, 0);
         // range_first_seen and range_last_seen come from otherIp's scans
-        assertEquals(result.range_first_seen.includes("10:00"), true);
-        assertEquals(result.range_last_seen.includes("10:01"), true);
+        // UTC 10:00:00Z = Vienna 11:00 (CET = UTC+1)
+        assertEquals(result.range_first_seen.includes("11:00"), true);
+        assertEquals(result.range_last_seen.includes("11:01"), true);
     } finally {
         await clearForensicsByIp(testIp);
         await clearForensicsByIp(otherIp);
