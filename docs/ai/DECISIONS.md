@@ -89,3 +89,12 @@
 
 - `AGENTS.md` is the bootstrap document.
 - Long-lived agent knowledge belongs in `docs/ai/`.
+
+## Internal Scroll Container for Fixed Navbar
+
+- The main content area (`#app-main`) uses an internal scroll container instead of body scrolling.
+- Body has `overflow: hidden` and `height: 100vh`.
+- `#app-main` uses `margin-top`, `height: calc(100vh - offset)`, and `overflow-y: auto`.
+- Content scrolls within this container and stops at the navbar bottom edge.
+- The scrollbar is hidden via CSS (`scrollbar-width: none` + `::-webkit-scrollbar`) while preserving mouse wheel, Page Up/Down, and touch scrolling.
+- This prevents content from sliding behind the transparent glassmorphism navbar while keeping the background visible through it.

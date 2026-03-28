@@ -72,5 +72,13 @@
 - On student IP cards, the missed count badge uses conditional Bootstrap classes based on priority:
   1. `text-bg-warning` (yellow/orange) when `missed_count >= 1` (student was absent at least once)
   2. `text-bg-danger` (red) when `missed_count == 0` AND `is_stale == true` (student is currently offline)
-  3. `bg-light text-dark border` (neutral) when neither condition applies
+  3. `text-bg-light` (neutral) when neither condition applies
 - The badge text format is "Fehlte X mal" (with space, not hyphen).
+- Submission badge ("Abgabe") appears above the missed count badge.
+
+## Scroll Container Layout
+
+- Body has `overflow: hidden` and `height: 100vh` — no body scrolling.
+- `#app-main` is the internal scroll container with `overflow-y: auto` and constrained height.
+- Scrollbar is hidden via `scrollbar-width: none` (Firefox) and `::-webkit-scrollbar { display: none }` (Chrome/Safari/Edge/Opera).
+- This keeps content from sliding behind the fixed glassmorphism navbar while preserving scroll functionality.

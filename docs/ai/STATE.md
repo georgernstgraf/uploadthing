@@ -3,14 +3,17 @@
 Current status as of 2026-03-28.
 
 ## Current Focus
-Feature issue #114 (warning color for missed count badge) is complete. No active work in progress.
+No active work in progress. Issue #115 (scroll container) completed.
 
 ## Completed (this cycle)
-- [x] Added warning color (`text-bg-warning`) to missed count badge when `missed_count >= 1`
-- [x] Changed text format from "Fehlte X-mal" to "Fehlte X mal" (with space instead of hyphen)
-- [x] Added missing `range_first_seen` / `range_last_seen` to `AdminTemplateData` type
-- [x] Fixed unused variable lint warning in `service/ipadmin_test.ts`
-- [x] Commit 62fb609: feat: warning color for missed count badge on student cards (#114)
+- [x] Badge styling: `text-bg-light` for normal state, `small` class removed
+- [x] Badge order: Abgabe badge now appears above "Fehlte X mal"
+- [x] Scroll container: Body no longer scrolls; #app-main is internal scroll container
+- [x] Scrollbar hidden while preserving scroll functionality
+- [x] Commit 03044e6: fix: remove redundant 'small' class from all badges
+- [x] Commit ab78223: fix: badge styling and order
+- [x] Commit 933c540: fix: content container as internal scroll area (#115)
+- [x] Commit 0145931: fix: hide scrollbar while preserving scroll functionality (#115)
 
 ## Pending
 - [ ] None.
