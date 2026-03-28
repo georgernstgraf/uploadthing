@@ -69,8 +69,16 @@
         });
 
         document.addEventListener('htmx:afterSwap', function(evt) {
-            if (evt.detail.target && evt.detail.target.id === 'main-content') {
-                window.scrollTo({ top: 0, behavior: 'auto' });
+            if (evt.detail.target && evt.detail.target.id === 'app-content') {
+                // Scroll the internal scroll container instead of window
+                const appMain = document.getElementById('app-main');
+                if (appMain) {
+                    appMain.scrollTo({ top: 0, behavior: 'auto' });
+                }
+                // Initialize Alpine.js on new content
+                if (window.Alpine && evt.detail.target) {
+                    Alpine.initTree(evt.detail.target);
+                }
             }
         });
     </script>
