@@ -15,11 +15,11 @@
 
 html,
 body {
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 body {
-    min-height: 100vh;
+    height: 100vh;
     font-family: "IBM Plex Sans", var(--bs-body-font-family), system-ui, sans-serif;
 }
 
@@ -43,7 +43,10 @@ body {
 }
 
 #app-main {
-    padding-top: var(--app-main-offset);
+    margin-top: var(--app-main-offset);
+    height: calc(100vh - var(--app-main-offset));
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 #main-nav {
