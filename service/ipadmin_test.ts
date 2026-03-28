@@ -157,7 +157,7 @@ Deno.test("ipadmin missed_count zero when present throughout active period", asy
     const suffix = crypto.randomUUID().slice(0, 8);
     const userEmail = `missed-active-${suffix}@example.com`;
     const testIp = `203.0.118.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
-    const otherIp = `203.0.119.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const _otherIp = `203.0.119.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
     const baseTime = new Date("2026-03-27T10:00:00Z");
     const t1 = new Date(baseTime.getTime());
     const t2 = new Date(baseTime.getTime() + 60000);

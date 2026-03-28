@@ -57,6 +57,8 @@ type AdminTemplateData = {
     ips_with_name: ServiceIpAdmin[];
     ips_without_name: ServiceIpAdmin[];
     anomalies: ServiceAdminAnomalies;
+    range_first_seen: string;
+    range_last_seen: string;
     withinTimeCutoff: boolean;
     endtimeInFuture: boolean;
     endtimeProvided: boolean;

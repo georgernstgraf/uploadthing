@@ -1,4 +1,7 @@
 *.db
+
+# Symlinked skills from opencode-helpers (not tracked)
+skills/
 static/img/bg-dark.jpg
 static/img/bg-light.jpg
 static/theme.css
