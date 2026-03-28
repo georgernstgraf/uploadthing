@@ -50,11 +50,11 @@
                             </div>
                             <div class="d-flex flex-column align-items-end gap-1 ms-1 flex-shrink-0">
                                 {{#if this.has_submission}}
-                                    <span class="badge text-bg-success small text-wrap text-end"
+                                    <span class="badge text-bg-success text-wrap text-end"
                                           title="{{submissionTooltip this.submissions}}"> Abgabe </span>
                                 {{/if}}
                                      <span
-                                           class="badge {{#if this.missed_count}}text-bg-warning{{else if this.is_stale}}text-bg-danger{{else}}text-bg-light{{/if}} small text-wrap text-end">
+                                           class="badge {{#if this.missed_count}}text-bg-warning{{else if this.is_stale}}text-bg-danger{{else}}text-bg-light{{/if}} text-wrap text-end">
                                      Fehlte {{this.missed_count}} mal </span>
                             </div>
                         </div>
@@ -144,7 +144,7 @@
                                     <span class="fw-normal small">Unbekannt</span>
                                 </div>
                             </div>
-                            <div class="badge bg-light text-dark border ms-1 flex-shrink-0 small">
+                            <div class="badge bg-light text-dark border ms-1 flex-shrink-0">
                                 {{this.report_count}}x
                             </div>
                         </div>
