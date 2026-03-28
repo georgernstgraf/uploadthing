@@ -94,3 +94,10 @@
 ## Generated Artifacts
 
 - `lib/prismaclient/` is no longer used by runtime code after the user-repository refactor; do not reintroduce it unless the project deliberately returns to generated Prisma client usage.
+
+## Test Isolation Pitfall
+
+- The test suite runs against the real `uploadthing.db`, not an isolated test database.
+- If a developer is logged in locally (e.g., via `localhost:8000`), their session data and registrations remain in the database and can cause flaky test failures, especially for anomaly detection tests.
+- When running `deno task test`, ensure you have no active local sessions or registrations that could interfere with test assertions.
+- The test user "grafg@spengergasse.at" is hardcoded in endpoint tests; do not use this email for local development sessions.

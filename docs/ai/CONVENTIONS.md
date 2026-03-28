@@ -66,3 +66,11 @@
 - Keep durable guidance in `docs/ai/` instead of growing `AGENTS.md` again.
 - Update `HANDOFF.md` when pausing with unfinished work.
 - Update the relevant doc in `docs/ai/` whenever repository conventions or architecture meaningfully change.
+
+## Badge Color Logic for Missed Count
+
+- On student IP cards, the missed count badge uses conditional Bootstrap classes based on priority:
+  1. `text-bg-warning` (yellow/orange) when `missed_count >= 1` (student was absent at least once)
+  2. `text-bg-danger` (red) when `missed_count == 0` AND `is_stale == true` (student is currently offline)
+  3. `bg-light text-dark border` (neutral) when neither condition applies
+- The badge text format is "Fehlte X mal" (with space, not hyphen).
