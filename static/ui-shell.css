@@ -47,6 +47,13 @@ body {
     height: calc(100vh - var(--app-main-offset));
     overflow-y: auto;
     overflow-x: hidden;
+    /* Hide scrollbar while keeping scroll functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+#app-main::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 #main-nav {
