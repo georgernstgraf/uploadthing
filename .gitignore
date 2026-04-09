@@ -1,4 +1,5 @@
 *.db
+.env.local
 
 # Symlinked skills from opencode-helpers (not tracked)
 skills/
