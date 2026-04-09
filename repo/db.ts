@@ -1,5 +1,7 @@
 import { Database } from "@db/sqlite";
-export const db = new Database("uploadthing.db");
+import config from "../lib/config.ts";
+
+export const db = new Database(config.DATABASE_PATH);
 
 export function vacuumInto(path: string) {
     db.exec(`VACUUM INTO '${path}';`);

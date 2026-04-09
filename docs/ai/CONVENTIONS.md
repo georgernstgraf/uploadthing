@@ -13,6 +13,7 @@
 - Common safe tasks are `deno task check`, `deno task lint`, `deno task test`, `deno task dev`, `deno task start`, `deno task pv`, `deno task pmD`, `deno task pmd`, `deno task pms`, `deno task pmr`, and `deno task ps`.
 - Treat `deno.json` as the source of truth if task names change.
 - For schema/index changes, treat `prisma/schema.prisma` as the source of truth and prefer the Prisma workflow: edit the schema first, then run `deno task pmd --name <migration_name>`, then inspect the generated migration instead of hand-authoring migration SQL.
+- When raw SQLite code needs the database file path, derive it from Prisma's `DATABASE_URL` using Prisma-relative `file:` semantics rather than introducing a separate runtime DB path setting.
 
 ## Coding Style
 
@@ -43,6 +44,7 @@
 - Keep user-facing validation text consistent with the existing German UI tone.
 - User-facing UI text must be German-only for both student and admin flows; do not leave English empty states, headings, helper text, or status labels in templates.
 - HTMX admin controls should return plain response text with non-2xx status on failure so the global toast handler in `templates/index.hbs` can surface the error.
+- Invalid or missing `DATABASE_URL` values should fail fast at startup instead of silently falling back to a hardcoded SQLite filename.
 
 ## Time Handling
 

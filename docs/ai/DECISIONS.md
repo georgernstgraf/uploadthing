@@ -46,6 +46,7 @@
 - This hybrid approach is intentional for now and should remain unless there is a deliberate migration plan.
 - `users` repository operations are now SQL-backed as well, so runtime CRUD for `users` lives in `repo/users.ts` while Prisma stays responsible for schema state and migrations.
 - The long-term direction discussed in this cycle is a future move toward Drizzle, so current reporting-path optimizations should prefer SQL/query shapes that are easy to carry forward.
+- Runtime SQLite path resolution now derives from Prisma's `DATABASE_URL`, and only Prisma-style SQLite `file:` URLs are supported for raw SQL access.
 
 ## Admin Forensics Query Strategy
 

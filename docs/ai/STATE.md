@@ -3,14 +3,14 @@
 Current status as of 2026-04-09.
 
 ## Current Focus
-No active work in progress. Legacy agent scaffold cleanup completed under issue #117.
+No active work in progress. Issue #116 database path fix completed.
 
 ## Completed (this cycle)
-- [x] Rewrote `AGENTS.md` into a concise project-native guide.
-- [x] Kept knowledge persistence policy centered on `docs/ai/`.
-- [x] Removed legacy scaffold files: `HEARTBEAT.md`, `IDENTITY.md`, `SOUL.md`, `TOOLS.md`, `USER.md`.
-- [x] Removed legacy scaffold directories and files: `.openclaw/workspace-state.json`, `memory/2026-03-28-0111.md`, and emptied `.openclaw/` and `memory/`.
-- [x] Left the `.env.local` untracking change in place without disturbing the local file.
+- [x] Removed the hardcoded runtime SQLite filename from `repo/db.ts`.
+- [x] Derived runtime raw-SQL database access from Prisma's `DATABASE_URL`.
+- [x] Restricted runtime DB configuration to Prisma-style SQLite `file:` URLs and fail-fast startup validation.
+- [x] Added config tests for Prisma-style SQLite URL parsing and path resolution.
+- [x] Verified `deno task check`, `deno task lint`, and `deno task test` all pass.
 
 ## Pending
 - [ ] None.
@@ -19,4 +19,4 @@ No active work in progress. Legacy agent scaffold cleanup completed under issue 
 None.
 
 ## Next Session Suggestion
-Check for new issues or feature requests; no follow-up from the cleanup is required.
+Check for new issues or feature requests; no follow-up from #116 is required.

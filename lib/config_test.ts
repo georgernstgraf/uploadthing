@@ -1,8 +1,10 @@
 import { assertEquals, assertExists } from "@std/assert";
+import { fromFileUrl, resolve } from "@std/path";
 import config, {
     isDevelopment,
     isProduction,
     parsePermittedFileTypes,
+    parseSqliteDatabaseUrl,
 } from "./config.ts";
 
 Deno.test("config - PERMITTED_FILETYPES is an array", () => {
@@ -24,6 +26,58 @@ Deno.test("config - parsePermittedFileTypes normalizes input", () => {
         "md",
         "pdf",
     ]);
+});
+
+Deno.test("config - parseSqliteDatabaseUrl parses Prisma SQLite URL", () => {
+    const prismaDir = resolve(fromFileUrl(new URL("../prisma/", import.meta.url)));
+    assertEquals(
+        parseSqliteDatabaseUrl("file:../uploadthing.db"),
+        resolve(prismaDir, "../uploadthing.db"),
+    );
+    assertEquals(
+        parseSqliteDatabaseUrl("file:./tmp/test.db"),
+        resolve(prismaDir, "./tmp/test.db"),
+    );
+});
+
+Deno.test("config - parseSqliteDatabaseUrl rejects empty string", () => {
+    const error = (() => {
+        try {
+            parseSqliteDatabaseUrl("");
+        } catch (caught) {
+            return caught;
+        }
+        return null;
+    })();
+
+    assertExists(error);
+    assertEquals(
+        error instanceof Error
+            ? error.message
+            : String(error),
+        "DATABASE_URL must be set to a Prisma-style SQLite file: URL.",
+    );
+});
+
+Deno.test("config - parseSqliteDatabaseUrl rejects non-file URLs", () => {
+    for (const invalid of ["uploadthing.db", "postgres://localhost/app"]) {
+        const error = (() => {
+            try {
+                parseSqliteDatabaseUrl(invalid);
+            } catch (caught) {
+                return caught;
+            }
+            return null;
+        })();
+
+        assertExists(error);
+        assertEquals(
+            error instanceof Error
+                ? error.message
+                : String(error),
+            "DATABASE_URL must use a Prisma-style SQLite file: URL.",
+        );
+    }
 });
 
 Deno.test("config - MAX_UPLOAD_MB has default value", () => {
@@ -76,6 +130,11 @@ Deno.test("config - isDevelopment boolean is calculated", () => {
 Deno.test("config - ABGABEN_DIR is set", () => {
     assertExists(config.ABGABEN_DIR);
     assertEquals(config.ABGABEN_DIR.includes("abgaben"), true);
+});
+
+Deno.test("config - DATABASE_PATH is derived from DATABASE_URL", () => {
+    assertExists(config.DATABASE_PATH);
+    assertEquals(config.DATABASE_PATH.length > 0, true);
 });
 
 Deno.test("config - UNTERLAGEN_DIR is set", () => {

@@ -1,3 +1,7 @@
+import { fromFileUrl, resolve } from "@std/path";
+
+const prismaDir = fromFileUrl(new URL("../prisma/", import.meta.url));
+
 export function parsePermittedFileTypes(raw: string): string[] {
     return [...new Set(
         raw
@@ -7,7 +11,34 @@ export function parsePermittedFileTypes(raw: string): string[] {
     )];
 }
 
+export function parseSqliteDatabaseUrl(databaseUrl: string): string {
+    const trimmed = databaseUrl.trim();
+    if (!trimmed) {
+        throw new Error(
+            "DATABASE_URL must be set to a Prisma-style SQLite file: URL.",
+        );
+    }
+
+    if (!trimmed.startsWith("file:")) {
+        throw new Error(
+            "DATABASE_URL must use a Prisma-style SQLite file: URL.",
+        );
+    }
+
+    const databasePath = trimmed.slice("file:".length);
+    if (!databasePath) {
+        throw new Error(
+            "DATABASE_URL must include a filesystem path after file:.",
+        );
+    }
+
+    return resolve(prismaDir, databasePath);
+}
+
+const databaseUrl = Deno.env.get("DATABASE_URL") || "";
+
 const config = {
+    DATABASE_PATH: parseSqliteDatabaseUrl(databaseUrl),
     ABGABEN_DIR: Deno.env.get("ABGABEN_DIR") || `${Deno.env.get("HOME")}/abgaben`,
     UNTERLAGEN_DIR: Deno.env.get("UNTERLAGEN_DIR") || `${Deno.env.get("HOME")}/unterlagen`,
     LISTEN_HOST: Deno.env.get("LISTEN_HOST"),

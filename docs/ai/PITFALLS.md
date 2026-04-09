@@ -25,6 +25,7 @@
 - Do not reintroduce runtime Prisma client usage for `users`; Prisma stays in the project for schema and migrations, while runtime user CRUD is handled in `repo/users.ts`.
 - Do not hand-edit index/drop-index migration SQL when the change belongs in Prisma schema state; remove or add indexes in `prisma/schema.prisma` first and generate the migration with `deno task pmd --name <migration_name>`.
 - If `deno task pmd` appears to pause, check the CLI invocation carefully: Prisma wants `--name <migration_name>` passed through the Deno task, and a malformed argument shape can fall back to an interactive migration-name prompt.
+- Prisma SQLite URLs such as `file:../uploadthing.db` are relative to the `prisma/` directory; if raw SQLite code resolves them relative to another directory, it can open the wrong database and surface missing-table errors like `no such table: ipfact`.
 
 ## Upload Safety
 
