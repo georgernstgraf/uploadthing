@@ -1,19 +1,16 @@
 # Project State
 
-Current status as of 2026-03-28.
+Current status as of 2026-04-09.
 
 ## Current Focus
-No active work in progress. Issue #115 (scroll container) completed.
+No active work in progress. Legacy agent scaffold cleanup completed under issue #117.
 
 ## Completed (this cycle)
-- [x] Badge styling: `text-bg-light` for normal state, `small` class removed
-- [x] Badge order: Abgabe badge now appears above "Fehlte X mal"
-- [x] Scroll container: Body no longer scrolls; #app-main is internal scroll container
-- [x] Scrollbar hidden while preserving scroll functionality
-- [x] Commit 03044e6: fix: remove redundant 'small' class from all badges
-- [x] Commit ab78223: fix: badge styling and order
-- [x] Commit 933c540: fix: content container as internal scroll area (#115)
-- [x] Commit 0145931: fix: hide scrollbar while preserving scroll functionality (#115)
+- [x] Rewrote `AGENTS.md` into a concise project-native guide.
+- [x] Kept knowledge persistence policy centered on `docs/ai/`.
+- [x] Removed legacy scaffold files: `HEARTBEAT.md`, `IDENTITY.md`, `SOUL.md`, `TOOLS.md`, `USER.md`.
+- [x] Removed legacy scaffold directories and files: `.openclaw/workspace-state.json`, `memory/2026-03-28-0111.md`, and emptied `.openclaw/` and `memory/`.
+- [x] Left the `.env.local` untracking change in place without disturbing the local file.
 
 ## Pending
 - [ ] None.
@@ -22,4 +19,4 @@ No active work in progress. Issue #115 (scroll container) completed.
 None.
 
 ## Next Session Suggestion
-No immediate tasks. The project is in a stable state. Check for new issues or feature requests.
+Check for new issues or feature requests; no follow-up from the cleanup is required.

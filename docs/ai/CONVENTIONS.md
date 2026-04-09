@@ -66,6 +66,7 @@
 - Keep durable guidance in `docs/ai/` instead of growing `AGENTS.md` again.
 - Update `HANDOFF.md` when pausing with unfinished work.
 - Update the relevant doc in `docs/ai/` whenever repository conventions or architecture meaningfully change.
+- Keep the root `AGENTS.md` concise and project-specific; avoid reintroducing framework-specific scaffold guidance there.
 
 ## Badge Color Logic for Missed Count
 

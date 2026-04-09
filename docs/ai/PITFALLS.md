@@ -94,6 +94,7 @@
 ## Generated Artifacts
 
 - `lib/prismaclient/` is no longer used by runtime code after the user-repository refactor; do not reintroduce it unless the project deliberately returns to generated Prisma client usage.
+- Do not reintroduce legacy agent scaffold artifacts such as `.openclaw/`, `memory/`, `SOUL.md`, `USER.md`, `IDENTITY.md`, `HEARTBEAT.md`, or `TOOLS.md`; durable project knowledge belongs in `docs/ai/` instead.
 
 ## Test Isolation Pitfall
 
