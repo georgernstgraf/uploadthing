@@ -21,3 +21,4 @@ opencode.json
 /screenshots/
 f.css
 /abgaben/
+.env.local
