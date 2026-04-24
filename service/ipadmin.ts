@@ -8,7 +8,7 @@ export type ServiceIpAdmin = {
     ip: string;
     seen_count: number;
     report_count: number;
-    missed_count: number; // scans where IP was absent between first and last appearance
+    missed_count: number; // scans where IP was absent from first appearance onward
     first_seen: string; // first time IP was seen in range (displayable)
     last_seen: string; // last time IP was seen in range (displayable)
     seen_at_desc: string[]; // displayable times
@@ -215,12 +215,12 @@ export async function for_range(
             first_seen = localAdminIpString(firstSeenTime);
             last_seen = localAdminIpString(lastSeenTime);
 
-            // Only count scans BETWEEN first_seen and last_seen where IP was absent
-            const scansBetween = allScans.filter(
-                (scan) => scan.valueOf() >= firstSeenTime.valueOf() && scan.valueOf() <= lastSeenTime.valueOf()
+            // Count scans from first_seen onward where IP was absent (including ongoing absence)
+            const scansFromFirstSeen = allScans.filter(
+                (scan) => scan.valueOf() >= firstSeenTime.valueOf()
             );
             const seenTimesSet = new Set(seenAtDesc.map((d) => d.toISOString()));
-            missed_count = scansBetween.filter((scan) => !seenTimesSet.has(scan.toISOString())).length;
+            missed_count = scansFromFirstSeen.filter((scan) => !seenTimesSet.has(scan.toISOString())).length;
         }
 
         const ip_admin: ServiceIpAdmin = {

@@ -137,10 +137,10 @@ Deno.test("ipadmin missed_count counts only between first and last appearance", 
 
         assertExists(found);
         // testIp first_seen = t3, last_seen = t4
-        // scans BETWEEN t3 and t4: t3, t4 (2 scans)
+        // scans from first_seen onward: t3, t4, t5 (3 scans)
         // testIp present at: t3, t4 (2 scans)
-        // missed: 0 (t5 is AFTER last_seen, not counted)
-        assertEquals(found.missed_count, 0);
+        // missed: 1 (t5 is after last_seen but now counted as ongoing absence)
+        assertEquals(found.missed_count, 1);
         // Verify first_seen and last_seen
         // t3 = 10:02 UTC = 11:02 CET (UTC+1)
         // t4 = 10:03 UTC = 11:03 CET
@@ -231,6 +231,57 @@ Deno.test("ipadmin missed_count zero for IP never seen", async () => {
         // UTC 10:00:00Z = Vienna 11:00 (CET = UTC+1)
         assertEquals(result.range_first_seen.includes("11:00"), true);
         assertEquals(result.range_last_seen.includes("11:01"), true);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByIp(otherIp);
+        await clearForensicsByUserEmail(userEmail);
+    }
+});
+
+Deno.test("ipadmin missed_count includes ongoing absence after last appearance", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `missed-ongoing-${suffix}@example.com`;
+    const testIp = `203.0.120.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const otherIp = `203.0.121.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const baseTime = new Date("2026-03-27T10:00:00Z");
+    const t1 = new Date(baseTime.getTime());
+    const t2 = new Date(baseTime.getTime() + 60000);
+    const t3 = new Date(baseTime.getTime() + 120000);
+    const t4 = new Date(baseTime.getTime() + 180000);
+    const t5 = new Date(baseTime.getTime() + 240000);
+    const t6 = new Date(baseTime.getTime() + 300000);
+    const start = new Date(baseTime.getTime() - 60000);
+    const end = new Date(baseTime.getTime() + 360000);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Ongoing Absence Test",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        // testIp seen only at t1, then absent at t2-t6 (still offline)
+        ipfactRepo.registerSeen(testIp, t1);
+        // otherIp creates the remaining scan timestamps
+        ipfactRepo.registerSeen(otherIp, t2);
+        ipfactRepo.registerSeen(otherIp, t3);
+        ipfactRepo.registerSeen(otherIp, t4);
+        ipfactRepo.registerSeen(otherIp, t5);
+        ipfactRepo.registerSeen(otherIp, t6);
+
+        const result = await for_range(start, end, false);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        // testIp first_seen = t1, last_seen = t1
+        // scans from first_seen onward: t1, t2, t3, t4, t5, t6
+        // testIp present at: t1 (1 scan)
+        // missed: 5 (t2, t3, t4, t5, t6)
+        assertEquals(found.missed_count, 5);
     } finally {
         await clearForensicsByIp(testIp);
         await clearForensicsByIp(otherIp);
