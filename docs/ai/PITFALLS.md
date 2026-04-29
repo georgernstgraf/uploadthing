@@ -97,6 +97,10 @@
 - `lib/prismaclient/` is no longer used by runtime code after the user-repository refactor; do not reintroduce it unless the project deliberately returns to generated Prisma client usage.
 - Do not reintroduce legacy agent scaffold artifacts such as `.openclaw/`, `memory/`, `SOUL.md`, `USER.md`, `IDENTITY.md`, `HEARTBEAT.md`, or `TOOLS.md`; durable project knowledge belongs in `docs/ai/` instead.
 
+## Download Filename Truncation
+
+- In `routes/admin.ts:234`, the download-abgaben timestamp uses `.slice(0, 15)` which truncates the minutes to one digit. The correct slice is `.slice(0, 16)` to capture the full `HH-MM` portion (e.g., `2026-04-29_09-37` instead of `2026-04-29_09-3`).
+
 ## Test Isolation Pitfall
 
 - The test suite runs against the real `uploadthing.db`, not an isolated test database.

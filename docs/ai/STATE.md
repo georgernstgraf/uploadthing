@@ -1,16 +1,12 @@
 # Project State
 
-Current status as of 2026-04-09.
+Current status as of 2026-04-29.
 
 ## Current Focus
-No active work in progress. Issue #116 database path fix completed.
+No active work in progress. Issue #119 download filename timestamp fix completed.
 
 ## Completed (this cycle)
-- [x] Removed the hardcoded runtime SQLite filename from `repo/db.ts`.
-- [x] Derived runtime raw-SQL database access from Prisma's `DATABASE_URL`.
-- [x] Restricted runtime DB configuration to Prisma-style SQLite `file:` URLs and fail-fast startup validation.
-- [x] Added config tests for Prisma-style SQLite URL parsing and path resolution.
-- [x] Verified `deno task check`, `deno task lint`, and `deno task test` all pass.
+- [x] Fixed timestamp truncation in download-abgaben route (#119): `.slice(0, 15)` → `.slice(0, 16)`
 
 ## Pending
 - [ ] None.
@@ -19,4 +15,4 @@ No active work in progress. Issue #116 database path fix completed.
 None.
 
 ## Next Session Suggestion
-Check for new issues or feature requests; no follow-up from #116 is required.
+Check for new issues or feature requests; no follow-up from #119 is required.

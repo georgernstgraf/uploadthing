@@ -231,7 +231,7 @@ adminRouter.get("/download-abgaben", (c) => {
 
     const child = cmd.spawn();
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").split("T").join("_").slice(0, 15);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").split("T").join("_").slice(0, 16);
     const filename = `abgaben_${timestamp}.tar.gz`;
 
     c.header("Content-Type", "application/gzip");
