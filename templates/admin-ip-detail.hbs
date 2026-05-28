@@ -1,0 +1,66 @@
+<div class="modal-header">
+    <h5 class="modal-title">
+        <span class="fw-bold">{{user_name}}</span>
+        <small class="text-body-secondary ms-2">{{ip}} ({{seen_count}}&times;)</small>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+</div>
+<div class="modal-body">
+    <div class="row g-2">
+        <div class="col-md-6">
+            <h6 class="fw-bold small text-uppercase text-primary mb-2">Cookies ({{cookie_presents.length}})</h6>
+            <ul class="list-group list-group-flush small rounded border"
+                style="max-height: 35vh; overflow-y: auto;">
+                {{#each cookie_presents}}
+                    <li class="list-group-item d-flex justify-content-between small py-1 px-2">
+                        <span>{{this.at}}</span>
+                        <span class="fw-semibold ms-2 text-break">{{this.user_name}}</span>
+                    </li>
+                {{else}}
+                    <li class="list-group-item small py-1 px-2 fst-italic text-body-secondary">Keine</li>
+                {{/each}}
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h6 class="fw-bold small text-uppercase text-primary mb-2">Registrierungen ({{registrations.length}})</h6>
+            <ul class="list-group list-group-flush small rounded border"
+                style="max-height: 35vh; overflow-y: auto;">
+                {{#each registrations}}
+                    <li class="list-group-item d-flex justify-content-between small py-1 px-2">
+                        <span>{{this.at}}</span>
+                        <span class="fw-semibold ms-2 text-break">{{this.user_name}}</span>
+                    </li>
+                {{else}}
+                    <li class="list-group-item small py-1 px-2 fst-italic text-body-secondary">Keine</li>
+                {{/each}}
+            </ul>
+        </div>
+        {{#if submissions.length}}
+            <div class="col-md-6 mt-2">
+                <h6 class="fw-bold small text-uppercase text-primary mb-2">Abgaben ({{submissions.length}})</h6>
+                <ul class="list-group list-group-flush small rounded border"
+                    style="max-height: 35vh; overflow-y: auto;">
+                    {{#each submissions}}
+                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
+                            <span>{{this.at}}</span>
+                            <span class="fw-semibold ms-2 text-break">{{this.filename}}</span>
+                        </li>
+                    {{/each}}
+                </ul>
+            </div>
+        {{/if}}
+        <div class="col-12 mt-2">
+            <h6 class="fw-bold small text-uppercase text-primary mb-2">IP-Präsenz: {{ip}} ({{seen_count}}&times;)</h6>
+            <ul class="list-group list-group-flush small rounded border"
+                style="max-height: 35vh; overflow-y: auto;">
+                {{#each seen_at_desc}}
+                    <li class="list-group-item d-flex justify-content-between small py-1 px-2">
+                        <span>{{this}}</span>
+                    </li>
+                {{else}}
+                    <li class="list-group-item small py-1 px-2 fst-italic text-body-secondary">Keine</li>
+                {{/each}}
+            </ul>
+        </div>
+    </div>
+</div>

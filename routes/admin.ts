@@ -144,6 +144,55 @@ adminRouter.get("/students", async (c) => {
     }));
 });
 
+adminRouter.get("/ip-detail", async (c) => {
+    const is_admin = c.get("is_admin");
+    if (!is_admin) {
+        return c.text("Forbidden", 403);
+    }
+
+    const ip = c.req.query("ip");
+    if (!ip) {
+        return c.text("Missing ip parameter", 400);
+    }
+
+    const query = c.req.query();
+    const validation = AdminQuerySchema.safeParse(query);
+    if (!validation.success) {
+        return c.text("Ungültiges Datums- oder Zeitformat.", 400);
+    }
+
+    const startdate = c.req.query("startdate") ||
+        localDateString(new Date(Date.now() - start_ms_earlier));
+    let starttime = c.req.query("starttime");
+    if (!starttime) {
+        starttime = localTimeString(new Date(Date.now() - start_ms_earlier));
+        const times = [...config.spg_times, starttime];
+        times.sort();
+        const index = times.indexOf(starttime);
+        times.splice(index, 1);
+        starttime = times.at(index < times.length ? index : -1)!;
+    }
+    const requestedEndDate = c.req.query("enddate");
+    const requestedEndTime = c.req.query("endtime");
+    const enddate = requestedEndDate ||
+        localDateString(new Date(Date.now() + one_day_ms));
+    const endtime = requestedEndTime || starttime;
+    let startDateTime = new Date(`${startdate} ${starttime}`);
+    let endDateTime = new Date(`${enddate} ${endtime}`);
+
+    if (endDateTime.getTime() < startDateTime.getTime()) {
+        [startDateTime, endDateTime] = [endDateTime, startDateTime];
+    }
+
+    try {
+        const detail = await service.ipadmin.getIPDetail(ip, startDateTime, endDateTime);
+        return c.html(hbs.adminIPDetailTemplate(detail));
+    } catch (error) {
+        console.error("ip-detail error:", error);
+        return c.text(`Detail konnte nicht geladen werden: ${(error as Error).message}`, 500);
+    }
+});
+
 adminRouter.get("/application", (c) => {
     const is_admin = c.get("is_admin");
     if (!is_admin) {

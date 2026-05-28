@@ -76,6 +76,14 @@
         },
         {
             "method": "GET",
+            "path": "/admin/ip-detail?ip=127.0.0.1",
+            "description": "Get IP detail modal content",
+            "expectedOutput": {
+                "type": "HTML or 403"
+            }
+        },
+        {
+            "method": "GET",
             "path": "/",
             "description": "Home page with directory index",
             "expectedOutput": {

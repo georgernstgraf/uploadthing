@@ -28,8 +28,14 @@
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_with_name}}
             <div class="col">
-                <details class="h-100 card shadow-sm  mb-0 d-flex flex-column">
-                    <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
+                <div class="card shadow-sm h-100"
+                     style="cursor: pointer;"
+                     hx-get="/admin/ip-detail?ip={{this.ip}}"
+                     hx-include="#admin-time-filter form"
+                     hx-target="#ip-detail-modal-content"
+                     hx-trigger="click"
+                     hx-on::afterSwap="bootstrap.Modal.getOrCreateInstance(document.getElementById('ip-detail-modal')).show()">
+                    <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-primary-emphasis bg-primary-subtle"
@@ -58,71 +64,8 @@
                                      Fehlte {{this.missed_count}} mal </span>
                             </div>
                         </div>
-                    </summary>
-                    <div class="card-body mt-0 pt-2 border-top flex-grow-1">
-                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold small">Historie</h6>
-                        <div class="row g-1">
-                            <div class="col-12">
-                                <div class="fw-bold text-center mb-1 small text-primary">Cookies</div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                    style="max-height: 80px;">
-                                    {{#each this.cookie_presents}}
-                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span>{{this.at}}</span>
-                                            <span class="fw-semibold ms-2 text-break">
-                                                {{#if this.user}}
-                                                    {{this.user.name}}
-                                                {{else}} Unbekannt {{/if}}
-                                            </span>
-                                        </li>
-                                    {{/each}}
-                                </ul>
-                            </div>
-                            <div class="col-12">
-                                <div class="fw-bold text-center mb-1 small text-primary">Registrierungen</div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                    style="max-height: 80px;">
-                                    {{#each this.registrations}}
-                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span>{{this.at}}</span>
-                                            <span class="fw-semibold ms-2 text-break">
-                                                {{#if this.user}}
-                                                    {{this.user.name}}
-                                                {{else}} Unbekannt {{/if}}
-                                            </span>
-                                        </li>
-                                    {{/each}}
-                                </ul>
-                            </div>
-                            {{#if this.submissions.length}}
-                                <div class="col-12">
-                                    <div class="fw-bold text-center mb-1 small text-primary">Abgaben</div>
-                                    <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                        style="max-height: 80px;">
-                                        {{#each this.submissions}}
-                                            <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                                <span>{{this.at}}</span>
-                                                <span class="fw-semibold ms-2 text-break">{{this.filename}}</span>
-                                            </li>
-                                        {{/each}}
-                                    </ul>
-                                </div>
-                            {{/if}}
-                            <div class="col-12">
-                                <div class="fw-bold text-center mb-1 small text-primary">IP-Fact: {{this.ip}} ({{this.seen_at_desc.length}}x)
-                                 </div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto"
-                                    style="max-height: 80px;">
-                                    {{#each this.seen_at_desc }}
-                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span>{{this}}</span>
-                                        </li>
-                                    {{/each}}
-                                </ul>
-                            </div>
-                        </div>
                     </div>
-                </details>
+                </div>
             </div>
         {{else}}
             <div class="col-12 text-center fst-italic py-2">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
@@ -138,8 +81,14 @@
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each teacher_ips}}
             <div class="col">
-                <details class="h-100 card shadow-sm  mb-0 d-flex flex-column">
-                    <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
+                <div class="card shadow-sm h-100"
+                     style="cursor: pointer;"
+                     hx-get="/admin/ip-detail?ip={{this.ip}}"
+                     hx-include="#admin-time-filter form"
+                     hx-target="#ip-detail-modal-content"
+                     hx-trigger="click"
+                     hx-on::afterSwap="bootstrap.Modal.getOrCreateInstance(document.getElementById('ip-detail-modal')).show()">
+                    <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-warning-emphasis bg-warning-subtle"
@@ -168,71 +117,8 @@
                                      Fehlte {{this.missed_count}} mal </span>
                             </div>
                         </div>
-                    </summary>
-                    <div class="card-body mt-0 pt-2 border-top flex-grow-1">
-                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold small">Historie</h6>
-                        <div class="row g-1">
-                            <div class="col-12">
-                                <div class="fw-bold text-center mb-1 small text-primary">Cookies</div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                    style="max-height: 80px;">
-                                    {{#each this.cookie_presents}}
-                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span>{{this.at}}</span>
-                                            <span class="fw-semibold ms-2 text-break">
-                                                {{#if this.user}}
-                                                    {{this.user.name}}
-                                                {{else}} Unbekannt {{/if}}
-                                            </span>
-                                        </li>
-                                    {{/each}}
-                                </ul>
-                            </div>
-                            <div class="col-12">
-                                <div class="fw-bold text-center mb-1 small text-primary">Registrierungen</div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                    style="max-height: 80px;">
-                                    {{#each this.registrations}}
-                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span>{{this.at}}</span>
-                                            <span class="fw-semibold ms-2 text-break">
-                                                {{#if this.user}}
-                                                    {{this.user.name}}
-                                                {{else}} Unbekannt {{/if}}
-                                            </span>
-                                        </li>
-                                    {{/each}}
-                                </ul>
-                            </div>
-                            {{#if this.submissions.length}}
-                                <div class="col-12">
-                                    <div class="fw-bold text-center mb-1 small text-primary">Abgaben</div>
-                                    <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                        style="max-height: 80px;">
-                                        {{#each this.submissions}}
-                                            <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                                <span>{{this.at}}</span>
-                                                <span class="fw-semibold ms-2 text-break">{{this.filename}}</span>
-                                            </li>
-                                        {{/each}}
-                                    </ul>
-                                </div>
-                            {{/if}}
-                            <div class="col-12">
-                                <div class="fw-bold text-center mb-1 small text-primary">IP-Fact: {{this.ip}} ({{this.seen_at_desc.length}}x)
-                                 </div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto"
-                                    style="max-height: 80px;">
-                                    {{#each this.seen_at_desc }}
-                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span>{{this}}</span>
-                                        </li>
-                                    {{/each}}
-                                </ul>
-                            </div>
-                        </div>
                     </div>
-                </details>
+                </div>
             </div>
         {{else}}
             <div class="col-12 text-center fst-italic py-2">Keine Lehrenden-IPs in diesem Zeitraum gefunden.</div>
@@ -243,8 +129,14 @@
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_without_name}}
             <div class="col">
-                <details class="h-100 card shadow-sm mb-0 d-flex flex-column">
-                    <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
+                <div class="card shadow-sm h-100"
+                     style="cursor: pointer;"
+                     hx-get="/admin/ip-detail?ip={{this.ip}}"
+                     hx-include="#admin-time-filter form"
+                     hx-target="#ip-detail-modal-content"
+                     hx-trigger="click"
+                     hx-on::afterSwap="bootstrap.Modal.getOrCreateInstance(document.getElementById('ip-detail-modal')).show()">
+                    <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-secondary-emphasis bg-secondary-subtle"
@@ -260,47 +152,8 @@
                         </div>
                         <div class="fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}
                         </div>
-                    </summary>
-                    <div class="card-body mt-0 pt-2 border-top flex-grow-1">
-                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold small">Historie</h6>
-                        <div class="row g-1">
-                            <div class="col-12">
-                                <div class="fw-bold text-center mb-1 small">Kein Benutzer</div>
-                                <p class="text-center fst-italic mb-1 small">Für diese IP wurde kein aktueller Cookie-Besuch gefunden.</p>
-                            </div>
-                            {{#if this.registrations.length}}
-                                <div class="col-12">
-                                    <div class="fw-bold text-center mb-1 small text-primary">Registrierungen</div>
-                                    <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
-                                        style="max-height: 80px;">
-                                        {{#each this.registrations}}
-                                            <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                                <span>{{this.at}}</span>
-                                                <span class="fw-semibold ms-2 text-break">
-                                                    {{#if this.user}}
-                                                        {{this.user.name}}
-                                                    {{else}} Unbekannt {{/if}}
-                                                </span>
-                                            </li>
-                                        {{/each}}
-                                    </ul>
-                                </div>
-                            {{/if}}
-                            <div class="col-12">
-                                <div class="fw-bold text-center mb-1 small text-primary">IP: {{this.ip}}</div>
-                                <ul class="list-group list-group-flush small rounded overflow-auto"
-                                    style="max-height: 80px;">
-                                    {{#each this.seen_at_desc }}
-                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                                            <span>{{this}}</span>
-                                            <span class="text-body-secondary fst-italic ms-2">Unbekannt</span>
-                                        </li>
-                                    {{/each}}
-                                </ul>
-                            </div>
-                        </div>
                     </div>
-                </details>
+                </div>
             </div>
         {{else}}
             <div class="col-12 text-center fst-italic py-2">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</div>

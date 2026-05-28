@@ -2,6 +2,7 @@ import Handlebars from "handlebars";
 import { UserType, TopType } from "./types.ts";
 import type {
     ServiceAdminAnomalies,
+    ServiceIPDetail,
     ServiceIpAdmin,
 } from "../service/ipadmin.ts";
 
@@ -80,6 +81,8 @@ type AdminFileTypesTemplateData = {
 type AdminExamModeTemplateData = {
     internet_active: boolean;
 };
+
+type AdminIPDetailTemplateData = ServiceIPDetail;
 
 // --- 3. Handlebars Helpers ---
 
@@ -189,4 +192,7 @@ export const navTemplate = Handlebars.compile<NavTemplateData>(
 );
 export const userbadgeTemplate = Handlebars.compile<UserbadgeTemplateData>(
     Deno.readTextFileSync("templates/userbadge.hbs"),
+);
+export const adminIPDetailTemplate = Handlebars.compile<AdminIPDetailTemplateData>(
+    Deno.readTextFileSync("templates/admin-ip-detail.hbs"),
 );

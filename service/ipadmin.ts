@@ -34,6 +34,18 @@ export type ServiceAdminAnomalies = {
     by_user: ServiceUserAnomaly[];
 };
 
+export type ServiceIPDetail = {
+    ip: string;
+    user_name: string;
+    cookie_presents: { at: string; user_name: string }[];
+    registrations: { at: string; user_name: string }[];
+    submissions: { at: string; filename: string }[];
+    seen_at_desc: string[];
+    seen_count: number;
+    missed_count: number;
+    has_submission: boolean;
+};
+
 export type ServiceAdminResult = {
     registered: ServiceIpAdmin[];
     unregistered: ServiceIpAdmin[];
@@ -282,4 +294,61 @@ export async function for_range(
         : "";
 
     return { registered, unregistered, teacher_ips: teacherIps, anomalies, range_first_seen, range_last_seen };
+}
+
+export async function getIPDetail(
+    ip: string,
+    start: Date,
+    end: Date,
+): Promise<ServiceIPDetail> {
+    const seenRows = repo.ipfact.getHistoryForIPInRangeDesc(ip, start, end);
+    const cookieRows = repo.cookiepresents.byIPInRange(ip, start, end);
+    const registrationRows = repo.registrations.byIPInRange(ip, start, end);
+    const submissionRows = repo.abgaben.getByIPAndDateRange(ip, start, end);
+
+    const userIds = new Set<number>();
+    for (const row of cookieRows) userIds.add(row.userId);
+    for (const row of registrationRows) userIds.add(row.userId);
+
+    const users = await repo.users.getByIds([...userIds]);
+    const usersById = new Map<number, string>();
+    for (const user of users) {
+        usersById.set(user.id, user.name);
+    }
+
+    const cookie_presents = cookieRows.map((row) => ({
+        at: localAdminIpString(row.at),
+        user_name: usersById.get(row.userId) ?? "Unbekannt",
+    }));
+
+    const registrations = registrationRows.map((row) => ({
+        at: localAdminIpString(row.at),
+        user_name: usersById.get(row.userId) ?? "Unbekannt",
+    }));
+
+    const submissions = submissionRows.map((row) => ({
+        at: localAdminIpString(row.at),
+        filename: row.filename,
+    }));
+
+    const seen_at_desc = seenRows.map((dt) => localAdminIpString(dt));
+
+    let user_name = "Unbekannt";
+    if (cookie_presents.length > 0) {
+        user_name = cookie_presents[0].user_name;
+    } else if (registrations.length > 0) {
+        user_name = registrations[0].user_name;
+    }
+
+    return {
+        ip,
+        user_name,
+        cookie_presents,
+        registrations,
+        submissions,
+        seen_at_desc,
+        seen_count: seen_at_desc.length,
+        missed_count: 0,
+        has_submission: submissions.length > 0,
+    };
 }
