@@ -2,6 +2,19 @@ import { fromFileUrl, resolve } from "@std/path";
 
 const prismaDir = fromFileUrl(new URL("../prisma/", import.meta.url));
 
+function requireEnv(name: string, hint?: string): string {
+    const value = Deno.env.get(name);
+    if (!value) {
+        throw new Error(`${name} muss gesetzt sein${hint ? ` (${hint})` : ""}.`);
+    }
+    return value;
+}
+
+function parseRequiredIpList(name: string): string[] {
+    const raw = requireEnv(name, "komma-separierte IP-Liste");
+    return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 export function parsePermittedFileTypes(raw: string): string[] {
     return [...new Set(
         raw
@@ -39,10 +52,10 @@ const databaseUrl = Deno.env.get("DATABASE_URL") || "";
 
 const config = {
     DATABASE_PATH: parseSqliteDatabaseUrl(databaseUrl),
-    ABGABEN_DIR: Deno.env.get("ABGABEN_DIR") || `${Deno.env.get("HOME")}/abgaben`,
-    UNTERLAGEN_DIR: Deno.env.get("UNTERLAGEN_DIR") || `${Deno.env.get("HOME")}/unterlagen`,
+    ABGABEN_DIR: requireEnv("ABGABEN_DIR"),
+    UNTERLAGEN_DIR: requireEnv("UNTERLAGEN_DIR"),
     LISTEN_HOST: Deno.env.get("LISTEN_HOST"),
-    LISTEN_PORT: Number(Deno.env.get("LISTEN_PORT")),
+    LISTEN_PORT: Number(requireEnv("LISTEN_PORT", "z.B. 8000")),
     page_title: `${Deno.env.get("LISTEN_HOST") || "localhost"}:${
         Deno.env.get("LISTEN_PORT")
     }`,
@@ -52,10 +65,10 @@ const config = {
     ),
     INTERNET_ACTIVE: (Deno.env.get("INTERNET_ACTIVE") || "true") === "true",
     EXAMMODE_COMMAND: Deno.env.get("EXAMMODE_COMMAND") || "exammode",
-    SERVICE_DN: Deno.env.get("SERVICE_DN")!,
-    SERVICE_PW: Deno.env.get("SERVICE_PW")!,
-    SERVICE_URL: Deno.env.get("SERVICE_URL")!,
-    SEARCH_BASE: Deno.env.get("SEARCH_BASE")!,
+    SERVICE_DN: requireEnv("SERVICE_DN"),
+    SERVICE_PW: requireEnv("SERVICE_PW"),
+    SERVICE_URL: requireEnv("SERVICE_URL"),
+    SEARCH_BASE: requireEnv("SEARCH_BASE"),
     logdir: Deno.env.get("LOGDIR") || "/var/log/exampy",
     ldap_retry_wait_seconds: 7,
     TODAY_HOURS_CUTOFF: Number(Deno.env.get("TODAY_HOURS_CUTOFF") || "12"),
@@ -92,13 +105,13 @@ const config = {
         "22:00",
     ],
     COOKIE_NAME: Deno.env.get("COOKIE_NAME") || "ut_session",
-    COOKIE_SECRET: Deno.env.get("COOKIE_SECRET") ||
-        "dev-secret-do-not-use-in-production-change-me",
+    COOKIE_SECRET: requireEnv("COOKIE_SECRET"),
     COOKIE_MAX_AGE_MS: 5 * 30 * 24 * 60 * 60 * 1000, // 5 months in ms
     COOKIE_MAX_AGE_S: 5 * 30 * 24 * 60 * 60, // 5 months in seconds
     SESSION_REFRESH_THRESHOLD_MS: 7 * 24 * 60 * 60 * 1000, // 1 week in ms
     DENO_ENV: Deno.env.get("DENO_ENV") || "development",
-    ADMIN_IPS: (Deno.env.get("ADMIN_IPS") || "").split(",").map((s) => s.trim()).filter(Boolean),
+    ADMIN_IPS: parseRequiredIpList("ADMIN_IPS"),
+    ACTIVEIPS_ALLOWED_IPS: parseRequiredIpList("ACTIVEIPS_ALLOWED_IPS"),
     THEME_ASSET_VERSION: `${Date.now()}`,
 };
 

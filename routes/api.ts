@@ -3,11 +3,17 @@ import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
 import { HonoContextVars } from "../lib/types.ts";
 import { ActiveIpsSchema, AdminExamModeSchema } from "../lib/schemas.ts";
+import config from "../lib/config.ts";
 
 const apiRouter = new Hono<{ Variables: HonoContextVars }>();
 
 apiRouter.post("/activeips", async (c) => {
     try {
+        const remoteIp = c.get("remoteip");
+        if (!config.ACTIVEIPS_ALLOWED_IPS.includes(remoteIp)) {
+            return c.json({ "ok": "false", "message": "Forbidden" }, 403);
+        }
+
         const body = await c.req.json();
         const validation = ActiveIpsSchema.safeParse(body);
         

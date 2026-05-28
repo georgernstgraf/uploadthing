@@ -142,27 +142,19 @@ Deno.test("config - UNTERLAGEN_DIR is set", () => {
     assertEquals(config.UNTERLAGEN_DIR.includes("unterlagen"), true);
 });
 
-Deno.test("config - SERVICE_DN is set when env provided", () => {
-    const hasEnv = Deno.env.get("SERVICE_DN");
-    if (!hasEnv) return; // Skip if env not set
+Deno.test("config - SERVICE_DN is set", () => {
     assertExists(config.SERVICE_DN);
 });
 
-Deno.test("config - SERVICE_PW is set when env provided", () => {
-    const hasEnv = Deno.env.get("SERVICE_PW");
-    if (!hasEnv) return; // Skip if env not set
+Deno.test("config - SERVICE_PW is set", () => {
     assertExists(config.SERVICE_PW);
 });
 
-Deno.test("config - SERVICE_URL is set when env provided", () => {
-    const hasEnv = Deno.env.get("SERVICE_URL");
-    if (!hasEnv) return; // Skip if env not set
+Deno.test("config - SERVICE_URL is set", () => {
     assertExists(config.SERVICE_URL);
 });
 
-Deno.test("config - SEARCH_BASE is set when env provided", () => {
-    const hasEnv = Deno.env.get("SEARCH_BASE");
-    if (!hasEnv) return; // Skip if env not set
+Deno.test("config - SEARCH_BASE is set", () => {
     assertExists(config.SEARCH_BASE);
 });
 

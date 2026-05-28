@@ -99,6 +99,19 @@
 - Student and teacher sections are both sorted by (lastname, firstname), parsed from the display name by splitting on the first blank.
 - This avoids mixed-context IP cards and makes the teacher audit trail more discoverable.
 
+## Fail-Strict Configuration
+
+- All security-relevant and operation-critical configuration is now required at startup.
+- `requireEnv()` throws immediately at module load time with a German error message if a required env var is missing, instead of silently falling back to a default.
+- `parseRequiredIpList()` enforces that IP whitelists (`ADMIN_IPS`, `ACTIVEIPS_ALLOWED_IPS`) are explicitly configured.
+- The following variables were changed from optional/fallback to required: `ABGABEN_DIR`, `UNTERLAGEN_DIR`, `LISTEN_PORT`, `COOKIE_SECRET`, `ADMIN_IPS`, `ACTIVEIPS_ALLOWED_IPS`, `SERVICE_DN`, `SERVICE_PW`, `SERVICE_URL`, `SEARCH_BASE`.
+
+## IP Whitelist for POST /activeips
+
+- The `/activeips` endpoint is now protected by an IP whitelist via `ACTIVEIPS_ALLOWED_IPS`.
+- Only requests from whitelisted source IPs can report active IPs.
+- The whitelist is independent from `ADMIN_IPS` since the WLAN device and admin machines may be on different IPs.
+
 ## Internal Scroll Container for Fixed Navbar
 
 - The main content area (`#app-main`) uses an internal scroll container instead of body scrolling.

@@ -28,6 +28,7 @@ This application supports supervised exam workflows where students identify them
 - These are independent HTTP requests from different sources on different timelines; scan timestamps and submission timestamps should not be assumed to align.
 - The ipfact table records per-scan IP sightings; the abgaben table records per-submission metadata.
 - A student's IP must appear in ipfact at every scan timestamp since their last submission for a resubmission to be allowed.
+- POST `/activeips` is protected by an IP whitelist (`ACTIVEIPS_ALLOWED_IPS`). Only the WLAN device's IP is allowed to report active IPs.
 
 ## Security Model
 

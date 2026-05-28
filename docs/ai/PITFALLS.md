@@ -1,5 +1,12 @@
 # PITFALLS
 
+## Fail-Strict Configuration
+
+- Config is fail-fast: all required env vars are validated at module load time via `requireEnv()` and `parseRequiredIpList()`.
+- Do not add new optional env vars with silent fallbacks for security-relevant or operation-critical settings; use `requireEnv()` instead.
+- The `!` non-null assertion pattern is no longer sufficient; use `requireEnv()` so the error message describes which variable is missing.
+- If `deno task start` fails immediately with a German error message, check that all required env vars in `lib/config.ts` are present in the environment.
+
 ## Outdated Testing References
 
 - Ignore old guidance that mentions `deno task testdb` or `main_test_db.ts`; they are not part of the current workflow.
