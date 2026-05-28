@@ -3,7 +3,7 @@
 Current status as of 2026-05-28.
 
 ## Current Focus
-No active work in progress. Six issues (#120, #126, #127, #125, #121, #122) completed this session.
+No active work in progress. Seven issues (#120, #126, #127, #125, #121, #122, #123) completed this session.
 
 ## Completed (this cycle)
 - [x] Admin forensics report separates teachers from students (#120):
@@ -28,6 +28,11 @@ No active work in progress. Six issues (#120, #126, #127, #125, #121, #122) comp
   - New `getExamModeStatus()` for GET /api/exammode
   - Blocking `runExamModeOnStartup()` before serve()
   - Tests updated, 175 pass
+- [x] IP detail modal replaces details/summary cards in admin report (#123):
+  - Modal-xl via HTMX hx-get on card click
+  - New `GET /admin/ip-detail` endpoint + `getIPDetail()` service
+  - Massive Payload-Reduktion im Admin-Report (nur noch Summary-Daten)
+  - 35vh Scroll-Listen, Bootstrap-Modal außerhalb Refresh-Panel
 
 ## Pending
 - [ ] None.
