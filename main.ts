@@ -3,6 +3,7 @@ import config from "./lib/config.ts";
 import { sessionMiddleware, remoteIPMiddleware } from "./middleware/session.ts";
 import { Bindings, HonoContextVars } from "./lib/types.ts";
 import { shutdownSqlite } from "./repo/db.ts";
+import * as service from "./service/service.ts";
 
 import adminRouter from "./routes/admin.ts";
 import homeRouter from "./routes/home.ts";
@@ -58,6 +59,8 @@ const sigtermHandler = () => {
 
 Deno.addSignalListener("SIGINT", sigintHandler);
 Deno.addSignalListener("SIGTERM", sigtermHandler);
+
+await service.admin.runExamModeOnStartup();
 
 await Deno.serve(
     {

@@ -68,6 +68,14 @@
         },
         {
             "method": "GET",
+            "path": "/api/exammode",
+            "description": "Get exam mode status",
+            "expectedOutput": {
+                "type": "HTML or 403"
+            }
+        },
+        {
+            "method": "GET",
             "path": "/",
             "description": "Home page with directory index",
             "expectedOutput": {

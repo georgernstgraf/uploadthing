@@ -29,6 +29,32 @@ apiRouter.post("/activeips", async (c) => {
     }
 });
 
+apiRouter.get("/exammode", async (c) => {
+    const is_admin = c.get("is_admin");
+    if (!is_admin) {
+        return c.text("Forbidden", 403);
+    }
+
+    try {
+        const result = await service.admin.getExamModeStatus();
+        if (!result.ok) {
+            const details = [result.stderr, result.stdout].filter(Boolean).join(" | ");
+            console.error("exammode status failed:", result);
+            return c.text(
+                `exammode status fehlgeschlagen (Exit ${result.code})${details ? `: ${details}` : ""}`,
+                500,
+            );
+        }
+
+        return c.html(hbs.adminExamModeTemplate({
+            internet_active: result.internet_active,
+        }));
+    } catch (error) {
+        console.error("exammode status could not be executed:", error);
+        return c.text(`exammode status konnte nicht ausgeführt werden: ${(error as Error).message}`, 500);
+    }
+});
+
 apiRouter.post("/exammode", async (c) => {
     const is_admin = c.get("is_admin");
     if (!is_admin) {

@@ -6,7 +6,15 @@ export type ExamModeResult = {
     code: number;
     stdout: string;
     stderr: string;
-    command_arg: "on" | "off";
+    command_arg: "start" | "stop";
+    internet_active: boolean;
+    ok: boolean;
+};
+
+export type ExamModeStatusResult = {
+    code: number;
+    stdout: string;
+    stderr: string;
     internet_active: boolean;
     ok: boolean;
 };
@@ -165,8 +173,8 @@ export function applyTheme(themeKey: string, options: ThemePathsOptions = {}): T
     return theme;
 }
 
-export function getExamModeCommandArg(internet_active: boolean): "on" | "off" {
-    return internet_active ? "off" : "on";
+export function getExamModeCommandArg(internet_active: boolean): "start" | "stop" {
+    return internet_active ? "stop" : "start";
 }
 
 async function defaultExamModeRunner(
@@ -204,6 +212,45 @@ export async function setInternetActive(
         internet_active: config.INTERNET_ACTIVE,
         ok,
     };
+}
+
+export async function getExamModeStatus(
+    runner: ExamModeRunner = defaultExamModeRunner,
+): Promise<ExamModeStatusResult> {
+    const result = await runner(config.EXAMMODE_COMMAND, ["status"]);
+    const ok = result.code === 0;
+
+    if (ok) {
+        config.INTERNET_ACTIVE = result.stdout === "off";
+    }
+
+    return {
+        ...result,
+        internet_active: config.INTERNET_ACTIVE,
+        ok,
+    };
+}
+
+export async function runExamModeOnStartup(
+    runner: ExamModeRunner = defaultExamModeRunner,
+): Promise<void> {
+    if (!Deno.env.get("EXAMMODE_COMMAND")) {
+        console.log("EXAMMODE_COMMAND not configured, skipping startup exam mode activation");
+        return;
+    }
+
+    console.log("Activating exam mode on startup ...");
+    const result = await setInternetActive(false, runner);
+
+    if (!result.ok) {
+        const details = [result.stderr, result.stdout].filter(Boolean).join(" | ");
+        console.error(
+            `exammode activation failed (exit ${result.code})${details ? `: ${details}` : ""}`,
+        );
+        Deno.exit(1);
+    }
+
+    console.log("exammode activation successful (internet blocked)");
 }
 
 export function createDatabaseBackup(destinationPath: string): void {

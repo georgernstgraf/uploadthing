@@ -5,6 +5,7 @@ import {
     cleanupDatabaseOlderThanOneMonth,
     getCurrentThemeKey,
     getExamModeCommandArg,
+    getExamModeStatus,
     listAvailableThemes,
     setInternetActive,
 } from "./admin.ts";
@@ -16,8 +17,8 @@ import * as ipfactRepo from "../repo/ipfact.ts";
 import * as abgabenRepo from "../repo/abgaben.ts";
 
 Deno.test("getExamModeCommandArg maps internet state to script arg", () => {
-    assertEquals(getExamModeCommandArg(true), "off");
-    assertEquals(getExamModeCommandArg(false), "on");
+    assertEquals(getExamModeCommandArg(true), "stop");
+    assertEquals(getExamModeCommandArg(false), "start");
 });
 
 Deno.test("setInternetActive updates runtime state on success", async () => {
@@ -30,7 +31,7 @@ Deno.test("setInternetActive updates runtime state on success", async () => {
 
         const result = await setInternetActive(true, (command, args) => {
             assertEquals(command, "exammode");
-            assertEquals(args, ["off"]);
+            assertEquals(args, ["stop"]);
             return Promise.resolve({
                 code: 0,
                 stdout: "internet enabled",
@@ -68,6 +69,37 @@ Deno.test("setInternetActive keeps previous state on failure", async () => {
         assertEquals(result.internet_active, false);
         assertEquals(config.INTERNET_ACTIVE, false);
         assertEquals(result.stdout, "internet disabled");
+    } finally {
+        config.EXAMMODE_COMMAND = originalCommand;
+        config.INTERNET_ACTIVE = originalInternetState;
+    }
+});
+
+Deno.test("getExamModeStatus returns internet_active from stdout", async () => {
+    const originalCommand = config.EXAMMODE_COMMAND;
+    const originalInternetState = config.INTERNET_ACTIVE;
+
+    try {
+        config.EXAMMODE_COMMAND = "exammode";
+
+        const resultOn = await getExamModeStatus((command, args) => {
+            assertEquals(command, "exammode");
+            assertEquals(args, ["status"]);
+            return Promise.resolve({ code: 0, stdout: "on", stderr: "" });
+        });
+        assertEquals(resultOn.ok, true);
+        assertEquals(resultOn.internet_active, false);
+
+        const resultOff = await getExamModeStatus(() => {
+            return Promise.resolve({ code: 0, stdout: "off", stderr: "" });
+        });
+        assertEquals(resultOff.ok, true);
+        assertEquals(resultOff.internet_active, true);
+
+        const resultFail = await getExamModeStatus(() => {
+            return Promise.resolve({ code: 1, stdout: "", stderr: "error" });
+        });
+        assertEquals(resultFail.ok, false);
     } finally {
         config.EXAMMODE_COMMAND = originalCommand;
         config.INTERNET_ACTIVE = originalInternetState;
