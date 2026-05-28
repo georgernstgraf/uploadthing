@@ -56,6 +56,7 @@ type AdminTemplateData = {
     enddate: string;
     ips_with_name: ServiceIpAdmin[];
     ips_without_name: ServiceIpAdmin[];
+    teacher_ips: ServiceIpAdmin[];
     anomalies: ServiceAdminAnomalies;
     range_first_seen: string;
     range_last_seen: string;
@@ -91,7 +92,12 @@ Handlebars.registerHelper("or", function (a, b) {
 });
 
 Handlebars.registerHelper("get", function (map, key) {
-    if (!map) return undefined;
+    if (!map) {
+        console.warn(
+            `[handlebars:get] Called with null/undefined map for key: ${String(key)}`,
+        );
+        return undefined;
+    }
     return map.get(key);
 });
 

@@ -1,6 +1,7 @@
 import { assertEquals, assertExists } from "@std/assert";
 import { for_range } from "./ipadmin.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
+import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
 import {
     clearForensicsByIp,
     clearForensicsByUserEmail,
@@ -8,6 +9,7 @@ import {
     seedRegistration,
     seedSharedIpAnomalyScenario,
     seedUserAnomalyScenario,
+    upsertFixtureUser,
 } from "../test/helpers/forensics_fixture.ts";
 
 Deno.test("ipadmin missed_count is zero when IP present at all scans", async () => {
@@ -453,5 +455,147 @@ Deno.test("ipadmin detects user anomalies from registrations without cookie pres
         await clearForensicsByIp(firstIp);
         await clearForensicsByIp(secondIp);
         await clearForensicsByUserEmail(userEmail);
+    }
+});
+
+Deno.test("ipadmin separates teacher IPs from student IPs", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const teacherEmail = `teacher-split-${suffix}@example.com`;
+    const studentEmail = `student-split-${suffix}@example.com`;
+    const teacherIp = `203.0.113.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const studentIp = `203.0.114.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const seenAt = new Date();
+    const start = new Date(seenAt.getTime() - 60_000);
+    const end = new Date(seenAt.getTime() + 60_000);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: teacherIp,
+            email: teacherEmail,
+            name: "Teacher One",
+            klasse: "LehrendeR",
+            at: seenAt,
+            withCookiePresent: true,
+        });
+        await seedNoAnomaliesScenario({
+            ip: studentIp,
+            email: studentEmail,
+            name: "Student One",
+            klasse: "5AHITM",
+            at: seenAt,
+            withCookiePresent: true,
+        });
+
+        const result = await for_range(start, end, false);
+
+        const inTeacher = result.teacher_ips.find((entry) => entry.ip === teacherIp);
+        const inRegistered = result.registered.find((entry) => entry.ip === teacherIp);
+        assertEquals(inTeacher !== undefined, true, "teacher IP should be in teacher_ips");
+        assertEquals(inRegistered, undefined, "teacher IP should NOT be in registered");
+
+        const inStudentRegistered = result.registered.find((entry) => entry.ip === studentIp);
+        const inStudentTeacher = result.teacher_ips.find((entry) => entry.ip === studentIp);
+        assertEquals(inStudentRegistered !== undefined, true, "student IP should be in registered");
+        assertEquals(inStudentTeacher, undefined, "student IP should NOT be in teacher_ips");
+    } finally {
+        await clearForensicsByIp(teacherIp);
+        await clearForensicsByIp(studentIp);
+        await clearForensicsByUserEmail(teacherEmail);
+        await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
+Deno.test("ipadmin sorts student IPs by lastname then firstname", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const ips = [
+        "203.0.113.10",
+        "203.0.113.11",
+        "203.0.113.12",
+    ];
+    const users = [
+        { email: `sort-b-${suffix}@example.com`, name: "Beta Gamma", klasse: "5AHITM" },
+        { email: `sort-a-${suffix}@example.com`, name: "Alpha Gamma", klasse: "5AHITM" },
+        { email: `sort-c-${suffix}@example.com`, name: "Delta Alpha", klasse: "5AHITM" },
+    ];
+    const seenAt = new Date();
+    const start = new Date(seenAt.getTime() - 60_000);
+    const end = new Date(seenAt.getTime() + 60_000);
+
+    // Expected order by lastname → firstname:
+    // 1. "Alpha" "Delta"   (Alpha)
+    // 2. "Beta" "Gamma"    (Gamma)
+    // 3. "Delta" "Alpha"   (Alpha)
+    // Sorted: Delta Alpha, Beta Gamma, Alpha Gamma (actually...)
+    // Let me compute:
+    // - "Delta Alpha": lastname="Alpha", firstname="Delta"
+    // - "Beta Gamma": lastname="Gamma", firstname="Beta"
+    // - "Alpha Gamma": lastname="Gamma", firstname="Alpha"
+    // Sort by lastname: "Alpha" < "Gamma" = "Gamma"
+    // Within "Gamma": "Alpha" (firstname) < "Beta" (firstname)
+    // Expected: Delta Alpha, Alpha Gamma, Beta Gamma
+    const expectedOrder = ["Delta Alpha", "Alpha Gamma", "Beta Gamma"];
+
+    try {
+        for (let i = 0; i < ips.length; i++) {
+            await seedNoAnomaliesScenario({
+                ip: ips[i],
+                email: users[i].email,
+                name: users[i].name,
+                klasse: users[i].klasse,
+                at: seenAt,
+                withCookiePresent: true,
+            });
+        }
+
+        const result = await for_range(start, end, false);
+
+        assertEquals(result.registered.length, 3);
+        const actualOrder = result.registered.map((entry) =>
+            entry.cookie_presents[0]?.user?.name ?? ""
+        );
+        assertEquals(actualOrder, expectedOrder);
+    } finally {
+        for (const ip of ips) await clearForensicsByIp(ip);
+        for (const u of users) await clearForensicsByUserEmail(u.email);
+    }
+});
+
+Deno.test("ipadmin most recent cookie decides teacher vs student", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const teacherEmail = `recent-teacher-${suffix}@example.com`;
+    const studentEmail = `recent-student-${suffix}@example.com`;
+    const sharedIp = `203.0.113.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const earlyTime = new Date("2026-03-27T09:00:00Z");
+    const lateTime = new Date("2026-03-27T10:00:00Z");
+    const start = new Date("2026-03-27T08:00:00Z");
+    const end = new Date("2026-03-27T11:00:00Z");
+
+    try {
+        // Student cookie at early time
+        const studentUser = await upsertFixtureUser({
+            email: studentEmail,
+            name: "Student Early",
+            klasse: "5AHITM",
+        });
+        cookiepresentsRepo.create(sharedIp, studentUser.id, earlyTime);
+
+        // Teacher cookie at late time (more recent → should decide)
+        const teacherUser = await upsertFixtureUser({
+            email: teacherEmail,
+            name: "Teacher Late",
+            klasse: "LehrendeR",
+        });
+        cookiepresentsRepo.create(sharedIp, teacherUser.id, lateTime);
+
+        const result = await for_range(start, end, false);
+
+        const inTeacher = result.teacher_ips.find((entry) => entry.ip === sharedIp);
+        const inRegistered = result.registered.find((entry) => entry.ip === sharedIp);
+        assertEquals(inTeacher !== undefined, true, "shared IP should be in teacher_ips (most recent cookie is teacher)");
+        assertEquals(inRegistered, undefined, "shared IP should NOT be in registered");
+    } finally {
+        await clearForensicsByIp(sharedIp);
+        await clearForensicsByUserEmail(teacherEmail);
+        await clearForensicsByUserEmail(studentEmail);
     }
 });

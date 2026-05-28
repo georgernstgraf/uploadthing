@@ -18,9 +18,9 @@
             </span>
         {{/if}}
     </h6>
-    <!-- Table 1: IPs with registered names -->
+    <!-- Table 1: Student IPs -->
     <h5 class="section-heading text-center mt-2 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-primary">
-        Bekannte IP-Adressen
+        Schüler IP-Adressen
         {{#if range_first_seen}}
         <span class="fw-normal text-body-secondary ms-2">{{range_first_seen}} – {{range_last_seen}}</span>
         {{/if}}
@@ -128,7 +128,117 @@
             <div class="col-12 text-center fst-italic py-2">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
         {{/each}}
     </div>
-    <!-- Table 2: IPs without registered names -->
+    <!-- Table 2: Teacher IPs -->
+    <h5 class="section-heading text-center mt-3 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-warning">
+        Lehrende IP-Adressen
+        {{#if range_first_seen}}
+        <span class="fw-normal text-body-secondary ms-2">{{range_first_seen}} – {{range_last_seen}}</span>
+        {{/if}}
+    </h5>
+    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
+        {{#each teacher_ips}}
+            <div class="col">
+                <details class="h-100 card shadow-sm  mb-0 d-flex flex-column">
+                    <summary class="card-header bg-transparent border-0 fw-bold py-2 px-2">
+                        <div class="d-flex align-items-center justify-content-between w-100">
+                            <div class="d-flex align-items-center gap-1 overflow-hidden">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-warning-emphasis bg-warning-subtle"
+                                     style="width: 26px; height: 26px; font-size: 0.875rem;">
+                                    {{#if this.cookie_presents.[0].user}}
+                                        {{givenNameInitial this.cookie_presents.[0].user.name}}
+                                    {{else}} ? {{/if}}
+                                </div>
+                                <div class="overflow-hidden">
+                                    <span class="d-block text-truncate"
+                                          title="{{this.cookie_presents.[0].user.name}}">
+                                        {{#if this.cookie_presents.[0].user}}
+                                            {{this.cookie_presents.[0].user.name}}
+                                        {{else}} Unbekannt {{/if}}
+                                    </span>
+                                    <span class="fw-normal d-block text-truncate small">{{this.ip}}</span>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column align-items-end gap-1 ms-1 flex-shrink-0">
+                                {{#if this.has_submission}}
+                                    <span class="badge text-bg-success text-wrap text-end"
+                                          title="{{submissionTooltip this.submissions}}"> Abgabe </span>
+                                {{/if}}
+                                     <span
+                                           class="badge {{#if this.missed_count}}text-bg-warning{{else if this.is_stale}}text-bg-danger{{else}}text-bg-light{{/if}} text-wrap text-end">
+                                     Fehlte {{this.missed_count}} mal </span>
+                            </div>
+                        </div>
+                    </summary>
+                    <div class="card-body mt-0 pt-2 border-top flex-grow-1">
+                        <h6 class="text-center w-100 mb-1 text-uppercase fw-bold small">Historie</h6>
+                        <div class="row g-1">
+                            <div class="col-12">
+                                <div class="fw-bold text-center mb-1 small text-primary">Cookies</div>
+                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
+                                    style="max-height: 80px;">
+                                    {{#each this.cookie_presents}}
+                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
+                                            <span>{{this.at}}</span>
+                                            <span class="fw-semibold ms-2 text-break">
+                                                {{#if this.user}}
+                                                    {{this.user.name}}
+                                                {{else}} Unbekannt {{/if}}
+                                            </span>
+                                        </li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            <div class="col-12">
+                                <div class="fw-bold text-center mb-1 small text-primary">Registrierungen</div>
+                                <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
+                                    style="max-height: 80px;">
+                                    {{#each this.registrations}}
+                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
+                                            <span>{{this.at}}</span>
+                                            <span class="fw-semibold ms-2 text-break">
+                                                {{#if this.user}}
+                                                    {{this.user.name}}
+                                                {{else}} Unbekannt {{/if}}
+                                            </span>
+                                        </li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            {{#if this.submissions.length}}
+                                <div class="col-12">
+                                    <div class="fw-bold text-center mb-1 small text-primary">Abgaben</div>
+                                    <ul class="list-group list-group-flush small rounded overflow-auto mb-1"
+                                        style="max-height: 80px;">
+                                        {{#each this.submissions}}
+                                            <li class="list-group-item d-flex justify-content-between small py-1 px-2">
+                                                <span>{{this.at}}</span>
+                                                <span class="fw-semibold ms-2 text-break">{{this.filename}}</span>
+                                            </li>
+                                        {{/each}}
+                                    </ul>
+                                </div>
+                            {{/if}}
+                            <div class="col-12">
+                                <div class="fw-bold text-center mb-1 small text-primary">IP-Fact: {{this.ip}} ({{this.seen_at_desc.length}}x)
+                                 </div>
+                                <ul class="list-group list-group-flush small rounded overflow-auto"
+                                    style="max-height: 80px;">
+                                    {{#each this.seen_at_desc }}
+                                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
+                                            <span>{{this}}</span>
+                                        </li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        {{else}}
+            <div class="col-12 text-center fst-italic py-2">Keine Lehrenden-IPs in diesem Zeitraum gefunden.</div>
+        {{/each}}
+    </div>
+    <!-- Table 3: IPs without registered names -->
     <h5 class="section-heading text-center mt-3 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-secondary">Unbekannte IP-Adressen</h5>
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
         {{#each ips_without_name}}

@@ -1,6 +1,15 @@
 import type { UserType } from "./types.ts";
 import type { RepoUserRecord } from "../repo/users.ts";
 
+export function parseDisplayName(name: string): { firstname: string; lastname: string } {
+    const firstSpace = name.indexOf(" ");
+    if (firstSpace === -1) return { firstname: "", lastname: name };
+    return {
+        firstname: name.slice(0, firstSpace),
+        lastname: name.slice(firstSpace + 1),
+    };
+}
+
 export function userRecordToUserType(user: RepoUserRecord): UserType {
     return {
         id: user.id,

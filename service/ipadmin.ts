@@ -2,7 +2,7 @@ import * as repo from "../repo/repo.ts";
 import { UserType } from "../lib/types.ts";
 import { localAdminIpString } from "../lib/timefunc.ts";
 import config from "../lib/config.ts";
-import { userRecordToUserType } from "../lib/user_mapper.ts";
+import { parseDisplayName, userRecordToUserType } from "../lib/user_mapper.ts";
 
 export type ServiceIpAdmin = {
     ip: string;
@@ -37,6 +37,7 @@ export type ServiceAdminAnomalies = {
 export type ServiceAdminResult = {
     registered: ServiceIpAdmin[];
     unregistered: ServiceIpAdmin[];
+    teacher_ips: ServiceIpAdmin[];
     anomalies: ServiceAdminAnomalies;
     range_first_seen: string; // earliest scan time across all IPs
     range_last_seen: string; // latest scan time across all IPs
@@ -246,13 +247,30 @@ export async function for_range(
 
         rv.push(ip_admin);
     }
-    rv.sort((a, b) => {
-        const left = a.seen_at_desc[0] ?? "";
-        const right = b.seen_at_desc[0] ?? "";
-        return right.localeCompare(left);
-    });
-    const registered = rv.filter((ipf) => ipf.cookie_presents.length > 0);
-    const unregistered = rv.filter((ipf) => ipf.cookie_presents.length === 0);
+    // Classify by role: last cookie decides
+    const studentIps: ServiceIpAdmin[] = [];
+    const teacherIps: ServiceIpAdmin[] = [];
+    for (const ip of rv) {
+        const primaryUser = ip.cookie_presents[0]?.user ?? null;
+        if (primaryUser?.klasse === "LehrendeR") {
+            teacherIps.push(ip);
+        } else {
+            studentIps.push(ip);
+        }
+    }
+
+    const sortByName = (a: ServiceIpAdmin, b: ServiceIpAdmin) => {
+        const aName = parseDisplayName(a.cookie_presents[0]?.user?.name ?? "");
+        const bName = parseDisplayName(b.cookie_presents[0]?.user?.name ?? "");
+        const cmp = aName.lastname.localeCompare(bName.lastname);
+        if (cmp !== 0) return cmp;
+        return aName.firstname.localeCompare(bName.firstname);
+    };
+    studentIps.sort(sortByName);
+    teacherIps.sort(sortByName);
+
+    const registered = studentIps.filter((ipf) => ipf.cookie_presents.length > 0);
+    const unregistered = studentIps.filter((ipf) => ipf.cookie_presents.length === 0);
     const anomalies = detectAnomalies(rv);
 
     // Calculate overall range from all scans
@@ -263,5 +281,5 @@ export async function for_range(
         ? localAdminIpString(allScans[allScans.length - 1])
         : "";
 
-    return { registered, unregistered, anomalies, range_first_seen, range_last_seen };
+    return { registered, unregistered, teacher_ips: teacherIps, anomalies, range_first_seen, range_last_seen };
 }

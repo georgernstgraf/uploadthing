@@ -1,5 +1,5 @@
 import { assertEquals, assertExists } from "@std/assert";
-import { userRecordToUserType, userTypeToDbInput } from "./user_mapper.ts";
+import { parseDisplayName, userRecordToUserType, userTypeToDbInput } from "./user_mapper.ts";
 import type { UserType } from "./types.ts";
 
 Deno.test("userRecordToUserType - maps complete record", () => {
@@ -103,4 +103,24 @@ Deno.test("userTypeToDbInput - returns new object (not mutating input)", () => {
 
     result.name = "Modified";
     assertEquals(userType.name, "Test");
+});
+
+Deno.test("parseDisplayName - splits on first blank", () => {
+    const result = parseDisplayName("Max Mustermann");
+    assertEquals(result, { firstname: "Max", lastname: "Mustermann" });
+});
+
+Deno.test("parseDisplayName - handles three part name", () => {
+    const result = parseDisplayName("Max Gustav Mustermann");
+    assertEquals(result, { firstname: "Max", lastname: "Gustav Mustermann" });
+});
+
+Deno.test("parseDisplayName - no space defaults to lastname", () => {
+    const result = parseDisplayName("Mustermann");
+    assertEquals(result, { firstname: "", lastname: "Mustermann" });
+});
+
+Deno.test("parseDisplayName - handles empty string", () => {
+    const result = parseDisplayName("");
+    assertEquals(result, { firstname: "", lastname: "" });
 });

@@ -91,6 +91,14 @@
 - `AGENTS.md` is the bootstrap document.
 - Long-lived agent knowledge belongs in `docs/ai/`.
 
+## Teacher/Student Split in Admin Forensics View
+
+- The admin forensics report now splits IP cards by role: students and teachers each get their own section.
+- Classification is determined by the most recent `cookie_presents[0]` user: `klasse === "LehrendeR"` → teacher section, otherwise → student section.
+- IPs without cookies remain in the "Unbekannte IP-Adressen" section unchanged.
+- Student and teacher sections are both sorted by (lastname, firstname), parsed from the display name by splitting on the first blank.
+- This avoids mixed-context IP cards and makes the teacher audit trail more discoverable.
+
 ## Internal Scroll Container for Fixed Navbar
 
 - The main content area (`#app-main`) uses an internal scroll container instead of body scrolling.

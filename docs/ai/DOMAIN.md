@@ -31,6 +31,8 @@ This application supports supervised exam workflows where students identify them
 
 - `klasse === "LehrendeR"` represents a teacher/admin role in the current model.
 - Additional IP restrictions for teacher registration can be configured with `ADMIN_IPS`.
+- In the admin forensics view, IP cards are split by role: the most recent `cookie_presents[0]` user decides whether an IP appears in students or in teachers.
+- An IP with no cookie presence stays in the "unknown" section regardless of registration history role.
 
 ## Why Admin History Matters
 
