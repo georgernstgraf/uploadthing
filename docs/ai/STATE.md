@@ -3,7 +3,7 @@
 Current status as of 2026-05-28.
 
 ## Current Focus
-No active work in progress. Seven issues (#120, #126, #127, #125, #121, #122, #123) completed this session.
+No active work in progress. All eight issues (#120, #126, #127, #125, #121, #122, #123, #124) completed this session.
 
 ## Completed (this cycle)
 - [x] Admin forensics report separates teachers from students (#120):
@@ -33,6 +33,9 @@ No active work in progress. Seven issues (#120, #126, #127, #125, #121, #122, #1
   - New `GET /admin/ip-detail` endpoint + `getIPDetail()` service
   - Massive Payload-Reduktion im Admin-Report (nur noch Summary-Daten)
   - 35vh Scroll-Listen, Bootstrap-Modal außerhalb Refresh-Panel
+- [x] Double-dot filename bug + username deduplication (#124):
+  - safeFileComponent: \.\. now collapses to . instead of _ (fixes plf-ticket..zip -> plf-ticket.zip)
+  - upload filenames: no more username prepended if already in filename (case-insensitive)
 
 ## Pending
 - [ ] None.
