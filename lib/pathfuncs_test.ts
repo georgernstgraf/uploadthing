@@ -49,12 +49,12 @@ Deno.test("safeFileComponent - replaces backslashes", () => {
 
 Deno.test("safeFileComponent - replaces path traversal", () => {
     const result = safeFileComponent("../../../etc/passwd");
-    assertEquals(result, "______etc_passwd");
+    assertEquals(result, "._._._etc_passwd");
 });
 
 Deno.test("safeFileComponent - replaces double dots in middle", () => {
     const result = safeFileComponent("file..name.txt");
-    assertEquals(result, "file_name.txt");
+    assertEquals(result, "file.name.txt");
 });
 
 Deno.test("safeFileComponent - replaces spaces", () => {
@@ -74,7 +74,7 @@ Deno.test("safeFileComponent - handles unicode characters", () => {
 
 Deno.test("safeFileComponent - combines multiple replacements", () => {
     const result = safeFileComponent("path/to/my file..name.txt");
-    assertEquals(result, "path_to_my_file_name.txt");
+    assertEquals(result, "path_to_my_file.name.txt");
 });
 
 Deno.test("safeFileComponent - handles empty string", () => {

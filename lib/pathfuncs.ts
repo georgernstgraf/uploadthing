@@ -47,7 +47,7 @@ export function safeFileComponent(input: string): string {
     // prevent path traversal + weird separators; keep it simple
     return input
         .replace(/[\/\\]/g, "_")
-        .replace(/\.\./g, "_")
+        .replace(/\.{2,}/g, ".")
         .replace(/\s+/g, "_");
 }
 
