@@ -21,6 +21,14 @@ This application supports supervised exam workflows where students identify them
 4. The authenticated user can access `unterlagen` and upload an exam file.
 5. Teachers use `/admin/students` to correlate sightings, registrations, cookie presence, anomalies, and submissions, and `/admin/application` for runtime administration settings.
 
+## Network Scan vs Upload Timing
+
+- POST `/activeips` comes from the WLAN infrastructure (firewall/access point), scanning for active IPs on the network.
+- POST `/upload` comes from the student's browser when they submit their exam file.
+- These are independent HTTP requests from different sources on different timelines; scan timestamps and submission timestamps should not be assumed to align.
+- The ipfact table records per-scan IP sightings; the abgaben table records per-submission metadata.
+- A student's IP must appear in ipfact at every scan timestamp since their last submission for a resubmission to be allowed.
+
 ## Security Model
 
 - Student identity assurance is partly operational: teachers visually confirm the displayed identity at the start of the exam.

@@ -41,6 +41,29 @@ export function getUserSubmissionsInRange(
 }
 
 /**
+ * Check whether a user is eligible to resubmit.
+ * A resubmission is allowed only if the student's IP was present
+ * in every network scan since their most recent submission.
+ */
+export function canResubmit(userId: number, currentIp: string): boolean {
+    const submissions = repo.abgaben.getByUserId(userId);
+    if (submissions.length === 0) return true;
+
+    const since = submissions[0].at;
+    const now = new Date();
+    const allScans = repo.ipfact.getUniqueScanTimestamps(since, now);
+    if (allScans.length === 0) return true;
+
+    const ipSeens = repo.ipfact.getHistoryForIPInRangeDesc(currentIp, since, now);
+    const ipSeenTimestamps = new Set(ipSeens.map((d) => d.toISOString()));
+
+    const missedAnyScan = allScans.some((ts) =>
+        !ipSeenTimestamps.has(ts.toISOString())
+    );
+    return !missedAnyScan;
+}
+
+/**
  * Fetch submissions for an IP within a date range.
  */
 export function getIPSubmissionsInRange(

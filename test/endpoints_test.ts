@@ -258,6 +258,9 @@ Deno.test("POST /upload - Authenticated upload with MD5 verification", async () 
     let cookie: string | null = null;
 
     try {
+        // Clear prior submissions to avoid canResubmit rejections
+        db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
+
         const registerRes = await fetch(`${BASE_URL}/register`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -328,6 +331,8 @@ Deno.test("POST /upload - rejects zip with non-zip content", async () => {
     let cookie: string | null = null;
 
     try {
+        db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
+
         const registerRes = await fetch(`${BASE_URL}/register`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -384,6 +389,8 @@ Deno.test("POST /upload - multipart .md with empty MIME type (Chrome-style)", as
     let cookie: string | null = null;
 
     try {
+        db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
+
         const registerRes = await fetch(`${BASE_URL}/register`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -449,6 +456,8 @@ Deno.test("POST /upload - multipart .md with text/plain MIME type", async () => 
     let cookie: string | null = null;
 
     try {
+        db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
+
         const registerRes = await fetch(`${BASE_URL}/register`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },

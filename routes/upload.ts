@@ -105,6 +105,15 @@ uploadRouter.post("/", async (c) => {
         throw e;
     }
 
+    if (remote_user.id) {
+        if (!service.abgaben.canResubmit(remote_user.id, remote_ip)) {
+            throw new AppError(
+                "Sie haben das WLAN verlassen. Eine erneute Abgabe ist nicht möglich.",
+                403,
+            );
+        }
+    }
+
     const baseFilename = `${safeFileComponent(remote_user.name)}-${
         safeFileComponent(file.name)
     }`;
