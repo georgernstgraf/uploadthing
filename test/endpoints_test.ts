@@ -132,6 +132,17 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(homeHtml.includes('href="/admin/application"'), true);
     assertEquals(homeHtml.includes(">Dateitypen<"), false);
 
+    // Ensure known exam mode state before checking admin page
+    const examModeReset = await fetch(`${BASE_URL}/api/exammode`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": cookie,
+        },
+        body: "internet_active=on",
+    });
+    await examModeReset.text();
+
     const settingsRes = await fetch(`${BASE_URL}/admin/application`, {
         headers: { "Cookie": cookie },
     });

@@ -3,7 +3,7 @@
 Current status as of 2026-05-28.
 
 ## Current Focus
-No active work in progress. Four issues (#120, #126, #127, #125) completed this session.
+No active work in progress. Six issues (#120, #126, #127, #125, #121, #122) completed this session.
 
 ## Completed (this cycle)
 - [x] Admin forensics report separates teachers from students (#120):
@@ -20,6 +20,14 @@ No active work in progress. Four issues (#120, #126, #127, #125) completed this 
   - Configuration documented in README.md
 - [x] Nav button "START" renamed to "ANGABE + DOKU" (#125):
   - Changed label in `templates/nav.hbs:6`
+- [x] Unified exammode.sh with start/stop/status in examsense repo (#121):
+  - `bin/exammode.sh` — start (block), stop (allow), status ("on"/"off")
+  - Replaces enable_doku_rule.sh / disable_doku_rule.sh
+- [x] Uploadthing exammode overhaul with startup activation (#122):
+  - `getExamModeCommandArg()` → `"start"`/`"stop"`
+  - New `getExamModeStatus()` for GET /api/exammode
+  - Blocking `runExamModeOnStartup()` before serve()
+  - Tests updated, 175 pass
 
 ## Pending
 - [ ] None.
