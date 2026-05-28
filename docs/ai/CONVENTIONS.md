@@ -37,6 +37,13 @@
 - Give meaningful one-off structural UI elements in Handlebars templates a clear unique `id`, and update any HTMX targets, CSS selectors, JS selectors, `aria-controls`, or anchor references when those IDs change.
 - Admin route naming is now split by responsibility: use `/admin/students` for the student/IP forensics page and `/admin/application` for runtime admin settings such as themes, file types, downloads, and cleanup.
 
+## Fail-Strict Configuration
+
+- Security-relevant and operation-critical env vars must use `requireEnv()` to fail at startup with a descriptive German error message.
+- IP whitelists (`ADMIN_IPS`, `ACTIVEIPS_ALLOWED_IPS`) must use `parseRequiredIpList()`.
+- Do not add new optional env vars with silent fallbacks for anything that affects security or runtime behavior.
+- The old `!` non-null assertion pattern on `Deno.env.get()` is no longer sufficient; convert to `requireEnv()`.
+
 ## Validation And Parsing
 
 - Prefer schema validation with Zod and `zod-form-data` where the project already uses it.
