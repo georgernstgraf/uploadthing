@@ -91,6 +91,7 @@ const config = {
         "21:15",
         "22:00",
     ],
+    ACTIVEIPS_SECRET: Deno.env.get("ACTIVEIPS_SECRET") || "",
     COOKIE_NAME: Deno.env.get("COOKIE_NAME") || "ut_session",
     COOKIE_SECRET: Deno.env.get("COOKIE_SECRET") ||
         "dev-secret-do-not-use-in-production-change-me",
