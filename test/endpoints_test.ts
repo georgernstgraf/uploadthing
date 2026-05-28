@@ -243,20 +243,54 @@ Deno.test("Admin navigation and live file type updates", async () => {
 
 // Dynamic test runner for all endpoints from JSON
 Deno.test("All endpoints from endpoints.json respond", async (t) => {
+    const testEmail = "grafg@spengergasse.at";
+    const registerRes = await fetch(`${BASE_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `email=${encodeURIComponent(testEmail)}`,
+    });
+    await registerRes.text();
+    const cookie = registerRes.headers.get("set-cookie");
+
+    const isProtected = (path: string) =>
+        path.startsWith("/admin/") || path === "/api/exammode" || path === "/unterlagen";
+
+    const mayReturn404: Record<string, true> = {
+        "/admin/logs": true,        // logs directory may not exist
+        "/unterlagen": true,         // route is unterlagen/* not /unterlagen
+    };
+
     for (const endpoint of endpoints.endpoints as Endpoint[]) {
         await t.step(
             `${endpoint.method} ${endpoint.path} - ${endpoint.description}`,
             async () => {
                 const url = `${BASE_URL}${endpoint.path}`;
                 const options: RequestInit = { method: endpoint.method };
+                const headers: Record<string, string> = {};
+
+                if (cookie) {
+                    headers["Cookie"] = cookie;
+                }
 
                 if (endpoint.method === "POST" && endpoint.data) {
-                    options.headers = { "Content-Type": "application/json" };
+                    headers["Content-Type"] = "application/json";
                     options.body = JSON.stringify(endpoint.data);
                 }
 
+                if (Object.keys(headers).length > 0) {
+                    options.headers = headers;
+                }
+
                 const res = await fetch(url, options);
-                assertExists(res.status);
+                if (isProtected(endpoint.path)) {
+                    if (mayReturn404[endpoint.path]) {
+                        assertEquals([200, 404].includes(res.status), true);
+                    } else {
+                        assertEquals(res.status, 200);
+                    }
+                } else {
+                    assertExists(res.status);
+                }
                 await res.text(); // consume body to avoid resource leak
             },
         );
