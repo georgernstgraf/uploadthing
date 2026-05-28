@@ -256,8 +256,7 @@ Deno.test("All endpoints from endpoints.json respond", async (t) => {
         path.startsWith("/admin/") || path === "/api/exammode" || path === "/unterlagen";
 
     const mayReturn404: Record<string, true> = {
-        "/admin/logs": true,        // logs directory may not exist
-        "/unterlagen": true,         // route is unterlagen/* not /unterlagen
+        "/admin/logs": true,        // route was removed, always 404
     };
 
     for (const endpoint of endpoints.endpoints as Endpoint[]) {

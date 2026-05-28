@@ -44,7 +44,7 @@
         },
         {
             "method": "GET",
-            "path": "/unterlagen",
+            "path": "/unterlagen/dummy.txt",
             "description": "Serve unterlagen directory",
             "expectedOutput": {
                 "type": "Directory listing or static files"
