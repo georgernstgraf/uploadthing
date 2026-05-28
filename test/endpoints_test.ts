@@ -73,13 +73,9 @@ Deno.test("GET /ldap?email=graf - LDAP search", async () => {
 });
 
 Deno.test("POST /activeips - Register active IPs", async () => {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (config.ACTIVEIPS_SECRET) {
-        headers["Authorization"] = `Bearer ${config.ACTIVEIPS_SECRET}`;
-    }
     const res = await fetch(`${BASE_URL}/activeips`, {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ips: ["10.10.10.10", "7.7.7.7", "8.8.1.1"] }),
     });
     assertEquals(res.status, 200);
