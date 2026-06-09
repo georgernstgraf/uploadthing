@@ -318,7 +318,7 @@ adminRouter.post("/cleanup-database", async (c) => {
     }
 
     try {
-        const result = service.admin.cleanupDatabaseOlderThanOneMonth();
+        const result = service.admin.cleanupDatabaseOlderThanOneYear();
         const html = `<div class="alert alert-success fs-lg mt-2 mx-auto" style="max-width: 720px;">Datenbank bereinigt. Entfernt: ${result.deleted_cookiepresents} Cookies, ${result.deleted_registrations} Registrierungen, ${result.deleted_ipfacts} IP-Logs, ${result.deleted_submissions} Abgaben (gesamt ${result.total_deleted}).</div>`;
         return renderApplicationPage(c, undefined, undefined, html);
     } catch (error) {

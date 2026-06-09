@@ -114,3 +114,19 @@
 - If a developer is logged in locally (e.g., via `localhost:8000`), their session data and registrations remain in the database and can cause flaky test failures, especially for anomaly detection tests.
 - When running `deno task test`, ensure you have no active local sessions or registrations that could interfere with test assertions.
 - The test user "grafg@spengergasse.at" is hardcoded in endpoint tests; do not use this email for local development sessions.
+
+## HTMX Attribute Inheritance Traps
+
+- `hx-select` inherits from parent elements down to children. A child's HTMX request will filter its response through a parent's `hx-select`, even if the selector is meaningless for the child's endpoint. This caused the IP detail modal to be empty because `hx-select="#admin-report-panel > *"` on the section filtered the `/admin/ip-detail` response to nothing.
+- `hx-disinherit` must be placed on an ANCESTOR of the elements that should not inherit, not on the elements themselves. HTMX's `getAttributeValueWithDisinheritance` has a guard `initialElement !== ancestor` that skips the disinherit check on the starting element. Placing `hx-disinherit` on the card itself is silently ignored; place it on the parent `<div.row>` or `<div.col>` wrapper instead.
+- `hx-on:` with camelCase event names (e.g., `hx-on::afterSwap`) breaks because HTML attribute names are case-insensitive and get lowercased by the browser to `hx-on::afterswap`. HTMX tries to match against the dispatched event (`htmx:afterSwap`) and fails. Always use kebab-case event names: `hx-on:htmx:after-swap`.
+- `htmx:afterSwap` fires on the swap TARGET elements (the content being swapped in), NOT on the requesting element. The event bubbles up from the target, so a listener on the card element (which is not an ancestor of the target) will never receive it. For per-request handling, use `htmx:afterRequest` (fires on the requesting element) or listen on `document` with a target-ID check.
+
+## Bootstrap JS Missing
+
+- The project had `bootstrap.css` (CSS only) but never loaded Bootstrap's JavaScript. `bootstrap.Modal`, `bootstrap.Tooltip`, etc. were all `undefined`. Bootstrap modals, tooltips, and `data-bs-*` dismiss attributes require loading `bootstrap.bundle.js`.
+- All external libraries in `static/` must be non-minified for auditability and debugging. Use symlinks from the generic name to the versioned name (e.g., `htmx.js` → `htmx-2.0.10.js`).
+
+## Missed Count After Submission
+
+- The `missed_count` calculation in `service/ipadmin.ts` previously counted ongoing absence after the last scan, even if the student had already submitted their work and left. A student who leaves after submitting should not be penalized; scans after their most recent submission are excluded from `missed_count`.

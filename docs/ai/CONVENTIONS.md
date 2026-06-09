@@ -92,3 +92,17 @@
 - `#app-main` is the internal scroll container with `overflow-y: auto` and constrained height.
 - Scrollbar is hidden via `scrollbar-width: none` (Firefox) and `::-webkit-scrollbar { display: none }` (Chrome/Safari/Edge/Opera).
 - This keeps content from sliding behind the fixed glassmorphism navbar while preserving scroll functionality.
+
+## External Library Management
+
+- All external JS/CSS libraries must be stored as non-minified, readable source files.
+- Use versioned filenames with symlinks: `static/htmx.js` → `static/htmx-2.0.10.js`, `static/alpine.js` → `static/alpine-3.15.12.js`, `static/bootstrap.css` → `static/bootstrap-5.3.8.css`, `static/bootstrap.bundle.js` → `static/bootstrap-5.3.8.bundle.js`.
+- When upgrading, download the new versioned file, update the symlink target. Old versioned files remain for rollback.
+- Bootstrap JS (`bootstrap.bundle.js`) must be loaded for modals, tooltips, and `data-bs-*` attributes to work. `bootstrap.css` alone is not enough.
+
+## HTMX Event and Attribute Rules
+
+- When using `hx-on:` attributes, always use kebab-case event names. HTML attribute names are case-insensitive and get lowercased by the browser, breaking camelCase matches.
+- `hx-disinherit` must be placed on an ANCESTOR of elements that should not inherit, never on the element itself. HTMX's disinherit check only runs on ancestors differing from the initial element.
+- Prefer global `document` event listeners over per-element `hx-on` for cross-element effects (e.g., showing a modal after a content swap). Check `evt.detail.target.id` in the listener to identify which swap occurred.
+- `htmx:afterSwap` fires on swap target elements (the new content), not the requesting element. For per-request effects, use `htmx:afterRequest` or listen on `document`.

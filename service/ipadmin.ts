@@ -37,7 +37,7 @@ export type ServiceAdminAnomalies = {
 export type ServiceIPDetail = {
     ip: string;
     user_name: string;
-    cookie_presents: { at: string; user_name: string }[];
+    cookie_presents: { at: string; user_name: string; count: number; count_gt_1: boolean }[];
     registrations: { at: string; user_name: string }[];
     submissions: { at: string; filename: string }[];
     seen_at_desc: string[];
@@ -326,9 +326,22 @@ export async function getIPDetail(
         usersById.set(user.id, user.name);
     }
 
-    const cookie_presents = cookieRows.map((row) => ({
-        at: localAdminIpString(row.at),
-        user_name: usersById.get(row.userId) ?? "Unbekannt",
+    const cookie_presents_map = new Map<string, { user_name: string; count: number }>();
+    for (const row of cookieRows) {
+        const at = localAdminIpString(row.at);
+        const user_name = usersById.get(row.userId) ?? "Unbekannt";
+        const existing = cookie_presents_map.get(at);
+        if (existing) {
+            existing.count++;
+        } else {
+            cookie_presents_map.set(at, { user_name, count: 1 });
+        }
+    }
+    const cookie_presents = [...cookie_presents_map.entries()].map(([at, { user_name, count }]) => ({
+        at,
+        user_name,
+        count,
+        count_gt_1: count > 1,
     }));
 
     const registrations = registrationRows.map((row) => ({

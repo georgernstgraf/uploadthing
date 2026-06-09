@@ -280,11 +280,11 @@ export function wipeAbgabenDirectory(dirPath: string): void {
     }
 }
 
-export function cleanupDatabaseOlderThanOneMonth(
+export function cleanupDatabaseOlderThanOneYear(
     now = new Date(),
 ): DatabaseCleanupResult {
     const cutoff = new Date(now);
-    cutoff.setMonth(cutoff.getMonth() - 1);
+    cutoff.setFullYear(cutoff.getFullYear() - 1);
 
     const deleted_cookiepresents = repo.cookiepresents.deleteOlderThan(cutoff);
     const deleted_registrations = repo.registrations.deleteOlderThan(cutoff);

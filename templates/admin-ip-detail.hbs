@@ -13,7 +13,7 @@
                 style="max-height: 35vh; overflow-y: auto;">
                 {{#each cookie_presents}}
                     <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                        <span>{{this.at}}</span>
+                        <span>{{this.at}}{{#if this.count_gt_1}} (&times;{{this.count}}){{/if}}</span>
                         <span class="fw-semibold ms-2 text-break">{{this.user_name}}</span>
                     </li>
                 {{else}}
@@ -42,7 +42,7 @@
                     style="max-height: 35vh; overflow-y: auto;">
                     {{#each submissions}}
                         <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                            <span>{{this.at}}</span>
+                        <span>{{this.at}}</span>
                             <span class="fw-semibold ms-2 text-break">{{this.filename}}</span>
                         </li>
                     {{/each}}

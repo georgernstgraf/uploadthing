@@ -120,3 +120,13 @@
 - Content scrolls within this container and stops at the navbar bottom edge.
 - The scrollbar is hidden via CSS (`scrollbar-width: none` + `::-webkit-scrollbar`) while preserving mouse wheel, Page Up/Down, and touch scrolling.
 - This prevents content from sliding behind the transparent glassmorphism navbar while keeping the background visible through it.
+
+## 2026-06-09: Missed count stops after last submission
+
+- **Choice**: IP detail modal content swap into `#ip-detail-modal-content` via `hx-target` with `hx-disinherit="hx-select"` on row wrappers to block inherited `hx-select` from the panel section.
+
+- **Choice**: Modal show triggered via global `htmx:afterSwap` listener in `templates/index.hbs`, checking `evt.detail.target.id === 'ip-detail-modal-content'`. Per-card `hx-on` handlers removed.
+
+- **Choice**: All external JS/CSS libraries stored as non-minified development source files with versioned filenames and symlinks (e.g., `htmx.js` → `htmx-2.0.10.js`). This enables source inspection and makes upgrades explicit.
+
+- **Choice**: `bootstrap.bundle.js` loaded in `<head>` (after `htmx.js`, before `toast.js`) to enable Bootstrap modal API. Previously only `bootstrap.css` was loaded, leaving `bootstrap.Modal` undefined.

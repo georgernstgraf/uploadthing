@@ -2,7 +2,7 @@ import { assert, assertEquals, assertExists } from "@std/assert";
 import config from "../lib/config.ts";
 import {
     applyTheme,
-    cleanupDatabaseOlderThanOneMonth,
+    cleanupDatabaseOlderThanOneYear,
     getCurrentThemeKey,
     getExamModeCommandArg,
     getExamModeStatus,
@@ -106,12 +106,12 @@ Deno.test("getExamModeStatus returns internet_active from stdout", async () => {
     }
 });
 
-Deno.test("cleanupDatabaseOlderThanOneMonth deletes only old time-based records", async () => {
+Deno.test("cleanupDatabaseOlderThanOneYear deletes only old time-based records", async () => {
     const suffix = crypto.randomUUID().slice(0, 8);
     const email = `cleanup-${suffix}@example.com`;
     const ip = `203.0.113.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
     const now = new Date("2026-03-12T12:00:00.000Z");
-    const oldDate = new Date("2026-01-15T12:00:00.000Z");
+    const oldDate = new Date("2025-01-15T12:00:00.000Z");
     const freshDate = new Date("2026-03-05T12:00:00.000Z");
 
     try {
@@ -130,7 +130,7 @@ Deno.test("cleanupDatabaseOlderThanOneMonth deletes only old time-based records"
         abgabenRepo.create(user.id, ip, `old-${suffix}.pdf`, oldDate);
         abgabenRepo.create(user.id, ip, `fresh-${suffix}.pdf`, freshDate);
 
-        const result = cleanupDatabaseOlderThanOneMonth(now);
+        const result = cleanupDatabaseOlderThanOneYear(now);
 
         assert(result.deleted_cookiepresents >= 1);
         assert(result.deleted_registrations >= 1);

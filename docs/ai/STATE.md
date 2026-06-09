@@ -1,41 +1,25 @@
 # Project State
 
-Current status as of 2026-05-28.
+Current status as of 2026-06-09.
 
 ## Current Focus
-No active work in progress. All eight issues (#120, #126, #127, #125, #121, #122, #123, #124) completed this session.
+Issue #128 — IP detail modal not appearing; missed count badge overcounting.
 
 ## Completed (this cycle)
-- [x] Admin forensics report separates teachers from students (#120):
-  - Teachers shown in new "Lehrende IP-Adressen" section
-  - Student/teacher classification by most recent cookie role, sorted by name
-- [x] Added `parseDisplayName()` splitting on first blank
-- [x] Resubmission blocked when student drops out of WLAN (#126):
-  - `canResubmit()` checks IP presence in all scans since last submission
-  - Error surfaces via HTMX toast
-- [x] Config made fail-strict, `/activeips` IP-whitelisted (#127):
-  - `requireEnv()` + `parseRequiredIpList()` helpers
-  - 10 fields changed from optional to required
-  - `ACTIVEIPS_ALLOWED_IPS` whitelist for POST /activeips
-  - Configuration documented in README.md
-- [x] Nav button "START" renamed to "ANGABE + DOKU" (#125):
-  - Changed label in `templates/nav.hbs:6`
-- [x] Unified exammode.sh with start/stop/status in examsense repo (#121):
-  - `bin/exammode.sh` — start (block), stop (allow), status ("on"/"off")
-  - Replaces enable_doku_rule.sh / disable_doku_rule.sh
-- [x] Uploadthing exammode overhaul with startup activation (#122):
-  - `getExamModeCommandArg()` → `"start"`/`"stop"`
-  - New `getExamModeStatus()` for GET /api/exammode
-  - Blocking `runExamModeOnStartup()` before serve()
-  - Tests updated, 175 pass
-- [x] IP detail modal replaces details/summary cards in admin report (#123):
-  - Modal-xl via HTMX hx-get on card click
-  - New `GET /admin/ip-detail` endpoint + `getIPDetail()` service
-  - Massive Payload-Reduktion im Admin-Report (nur noch Summary-Daten)
-  - 35vh Scroll-Listen, Bootstrap-Modal außerhalb Refresh-Panel
-- [x] Double-dot filename bug + username deduplication (#124):
-  - safeFileComponent: \.\. now collapses to . instead of _ (fixes plf-ticket..zip -> plf-ticket.zip)
-  - upload filenames: no more username prepended if already in filename (case-insensitive)
+- [x] Fixed IP detail modal — 3 separate root causes (#128):
+  - Missing `bootstrap.bundle.js` (only CSS was loaded, `bootstrap.Modal` was undefined)
+  - `hx-disinherit="hx-select"` placed on card itself was silently ignored; moved to parent `div.row` wrappers to block inherited `hx-select` from filtering responses
+  - Modal show triggered via global `htmx:afterSwap` document listener checking target ID, instead of broken per-card `hx-on`
+- [x] Fixed missed_count to stop after most recent submission:
+  - `service/ipadmin.ts`: `for_range()` now uses the most recent submission as a cutoff; scans after submission are excluded from `missed_count`
+  - `service/ipadmin_test.ts`: new test `missed_count stops after most recent submission`
+- [x] Upgraded external libraries to latest stable, all non-minified:
+  - htmx: 2.0.8 → 2.0.10
+  - alpine: 3.14.1 (minified) → 3.15.12 (non-minified)
+  - bootstrap: 5.3.8 (was already latest CSS-only, added `bootstrap.bundle.js`)
+- [x] Versioned filenames with symlinks in `static/`:
+  - `htmx.js` → `htmx-2.0.10.js`, `alpine.js` → `alpine-3.15.12.js`
+  - `bootstrap.css` → `bootstrap-5.3.8.css`, `bootstrap.bundle.js` → `bootstrap-5.3.8.bundle.js`
 
 ## Pending
 - [ ] None.
@@ -44,4 +28,4 @@ No active work in progress. All eight issues (#120, #126, #127, #125, #121, #122
 None.
 
 ## Next Session Suggestion
-Check for new issues or feature requests.
+Verify modal works end-to-end in the browser. If the modal is nested too deeply in `#app-content`, consider moving it to `templates/main.hbs` as a direct sibling of `#app-content` to avoid stacking context issues with the Bootstrap backdrop.
