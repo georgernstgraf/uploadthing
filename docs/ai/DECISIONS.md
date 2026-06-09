@@ -130,3 +130,23 @@
 - **Choice**: All external JS/CSS libraries stored as non-minified development source files with versioned filenames and symlinks (e.g., `htmx.js` → `htmx-2.0.10.js`). This enables source inspection and makes upgrades explicit.
 
 - **Choice**: `bootstrap.bundle.js` loaded in `<head>` (after `htmx.js`, before `toast.js`) to enable Bootstrap modal API. Previously only `bootstrap.css` was loaded, leaving `bootstrap.Modal` undefined.
+
+## 2026-06-09: IP presence timeline with absent highlighting
+
+- **Choice**: `ServiceIPDetail.seen_at_desc` changed from `string[]` to `{ at: string; present: boolean }[]`. The `getIPDetail()` service generates a continuous minute-by-minute timeline from the IP's first-seen to last-seen within the query range.
+
+- **Choice**: Absent minutes rendered with `list-group-item-danger` (red-tinted background) and a "fehlt" (absent) label. Present minutes have no special styling.
+
+- **Choice**: `seen_count` set to `seenRows.length` (actual sightings), not the timeline length.
+
+## 2026-06-09: Cookie deduplication in IP detail modal
+
+- **Choice**: Cookie entries grouped by minute with a count accumulator. `count_gt_1` boolean avoids showing `(&times;1)` — multiplier only appears when duplicates exist. Applied only in `getIPDetail()`, not in `for_range()`.
+
+## 2026-06-09: Database cleanup cutoff to 1 year
+
+- **Choice**: `cleanupDatabaseOlderThanOneMonth` renamed to `cleanupDatabaseOlderThanOneYear`, cutoff changed from `setMonth(-1)` to `setFullYear(-1)`. Affects all 4 tables uniformly.
+
+## 2026-06-09: IP detail modal 2-column layout
+
+- **Choice**: Modal restructured: left column stacks Abgaben → Registrierungen → Cookies (each max 35vh), right column holds IP-Präsenz with `flex-grow-1` and `max-height: 80vh`. Content-driven sizing, no forced `min-height`.
