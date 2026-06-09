@@ -50,8 +50,9 @@
             <ul class="list-group list-group-flush small rounded border flex-grow-1"
                 style="max-height: 80vh; overflow-y: auto;">
                 {{#each seen_at_desc}}
-                    <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                        <span>{{this}}</span>
+                    <li class="list-group-item d-flex justify-content-between small py-1 px-2{{#unless this.present}} list-group-item-danger{{/unless}}">
+                        <span>{{this.at}}</span>
+                        {{#unless this.present}}<span class="fw-semibold ms-2">fehlt</span>{{/unless}}
                     </li>
                 {{else}}
                     <li class="list-group-item small py-1 px-2 fst-italic text-body-secondary">Keine</li>

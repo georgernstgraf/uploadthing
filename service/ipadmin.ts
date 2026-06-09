@@ -40,7 +40,7 @@ export type ServiceIPDetail = {
     cookie_presents: { at: string; user_name: string; count: number; count_gt_1: boolean }[];
     registrations: { at: string; user_name: string }[];
     submissions: { at: string; filename: string }[];
-    seen_at_desc: string[];
+    seen_at_desc: { at: string; present: boolean }[];
     seen_count: number;
     missed_count: number;
     has_submission: boolean;
@@ -354,7 +354,29 @@ export async function getIPDetail(
         filename: row.filename,
     }));
 
-    const seen_at_desc = seenRows.map((dt) => localAdminIpString(dt));
+    const roundDownToMinute = (d: Date) => {
+        const copy = new Date(d);
+        copy.setSeconds(0, 0);
+        return copy;
+    };
+
+    let seen_at_desc: { at: string; present: boolean }[] = [];
+    if (seenRows.length > 0) {
+        const sorted = [...seenRows].sort((a, b) => a.valueOf() - b.valueOf());
+        const firstMinute = roundDownToMinute(sorted[0]);
+        const lastMinute = roundDownToMinute(sorted[sorted.length - 1]);
+
+        const presentSet = new Set(seenRows.map((d) => localAdminIpString(roundDownToMinute(d))));
+
+        const entries: { at: string; present: boolean }[] = [];
+        const t = new Date(lastMinute);
+        while (t >= firstMinute) {
+            const at = localAdminIpString(t);
+            entries.push({ at, present: presentSet.has(at) });
+            t.setMinutes(t.getMinutes() - 1);
+        }
+        seen_at_desc = entries;
+    }
 
     let user_name = "Unbekannt";
     if (cookie_presents.length > 0) {
@@ -370,7 +392,7 @@ export async function getIPDetail(
         registrations,
         submissions,
         seen_at_desc,
-        seen_count: seen_at_desc.length,
+        seen_count: seenRows.length,
         missed_count: 0,
         has_submission: submissions.length > 0,
     };
