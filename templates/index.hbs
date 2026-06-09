@@ -47,6 +47,7 @@
         }
     </style>
     <script src="/static/htmx.js"></script>
+    <script src="/static/bootstrap.bundle.js"></script>
     <script src="/static/toast.js"></script>
     <script>
         function showNetworkErrorToast() {
@@ -80,9 +81,12 @@
                     Alpine.initTree(evt.detail.target);
                 }
             }
+            if (evt.detail.target && evt.detail.target.id === 'ip-detail-modal-content') {
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('ip-detail-modal')).show();
+            }
         });
     </script>
-    <script src="/static/alpine.min.js"
+    <script src="/static/alpine.js"
             defer></script>
 </head>
 

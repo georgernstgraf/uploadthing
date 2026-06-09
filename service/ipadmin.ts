@@ -228,9 +228,19 @@ export async function for_range(
             first_seen = localAdminIpString(firstSeenTime);
             last_seen = localAdminIpString(lastSeenTime);
 
-            // Count scans from first_seen onward where IP was absent (including ongoing absence)
+            // If the student has submitted work, stop counting missed scans after that point.
+            // (A student who leaves after submitting is considered done, not missing.)
+            const rawSubmissions = submissionsByIp.get(ip) ?? [];
+            const cutoffTime = rawSubmissions.length > 0
+                ? rawSubmissions[0].at  // most recent submission (sorted desc)
+                : null;
+
             const scansFromFirstSeen = allScans.filter(
-                (scan) => scan.valueOf() >= firstSeenTime.valueOf()
+                (scan) => {
+                    if (scan.valueOf() < firstSeenTime.valueOf()) return false;
+                    if (cutoffTime && scan.valueOf() > cutoffTime.valueOf()) return false;
+                    return true;
+                }
             );
             const seenTimesSet = new Set(seenAtDesc.map((d) => d.toISOString()));
             missed_count = scansFromFirstSeen.filter((scan) => !seenTimesSet.has(scan.toISOString())).length;

@@ -8,6 +8,7 @@ import {
     seedNoAnomaliesScenario,
     seedRegistration,
     seedSharedIpAnomalyScenario,
+    seedSubmission,
     seedUserAnomalyScenario,
     upsertFixtureUser,
 } from "../test/helpers/forensics_fixture.ts";
@@ -597,5 +598,65 @@ Deno.test("ipadmin most recent cookie decides teacher vs student", async () => {
         await clearForensicsByIp(sharedIp);
         await clearForensicsByUserEmail(teacherEmail);
         await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
+Deno.test("ipadmin missed_count stops after most recent submission", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `missed-submit-${suffix}@example.com`;
+    const testIp = `203.0.122.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const otherIp = `203.0.123.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const baseTime = new Date("2026-06-01T10:00:00Z");
+    const t1 = new Date(baseTime.getTime());          // IP seen
+    const t2 = new Date(baseTime.getTime() + 60000);  // IP absent (miss before submission)
+    const t3 = new Date(baseTime.getTime() + 120000); // IP seen
+    const t4 = new Date(baseTime.getTime() + 150000); // submission time (cutoff)
+    const t5 = new Date(baseTime.getTime() + 180000); // IP absent after submission
+    const t6 = new Date(baseTime.getTime() + 240000); // IP absent after submission
+    const start = new Date(baseTime.getTime() - 60000);
+    const end = new Date(baseTime.getTime() + 300000);
+
+    try {
+        const { userId } = await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Submission Cutoff Test",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        // Scans at t1, t3: testIp present
+        ipfactRepo.registerSeen(testIp, t1);
+        ipfactRepo.registerSeen(testIp, t3);
+        // Scan at t2: testIp absent before submission (should count)
+        ipfactRepo.registerSeen(otherIp, t2);
+        // Scans at t5, t6: testIp absent after submission (should NOT count)
+        ipfactRepo.registerSeen(otherIp, t5);
+        ipfactRepo.registerSeen(otherIp, t6);
+
+        // Submission at t4 (not a scan, just the cutoff)
+        seedSubmission({
+            userId,
+            ip: testIp,
+            filename: "test-submission.md",
+            at: t4,
+        });
+
+        const result = await for_range(start, end, false);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        // allScans: t1, t2, t3, t5, t6
+        // scans from first_seen (t1) up to cutoff (t4): t1, t2, t3
+        // IP present at: t1, t3
+        // missed: 1 (t2)
+        assertEquals(found.missed_count, 1);
+        assertEquals(found.has_submission, true);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByIp(otherIp);
+        await clearForensicsByUserEmail(userEmail);
     }
 });

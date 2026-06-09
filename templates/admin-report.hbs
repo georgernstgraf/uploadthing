@@ -25,7 +25,8 @@
         <span class="fw-normal text-body-secondary ms-2">{{range_first_seen}} – {{range_last_seen}}</span>
         {{/if}}
     </h5>
-    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
+    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1"
+         hx-disinherit="hx-select">
         {{#each ips_with_name}}
             <div class="col">
                 <div class="card shadow-sm h-100"
@@ -33,8 +34,7 @@
                      hx-get="/admin/ip-detail?ip={{this.ip}}"
                      hx-include="#admin-time-filter form"
                      hx-target="#ip-detail-modal-content"
-                     hx-trigger="click"
-                     hx-on::afterSwap="bootstrap.Modal.getOrCreateInstance(document.getElementById('ip-detail-modal')).show()">
+                     hx-trigger="click">
                     <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
@@ -78,7 +78,8 @@
         <span class="fw-normal text-body-secondary ms-2">{{range_first_seen}} – {{range_last_seen}}</span>
         {{/if}}
     </h5>
-    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
+    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1"
+         hx-disinherit="hx-select">
         {{#each teacher_ips}}
             <div class="col">
                 <div class="card shadow-sm h-100"
@@ -86,8 +87,7 @@
                      hx-get="/admin/ip-detail?ip={{this.ip}}"
                      hx-include="#admin-time-filter form"
                      hx-target="#ip-detail-modal-content"
-                     hx-trigger="click"
-                     hx-on::afterSwap="bootstrap.Modal.getOrCreateInstance(document.getElementById('ip-detail-modal')).show()">
+                     hx-trigger="click">
                     <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
@@ -126,7 +126,8 @@
     </div>
     <!-- Table 3: IPs without registered names -->
     <h5 class="section-heading text-center mt-3 mb-1 fw-bold text-uppercase border-bottom pb-1 d-inline-block mx-auto border-secondary">Unbekannte IP-Adressen</h5>
-    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1">
+    <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1"
+         hx-disinherit="hx-select">
         {{#each ips_without_name}}
             <div class="col">
                 <div class="card shadow-sm h-100"
@@ -134,8 +135,7 @@
                      hx-get="/admin/ip-detail?ip={{this.ip}}"
                      hx-include="#admin-time-filter form"
                      hx-target="#ip-detail-modal-content"
-                     hx-trigger="click"
-                     hx-on::afterSwap="bootstrap.Modal.getOrCreateInstance(document.getElementById('ip-detail-modal')).show()">
+                     hx-trigger="click">
                     <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
                         <div class="d-flex align-items-center justify-content-between w-100">
                             <div class="d-flex align-items-center gap-1 overflow-hidden">
