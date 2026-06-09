@@ -8,7 +8,31 @@
 <div class="modal-body">
     <div class="row g-2">
         <div class="col-md-6">
-            <h6 class="fw-bold small text-uppercase text-primary mb-2">Cookies ({{cookie_presents.length}})</h6>
+            <h6 class="fw-bold small text-uppercase text-primary mb-2">Abgaben ({{submissions.length}})</h6>
+            <ul class="list-group list-group-flush small rounded border"
+                style="max-height: 35vh; overflow-y: auto;">
+                    {{#each submissions}}
+                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
+                            <span>{{this.at}}</span>
+                            <span class="fw-semibold ms-2 text-break">{{this.filename}}</span>
+                        </li>
+                    {{else}}
+                        <li class="list-group-item small py-1 px-2 fst-italic text-body-secondary">Keine</li>
+                    {{/each}}
+                </ul>
+            <h6 class="fw-bold small text-uppercase text-primary mb-2 mt-2">Registrierungen ({{registrations.length}})</h6>
+            <ul class="list-group list-group-flush small rounded border"
+                style="max-height: 35vh; overflow-y: auto;">
+                {{#each registrations}}
+                    <li class="list-group-item d-flex justify-content-between small py-1 px-2">
+                        <span>{{this.at}}</span>
+                        <span class="fw-semibold ms-2 text-break">{{this.user_name}}</span>
+                    </li>
+                {{else}}
+                    <li class="list-group-item small py-1 px-2 fst-italic text-body-secondary">Keine</li>
+                {{/each}}
+            </ul>
+            <h6 class="fw-bold small text-uppercase text-primary mb-2 mt-2">Cookies ({{cookie_presents.length}})</h6>
             <ul class="list-group list-group-flush small rounded border"
                 style="max-height: 35vh; overflow-y: auto;">
                 {{#each cookie_presents}}
@@ -21,38 +45,10 @@
                 {{/each}}
             </ul>
         </div>
-        <div class="col-md-6">
-            <h6 class="fw-bold small text-uppercase text-primary mb-2">Registrierungen ({{registrations.length}})</h6>
-            <ul class="list-group list-group-flush small rounded border"
-                style="max-height: 35vh; overflow-y: auto;">
-                {{#each registrations}}
-                    <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                        <span>{{this.at}}</span>
-                        <span class="fw-semibold ms-2 text-break">{{this.user_name}}</span>
-                    </li>
-                {{else}}
-                    <li class="list-group-item small py-1 px-2 fst-italic text-body-secondary">Keine</li>
-                {{/each}}
-            </ul>
-        </div>
-        {{#if submissions.length}}
-            <div class="col-md-6 mt-2">
-                <h6 class="fw-bold small text-uppercase text-primary mb-2">Abgaben ({{submissions.length}})</h6>
-                <ul class="list-group list-group-flush small rounded border"
-                    style="max-height: 35vh; overflow-y: auto;">
-                    {{#each submissions}}
-                        <li class="list-group-item d-flex justify-content-between small py-1 px-2">
-                        <span>{{this.at}}</span>
-                            <span class="fw-semibold ms-2 text-break">{{this.filename}}</span>
-                        </li>
-                    {{/each}}
-                </ul>
-            </div>
-        {{/if}}
-        <div class="col-12 mt-2">
+        <div class="col-md-6 d-flex flex-column">
             <h6 class="fw-bold small text-uppercase text-primary mb-2">IP-Präsenz: {{ip}} ({{seen_count}}&times;)</h6>
-            <ul class="list-group list-group-flush small rounded border"
-                style="max-height: 35vh; overflow-y: auto;">
+            <ul class="list-group list-group-flush small rounded border flex-grow-1"
+                style="max-height: 80vh; overflow-y: auto;">
                 {{#each seen_at_desc}}
                     <li class="list-group-item d-flex justify-content-between small py-1 px-2">
                         <span>{{this}}</span>
