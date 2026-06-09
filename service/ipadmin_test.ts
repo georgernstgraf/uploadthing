@@ -514,27 +514,23 @@ Deno.test("ipadmin sorts student IPs by lastname then firstname", async () => {
         "203.0.113.12",
     ];
     const users = [
-        { email: `sort-b-${suffix}@example.com`, name: "Beta Gamma", klasse: "5AHITM" },
-        { email: `sort-a-${suffix}@example.com`, name: "Alpha Gamma", klasse: "5AHITM" },
-        { email: `sort-c-${suffix}@example.com`, name: "Delta Alpha", klasse: "5AHITM" },
+        { email: `sort-a-${suffix}@example.com`, name: "Gamma Beta", klasse: "5AHITM" },
+        { email: `sort-b-${suffix}@example.com`, name: "Gamma Alpha", klasse: "5AHITM" },
+        { email: `sort-c-${suffix}@example.com`, name: "Alpha Delta", klasse: "5AHITM" },
     ];
     const seenAt = new Date();
     const start = new Date(seenAt.getTime() - 60_000);
     const end = new Date(seenAt.getTime() + 60_000);
 
-    // Expected order by lastname → firstname:
-    // 1. "Alpha" "Delta"   (Alpha)
-    // 2. "Beta" "Gamma"    (Gamma)
-    // 3. "Delta" "Alpha"   (Alpha)
-    // Sorted: Delta Alpha, Beta Gamma, Alpha Gamma (actually...)
-    // Let me compute:
-    // - "Delta Alpha": lastname="Alpha", firstname="Delta"
-    // - "Beta Gamma": lastname="Gamma", firstname="Beta"
-    // - "Alpha Gamma": lastname="Gamma", firstname="Alpha"
-    // Sort by lastname: "Alpha" < "Gamma" = "Gamma"
-    // Within "Gamma": "Alpha" (firstname) < "Beta" (firstname)
-    // Expected: Delta Alpha, Alpha Gamma, Beta Gamma
-    const expectedOrder = ["Delta Alpha", "Alpha Gamma", "Beta Gamma"];
+    // Names in LastName FirstName format:
+    // "Gamma Beta":    lastname="Gamma", firstname="Beta"
+    // "Gamma Alpha":   lastname="Gamma", firstname="Alpha"
+    // "Alpha Delta":   lastname="Alpha", firstname="Delta"
+    // Sort by lastname then firstname:
+    // "Alpha" < "Gamma" = "Gamma"
+    // Within "Gamma": "Alpha" < "Beta"
+    // Expected: Alpha Delta, Gamma Alpha, Gamma Beta
+    const expectedOrder = ["Alpha Delta", "Gamma Alpha", "Gamma Beta"];
 
     try {
         for (let i = 0; i < ips.length; i++) {

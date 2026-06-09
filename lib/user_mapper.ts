@@ -5,8 +5,8 @@ export function parseDisplayName(name: string): { firstname: string; lastname: s
     const firstSpace = name.indexOf(" ");
     if (firstSpace === -1) return { firstname: "", lastname: name };
     return {
-        firstname: name.slice(0, firstSpace),
-        lastname: name.slice(firstSpace + 1),
+        firstname: name.slice(firstSpace + 1),
+        lastname: name.slice(0, firstSpace),
     };
 }
 

@@ -106,13 +106,13 @@ Deno.test("userTypeToDbInput - returns new object (not mutating input)", () => {
 });
 
 Deno.test("parseDisplayName - splits on first blank", () => {
-    const result = parseDisplayName("Max Mustermann");
+    const result = parseDisplayName("Mustermann Max");
     assertEquals(result, { firstname: "Max", lastname: "Mustermann" });
 });
 
 Deno.test("parseDisplayName - handles three part name", () => {
-    const result = parseDisplayName("Max Gustav Mustermann");
-    assertEquals(result, { firstname: "Max", lastname: "Gustav Mustermann" });
+    const result = parseDisplayName("Mustermann Max Gustav");
+    assertEquals(result, { firstname: "Max Gustav", lastname: "Mustermann" });
 });
 
 Deno.test("parseDisplayName - no space defaults to lastname", () => {
