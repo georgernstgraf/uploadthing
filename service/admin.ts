@@ -231,26 +231,57 @@ export async function getExamModeStatus(
     };
 }
 
+/**
+ * Beim Applikationsstart ist Exam Mode Off / Internet frei:
+ *
+ * - Ein beim vorherigen Prozesslauf hängengebliebener Exam-Zustand
+ *   (`running`/`paused`) wird auf `stopped` gesetzt, damit kein
+ *   Countdown über den Neustart weiterläuft.
+ * - Sofern `EXAMMODE_COMMAND` konfiguriert ist, wird die Firewall mit
+ *   dem `stop`-Kommando (Internet frei) geschaltet; ohne Env-Var wird
+ *   der Firewall-Aufruf übersprungen.
+ */
 export async function runExamModeOnStartup(
     runner: ExamModeRunner = defaultExamModeRunner,
 ): Promise<void> {
+    resetExamStateOnStartup();
+
     if (!Deno.env.get("EXAMMODE_COMMAND")) {
-        console.log("EXAMMODE_COMMAND not configured, skipping startup exam mode activation");
+        console.log("EXAMMODE_COMMAND not configured, skipping startup internet release");
         return;
     }
 
-    console.log("Activating exam mode on startup ...");
-    const result = await setInternetActive(false, runner);
+    console.log("Ensuring internet is free on startup (exam mode off) ...");
+    const result = await setInternetActive(true, runner);
 
     if (!result.ok) {
         const details = [result.stderr, result.stdout].filter(Boolean).join(" | ");
         console.error(
-            `exammode activation failed (exit ${result.code})${details ? `: ${details}` : ""}`,
+            `exammode startup release failed (exit ${result.code})${details ? `: ${details}` : ""}`,
         );
         Deno.exit(1);
     }
 
-    console.log("exammode activation successful (internet blocked)");
+    console.log("exammode startup reset successful (internet free)");
+}
+
+/**
+ * Setzt einen beim vorherigen Lauf hängengebliebenen Exam-Zustand
+ * (`running`/`paused`) konsistent auf `stopped`. Fehlende oder
+ * bereits beendete Zustände bleiben unverändert.
+ */
+function resetExamStateOnStartup(): void {
+    const state = repo.exam.get();
+    if (!state || (state.status !== "running" && state.status !== "paused")) {
+        return;
+    }
+
+    repo.exam.upsert({
+        ...state,
+        status: "stopped",
+        updated_at: new Date(),
+    });
+    console.log("Exam state reset to stopped on startup");
 }
 
 export function createDatabaseBackup(destinationPath: string): void {

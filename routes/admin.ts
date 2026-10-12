@@ -4,6 +4,7 @@ import { localDateString, localTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
 import config, { parsePermittedFileTypes } from "../lib/config.ts";
+import { requireAdmin } from "../middleware/admin.ts";
 import {
     AdminCleanupDatabaseSchema,
     AdminFileTypesSchema,
@@ -12,6 +13,10 @@ import {
 } from "../lib/schemas.ts";
 
 const adminRouter = new Hono<{ Variables: HonoContextVars }>();
+
+// Alle /admin-Routen sind admin-pflichtig; die Sperre läuft vor jedem Handler.
+adminRouter.use("*", requireAdmin);
+
 const start_ms_earlier = 3.6 * 1.5e6;
 const one_day_ms = 24 * 3.6e6;
 const time_cutoff_ms = config.TODAY_HOURS_CUTOFF * 3.6e6;
@@ -56,9 +61,6 @@ function renderApplicationPage(
 
 adminRouter.get("/students", async (c) => {
     const is_admin = c.get("is_admin");
-    if (!is_admin) {
-        return c.text("Forbidden", 403);
-    }
 
     const remote_user = c.get("remoteuser");
     if (!remote_user) {
@@ -145,11 +147,6 @@ adminRouter.get("/students", async (c) => {
 });
 
 adminRouter.get("/ip-detail", async (c) => {
-    const is_admin = c.get("is_admin");
-    if (!is_admin) {
-        return c.text("Forbidden", 403);
-    }
-
     const ip = c.req.query("ip");
     if (!ip) {
         return c.text("Missing ip parameter", 400);
@@ -194,20 +191,10 @@ adminRouter.get("/ip-detail", async (c) => {
 });
 
 adminRouter.get("/application", (c) => {
-    const is_admin = c.get("is_admin");
-    if (!is_admin) {
-        return c.text("Forbidden", 403);
-    }
-
     return renderApplicationPage(c);
 });
 
 adminRouter.post("/application", async (c) => {
-    const is_admin = c.get("is_admin");
-    if (!is_admin) {
-        return c.text("Forbidden", 403);
-    }
-
     const formData = await c.req.formData();
     const validation = AdminFileTypesSchema.safeParse(formData);
     if (!validation.success) {
@@ -231,11 +218,6 @@ adminRouter.post("/application", async (c) => {
 });
 
 adminRouter.post("/theme", async (c) => {
-    const is_admin = c.get("is_admin");
-    if (!is_admin) {
-        return c.text("Forbidden", 403);
-    }
-
     const formData = await c.req.formData();
     const validation = AdminThemeSchema.safeParse(formData);
     if (!validation.success) {
@@ -259,11 +241,6 @@ adminRouter.post("/theme", async (c) => {
 });
 
 adminRouter.get("/download-abgaben", (c) => {
-    const is_admin = c.get("is_admin");
-    if (!is_admin) {
-        return c.text("Forbidden", 403);
-    }
-
     const vacuumPath = `${config.ABGABEN_DIR}/vacuum.db`;
     
     try {
@@ -291,11 +268,6 @@ adminRouter.get("/download-abgaben", (c) => {
 });
 
 adminRouter.post("/wipe-abgaben", (c) => {
-    const is_admin = c.get("is_admin");
-    if (!is_admin) {
-        return c.text("Forbidden", 403);
-    }
-
     try {
         service.admin.wipeAbgabenDirectory(config.ABGABEN_DIR);
         return c.html(`<div class="alert alert-success fs-lg mt-2 mx-auto" style="max-width: 800px;">Abgaben-Verzeichnis erfolgreich geleert.</div>`);
@@ -306,11 +278,6 @@ adminRouter.post("/wipe-abgaben", (c) => {
 });
 
 adminRouter.post("/cleanup-database", async (c) => {
-    const is_admin = c.get("is_admin");
-    if (!is_admin) {
-        return c.text("Forbidden", 403);
-    }
-
     const formData = await c.req.formData();
     const validation = AdminCleanupDatabaseSchema.safeParse(formData);
     if (!validation.success) {

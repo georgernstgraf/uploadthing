@@ -1,4 +1,4 @@
-import { assertEquals, assertExists } from "@std/assert";
+import { assertEquals, assertExists, assert } from "@std/assert";
 import { createHash } from "node:crypto";
 import endpoints from "./endpoints.json" with { type: "json" };
 import config from "../lib/config.ts";
@@ -9,9 +9,11 @@ import * as registrationsRepo from "../repo/registrations.ts";
 import * as usersRepo from "../repo/users.ts";
 import {
     LOCAL_TEST_IP,
+    clearExamState,
     clearForensicsByIp,
     clearForensicsByUserEmail,
     seedNoAnomaliesScenario,
+    upsertFixtureUser,
 } from "./helpers/forensics_fixture.ts";
 
 const BASE_URL = Deno.env.get("TEST_BASE_URL") || endpoints.baseUrl;
@@ -59,8 +61,9 @@ Deno.test("GET / - Home page", async () => {
 
 Deno.test("GET /admin/logs - Admin logs", async () => {
     const res = await fetch(`${BASE_URL}/admin/logs`);
-    // May return 200 or 404 depending on logs directory existence
-    assertEquals([200, 404].includes(res.status), true);
+    // Route wurde entfernt: für Anonyme liefert die requireAdmin-Middleware
+    // 403, für Admins bleibt ein unregistrierter Pfad 404.
+    assertEquals([200, 403, 404].includes(res.status), true);
     const text = await res.text();
     assertExists(text);
 });
@@ -641,5 +644,306 @@ Deno.test("GET /admin/students shows user anomalies without shared-IP anomalies"
         db.exec(`DELETE FROM registrations WHERE ip IN ('${firstIp}', '${secondIp}')`);
         db.exec(`DELETE FROM ipfact WHERE ip IN ('${firstIp}', '${secondIp}')`);
         usersRepo.deleteByEmail(userEmail);
+    }
+});
+
+async function registerAndGetCookie(email: string): Promise<string> {
+    const registerRes = await fetch(`${BASE_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `email=${encodeURIComponent(email)}`,
+    });
+    await registerRes.text(); // consume body to avoid resource leak
+    const cookie = registerRes.headers.get("set-cookie");
+    assertExists(cookie);
+    return cookie;
+}
+
+async function postExamForm(
+    cookie: string,
+    path: string,
+    body: string,
+): Promise<Response> {
+    return await fetch(`${BASE_URL}${path}`, {
+        method: "POST",
+        headers: {
+            "Cookie": cookie,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body,
+    });
+}
+
+type ExamStateResponse = {
+    status: string;
+    remaining_seconds: number;
+};
+
+async function getExamState(cookie: string): Promise<ExamStateResponse> {
+    const res = await fetch(`${BASE_URL}/api/exam/state`, {
+        headers: { "Cookie": cookie },
+    });
+    assertEquals(res.status, 200);
+    return await res.json();
+}
+
+Deno.test("Router-Split: /api/activeips ist nach dem Split 404", async () => {
+    const res = await fetch(`${BASE_URL}/api/activeips`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ips: ["10.10.10.10"] }),
+    });
+    await res.text(); // consume body to avoid resource leak
+    assertEquals(res.status, 404);
+});
+
+Deno.test("Router-Split: /exammode am Root ist nach dem Split 404", async () => {
+    const res = await fetch(`${BASE_URL}/exammode`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "internet_active=on",
+    });
+    await res.text(); // consume body to avoid resource leak
+    assertEquals(res.status, 404);
+});
+
+Deno.test("Router-Split: /activeips bleibt am Root mit IP-Whitelist gemountet", async () => {
+    // Whitelist-Verhalten unverändert: Anfragen von nicht erlaubten
+    // IPs werden weiterhin mit 403 abgewiesen (der Testlauf kommt von
+    // 127.0.0.1, das in der Whitelist steht — deshalb prüfen wir hier
+    // den Happy Path als Kanoniker gegen das Root-Mount).
+    const res = await fetch(`${BASE_URL}/activeips`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ips: ["10.10.10.10"] }),
+    });
+    assertEquals(res.status, 200);
+    const json = await res.json();
+    assertEquals(json.ok, "true");
+});
+
+Deno.test("requireAdmin: alle /admin-Routen liefern ohne Admin 403", async () => {
+    const adminPaths: Array<[string, "GET" | "POST"]> = [
+        ["/admin/students", "GET"],
+        ["/admin/application", "GET"],
+        ["/admin/application", "POST"],
+        ["/admin/ip-detail?ip=127.0.0.1", "GET"],
+        ["/admin/theme", "POST"],
+        ["/admin/download-abgaben", "GET"],
+        ["/admin/wipe-abgaben", "POST"],
+        ["/admin/cleanup-database", "POST"],
+    ];
+
+    // Anonym
+    for (const [path, method] of adminPaths) {
+        const res = await fetch(`${BASE_URL}${path}`, { method });
+        assertEquals(res.status, 403, `${method} ${path} sollte anonym 403 liefern`);
+        await res.text(); // consume body to avoid resource leak
+    }
+
+    // Als Schüler
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `admin-guard-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Admin Guard Student",
+        klasse: "5AHITM",
+    });
+
+    try {
+        const cookie = await registerAndGetCookie(studentEmail);
+
+        for (const [path, method] of adminPaths) {
+            const res = await fetch(`${BASE_URL}${path}`, {
+                method,
+                headers: { "Cookie": cookie },
+            });
+            assertEquals(res.status, 403, `${method} ${path} sollte als Schüler 403 liefern`);
+            await res.text(); // consume body to avoid resource leak
+        }
+    } finally {
+        await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
+Deno.test("Exam-API: Admin-Endpunkte sind für Schüler gesperrt", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `exam-guard-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Exam Guard Student",
+        klasse: "5AHITM",
+    });
+
+    try {
+        const cookie = await registerAndGetCookie(studentEmail);
+
+        for (const path of [
+            "/api/exam/start",
+            "/api/exam/pause",
+            "/api/exam/resume",
+            "/api/exam/stop",
+            "/api/exam/extra",
+        ]) {
+            const res = await postExamForm(cookie, path, "minutes=30");
+            assertEquals(res.status, 403, `POST ${path} sollte als Schüler 403 liefern`);
+            await res.text(); // consume body to avoid resource leak
+        }
+    } finally {
+        await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
+Deno.test("Exam-API: anonyme Anfragen erhalten 401 bzw. 403", async () => {
+    // Anonyme Admin-Aktionen
+    for (const path of [
+        "/api/exam/start",
+        "/api/exam/pause",
+        "/api/exam/resume",
+        "/api/exam/stop",
+        "/api/exam/extra",
+    ]) {
+        const res = await postExamForm("", path, "minutes=30");
+        assertEquals(res.status, 403, `POST ${path} sollte anonym 403 liefern`);
+        await res.text(); // consume body to avoid resource leak
+    }
+
+    // Anonymer Countdown-Zugriff
+    const stateRes = await fetch(`${BASE_URL}/api/exam/state`);
+    assertEquals(stateRes.status, 401);
+    await stateRes.text(); // consume body to avoid resource leak
+});
+
+Deno.test("Exam-API: ungültige Dauer wird mit 400 und deutscher Meldung abgelehnt", async () => {
+    clearExamState();
+    try {
+        const cookie = await registerAndGetCookie("grafg@spengergasse.at");
+
+        for (const body of [
+            "minutes=0",
+            "minutes=-3",
+            "minutes=abc",
+            "minutes=1.5",
+            "minutes=",
+            "minutes=601",
+            "",
+        ]) {
+            const res = await postExamForm(cookie, "/api/exam/start", body);
+            assertEquals(res.status, 400, `Body '${body}' sollte 400 liefern`);
+            const text = await res.text();
+            assert(text.length > 0, "Fehlermeldung sollte nicht leer sein");
+        }
+
+        for (const body of ["minutes=0", "minutes=-3", "minutes=abc", ""]) {
+            const res = await postExamForm(cookie, "/api/exam/extra", body);
+            assertEquals(res.status, 400, `Zusatzzeit '${body}' sollte 400 liefern`);
+            await res.text(); // consume body to avoid resource leak
+        }
+
+        // Keine der abgelehnten Anfragen darf einen Exam-Zustand erzeugt haben.
+        const state = await getExamState(cookie);
+        assertEquals(state.status, "idle");
+        assertEquals(state.remaining_seconds, 0);
+
+        // Ungültige State-Machine-Übergänge ohne Examen: 409 mit deutscher Meldung.
+        const pauseRes = await postExamForm(cookie, "/api/exam/pause", "");
+        assertEquals(pauseRes.status, 409);
+        assertEquals((await pauseRes.text()).includes("Es läuft kein Examen"), true);
+
+        const stopRes = await postExamForm(cookie, "/api/exam/stop", "");
+        assertEquals(stopRes.status, 409);
+        assertEquals((await stopRes.text()).includes("Es läuft kein Examen"), true);
+    } finally {
+        clearExamState();
+    }
+});
+
+Deno.test("Exam-API: Happy-Path als Admin über start/pause/resume/extra/stop", async () => {
+    clearExamState();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `exam-state-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Exam State Student",
+        klasse: "5AHITM",
+    });
+
+    try {
+        const adminCookie = await registerAndGetCookie("grafg@spengergasse.at");
+        const studentCookie = await registerAndGetCookie(studentEmail);
+
+        // Start: 60 Minuten
+        const startRes = await postExamForm(adminCookie, "/api/exam/start", "minutes=60");
+        assertEquals(startRes.status, 200);
+        assertEquals((await startRes.text()).includes("60 Minuten"), true);
+
+        // Countdown als Schüler: Login genügt
+        const runningState = await getExamState(studentCookie);
+        assertEquals(runningState.status, "running");
+        assert(
+            runningState.remaining_seconds > 0 &&
+                runningState.remaining_seconds <= 60 * 60,
+            `remaining_seconds sollte im 60-Minuten-Fenster liegen: ${runningState.remaining_seconds}`,
+        );
+
+        // Doppelstart: 409
+        const secondStartRes = await postExamForm(adminCookie, "/api/exam/start", "minutes=30");
+        assertEquals(secondStartRes.status, 409);
+        await secondStartRes.text(); // consume body to avoid resource leak
+
+        // Pause: Countdown friert ein
+        const pauseRes = await postExamForm(adminCookie, "/api/exam/pause", "");
+        assertEquals(pauseRes.status, 200);
+        await pauseRes.text();
+
+        const pausedState = await getExamState(studentCookie);
+        assertEquals(pausedState.status, "paused");
+        assert(pausedState.remaining_seconds > 0, "pausiertes Examen sollte Restzeit behalten");
+
+        // Resume
+        const resumeRes = await postExamForm(adminCookie, "/api/exam/resume", "");
+        assertEquals(resumeRes.status, 200);
+        await resumeRes.text();
+
+        const resumedState = await getExamState(studentCookie);
+        assertEquals(resumedState.status, "running");
+
+        // Zusatzzeit: Restzeit steigt deutlich
+        const beforeExtra = await getExamState(studentCookie);
+        const extraRes = await postExamForm(adminCookie, "/api/exam/extra", "minutes=5");
+        assertEquals(extraRes.status, 200);
+        await extraRes.text();
+
+        const afterExtra = await getExamState(studentCookie);
+        assertEquals(afterExtra.status, "running");
+        assert(
+            afterExtra.remaining_seconds > beforeExtra.remaining_seconds + 200,
+            `Zusatzzeit sollte die Restzeit erhöhen: ${beforeExtra.remaining_seconds} -> ${afterExtra.remaining_seconds}`,
+        );
+
+        // Stopp: Exam Mode Off, Restzeit 0
+        const stopRes = await postExamForm(adminCookie, "/api/exam/stop", "");
+        assertEquals(stopRes.status, 200);
+        await stopRes.text();
+
+        const stoppedState = await getExamState(studentCookie);
+        assertEquals(stoppedState.status, "stopped");
+        assertEquals(stoppedState.remaining_seconds, 0);
+
+        // Neustart nach Stopp ist möglich
+        const restartRes = await postExamForm(adminCookie, "/api/exam/start", "minutes=10");
+        assertEquals(restartRes.status, 200);
+        await restartRes.text();
+
+        const restartedState = await getExamState(studentCookie);
+        assertEquals(restartedState.status, "running");
+
+        // Sauberer Endzustand: Examen stoppen
+        const cleanupStopRes = await postExamForm(adminCookie, "/api/exam/stop", "");
+        assertEquals(cleanupStopRes.status, 200);
+        await cleanupStopRes.text();
+    } finally {
+        clearExamState();
+        await clearForensicsByUserEmail(studentEmail);
     }
 });

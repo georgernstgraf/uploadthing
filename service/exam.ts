@@ -1,7 +1,7 @@
 import * as repo from "../repo/repo.ts";
 import type { RepoExamStateRecord } from "../repo/exam.ts";
 import { setInternetActive } from "./admin.ts";
-import type { ExamModeRunner } from "./admin.ts";
+import type { ExamModeResult, ExamModeRunner } from "./admin.ts";
 
 /**
  * Zeitarithmetik (einfachste konsistente Variante mit den vorhandenen
@@ -82,15 +82,20 @@ export function resume(now: () => Date = () => new Date()): void {
 /**
  * Stoppt das Examen vorzeitig und schaltet das Internet wieder frei
  * (Exam Mode Off).
+ *
+ * Liefert das Firewall-Ergebnis zurück, damit die Route einen
+ * fehlgeschlagenen `exammode`-Aufruf (`ok: false`) an der Admin-UI
+ * melden kann, ohne den bereits vollzogenen Zustandswechsel
+ * rückgängig zu machen.
  */
-export async function stop(runner?: ExamModeRunner): Promise<void> {
+export async function stop(runner?: ExamModeRunner): Promise<ExamModeResult> {
     const state = requireState(
         "Es läuft kein Examen, das gestoppt werden kann.",
         "running",
         "paused",
     );
 
-    await finishExam(state, runner);
+    return await finishExam(state, runner);
 }
 
 /**
@@ -173,15 +178,25 @@ export async function getRemainingSeconds(
 async function finishExam(
     state: RepoExamStateRecord,
     runner?: ExamModeRunner,
-): Promise<void> {
+): Promise<ExamModeResult> {
     repo.exam.upsert({
         ...state,
         status: "stopped",
         updated_at: new Date(),
     });
 
-    // Exam Mode Off: Internet wird wieder freigeschaltet.
-    await setInternetActive(true, runner);
+    // Exam Mode Off: Internet wird wieder freigeschaltet. Der
+    // Zustandswechsel bleibt unabhängig vom Firewall-Ergebnis
+    // bestehen; ein Fehler wird geloggt und dem Aufrufer gemeldet.
+    const result = await setInternetActive(true, runner);
+    if (!result.ok) {
+        const details = [result.stderr, result.stdout].filter(Boolean).join(" | ");
+        console.error(
+            `exammode fehlgeschlagen (Exit ${result.code})${details ? `: ${details}` : ""}`,
+        );
+    }
+
+    return result;
 }
 
 function requireState(

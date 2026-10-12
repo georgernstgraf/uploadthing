@@ -10,6 +10,7 @@ import homeRouter from "./routes/home.ts";
 import uploadRouter from "./routes/upload.ts";
 import authRouter from "./routes/auth.ts";
 import apiRouter from "./routes/api.ts";
+import machineRouter from "./routes/machine.ts";
 import filesRouter from "./routes/files.ts";
 
 import { errorHandler } from "./middleware/error.ts";
@@ -27,7 +28,7 @@ app.route("/admin", adminRouter);
 app.route("/upload", uploadRouter);
 app.route("/", homeRouter);
 app.route("/", authRouter);
-app.route("/", apiRouter);
+app.route("/", machineRouter);
 app.route("/api", apiRouter);
 app.route("/", filesRouter);
 

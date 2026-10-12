@@ -7,6 +7,7 @@ import {
     getExamModeCommandArg,
     getExamModeStatus,
     listAvailableThemes,
+    runExamModeOnStartup,
     setInternetActive,
 } from "./admin.ts";
 import { db } from "../repo/db.ts";
@@ -15,6 +16,8 @@ import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as abgabenRepo from "../repo/abgaben.ts";
+import * as examRepo from "../repo/exam.ts";
+import { clearExamState } from "../test/helpers/forensics_fixture.ts";
 
 Deno.test("getExamModeCommandArg maps internet state to script arg", () => {
     assertEquals(getExamModeCommandArg(true), "stop");
@@ -103,6 +106,133 @@ Deno.test("getExamModeStatus returns internet_active from stdout", async () => {
     } finally {
         config.EXAMMODE_COMMAND = originalCommand;
         config.INTERNET_ACTIVE = originalInternetState;
+    }
+});
+
+Deno.test("runExamModeOnStartup schaltet beim Start das Internet frei", async () => {
+    const originalCommand = Deno.env.get("EXAMMODE_COMMAND");
+    const originalInternetState = config.INTERNET_ACTIVE;
+    clearExamState();
+
+    try {
+        Deno.env.set("EXAMMODE_COMMAND", "exammode");
+        config.INTERNET_ACTIVE = false;
+
+        const capturedArgs: string[] = [];
+        await runExamModeOnStartup((_command, args) => {
+            capturedArgs.push(...args);
+            return Promise.resolve({
+                code: 0,
+                stdout: "internet enabled",
+                stderr: "",
+            });
+        });
+
+        assertEquals(capturedArgs, ["stop"]);
+        assertEquals(config.INTERNET_ACTIVE, true);
+    } finally {
+        if (originalCommand !== undefined) {
+            Deno.env.set("EXAMMODE_COMMAND", originalCommand);
+        } else {
+            Deno.env.delete("EXAMMODE_COMMAND");
+        }
+        config.INTERNET_ACTIVE = originalInternetState;
+        clearExamState();
+    }
+});
+
+Deno.test("runExamModeOnStartup ohne EXAMMODE_COMMAND überspringt den Runner", async () => {
+    const originalCommand = Deno.env.get("EXAMMODE_COMMAND");
+    const originalInternetState = config.INTERNET_ACTIVE;
+    clearExamState();
+
+    try {
+        Deno.env.delete("EXAMMODE_COMMAND");
+        config.INTERNET_ACTIVE = false;
+
+        let runnerCalled = false;
+        await runExamModeOnStartup(() => {
+            runnerCalled = true;
+            return Promise.resolve({ code: 0, stdout: "", stderr: "" });
+        });
+
+        assertEquals(runnerCalled, false);
+        assertEquals(config.INTERNET_ACTIVE, false);
+    } finally {
+        if (originalCommand !== undefined) {
+            Deno.env.set("EXAMMODE_COMMAND", originalCommand);
+        }
+        config.INTERNET_ACTIVE = originalInternetState;
+        clearExamState();
+    }
+});
+
+Deno.test("runExamModeOnStartup setzt einen hängengebliebenen Exam-Zustand auf stopped", async () => {
+    const originalCommand = Deno.env.get("EXAMMODE_COMMAND");
+    clearExamState();
+
+    try {
+        Deno.env.delete("EXAMMODE_COMMAND");
+
+        for (const status of ["running", "paused"] as const) {
+            examRepo.upsert({
+                status,
+                duration_seconds: 600,
+                started_at: new Date("2026-10-12T08:00:00.000Z"),
+                paused_seconds: 30,
+                extra_seconds: 60,
+                updated_at: new Date("2026-10-12T08:05:00.000Z"),
+            });
+
+            await runExamModeOnStartup(() => {
+                throw new Error("Runner darf ohne EXAMMODE_COMMAND nicht laufen.");
+            });
+
+            const state = examRepo.get();
+            assertEquals(state?.status, "stopped");
+            assertEquals(state?.duration_seconds, 600);
+            assertEquals(state?.extra_seconds, 60);
+            clearExamState();
+        }
+    } finally {
+        if (originalCommand !== undefined) {
+            Deno.env.set("EXAMMODE_COMMAND", originalCommand);
+        }
+        clearExamState();
+    }
+});
+
+Deno.test("runExamModeOnStartup lässt fehlende oder beendete Exam-Zustände unverändert", async () => {
+    const originalCommand = Deno.env.get("EXAMMODE_COMMAND");
+    clearExamState();
+
+    try {
+        Deno.env.delete("EXAMMODE_COMMAND");
+
+        const noopRunner = () => {
+            throw new Error("Runner darf ohne EXAMMODE_COMMAND nicht laufen.");
+        };
+
+        // Ohne Zeile: bleibt ohne Zeile (idle).
+        await runExamModeOnStartup(noopRunner);
+        assertEquals(examRepo.get(), null);
+
+        // Gestoppter Zustand bleibt gestoppt.
+        examRepo.upsert({
+            status: "stopped",
+            duration_seconds: 600,
+            started_at: new Date("2026-10-12T08:00:00.000Z"),
+            paused_seconds: 0,
+            extra_seconds: 0,
+            updated_at: new Date("2026-10-12T09:00:00.000Z"),
+        });
+        await runExamModeOnStartup(noopRunner);
+        assertEquals(examRepo.get()?.status, "stopped");
+    } finally {
+        if (originalCommand !== undefined) {
+            Deno.env.set("EXAMMODE_COMMAND", originalCommand);
+        }
+        clearExamState();
     }
 });
 
