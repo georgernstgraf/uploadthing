@@ -1,6 +1,7 @@
-import { Hono } from "hono";
+import { Context, Hono } from "hono";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
+import config from "../lib/config.ts";
 import { HonoContextVars } from "../lib/types.ts";
 import { getSession } from "../middleware/session.ts";
 import { requireAdmin } from "../middleware/admin.ts";
@@ -17,6 +18,32 @@ import {
  */
 const apiRouter = new Hono<{ Variables: HonoContextVars }>();
 
+/**
+ * Rendert das Admin-Exam-Panel (Examen-Steuerung + Firewall-Regel)
+ * als HTMX-Antwort: Bei erfolgreichen Aktionen wird der Ziel-Container
+ * mit dem aktuellen Panel ersetzt; Fehler der Panel-Aktionen bleiben
+ * plain-text mit non-2xx und landen im globalen Toast-Handler.
+ *
+ * Der Internetstatus wird vom Aufrufer übergeben — kein zusätzlicher
+ * `exammode status`-Lauf, der `config.INTERNET_ACTIVE` überschreiben
+ * würde. Die Exam-Aktionen nutzen den aktuellen Konfigurationsstand,
+ * die exammode-Endpunkte das Ergebnis ihres Firewall-Aufrufs.
+ */
+async function renderExamPanel(
+    c: Context<{ Variables: HonoContextVars }>,
+    internet_active: boolean,
+    success_message?: string,
+) {
+    const exam = await service.exam.getStatusView();
+    return c.html(hbs.adminExamModeTemplate({
+        internet_active,
+        exam_status: exam.status,
+        exam_remaining_label: exam.remaining_label,
+        exam_open: exam.open,
+        success_message,
+    }));
+}
+
 apiRouter.get("/exammode", requireAdmin, async (c) => {
     try {
         const result = await service.admin.getExamModeStatus();
@@ -29,9 +56,7 @@ apiRouter.get("/exammode", requireAdmin, async (c) => {
             );
         }
 
-        return c.html(hbs.adminExamModeTemplate({
-            internet_active: result.internet_active,
-        }));
+        return await renderExamPanel(c, result.internet_active);
     } catch (error) {
         console.error("exammode status could not be executed:", error);
         return c.text(`exammode status konnte nicht ausgeführt werden: ${(error as Error).message}`, 500);
@@ -61,9 +86,7 @@ apiRouter.post("/exammode", requireAdmin, async (c) => {
             );
         }
 
-        return c.html(hbs.adminExamModeTemplate({
-            internet_active: result.internet_active,
-        }));
+        return await renderExamPanel(c, result.internet_active);
     } catch (error) {
         console.error("exammode could not be executed:", error);
         return c.text(`exammode konnte nicht ausgeführt werden: ${(error as Error).message}`, 500);
@@ -74,7 +97,8 @@ apiRouter.post("/exammode", requireAdmin, async (c) => {
  * Startet ein Examen mit vorgegebener Dauer (Formularfeld `minutes`,
  * Ganzzahl in Minuten, 1–600). Ungültige Übergänge der State-Machine
  * (z. B. Start während eines laufenden Examens) werden mit 409
- * und deutscher Fehlermeldung gemeldet.
+ * und deutscher Fehlermeldung gemeldet. Bei Erfolg wird das
+ * aktualisierte Admin-Exam-Panel als HTMX-Antwort zurückgegeben.
  */
 apiRouter.post("/exam/start", requireAdmin, async (c) => {
     const formData = await c.req.formData();
@@ -88,25 +112,29 @@ apiRouter.post("/exam/start", requireAdmin, async (c) => {
 
     try {
         service.exam.start(validation.data.minutes * 60);
-        return c.text(`Examen gestartet. Dauer: ${validation.data.minutes} Minuten.`);
+        return await renderExamPanel(
+            c,
+            config.INTERNET_ACTIVE,
+            `Examen gestartet. Dauer: ${validation.data.minutes} Minuten.`,
+        );
     } catch (error) {
         return c.text((error as Error).message, 409);
     }
 });
 
-apiRouter.post("/exam/pause", requireAdmin, (c) => {
+apiRouter.post("/exam/pause", requireAdmin, async (c) => {
     try {
         service.exam.pause();
-        return c.text("Examen pausiert.");
+        return await renderExamPanel(c, config.INTERNET_ACTIVE, "Examen pausiert.");
     } catch (error) {
         return c.text((error as Error).message, 409);
     }
 });
 
-apiRouter.post("/exam/resume", requireAdmin, (c) => {
+apiRouter.post("/exam/resume", requireAdmin, async (c) => {
     try {
         service.exam.resume();
-        return c.text("Examen fortgesetzt.");
+        return await renderExamPanel(c, config.INTERNET_ACTIVE, "Examen fortgesetzt.");
     } catch (error) {
         return c.text((error as Error).message, 409);
     }
@@ -130,7 +158,11 @@ apiRouter.post("/exam/stop", requireAdmin, async (c) => {
             );
         }
 
-        return c.text("Examen beendet. Internet ist wieder freigeschaltet.");
+        return await renderExamPanel(
+            c,
+            config.INTERNET_ACTIVE,
+            "Examen beendet. Internet ist wieder freigeschaltet.",
+        );
     } catch (error) {
         return c.text((error as Error).message, 409);
     }
@@ -152,7 +184,11 @@ apiRouter.post("/exam/extra", requireAdmin, async (c) => {
 
     try {
         service.exam.addExtra(validation.data.minutes * 60);
-        return c.text(`Zusatzzeit von ${validation.data.minutes} Minuten hinzugefügt.`);
+        return await renderExamPanel(
+            c,
+            config.INTERNET_ACTIVE,
+            `Zusatzzeit von ${validation.data.minutes} Minuten hinzugefügt.`,
+        );
     } catch (error) {
         return c.text((error as Error).message, 409);
     }

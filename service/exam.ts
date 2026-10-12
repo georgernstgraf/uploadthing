@@ -1,5 +1,6 @@
 import * as repo from "../repo/repo.ts";
-import type { RepoExamStateRecord } from "../repo/exam.ts";
+import type { ExamStatus, RepoExamStateRecord } from "../repo/exam.ts";
+import { durationString } from "../lib/timefunc.ts";
 import { setInternetActive } from "./admin.ts";
 import type { ExamModeResult, ExamModeRunner } from "./admin.ts";
 
@@ -19,7 +20,21 @@ import type { ExamModeResult, ExamModeRunner } from "./admin.ts";
  *   statt `now` der eingefrorene Pausenbeginn (`updated_at`) verwendet.
  */
 
-export type { RepoExamStateRecord } from "../repo/exam.ts";
+export type { RepoExamStateRecord, ExamStatus } from "../repo/exam.ts";
+
+/**
+ * Zusammenfassung des Exam-Zustands für UI-Routen (Admin-Panel und
+ * Schüler-Upload-Seite).
+ */
+export type ExamStatusView = {
+    status: ExamStatus;
+    remaining_seconds: number;
+    remaining_label: string;
+    /** Serverseitiger Endzeitpunkt als Epoch-Millisekunden (nur bei offener Examenzeit). */
+    ends_at_ms: number | null;
+    /** true, solange Uploads/Unterlagen erlaubt sind (running oder paused mit Restzeit). */
+    open: boolean;
+};
 
 /**
  * Liest den aktuellen Exam-Zustand ohne Seiteneffekte
@@ -173,6 +188,52 @@ export async function getRemainingSeconds(
     }
 
     return Math.ceil(remaining);
+}
+
+/**
+ * UI-Sicht auf den Exam-Zustand für Admin-Panel und Schüler-Seite.
+ *
+ * Baut auf der autoritativen Restzeit-Berechnung auf: Ein natürlich
+ * abgelaufenes Examen wird dabei wie in `getRemainingSeconds()` auf
+ * `stopped` gesetzt und das Internet freigeschaltet. `ends_at_ms` ist
+ * nur gesetzt, solange Examenzeit offen ist (running/paused mit
+ * positiver Restzeit) — während einer Pause ist es der hypothetische
+ * Endzeitpunkt ab Renderzeit, der Client zeigt in der Pause statisch
+ * „pausiert" an.
+ */
+export async function getStatusView(
+    now: () => Date = () => new Date(),
+    runner?: ExamModeRunner,
+): Promise<ExamStatusView> {
+    const remaining = await getRemainingSeconds(now, runner);
+    const state = repo.exam.get();
+    const remainingSeconds = remaining === null ? 0 : Math.max(0, remaining);
+
+    return {
+        status: state?.status ?? "idle",
+        remaining_seconds: remainingSeconds,
+        remaining_label: durationString(remainingSeconds),
+        ends_at_ms: remainingSeconds > 0 ? now().getTime() + remainingSeconds * 1000 : null,
+        open: remainingSeconds > 0,
+    };
+}
+
+/**
+ * Examenzeit-Fenster für Gating-Entscheidungen (Uploads, Unterlagen):
+ * offen solange der Exam-State `running` oder `paused` ist und
+ * positive Restzeit übrig ist. Eine Pause hält nur den Countdown an —
+ * Uploads und Downloads bleiben erlaubt.
+ *
+ * Nutzt die autoritative Restzeit-Berechnung, dadurch schließt sich
+ * das Fenster auch, wenn ein laufendes Examen abgelaufen ist, aber
+ * noch niemand den Zustand abgerufen hat.
+ */
+export async function isExamWindowOpen(
+    now: () => Date = () => new Date(),
+    runner?: ExamModeRunner,
+): Promise<boolean> {
+    const remaining = await getRemainingSeconds(now, runner);
+    return remaining !== null && remaining > 0;
 }
 
 async function finishExam(

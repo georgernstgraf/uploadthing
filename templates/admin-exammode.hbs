@@ -1,30 +1,154 @@
-<form hx-post="/api/exammode"
-      hx-trigger="change"
-      hx-target="this"
-      hx-swap="outerHTML"
-      class="mx-auto w-100 col-xl-8">
-    <div class="card shadow-sm {{#if internet_active}}border-success-subtle bg-success-subtle{{else}}border-danger-subtle bg-danger-subtle{{/if}}">
-        <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
-            <h3 class="card-title fw-bold fs-5 mb-1">Dokumentationsserver-Firewall-Regel</h3>
-            <p class="card-text small mb-0">Schaltet den Internetzugang für die Prüfungsumgebung während des Betriebs um.</p>
+{{#*inline "exam-extra-form"}}
+<form id="exam-extra-form"
+      class="w-100"
+      hx-post="/api/exam/extra"
+      hx-target="#exam-admin-panel"
+      hx-swap="outerHTML">
+    <label class="form-label fw-bold" for="exam-extra-minutes">Zusatzzeit (Minuten)</label>
+    <div class="row g-2 justify-content-center align-items-end">
+        <div class="col-md-6">
+            <input id="exam-extra-minutes"
+                   name="minutes"
+                   type="number"
+                   class="form-control text-center"
+                   min="1"
+                   max="600"
+                   step="1"
+                   value="5"
+                   required>
         </div>
-        <div class="card-body d-flex flex-column align-items-center text-center gap-3 pt-3">
-            <div class="form-check form-switch m-0 d-flex justify-content-center">
-                <input id="internet_active"
-                       name="internet_active"
-                       type="checkbox"
-                       role="switch"
-                       class="form-check-input mt-0 {{#if internet_active}}bg-success border-success{{else}}bg-danger border-danger{{/if}}"
-                       style="width: 3.5rem; height: 1.75rem;"
-                       {{#if internet_active}}checked{{/if}}>
-            </div>
-            <div class="badge rounded-pill px-3 py-2 fs-6 {{#if internet_active}}text-bg-success{{else}}text-bg-danger{{/if}}">
-                {{#if internet_active}}Internet aktiv{{else}}Internet blockiert{{/if}}
-            </div>
-            <p class="small mb-0">
-                {{#if internet_active}}Die Firewall-Regel ist deaktiviert. Voller Internetzugang ist freigegeben.{{else}}Die Firewall-Regel ist aktiviert. Internetzugang ist gesperrt.{{/if}}
-            </p>
-            <div class="htmx-indicator small">Firewall-Regel wird aktualisiert ...</div>
+        <div class="col-md-4 d-grid">
+            <button type="submit"
+                    class="btn btn-secondary"
+                    hx-disabled-elt="this">Zusatzzeit hinzufügen</button>
         </div>
     </div>
+    <div class="form-text text-center mt-2">Ganzzahl zwischen 1 und 600 Minuten.</div>
 </form>
+{{/inline}}
+<div id="exam-admin-panel" class="mx-auto w-100 col-xl-8 vstack gap-3">
+    <div class="card shadow-sm">
+        <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
+            <h3 class="card-title fw-bold fs-5 mb-1">Examen-Steuerung</h3>
+            <p class="card-text small mb-0">Prüfungsdauer, Zusatzzeit und Pausensteuerung für den laufenden Durchgang.</p>
+        </div>
+        <div class="card-body d-flex flex-column align-items-center text-center gap-3 pt-3">
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <span id="exam-status-badge"
+                      class="badge rounded-pill px-3 py-2 fs-6 {{#if (eq exam_status "running")}}text-bg-success{{else if (eq exam_status "paused")}}text-bg-warning{{else}}text-bg-secondary{{/if}}">
+                    {{#if (eq exam_status "running")}}Examen läuft{{else if (eq exam_status "paused")}}Examen pausiert{{else if (eq exam_status "stopped")}}Examen beendet{{else}}Kein Examen{{/if}}
+                </span>
+                {{#if exam_open}}
+                    <span id="exam-remaining-badge"
+                          class="badge rounded-pill px-3 py-2 fs-6 text-bg-dark">Restzeit: {{exam_remaining_label}}</span>
+                {{/if}}
+            </div>
+            {{#if (eq exam_status "stopped")}}
+                <p class="small mb-0">Das Examen wurde beendet, das Internet ist wieder freigeschaltet. Ein neuer Start ist jederzeit möglich.</p>
+            {{/if}}
+            {{#if success_message}}
+                <div class="alert alert-success mb-0 w-100" role="alert">{{success_message}}</div>
+            {{/if}}
+
+            {{#if (eq exam_status "running")}}
+                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                    <button id="exam-pause-button"
+                            type="button"
+                            class="btn btn-warning btn-lg"
+                            hx-post="/api/exam/pause"
+                            hx-target="#exam-admin-panel"
+                            hx-swap="outerHTML"
+                            hx-disabled-elt="this">Pause</button>
+                    <button id="exam-stop-button"
+                            type="button"
+                            class="btn btn-danger btn-lg"
+                            hx-post="/api/exam/stop"
+                            hx-target="#exam-admin-panel"
+                            hx-swap="outerHTML"
+                            hx-disabled-elt="this"
+                            hx-confirm="Möchten Sie das Examen wirklich vorzeitig beenden?">Stopp</button>
+                </div>
+                {{> exam-extra-form }}
+            {{else if (eq exam_status "paused")}}
+                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                    <button id="exam-resume-button"
+                            type="button"
+                            class="btn btn-success btn-lg"
+                            hx-post="/api/exam/resume"
+                            hx-target="#exam-admin-panel"
+                            hx-swap="outerHTML"
+                            hx-disabled-elt="this">Fortsetzen</button>
+                    <button id="exam-stop-button"
+                            type="button"
+                            class="btn btn-danger btn-lg"
+                            hx-post="/api/exam/stop"
+                            hx-target="#exam-admin-panel"
+                            hx-swap="outerHTML"
+                            hx-disabled-elt="this"
+                            hx-confirm="Möchten Sie das Examen wirklich vorzeitig beenden?">Stopp</button>
+                </div>
+                {{> exam-extra-form }}
+            {{else}}
+                <form id="exam-start-form"
+                      class="w-100"
+                      hx-post="/api/exam/start"
+                      hx-target="#exam-admin-panel"
+                      hx-swap="outerHTML">
+                    <label class="form-label fw-bold" for="exam-duration-minutes">Prüfungsdauer (Minuten)</label>
+                    <div class="row g-2 justify-content-center align-items-end">
+                        <div class="col-md-6">
+                            <input id="exam-duration-minutes"
+                                   name="minutes"
+                                   type="number"
+                                   class="form-control form-control-lg text-center"
+                                   min="1"
+                                   max="600"
+                                   step="1"
+                                   value="90"
+                                   required>
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <button type="submit"
+                                    class="btn btn-primary btn-lg"
+                                    hx-disabled-elt="this">Examen starten</button>
+                        </div>
+                    </div>
+                    <div class="form-text text-center mt-2">Ganzzahl zwischen 1 und 600 Minuten. Nach dem Start sind Uploads und Unterlagen freigegeben.</div>
+                </form>
+            {{/if}}
+            <div class="htmx-indicator small">Examen wird aktualisiert ...</div>
+        </div>
+    </div>
+
+    <form id="exam-firewall-form"
+          hx-post="/api/exammode"
+          hx-trigger="change"
+          hx-target="#exam-admin-panel"
+          hx-swap="outerHTML"
+          class="w-100">
+        <div class="card shadow-sm {{#if internet_active}}border-success-subtle bg-success-subtle{{else}}border-danger-subtle bg-danger-subtle{{/if}}">
+            <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
+                <h3 class="card-title fw-bold fs-5 mb-1">Dokumentationsserver-Firewall-Regel</h3>
+                <p class="card-text small mb-0">Schaltet den Internetzugang für die Prüfungsumgebung während des Betriebs um.</p>
+            </div>
+            <div class="card-body d-flex flex-column align-items-center text-center gap-3 pt-3">
+                <div class="form-check form-switch m-0 d-flex justify-content-center">
+                    <input id="internet_active"
+                           name="internet_active"
+                           type="checkbox"
+                           role="switch"
+                           class="form-check-input mt-0 {{#if internet_active}}bg-success border-success{{else}}bg-danger border-danger{{/if}}"
+                           style="width: 3.5rem; height: 1.75rem;"
+                           {{#if internet_active}}checked{{/if}}>
+                </div>
+                <div class="badge rounded-pill px-3 py-2 fs-6 {{#if internet_active}}text-bg-success{{else}}text-bg-danger{{/if}}">
+                    {{#if internet_active}}Internet aktiv{{else}}Internet blockiert{{/if}}
+                </div>
+                <p class="small mb-0">
+                    {{#if internet_active}}Die Firewall-Regel ist deaktiviert. Voller Internetzugang ist freigegeben.{{else}}Die Firewall-Regel ist aktiviert. Internetzugang ist gesperrt.{{/if}}
+                </p>
+                <div class="htmx-indicator small">Firewall-Regel wird aktualisiert ...</div>
+            </div>
+        </div>
+    </form>
+</div>

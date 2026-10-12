@@ -18,6 +18,10 @@ type UploadTemplateData = {
     accept_attr?: string;
     types_label?: string;
     types_feedback?: string;
+    exam_open?: boolean;
+    exam_ends_at_ms?: number;
+    exam_paused?: boolean;
+    exam_remaining_label?: string;
 };
 
 type SuccessTemplateData = {
@@ -70,7 +74,7 @@ type AdminTemplateData = {
 type AdminFileTypesTemplateData = {
     permitted_filetypes: string;
     current_filetypes: string[];
-    firewall_toggle_html: string;
+    exam_panel_html: string;
     available_themes: { key: string; label: string }[];
     current_theme_key: string | null;
     success_message?: string;
@@ -80,6 +84,10 @@ type AdminFileTypesTemplateData = {
 
 type AdminExamModeTemplateData = {
     internet_active: boolean;
+    exam_status: "idle" | "running" | "paused" | "stopped";
+    exam_remaining_label: string;
+    exam_open: boolean;
+    success_message?: string;
 };
 
 type AdminIPDetailTemplateData = ServiceIPDetail;

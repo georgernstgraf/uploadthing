@@ -21,7 +21,7 @@ const start_ms_earlier = 3.6 * 1.5e6;
 const one_day_ms = 24 * 3.6e6;
 const time_cutoff_ms = config.TODAY_HOURS_CUTOFF * 3.6e6;
 
-function renderApplicationPage(
+async function renderApplicationPage(
     c: Context<{ Variables: HonoContextVars }>,
     success_message?: string,
     error_message?: string,
@@ -32,11 +32,15 @@ function renderApplicationPage(
         return c.redirect("/whoami");
     }
 
+    const exam = await service.exam.getStatusView();
     const content = hbs.adminFileTypesTemplate({
         permitted_filetypes: config.PERMITTED_FILETYPES.join(", "),
         current_filetypes: config.PERMITTED_FILETYPES,
-        firewall_toggle_html: hbs.adminExamModeTemplate({
+        exam_panel_html: hbs.adminExamModeTemplate({
             internet_active: config.INTERNET_ACTIVE,
+            exam_status: exam.status,
+            exam_remaining_label: exam.remaining_label,
+            exam_open: exam.open,
         }),
         available_themes: service.admin.listAvailableThemes(),
         current_theme_key: service.admin.getCurrentThemeKey(),
@@ -190,8 +194,8 @@ adminRouter.get("/ip-detail", async (c) => {
     }
 });
 
-adminRouter.get("/application", (c) => {
-    return renderApplicationPage(c);
+adminRouter.get("/application", async (c) => {
+    return await renderApplicationPage(c);
 });
 
 adminRouter.post("/application", async (c) => {

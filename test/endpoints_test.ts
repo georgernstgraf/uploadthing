@@ -12,6 +12,7 @@ import {
     clearExamState,
     clearForensicsByIp,
     clearForensicsByUserEmail,
+    seedExamState,
     seedNoAnomaliesScenario,
     upsertFixtureUser,
 } from "./helpers/forensics_fixture.ts";
@@ -220,6 +221,9 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(updateRes.status, 200);
     assertEquals(updateHtml.includes(".pdf"), true);
 
+    // Upload-Seite nur mit laufendem Examen vollständig prüfbar
+    seedExamState("running");
+
     const uploadRes = await fetch(`${BASE_URL}/upload`, {
         headers: { "Cookie": cookie },
     });
@@ -242,6 +246,7 @@ Deno.test("Admin navigation and live file type updates", async () => {
     }
 
     config.INTERNET_ACTIVE = originalInternetState;
+    clearExamState();
 });
 
 // Dynamic test runner for all endpoints from JSON
@@ -308,6 +313,9 @@ Deno.test("POST /upload - Authenticated upload with MD5 verification", async () 
         // Clear prior submissions to avoid canResubmit rejections
         db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
 
+        // Uploads sind nur während Examenzeit erlaubt
+        seedExamState("running");
+
         const registerRes = await fetch(`${BASE_URL}/register`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -356,6 +364,7 @@ Deno.test("POST /upload - Authenticated upload with MD5 verification", async () 
 
         await Deno.remove(filePath);
     } finally {
+        clearExamState();
         if (cookie) {
             const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
                 method: "POST",
@@ -379,6 +388,9 @@ Deno.test("POST /upload - rejects zip with non-zip content", async () => {
 
     try {
         db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
+
+        // Uploads sind nur während Examenzeit erlaubt
+        seedExamState("running");
 
         const registerRes = await fetch(`${BASE_URL}/register`, {
             method: "POST",
@@ -414,6 +426,7 @@ Deno.test("POST /upload - rejects zip with non-zip content", async () => {
         const html = await uploadRes.text();
         assertEquals(html.includes("Der Dateiinhalt konnte nicht als .zip erkannt werden."), true);
     } finally {
+        clearExamState();
         if (cookie) {
             const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
                 method: "POST",
@@ -437,6 +450,9 @@ Deno.test("POST /upload - multipart .md with empty MIME type (Chrome-style)", as
 
     try {
         db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
+
+        // Uploads sind nur während Examenzeit erlaubt
+        seedExamState("running");
 
         const registerRes = await fetch(`${BASE_URL}/register`, {
             method: "POST",
@@ -481,6 +497,7 @@ Deno.test("POST /upload - multipart .md with empty MIME type (Chrome-style)", as
             }
         }
     } finally {
+        clearExamState();
         if (cookie) {
             const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
                 method: "POST",
@@ -504,6 +521,9 @@ Deno.test("POST /upload - multipart .md with text/plain MIME type", async () => 
 
     try {
         db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
+
+        // Uploads sind nur während Examenzeit erlaubt
+        seedExamState("running");
 
         const registerRes = await fetch(`${BASE_URL}/register`, {
             method: "POST",
@@ -548,6 +568,7 @@ Deno.test("POST /upload - multipart .md with text/plain MIME type", async () => 
             }
         }
     } finally {
+        clearExamState();
         if (cookie) {
             const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
                 method: "POST",
@@ -942,6 +963,140 @@ Deno.test("Exam-API: Happy-Path als Admin über start/pause/resume/extra/stop", 
         const cleanupStopRes = await postExamForm(adminCookie, "/api/exam/stop", "");
         assertEquals(cleanupStopRes.status, 200);
         await cleanupStopRes.text();
+    } finally {
+        clearExamState();
+        await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
+Deno.test("Exam-Gating: Upload und Unterlagen nur während Examenzeit", async () => {
+    clearExamState();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `exam-gating-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Exam Gating Student",
+        klasse: "5AHITM",
+    });
+
+    // PERMITTED_FILETYPES kommt aus der .env (hier: md) — der Test
+    // lädt deshalb eine .md-Datei hoch (MIME wie im bestehenden
+    // Chrome-Szenario leer).
+    const uploadForm = () => {
+        const formData = new FormData();
+        formData.append("file", new Blob(["# Exam Gating"], { type: "" }), "gating.md");
+        return formData;
+    };
+
+    try {
+        const cookie = await registerAndGetCookie(studentEmail);
+
+        // Idle: Upload-Seite lesbar, aber ohne Formular und ohne Countdown.
+        const idlePageRes = await fetch(`${BASE_URL}/upload`, {
+            headers: { "Cookie": cookie },
+        });
+        assertEquals(idlePageRes.status, 200);
+        const idleHtml = await idlePageRes.text();
+        assertEquals(idleHtml.includes("Uploads sind nur während des Examens möglich."), true);
+        assertEquals(idleHtml.includes('hx-post="/upload"'), false);
+        assertEquals(idleHtml.includes("exam-countdown"), false);
+
+        // Idle: POST /upload wird mit 403 abgelehnt.
+        const idlePostRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            headers: { "Cookie": cookie },
+            body: uploadForm(),
+        });
+        assertEquals(idlePostRes.status, 403);
+        assertEquals((await idlePostRes.text()).includes("Uploads sind nur während des Examens möglich."), true);
+
+        // Idle: Unterlagen-Download wird mit 403 abgelehnt.
+        const idleFilesRes = await fetch(`${BASE_URL}/unterlagen/gating-dummy.txt`, {
+            headers: { "Cookie": cookie },
+        });
+        assertEquals(idleFilesRes.status, 403);
+        assertEquals((await idleFilesRes.text()).includes("Unterlagen sind nur während des Examens verfügbar."), true);
+
+        // Der Unterlagen-Index auf der Startseite bleibt öffentlich.
+        const homeRes = await fetch(`${BASE_URL}/`);
+        assertEquals(homeRes.status, 200);
+        await homeRes.text(); // consume body
+
+        // Running: Upload-Seite mit Formular, Countdown und Motivation.
+        seedExamState("running");
+        const runPageRes = await fetch(`${BASE_URL}/upload`, {
+            headers: { "Cookie": cookie },
+        });
+        assertEquals(runPageRes.status, 200);
+        const runHtml = await runPageRes.text();
+        assertEquals(runHtml.includes('hx-post="/upload"'), true);
+        assertEquals(runHtml.includes("exam-countdown"), true);
+        assertEquals(runHtml.includes("Restzeit:"), true);
+        assertEquals(runHtml.includes("Früh abgeben"), true);
+
+        // Running: Upload wird akzeptiert.
+        const runPostRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            headers: { "Cookie": cookie },
+            body: uploadForm(),
+        });
+        assertEquals(runPostRes.status, 200);
+        const runPostHtml = await runPostRes.text();
+        const filenameMatch = runPostHtml.match(/<span class="fw-bold text-break[^"]*">([^<]+)<\/span>/);
+        assertExists(filenameMatch);
+        await Deno.remove(`${config.ABGABEN_DIR}/${filenameMatch[1]}`);
+
+        // Running: Unterlagen-Download ist nicht mehr gesperrt.
+        const runFilesRes = await fetch(`${BASE_URL}/unterlagen/gating-dummy.txt`, {
+            headers: { "Cookie": cookie },
+        });
+        assert(
+            runFilesRes.status !== 403,
+            `Während des Examens sollte /unterlagen nicht 403 liefern (war ${runFilesRes.status})`,
+        );
+        await runFilesRes.text(); // consume body
+
+        // Paused: Gating bleibt offen, Countdown zeigt die Pause an.
+        seedExamState("paused");
+        const pausedPageRes = await fetch(`${BASE_URL}/upload`, {
+            headers: { "Cookie": cookie },
+        });
+        assertEquals(pausedPageRes.status, 200);
+        const pausedHtml = await pausedPageRes.text();
+        assertEquals(pausedHtml.includes("Prüfungszeit pausiert"), true);
+        assertEquals(pausedHtml.includes('hx-post="/upload"'), true);
+
+        const pausedFilesRes = await fetch(`${BASE_URL}/unterlagen/gating-dummy.txt`, {
+            headers: { "Cookie": cookie },
+        });
+        assert(
+            pausedFilesRes.status !== 403,
+            `Während der Pause sollte /unterlagen nicht 403 liefern (war ${pausedFilesRes.status})`,
+        );
+        await pausedFilesRes.text(); // consume body
+
+        // Stopped: Upload und Unterlagen wieder gesperrt.
+        seedExamState("stopped");
+        const stoppedPageRes = await fetch(`${BASE_URL}/upload`, {
+            headers: { "Cookie": cookie },
+        });
+        assertEquals(stoppedPageRes.status, 200);
+        const stoppedHtml = await stoppedPageRes.text();
+        assertEquals(stoppedHtml.includes("Uploads sind nur während des Examens möglich."), true);
+
+        const stoppedPostRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            headers: { "Cookie": cookie },
+            body: uploadForm(),
+        });
+        assertEquals(stoppedPostRes.status, 403);
+        await stoppedPostRes.text(); // consume body
+
+        const stoppedFilesRes = await fetch(`${BASE_URL}/unterlagen/gating-dummy.txt`, {
+            headers: { "Cookie": cookie },
+        });
+        assertEquals(stoppedFilesRes.status, 403);
+        await stoppedFilesRes.text(); // consume body
     } finally {
         clearExamState();
         await clearForensicsByUserEmail(studentEmail);

@@ -125,6 +125,19 @@ export function adminIpString(
     return autoString(input, 15, nowZoned_);
 }
 
+/**
+ * Formatiert eine Dauer in Sekunden als Restzeit-Anzeige (H:MM:SS,
+ * unterhalb einer Stunde MM:SS). Negative Werte werden auf 0 geklemmt.
+ */
+export function durationString(totalSeconds: number): string {
+    const seconds = Math.max(0, Math.ceil(totalSeconds));
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const rest = seconds % 60;
+    const minutePart = hours > 0 ? String(minutes).padStart(2, "0") : String(minutes);
+    return `${hours > 0 ? `${hours}:` : ""}${minutePart}:${String(rest).padStart(2, "0")}`;
+}
+
 // ============================================================================
 // Legacy Date-based Functions (deprecated, kept for backward compatibility)
 // ============================================================================

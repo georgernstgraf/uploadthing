@@ -20,12 +20,13 @@ function formatGermanFileTypes(types: string[]): { label: string; feedback: stri
     return { label: `${allButLast.join(" oder ")} oder ${last}`, feedback: `${allButLast.join(" oder ")} oder ${last}` };
 }
 
-uploadRouter.get("/", (c) => {
+uploadRouter.get("/", async (c) => {
     const remote_user = c.get("remoteuser");
     if (!remote_user) {
         return c.redirect("/whoami");
     }
 
+    const exam = await service.exam.getStatusView();
     const types = config.PERMITTED_FILETYPES;
     const germanTypes = formatGermanFileTypes(types);
 
@@ -34,6 +35,10 @@ uploadRouter.get("/", (c) => {
         accept_attr: types.map((t) => `.${t}`).join(","),
         types_label: germanTypes.label,
         types_feedback: germanTypes.feedback,
+        exam_open: exam.open,
+        exam_ends_at_ms: exam.ends_at_ms ?? undefined,
+        exam_paused: exam.status === "paused",
+        exam_remaining_label: exam.remaining_label,
     });
 
     if (c.req.header("HX-Request") === "true") {
@@ -57,6 +62,10 @@ uploadRouter.post("/", async (c) => {
     const maxUploadBytes = config.MAX_UPLOAD_MB * 1024 * 1024;
     if (!remote_user) {
         return c.redirect("/whoami");
+    }
+
+    if (!(await service.exam.isExamWindowOpen())) {
+        throw new AppError("Uploads sind nur während des Examens möglich.", 403);
     }
 
     let formData: FormData;

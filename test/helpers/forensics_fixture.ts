@@ -1,6 +1,7 @@
 import { db } from "../../repo/db.ts";
 import * as abgabenRepo from "../../repo/abgaben.ts";
 import * as cookiepresentsRepo from "../../repo/cookiepresents.ts";
+import * as examRepo from "../../repo/exam.ts";
 import * as ipfactRepo from "../../repo/ipfact.ts";
 import * as registrationsRepo from "../../repo/registrations.ts";
 import * as usersRepo from "../../repo/users.ts";
@@ -44,6 +45,30 @@ export function resetLocalhostForensics(): void {
  */
 export function clearExamState(): void {
     db.exec("DELETE FROM examstate");
+}
+
+/**
+ * Legt den Exam-Singleton direkt auf einen definierten Zustand, damit
+ * Endpoint-Tests Gating-Szenarien (running/paused/stopped) ohne
+ * Admin-API-Detour und ohne Firewall-Aufruf fahren können.
+ */
+export function seedExamState(
+    status: "running" | "paused" | "stopped",
+    durationSeconds = 3600,
+): void {
+    const now = new Date();
+    const startedAt = status === "stopped"
+        ? new Date(now.getTime() - durationSeconds * 1000)
+        : new Date(now.getTime() - 60_000);
+
+    examRepo.upsert({
+        status,
+        duration_seconds: durationSeconds,
+        started_at: startedAt,
+        paused_seconds: 0,
+        extra_seconds: 0,
+        updated_at: now,
+    });
 }
 
 export async function seedRegistration(params: {

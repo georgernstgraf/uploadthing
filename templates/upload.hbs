@@ -1,50 +1,74 @@
 <div x-data="{ fileName: 'Datei hier ablegen oder klicken' }">
-    <form hx-post="/upload"
-          enctype="multipart/form-data"
-          hx-target="#app-content"
-          hx-swap="innerHTML"
-          class="card shadow-sm border-0 needs-validation mx-auto w-100 col-lg-8 col-xl-6"
-          novalidate="">
-        <div class="card-body text-center">
-            <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm text-primary">
-                <img src="/static/img/icons/cloud-arrow-up.svg"
-                     alt=""
-                     width="48"
-                     height="48">
+    {{#if exam_open}}
+        {{#if exam_ends_at_ms}}
+            <div id="exam-countdown"
+                 class="text-center mb-3"
+                 x-data="{ endsAt: {{exam_ends_at_ms}}, paused: {{#if exam_paused}}true{{else}}false{{/if}}, label: '{{exam_remaining_label}}', tick() { if (this.paused) { return; } const total = Math.max(0, Math.ceil((this.endsAt - Date.now()) / 1000)); const h = Math.floor(total / 3600); const m = Math.floor((total % 3600) / 60); const s = total % 60; this.label = (h > 0 ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'); } }"
+                 x-init="if (!paused) { tick(); setInterval(() => tick(), 1000); }">
+                {{#if exam_paused}}
+                    <span id="exam-countdown-badge"
+                          class="badge rounded-pill px-3 py-2 fs-6 text-bg-warning">Prüfungszeit pausiert &ndash; Restzeit: {{exam_remaining_label}}</span>
+                {{else}}
+                    <span id="exam-countdown-badge"
+                          class="badge rounded-pill px-3 py-2 fs-6 text-bg-primary">Restzeit: <span x-text="label">{{exam_remaining_label}}</span></span>
+                {{/if}}
             </div>
-            <h2 class="card-title h3 mb-2 fw-bold">
-                {{~#if types_label~}} Bitte {{types_label}} Datei auswählen
-                {{else}} Bitte ZIP Datei auswählen {{~/if~}}
-            </h2>
-            <div class="mt-4 p-4 border border-2 border-dashed rounded-4 position-relative bg-body-tertiary shadow-sm"
-                 @dragover.prevent="$el.style.borderColor = 'var(--bs-primary)'"
-                 @dragleave.prevent="$el.style.borderColor = 'var(--bs-border-color)'"
-                 @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--bs-border-color)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
-                <input type="file"
-                       x-ref="fileInput"
-                       class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
-                       name="file"
-                       accept="{{#if accept_attr}}{{accept_attr}}{{else}}.zip{{/if}}"
-                       required
-                       @change="fileName = $el.files[0]?.name || 'Datei hier ablegen oder klicken'">
-                <div class="d-flex align-items-center justify-content-center gap-2 fw-bold">
-                    <span x-text="fileName"></span>
+        {{/if}}
+        <form hx-post="/upload"
+              enctype="multipart/form-data"
+              hx-target="#app-content"
+              hx-swap="innerHTML"
+              class="card shadow-sm border-0 needs-validation mx-auto w-100 col-lg-8 col-xl-6"
+              novalidate="">
+            <div class="card-body text-center">
+                <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm text-primary">
+                    <img src="/static/img/icons/cloud-arrow-up.svg"
+                         alt=""
+                         width="48"
+                         height="48">
+                </div>
+                <h2 class="card-title h3 mb-2 fw-bold">
+                    {{~#if types_label~}} Bitte {{types_label}} Datei auswählen
+                    {{else}} Bitte ZIP Datei auswählen {{~/if~}}
+                </h2>
+                <div class="mt-4 p-4 border border-2 border-dashed rounded-4 position-relative bg-body-tertiary shadow-sm"
+                     @dragover.prevent="$el.style.borderColor = 'var(--bs-primary)'"
+                     @dragleave.prevent="$el.style.borderColor = 'var(--bs-border-color)'"
+                     @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--bs-border-color)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
+                    <input type="file"
+                           x-ref="fileInput"
+                           class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
+                           name="file"
+                           accept="{{#if accept_attr}}{{accept_attr}}{{else}}.zip{{/if}}"
+                           required
+                           @change="fileName = $el.files[0]?.name || 'Datei hier ablegen oder klicken'">
+                    <div class="d-flex align-items-center justify-content-center gap-2 fw-bold">
+                        <span x-text="fileName"></span>
+                    </div>
+                </div>
+                <div class="invalid-feedback">
+                    {{~#if types_feedback~}} Bitte eine {{types_feedback}} Datei auswählen.
+                    {{else}} Bitte eine ZIP-Datei auswählen. {{~/if~}}
                 </div>
             </div>
-            <div class="invalid-feedback">
-                {{~#if types_feedback~}} Bitte eine {{types_feedback}} Datei auswählen.
-                {{else}} Bitte eine ZIP-Datei auswählen. {{~/if~}}
+            <div class="card-footer bg-transparent border-0 text-center pt-0 pb-4">
+                <p id="upload-early-hint" class="form-text text-body-secondary mb-2">Früh abgeben = kein Stress am Ende!</p>
+                <button type="submit"
+                        class="btn btn-info btn-lg py-3 shadow-sm w-100 d-flex justify-content-center">
+                    <span class="fw-bold d-block text-center mx-auto">Hochladen</span>
+                    <span class="htmx-indicator">
+                        <span class="spinner-border spinner-border-sm"
+                              role="status"
+                              aria-hidden="true"></span> Wird hochgeladen... </span>
+                </button>
             </div>
+        </form>
+    {{else}}
+        <div id="upload-exam-closed"
+             class="alert alert-warning text-center mx-auto w-100 col-lg-8 col-xl-6"
+             role="alert">
+            <h2 class="alert-heading h4 mb-2">Uploads sind nur während des Examens möglich.</h2>
+            <p class="mb-0">Bitte warten Sie, bis Ihre Lehrperson das Examen gestartet hat.</p>
         </div>
-        <div class="card-footer bg-transparent border-0 text-center pt-0 pb-4">
-            <button type="submit"
-                    class="btn btn-info btn-lg py-3 shadow-sm w-100 d-flex justify-content-center">
-                <span class="fw-bold d-block text-center mx-auto">Hochladen</span>
-                <span class="htmx-indicator">
-                    <span class="spinner-border spinner-border-sm"
-                          role="status"
-                          aria-hidden="true"></span> Wird hochgeladen... </span>
-            </button>
-        </div>
-    </form>
+    {{/if}}
 </div>

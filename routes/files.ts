@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/deno";
 import config from "../lib/config.ts";
 import { HonoContextVars } from "../lib/types.ts";
+import * as service from "../service/service.ts";
 
 const filesRouter = new Hono<{ Variables: HonoContextVars }>();
 
@@ -19,6 +20,9 @@ filesRouter.get(
         const remote_user = c.get("remoteuser");
         if (!remote_user) {
             return c.redirect("/whoami");
+        }
+        if (!(await service.exam.isExamWindowOpen())) {
+            return c.text("Unterlagen sind nur während des Examens verfügbar.", 403);
         }
         const handler = serveStatic({
             root: config.UNTERLAGEN_DIR,
