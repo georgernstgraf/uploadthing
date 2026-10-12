@@ -38,6 +38,14 @@ export function resetLocalhostForensics(): void {
     clearForensicsByIp(LOCAL_TEST_IP);
 }
 
+/**
+ * Entfernt die Singleton-Zeile des Exam-Zustands,
+ * damit Tests von einem definierten idle-Zustand starten.
+ */
+export function clearExamState(): void {
+    db.exec("DELETE FROM examstate");
+}
+
 export async function seedRegistration(params: {
     ip?: string;
     email: string;

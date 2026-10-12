@@ -63,3 +63,14 @@ model abgaben {
   @@index([at])
   @@index([ip, at])
 }
+
+// Singleton: immer genau eine Zeile mit id = 1.
+model examstate {
+  id               Int       @id
+  status           String
+  duration_seconds Int
+  started_at       DateTime?
+  paused_seconds   Int
+  extra_seconds    Int
+  updated_at       DateTime
+}

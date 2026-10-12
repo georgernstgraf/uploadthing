@@ -4,6 +4,7 @@ import * as registrations from "./registrations.ts";
 import * as cookiepresents from "./cookiepresents.ts";
 import * as users from "./users.ts";
 import * as abgaben from "./abgaben.ts";
+import * as exam from "./exam.ts";
 import * as ldap from "./ldapuser.ts";
 
 export {
@@ -15,4 +16,5 @@ export {
     cookiepresents,
     users,
     abgaben,
+    exam,
 };

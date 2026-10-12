@@ -6,5 +6,6 @@ import * as user from "./user.ts";
 import * as abgaben from "./abgaben.ts";
 import * as ipadmin from "./ipadmin.ts";
 import * as admin from "./admin.ts";
+import * as exam from "./exam.ts";
 
-export { ipfact, ldap, registrations, cookiepresents, user, abgaben, ipadmin, admin };
+export { ipfact, ldap, registrations, cookiepresents, user, abgaben, ipadmin, admin, exam };
