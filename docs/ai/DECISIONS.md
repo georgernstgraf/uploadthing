@@ -29,10 +29,20 @@
 - Theme asset URLs are versioned with the runtime `THEME_ASSET_VERSION` value so a just-applied theme invalidates cached `theme.css` and background images on the next full-page render.
 - The admin theme selector uses the git-tracked source files in `themes/<key>/` as the source of truth and copies them into the unmanaged generic targets under `static/`.
 
-## Dual API Mounting
+## Router Split: Machine Contract At Root, API Under /api
 
-- `apiRouter` is mounted at both `/` and `/api`.
-- This preserves existing root-level endpoints such as `/activeips` while allowing explicit API-style paths such as `/api/exammode` for new HTMX controls.
+- `machineRouter` is mounted at the root and carries only `POST /activeips`, the external contract with the WLAN infrastructure (IP-whitelist via `ACTIVEIPS_ALLOWED_IPS`).
+- `apiRouter` is mounted only under `/api`.
+- The former dual mounting (`/` and `/api`) was removed; the shadow paths `/exammode` (root) and `/api/activeips` no longer exist.
+
+## Exam Lifecycle State Machine
+
+- Exam duration is preset by the admin: `examstate` is a SQLite singleton (`idle`/`running`/`paused`/`stopped`) with duration, extra seconds, and accumulated pause time; Prisma owns the schema, runtime access is direct SQLite via `repo/exam.ts`.
+- `service/exam.ts` is authoritative for remaining time; the clock is injectable for tests. `updated_at` doubles as the pause-start anchor (pause()/resume() only touch it; addExtra during a pause deliberately does not).
+- Pause only stops the countdown — uploads and Unterlagen downloads stay allowed. Stop and natural expiry both mean exam mode off with internet released; there is no grace period.
+- Startup always resets to exam mode off / internet free and forces a stuck `running`/`paused` examstate to `stopped` — this reverses the earlier "block internet on startup" behavior.
+- Uploads (`POST /upload`) and Unterlagen downloads (`GET /unterlagen/*`) are gated by `service.exam.isExamWindowOpen()`; the Unterlagen index (`GET /`) stays public. Admins are not exempted from the Unterlagen gating.
+- Early submissions are encouraged; `canResubmit()` already enforces "submitted + left the network = no resubmission, submitted + stayed = resubmission allowed".
 
 ## Runtime-Editable Upload Policy
 

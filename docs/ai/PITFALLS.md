@@ -59,6 +59,9 @@
 - Successful `exammode` runs currently return a short stdout message (`internet enabled` or `internet disabled`) and exit `0`.
 - The firewall toggle does not auto-discover the machine's real internet state; it starts from env/config and only changes after successful admin-triggered `exammode` runs.
 - The current dev machine ships a stub `exammode` in `PATH` that only echoes the success text, so local endpoint tests verify UI/backend wiring rather than a real firewall change.
+- Since #131, startup releases the internet (exam mode off) instead of blocking it; without `EXAMMODE_COMMAND` only the examstate reset runs, the firewall call is skipped. Startup examstate reset is not tied to the env var.
+- The examstate singleton persists across test runs; use `clearExamState()` (and `seedExamState()` for running/paused scenarios) from `test/helpers/forensics_fixture.ts` or tests will see leftovers from earlier runs.
+- The student countdown receives `ends_at_ms` server-rendered and ticks client-side via Alpine; after a resume it stays behind the server until page reload (no polling by design).
 - Browser-visible flows may also depend on local directories such as `ABGABEN_DIR` and `UNTERLAGEN_DIR` existing and being readable.
 
 ## Cookie Presence Semantics
