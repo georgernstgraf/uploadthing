@@ -5,6 +5,7 @@ import config, {
     isProduction,
     parsePermittedFileTypes,
     parseSqliteDatabaseUrl,
+    parseTlsConfig,
 } from "./config.ts";
 
 Deno.test("config - PERMITTED_FILETYPES is an array", () => {
@@ -107,6 +108,55 @@ Deno.test("config - COOKIE_MAX_AGE_S is calculated correctly", () => {
 Deno.test("config - SESSION_REFRESH_THRESHOLD_MS is calculated correctly", () => {
     const expected = 7 * 24 * 60 * 60 * 1000;
     assertEquals(config.SESSION_REFRESH_THRESHOLD_MS, expected);
+});
+
+Deno.test("config - parseTlsConfig returns null when neither path is set", () => {
+    assertEquals(parseTlsConfig(undefined, undefined), null);
+});
+
+Deno.test("config - parseTlsConfig returns config when both paths are set", () => {
+    assertEquals(
+        parseTlsConfig("/etc/uploadthing/tls/fullchain.pem", "/etc/uploadthing/tls/privkey.pem"),
+        { certPath: "/etc/uploadthing/tls/fullchain.pem", keyPath: "/etc/uploadthing/tls/privkey.pem" },
+    );
+});
+
+Deno.test("config - parseTlsConfig rejects cert without key", () => {
+    const error = (() => {
+        try {
+            parseTlsConfig("/etc/uploadthing/tls/fullchain.pem", undefined);
+        } catch (caught) {
+            return caught;
+        }
+        return null;
+    })();
+
+    assertExists(error);
+    assertEquals(
+        error instanceof Error ? error.message : String(error),
+        "TLS_CERT_PATH und TLS_KEY_PATH müssen gemeinsam gesetzt sein.",
+    );
+});
+
+Deno.test("config - parseTlsConfig rejects key without cert", () => {
+    const error = (() => {
+        try {
+            parseTlsConfig(undefined, "/etc/uploadthing/tls/privkey.pem");
+        } catch (caught) {
+            return caught;
+        }
+        return null;
+    })();
+
+    assertExists(error);
+    assertEquals(
+        error instanceof Error ? error.message : String(error),
+        "TLS_CERT_PATH und TLS_KEY_PATH müssen gemeinsam gesetzt sein.",
+    );
+});
+
+Deno.test("config - TLS defaults to null without env vars", () => {
+    assertEquals(config.TLS, null);
 });
 
 Deno.test("config - spg_times is an array of time strings", () => {

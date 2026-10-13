@@ -48,6 +48,21 @@ export function parseSqliteDatabaseUrl(databaseUrl: string): string {
     return resolve(prismaDir, databasePath);
 }
 
+export function parseTlsConfig(
+    certPath: string | undefined,
+    keyPath: string | undefined,
+): { certPath: string; keyPath: string } | null {
+    if (!certPath && !keyPath) {
+        return null;
+    }
+    if (certPath && keyPath) {
+        return { certPath, keyPath };
+    }
+    throw new Error(
+        "TLS_CERT_PATH und TLS_KEY_PATH müssen gemeinsam gesetzt sein.",
+    );
+}
+
 const databaseUrl = Deno.env.get("DATABASE_URL") || "";
 
 const config = {
@@ -56,6 +71,10 @@ const config = {
     UNTERLAGEN_DIR: requireEnv("UNTERLAGEN_DIR"),
     LISTEN_HOST: Deno.env.get("LISTEN_HOST"),
     LISTEN_PORT: Number(requireEnv("LISTEN_PORT", "z.B. 8000")),
+    TLS: parseTlsConfig(
+        Deno.env.get("TLS_CERT_PATH"),
+        Deno.env.get("TLS_KEY_PATH"),
+    ),
     page_title: `${Deno.env.get("LISTEN_HOST") || "localhost"}:${
         Deno.env.get("LISTEN_PORT")
     }`,

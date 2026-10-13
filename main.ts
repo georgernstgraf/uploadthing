@@ -68,6 +68,12 @@ await Deno.serve(
         hostname: config.LISTEN_HOST,
         port: config.LISTEN_PORT,
         signal: abortController.signal,
+        ...(config.TLS
+            ? {
+                cert: Deno.readTextFileSync(config.TLS.certPath),
+                key: Deno.readTextFileSync(config.TLS.keyPath),
+            }
+            : {}),
     },
     (req, info) => app.fetch(req, { info }),
 );

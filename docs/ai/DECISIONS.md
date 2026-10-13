@@ -1,5 +1,12 @@
 # DECISIONS
 
+## Native TLS, No Proxy
+
+- uploadthing is itself the TLS endpoint via `Deno.serve` (`cert`/`key` options); no reverse proxy is put in front.
+- TLS is opt-in: `TLS_CERT_PATH` and `TLS_KEY_PATH` must be set together (fail-fast, German error) — unset means plain HTTP, unchanged behavior.
+- The certificate source is the Let's Encrypt harvest on the school host `kik` (internal repo KI-Kustodiat-intern issue #3; uploadthing issue #136 is linked as its sub-issue). Certificates are copied manually via `scp`; after each copy the service restarts, since Deno reads cert/key at startup.
+- Default deployment port for TLS is 8443. Port 443 is occupied by OPNsense; moving the OPNsense GUI + a DNAT rule (not a proxy) is the open alternative.
+
 ## Deno-First Execution
 
 - The project uses Deno tasks and Deno runtime APIs as the primary execution model.

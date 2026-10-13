@@ -16,6 +16,8 @@ The application fails to start if any required variable is missing.
 | `UNTERLAGEN_DIR` | Directory for exam materials served to students |
 | `LISTEN_HOST` | IP address to bind to (e.g. `127.0.0.1`) |
 | `LISTEN_PORT` | Port to listen on (e.g. `8000`) |
+| `TLS_CERT_PATH` | Path to a PEM certificate chain (e.g. `fullchain.pem`) — enables native TLS via `Deno.serve`; must be set together with `TLS_KEY_PATH` |
+| `TLS_KEY_PATH` | Path to a PEM private key (e.g. `privkey.pem`); must be set together with `TLS_CERT_PATH` |
 | `COOKIE_SECRET` | HMAC key for session cookies (long random string) |
 | `ADMIN_IPS` | Comma-separated IPs allowed to register as teacher, e.g. `127.0.0.1,192.168.21.2` |
 | `ACTIVEIPS_ALLOWED_IPS` | Comma-separated IPs allowed to report active IPs via `/activeips`, e.g. `10.0.0.1,192.168.21.2` |

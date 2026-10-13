@@ -18,6 +18,7 @@ Issue #131 (vorgegebene Prüfungsdauer) — completed.
 ## Pending
 - [ ] #133 — Prisma → Drizzle Migration (Engines/Linuxulator/Pin eliminieren)
 - [ ] #134 — Admin-Upload für Unterlagen (SSH-Handgriff ersetzen)
+- [ ] #136 — Native TLS (Code fertig; Deployment: scp der geernteten Zertifikate, Ziel-Maschine + Split-DNS offen)
 - [ ] #135 — Playwright-Smoke-Suite für examkritische Browser-Flows (vor der htmx-4-Migration)
 
 ## Blockers
