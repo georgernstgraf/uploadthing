@@ -43,6 +43,23 @@ only in the operator's head; it is now recorded here (see #132).
   that just exits 0), so local tests verify wiring only, not a real
   firewall change.
 
+## Package Repos On OPNsense
+
+- OPNsense uses its own signed pkg repositories and keeps the FreeBSD
+  repos disabled by default (`/etc/pkg/FreeBSD.conf`).
+- Officially unsupported and explicitly discouraged: enabling FreeBSD
+  repositories under `/usr/local/etc/pkg/repos/` — real-world fallout in
+  2026 shows this can break OPNsense major upgrades (26.1 → 26.7).
+- The sanctioned way for extra software is building the port on the box
+  (`opnsense-code ports && cd /usr/ports/<port> && make install`). For
+  Deno this means building V8 from source: hours of build time plus
+  recurring maintenance burden across major OPNsense upgrades — not
+  worth it.
+- Consequence for this project: do not try to install native Deno from
+  packages on `sense`. The Linuxulator remains the pragmatic runtime
+  path, and the Drizzle migration (#133) shrinks what depends on it —
+  after that only Deno itself (if it runs emulated) or nothing.
+
 ## Unterlagen (Exam Task Materials)
 
 - Exam task materials (Angaben/Unterlagen) are **copied manually via
