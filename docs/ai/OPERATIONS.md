@@ -71,6 +71,31 @@ only in the operator's head; it is now recorded here (see #132).
   exam window; the manual lifecycle above is orthogonal to that.
 - An admin upload feature to replace the SSH step is planned (#134).
 
+## TLS Operation On sense (from #137)
+
+- The Deno webserver is **itself the TLS endpoint** (native TLS via
+  `Deno.serve`) — there is **no reverse proxy** in front of it. TLS is
+  opt-in via the env pair `TLS_CERT_PATH` / `TLS_KEY_PATH`; see
+  `parseTlsConfig()` in `lib/config.ts` (fail-fast when only one is set).
+- `Deno.serve` has no separate chain parameter: `TLS_CERT_PATH` must
+  point to a **fullchain** file (leaf certificate plus intermediate
+  chain, exactly how Certbot delivers `live/<name>/fullchain.pem`).
+- Certificates are Let's Encrypt certificates for
+  `tst.spengergasse.at`, harvested on `kik` via HTTP-01 and delivered
+  to `sense` by manual `scp` (harvest/renewal details: internal project
+  KI-Kustodiat-intern #3).
+- Planned layout on `sense`: cert directory under georg's home,
+  e.g. `~/uploadthing/tls/` (readable by the unprivileged user),
+  `privkey.pem` with mode 600, owner `georg`.
+- Production env on `sense` sets `TLS_CERT_PATH`, `TLS_KEY_PATH` and
+  `LISTEN_PORT=8443`. Port 443 stays occupied by the OPNsense GUI on
+  the same host; the clean-URL alternative (GUI on 8443 + DNAT, TLS
+  still end-to-end at Deno) is deliberately deferred.
+- Public DNS for `tst.spengergasse.at` keeps pointing at `kik` (needed
+  for ACME HTTP-01 validation); clients reach `sense` through a
+  **split-DNS override** (`tst.spengergasse.at` → sense LAN IP,
+  configured in OPNsense Unbound).
+
 ## Database Sync Cycle (from the dev machine)
 
 Driven by the `Makefile` on the development machine:
@@ -88,3 +113,8 @@ Driven by the `Makefile` on the development machine:
 - Exact Deno install/version procedure on `sense` and where the
   `exammode` script lives on the box are not yet recorded; to be filled
   in from operator knowledge or a future session on the host.
+- Same gap applies to the TLS deployment from #137: how the app
+  service on `sense` is supervised/restarted (the repo's
+  `startloop.sh` respawn loop with a `STOPPED` marker file is a
+  candidate) and how the harvested certificates actually arrive from
+  `kik` are still to be recorded after a session on the host.
