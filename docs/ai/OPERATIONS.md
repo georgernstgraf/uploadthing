@@ -25,6 +25,10 @@ only in the operator's head; it is now recorded here (see #132).
 - **Do not bump the Prisma version** until the planned Drizzle migration
   (#133) removes Prisma entirely. Drizzle is engine-free pure TS and
   eliminates the Linuxulator dependency and the pin in one move.
+- This engine pain is also the historical reason the runtime persistence
+  layer uses plain SQL with hand-written prepared statements instead of
+  Prisma queries (`repo/*.ts`); Prisma only remains in the loop for
+  schema and migrations.
 
 ## Exam Mode Command
 

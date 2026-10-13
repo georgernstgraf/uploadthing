@@ -52,7 +52,8 @@
 ## Hybrid Persistence Strategy
 
 - Prisma remains the schema and migration authority, but runtime persistence no longer uses a generated Prisma client.
-- Direct SQLite access is still used for `ipfact`, `registrations`, `cookiepresents`, and `abgaben`.
+- Direct SQLite access is still used for `ipfact`, `registrations`, `cookiepresents`, `abgaben`, `examstate`, and `users`.
+- Historical origin: the raw-SQL runtime layer exists because the Prisma engines were a major pain on FreeBSD/OPNsense (Linuxulator) — it is a pragmatic workaround that hardened into the current architecture, not a design preference. The planned Drizzle migration (#133) resolves the underlying engine problem and thereby makes the workaround itself obsolete.
 - This hybrid approach is intentional for now and should remain unless there is a deliberate migration plan.
 - `users` repository operations are now SQL-backed as well, so runtime CRUD for `users` lives in `repo/users.ts` while Prisma stays responsible for schema state and migrations.
 - The long-term direction discussed in this cycle is a future move toward Drizzle, so current reporting-path optimizations should prefer SQL/query shapes that are easy to carry forward.
