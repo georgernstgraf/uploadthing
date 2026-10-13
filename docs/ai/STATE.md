@@ -16,7 +16,8 @@ Issue #131 (vorgegebene Prüfungsdauer) — completed.
 - [x] Admin exam control panel (duration, start/pause/resume/stop/extra) and student countdown with early-submission encouragement (#131)
 
 ## Pending
-- [ ] None.
+- [ ] #133 — Prisma → Drizzle Migration (Engines/Linuxulator/Pin eliminieren)
+- [ ] #134 — Admin-Upload für Unterlagen (SSH-Handgriff ersetzen)
 
 ## Blockers
 None.
