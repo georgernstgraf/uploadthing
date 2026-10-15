@@ -1,12 +1,49 @@
 import { assertEquals, assertExists } from "@std/assert";
 import { fromFileUrl, resolve } from "@std/path";
 import config, {
+    buildHeroUrl,
     isDevelopment,
     isProduction,
     parsePermittedFileTypes,
     parseSqliteDatabaseUrl,
     parseTlsConfig,
 } from "./config.ts";
+
+Deno.test("config - buildHeroUrl prefers PUBLIC_URL", () => {
+    assertEquals(
+        buildHeroUrl("https://tst.spengergasse.at:8443", "127.0.0.1", 8000),
+        "https://tst.spengergasse.at:8443",
+    );
+});
+
+Deno.test("config - buildHeroUrl strips trailing slashes from PUBLIC_URL", () => {
+    assertEquals(
+        buildHeroUrl("http://router:8000/", undefined, 8000),
+        "http://router:8000",
+    );
+    assertEquals(
+        buildHeroUrl("http://router:8000//", undefined, 8000),
+        "http://router:8000",
+    );
+});
+
+Deno.test("config - buildHeroUrl falls back to listen address", () => {
+    assertEquals(
+        buildHeroUrl(undefined, "127.0.0.1", 8000),
+        "http://127.0.0.1:8000/",
+    );
+    assertEquals(
+        buildHeroUrl(undefined, undefined, 8000),
+        "http://localhost:8000/",
+    );
+});
+
+Deno.test("config - buildHeroUrl ignores blank PUBLIC_URL", () => {
+    assertEquals(
+        buildHeroUrl("   ", "router", 8000),
+        "http://router:8000/",
+    );
+});
 
 Deno.test("config - PERMITTED_FILETYPES is an array", () => {
     assertEquals(Array.isArray(config.PERMITTED_FILETYPES), true);

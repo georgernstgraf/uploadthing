@@ -50,6 +50,7 @@ uploadRouter.get("/", async (c) => {
         remote_ip: c.get("remoteip"),
         is_admin: c.get("is_admin"),
         page_title: config.page_title,
+        hero_url: config.hero_url,
         theme_asset_version: config.THEME_ASSET_VERSION,
         content,
     }));
@@ -204,6 +205,7 @@ uploadRouter.post("/", async (c) => {
         remote_ip,
         is_admin: c.get("is_admin"),
         page_title: config.page_title,
+        hero_url: config.hero_url,
         theme_asset_version: config.THEME_ASSET_VERSION,
         content,
     }));

@@ -17,6 +17,7 @@ export type TopType = {
     remote_ip: string;
     remote_user: UserType | null;
     page_title: string;
+    hero_url: string;
     is_admin: boolean;
     theme_asset_version: string;
 };

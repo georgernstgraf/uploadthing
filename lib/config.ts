@@ -63,6 +63,25 @@ export function parseTlsConfig(
     );
 }
 
+/**
+ * Baut die im Hero-Header angezeigte URL.
+ *
+ * PUBLIC_URL (vollständige URL, z. B. "https://tst.spengergasse.at:8443")
+ * hat Vorrang und ist vom Bind-Host entkoppelt. Ohne PUBLIC_URL gilt das
+ * bisherige Verhalten: "http://<LISTEN_HOST>:<LISTEN_PORT>/".
+ */
+export function buildHeroUrl(
+    publicUrl: string | undefined,
+    listenHost: string | undefined,
+    listenPort: number,
+): string {
+    const trimmed = publicUrl?.trim();
+    if (trimmed) {
+        return trimmed.replace(/\/+$/, "");
+    }
+    return `http://${listenHost || "localhost"}:${listenPort}/`;
+}
+
 const databaseUrl = Deno.env.get("DATABASE_URL") || "";
 
 const config = {
@@ -78,6 +97,11 @@ const config = {
     page_title: `${Deno.env.get("LISTEN_HOST") || "localhost"}:${
         Deno.env.get("LISTEN_PORT")
     }`,
+    hero_url: buildHeroUrl(
+        Deno.env.get("PUBLIC_URL"),
+        Deno.env.get("LISTEN_HOST"),
+        Number(Deno.env.get("LISTEN_PORT")),
+    ),
     MAX_UPLOAD_MB: Number(Deno.env.get("MAX_UPLOAD_MB") || "50"),
     PERMITTED_FILETYPES: parsePermittedFileTypes(
         Deno.env.get("PERMITTED_FILETYPES") || "zip",
