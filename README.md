@@ -40,6 +40,7 @@ The application fails to start if any required variable is missing.
 | `TODAY_HOURS_CUTOFF` | `12` | Hours before midnight for admin time filter default |
 | `ADMIN_STALE_MINUTES` | `3` | Minutes before an IP is considered stale |
 | `ADMIN_REFRESH_SECONDS` | `15` | Auto-refresh interval for admin forensics page |
+| `PUBLIC_URL` | `http://<LISTEN_HOST>:<LISTEN_PORT>/` | URL displayed in the hero header (full URL incl. scheme, optionally with port); decoupled from `LISTEN_HOST`, which only determines the bind address |
 
 ## Project Knowledge
 
