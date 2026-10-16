@@ -106,6 +106,12 @@ only in the operator's head; it is now recorded here (see #132).
   stay visible to the app (verified via `pfctl -s state`); TLS stays
   end-to-end in `Deno.serve`. Pre-change backups:
   `/conf/config.xml.bak-20261016-*` on `sense`.
+- **Cert renewal caveat:** the OPNsense GUI uses a *snapshot* of the
+  certificate (imported once into the cert store). After each renewal
+  harvest on `kik` + `scp` to `sense`, the GUI's copy must be
+  re-imported (replace `crt`/`prv` of the cert item) — otherwise the
+  GUI on :8443 serves the stale certificate while the app on 443 is
+  current.
 - Service management on `sense`: rc.d script
   `/usr/local/etc/rc.d/uploadthing` (`uploadthing_enable=YES`, boots
   with the system), running `startloop.sh` (while-loop wrapper) via
