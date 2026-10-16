@@ -5,7 +5,17 @@
 - uploadthing is itself the TLS endpoint via `Deno.serve` (`cert`/`key` options); no reverse proxy is put in front.
 - TLS is opt-in: `TLS_CERT_PATH` and `TLS_KEY_PATH` must be set together (fail-fast, German error) — unset means plain HTTP, unchanged behavior.
 - The certificate source is the Let's Encrypt harvest on the school host `kik` (internal repo KI-Kustodiat-intern issue #3; uploadthing issue #136 is linked as its sub-issue). Certificates are copied manually via `scp`; after each copy the service restarts, since Deno reads cert/key at startup.
-- Default deployment port for TLS is 8443. Port 443 is occupied by OPNsense; moving the OPNsense GUI + a DNAT rule (not a proxy) is the open alternative.
+- Final topology on `sense` (2026-10-16): Deno listens on **loopback 8000
+  only** (`LISTEN_HOST=127.0.0.1`); the OPNsense GUI moved from 443 to
+  **8443** with the real Let's Encrypt certificate imported into the
+  OPNsense cert store; a DNAT port forward on LAN translates
+  `192.168.21.1:443` → `127.0.0.1:8000` (pf rdr with auto-generated
+  associated pass rule, **no SNAT**, so client IPs are preserved). Result:
+  `https://tst.spengergasse.at` works without a port, TLS stays
+  end-to-end in `Deno.serve`, and port 8000 is unreachable from the
+  network. Privileged-port workarounds (`mac_portacl`, lowering
+  `net.inet.ip.portrange.reservedhigh`) were discarded — the loopback
+  binding plus DNAT makes them unnecessary.
 
 ## Deno-First Execution
 

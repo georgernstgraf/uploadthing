@@ -90,10 +90,31 @@ only in the operator's head; it is now recorded here (see #132).
 - Planned layout on `sense`: cert directory under georg's home,
   e.g. `~/uploadthing/tls/` (readable by the unprivileged user),
   `privkey.pem` with mode 600, owner `georg`.
-- Production env on `sense` sets `TLS_CERT_PATH`, `TLS_KEY_PATH` and
-  `LISTEN_PORT=8443`. Port 443 stays occupied by the OPNsense GUI on
-  the same host; the clean-URL alternative (GUI on 8443 + DNAT, TLS
-  still end-to-end at Deno) is deliberately deferred.
+- Production env on `sense`: `DENO_ENV=production`, `LISTEN_PORT=8000`,
+  `LISTEN_HOST=127.0.0.1` (**loopback only** — port 8000 is not reachable
+  from the network), plus `TLS_CERT_PATH` =
+  `/home/georg/certs/tst.spengergasse.at/fullchain.pem` and the matching
+  `TLS_KEY_PATH`.
+- Clean URL `https://tst.spengergasse.at` without port — implemented
+  2026-10-16: the OPNsense GUI moved to **8443** (the real LE certificate
+  was imported into the OPNsense cert store, descr
+  "tst.spengergasse.at (uploadthing cert, ssh import)") and a DNAT port
+  forward on the LAN interface (`usblan`) translates
+  `192.168.21.1:443` → `127.0.0.1:8000` (`pf rdr`, NAT rule uuid
+  `cf776562-1412-47ec-af06-5c0a0cfebd0c`, associated pass rule
+  auto-generated via `pass=rule`). **No SNAT** → the real client IPs
+  stay visible to the app (verified via `pfctl -s state`); TLS stays
+  end-to-end in `Deno.serve`. Pre-change backups:
+  `/conf/config.xml.bak-20261016-*` on `sense`.
+- Service management on `sense`: rc.d script
+  `/usr/local/etc/rc.d/uploadthing` (`uploadthing_enable=YES`, boots
+  with the system), running `startloop.sh` (while-loop wrapper) via
+  `daemon -u georg`. Caveat: `service uploadthing restart` can no-op
+  when the loop shell survives with a stale pidfile — a clean restart
+  is: kill both the loop shell and the deno child, remove
+  `/var/run/uploadthing.pid`, then `service uploadthing start`. A
+  `STOPPED` file in `~/uploadthing` keeps the loop from starting deno
+  (deliberate downtime switch — check it before starting).
 - Public DNS for `tst.spengergasse.at` keeps pointing at `kik` (needed
   for ACME HTTP-01 validation); clients reach `sense` through a
   **split-DNS override** (`tst.spengergasse.at` → sense LAN IP,
