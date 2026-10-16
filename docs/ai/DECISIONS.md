@@ -1,5 +1,26 @@
 # DECISIONS
 
+## Single-Repo Exam System (appliance/ Integration)
+
+- The sister repo `examsense` (OPNsense/FreeBSD appliance scripts:
+  exammode, scan helpers, rc.d service, redacted config snapshots,
+  MikroTik artifacts) was merged into this repository as `appliance/`
+  (2026-10-16); `georgernstgraf/examsense` is archived (read-only) on
+  GitHub.
+- Import method: squashed subtree (`git subtree add --prefix=appliance
+  --squash`), deliberately not full-history — the old history stays
+  queryable in the archived repo.
+- Examsense documentation was consolidated, not duplicated: operational
+  guidance lives in `docs/ai/OPERATIONS.md` ("Appliance Setup"), script
+  conventions in `docs/ai/CONVENTIONS.md` ("Appliance Scripts");
+  `appliance/README.md` and `appliance/AGENTS.md` are thin pointers.
+- The examsense Makefile target lives on as `config-snapshot` in the
+  root Makefile; it runs **on the appliance** (source is
+  `/conf/config.xml`), not on the dev machine.
+- `appliance/files/` filenames map 1:1 to OPNsense system paths
+  (slashes replaced by underscores); renaming requires a deployment
+  migration note.
+
 ## Native TLS, No Proxy
 
 - uploadthing is itself the TLS endpoint via `Deno.serve` (`cert`/`key` options); no reverse proxy is put in front.

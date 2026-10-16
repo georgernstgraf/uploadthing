@@ -1,5 +1,17 @@
 # PITFALLS
 
+## Broken Test Environment In Dev Checkout
+
+- As of 2026-10-16, `deno task test` fails in the dell dev checkout for
+  **pre-existing env reasons**, not code reasons: `.env` lacks
+  `ABGABEN_DIR`/`UNTERLAGEN_DIR` (those live in `.env.local`, which
+  `scripts/test-with-server.sh` does not source), so the dev server and
+  11 test modules die at startup with `requireEnv()` errors while 60/71
+  tests pass. [ACTIVE until env files or test script are fixed]
+- When this failure appears, check whether it is the known env gap
+  before hunting for a code cause; the app itself cannot even start
+  with the current `.env`/`.env.local`.
+
 ## Fail-Strict Configuration
 
 - Config is fail-fast: all required env vars are validated at module load time via `requireEnv()` and `parseRequiredIpList()`.
