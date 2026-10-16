@@ -23,5 +23,10 @@ opencode.json
 f.css
 /abgaben/
 /unterlagen/
+
+# appliance/ (formerly examsense)
+/appliance/tmp/
+/appliance/test-exam.py
+/appliance/bin/scan.py
 .env.local
 SCRATCH.md

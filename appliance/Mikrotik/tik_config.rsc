@@ -19,7 +19,7 @@ set [ find default=yes ] ip-type=ipv4 use-network-apn=no
 /interface wireless security-profiles
 set [ find default=yes ] authentication-types=wpa2-psk comment=defconf \
     disable-pmkid=yes supplicant-identity=MikroTik wpa2-pre-shared-key=\
-    6AWVC6DQ99
+    <password-not-revealed>
 /interface bridge port
 add bridge=bridge comment=defconf ingress-filtering=no interface=ether2 \
     internal-path-cost=10 path-cost=10

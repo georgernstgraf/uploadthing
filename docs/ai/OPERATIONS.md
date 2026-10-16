@@ -42,6 +42,9 @@ only in the operator's head; it is now recorded here (see #132).
 - In the dev environment `.env` sets `EXAMMODE_COMMAND=true` (a stub
   that just exits 0), so local tests verify wiring only, not a real
   firewall change.
+- The real script lives in this repo: `appliance/bin/exammode.sh`
+  (unified start/stop/status since #121). It is deployed to the box
+  (`/root/bin/exammode`) via the `appliance/` install path below.
 
 ## Package Repos On OPNsense
 
@@ -96,6 +99,91 @@ only in the operator's head; it is now recorded here (see #132).
   **split-DNS override** (`tst.spengergasse.at` → sense LAN IP,
   configured in OPNsense Unbound).
 
+## Appliance Setup (from the former examsense repo)
+
+The `appliance/` directory holds the OPNsense/FreeBSD appliance-side
+half of the system (imported from the sister repo `examsense`, now
+archived). Layout:
+
+- `appliance/bin/` — scripts for `/root/bin` or a similar PATH location
+  (`exammode.sh`, `scan-pfctl.py`, `scan-nmap.py`, `scan-tik.py`,
+  `list.awk`, `redact-opnsense.sed`).
+- `appliance/files/` — mirrors target appliance paths under
+  `/usr/local/...`; filenames are the system path with `/` replaced by
+  `_` (e.g. `usr_local_etc_rc.d_uploadthing` →
+  `/usr/local/etc/rc.d/uploadthing`).
+- `appliance/Mikrotik/` — router config artifacts and command notes.
+  **Sensitive:** `show-sensitive` exports and backup commands may
+  contain live wireless keys or backup passwords — never commit them.
+
+### Install into /root on the appliance
+
+- Clone or unpack this repository as `root` into `/root/examdns`
+  (or deploy the `appliance/` subtree) and make the scripts available
+  on PATH, e.g. `ln -s /root/examdns/bin /root/bin`.
+
+### OPNsense base DNS settings
+
+- System → Settings → General: leave `DNS Servers` empty (or configure
+  explicitly); enable `Allow DNS server list to be overridden by
+  DHCP/PPP on WAN`; enable `Do not use the local DNS service as a
+  nameserver for this system`.
+- Services → Unbound DNS → Query Forwarding: enable `Use System
+  Nameservers`.
+- Services → Unbound DNS → Advanced: enable `Log Queries`, `Log
+  Replies`, `Tag Queries and Replies`.
+
+### Redirect DNS traffic to Unbound
+
+- Firewall → NAT → Port Forward: redirect all DNS traffic targeting
+  `not this firewall:53` to `127.0.0.1:53`.
+
+### Block known DoH endpoints
+
+- Firewall → Aliases: `Type` = `URL Table (IPs)`, source
+  `https://raw.githubusercontent.com/crypt0rr/public-doh-servers/main/ipv4.list`.
+- Firewall → Rules → LAN: reject port `443` traffic to the DoH alias.
+
+### Scan helper / configd integration
+
+- `appliance/bin/scan-pfctl.py` posts active IPs discovered from
+  `pfctl -ss` (this is the data source for the app's `/activeips`
+  endpoint).
+- Deploy `appliance/files/usr_local_opnsense_scripts_custom_nmap_cron.sh`
+  as `/usr/local/opnsense/scripts/custom/nmap_cron.sh`.
+- Deploy
+  `appliance/files/usr_local_opnsense_service_conf_actions.d_actions_exampy.conf`
+  into `/usr/local/opnsense/service/conf/actions.d/`, then
+  `service configd restart` and create the cron job in the GUI.
+
+### Uploadthing rc.d service
+
+- Service file: `appliance/files/usr_local_etc_rc.d_uploadthing`.
+- Create `33.2/32` as a Proxy ARP address.
+- Add a firewall NAT port-forward from `33.2:80` to `localhost:8000`.
+- Start with `service uploadthing start` after deployment.
+
+### Additional appliance notes
+
+- Host overrides in use: `router`, `sense`, `tplink`.
+- Admin access (System → Admin → Settings): enable SSH + root login
+  per appliance policy; passwordless sudo and serial console only when
+  needed for recovery.
+- USB NIC persistence: install
+  `appliance/files/usr_local_sbin_usb_nic_rename.sh` as
+  `/usr/local/sbin/usb_nic_rename.sh` (adjust placeholder MACs first)
+  and `appliance/files/usr_local_etc_devd_usb_persist.conf` as
+  `/usr/local/etc/devd/usb_persist.conf`.
+- Shell aliases on the box:
+  `alias ub='unbound-control -c /var/unbound/unbound.conf'`,
+  `alias ut='tail -F /var/log/resolver/latest.log'`.
+- System tunables: `net.inet.tcp.blackhole=0`,
+  `net.inet.udp.blackhole=0`, `hw.usb.no_suspend=1`.
+- Redacted config snapshots: `make config-snapshot` on the appliance
+  writes `appliance/files/conf_config.xml` via
+  `appliance/bin/redact-opnsense.sed`; snapshots in the repo are
+  redacted (verify before committing new ones).
+
 ## Database Sync Cycle (from the dev machine)
 
 Driven by the `Makefile` on the development machine:
@@ -110,9 +198,10 @@ Driven by the `Makefile` on the development machine:
 
 ## Open Points
 
-- Exact Deno install/version procedure on `sense` and where the
-  `exammode` script lives on the box are not yet recorded; to be filled
-  in from operator knowledge or a future session on the host.
+- Exact Deno install/version procedure on `sense` is not yet recorded;
+  to be filled in from operator knowledge or a future session on the
+  host. (The `exammode` script location is now recorded above:
+  `appliance/bin/exammode.sh` → `/root/bin/exammode`.)
 - Same gap applies to the TLS deployment from #137: how the app
   service on `sense` is supervised/restarted (the repo's
   `startloop.sh` respawn loop with a `STOPPED` marker file is a

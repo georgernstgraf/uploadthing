@@ -42,6 +42,14 @@ The application fails to start if any required variable is missing.
 | `ADMIN_REFRESH_SECONDS` | `15` | Auto-refresh interval for admin forensics page |
 | `PUBLIC_URL` | `http://<LISTEN_HOST>:<LISTEN_PORT>/` | URL displayed in the hero header (full URL incl. scheme, optionally with port); decoupled from `LISTEN_HOST`, which only determines the bind address |
 
+## Appliance Scripts (`appliance/`)
+
+The `appliance/` directory contains the OPNsense/FreeBSD appliance-side
+half of the exam system (exam mode toggle, scan helpers, rc.d service,
+redacted config snapshots, MikroTik artifacts). It was imported from the
+former `examsense` repository. See `appliance/README.md` and
+`docs/ai/OPERATIONS.md` ("Appliance Setup").
+
 ## Project Knowledge
 
 Primary project guidance lives in `docs/ai/`:

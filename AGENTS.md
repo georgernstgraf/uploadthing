@@ -1,5 +1,14 @@
 # Project Agent Guide
 
+## Scope
+
+- This repository covers **both halves of the exam system**: the Deno
+  web app (`lib/`, `routes/`, `service/`, `repo/`, `templates/`, …) and
+  the OPNsense/FreeBSD appliance-side scripts under `appliance/`
+  (imported from the archived `examsense` repo).
+- Appliance scripts follow their own conventions — see
+  `docs/ai/CONVENTIONS.md`, section "Appliance Scripts".
+
 ## Role
 
 - Act as a senior developer.

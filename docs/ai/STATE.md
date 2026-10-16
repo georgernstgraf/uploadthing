@@ -1,9 +1,14 @@
 # Project State
 
-Current status as of 2026-10-13.
+Current status as of 2026-10-16.
 
 ## Current Focus
-Issue #137 (TLS-Betrieb auf sense) — in progress: `.env.example` + TLS-Deploy-Doku erledigt; Host-Arbeit auf `sense` offen (SSH-Zugang ungeklärt).
+Sister repo `examsense` (OPNsense appliance scripts) integrated into this
+repo as `appliance/` (squashed subtree import, docs consolidated into
+`docs/ai/OPERATIONS.md` + `CONVENTIONS.md`, examsense archived on GitHub).
+Issue #137 (TLS-Betrieb auf sense) — in progress: `.env.example` +
+TLS-Deploy-Doku erledigt; Host-Arbeit auf `sense` offen (SSH-Zugang
+ungeklärt).
 
 ## Completed (this cycle)
 - [x] `.env.example` (git-tracked, Platzhalter, TLS-Block mit Beides-oder-keins-Hinweis) (#137)

@@ -15,3 +15,8 @@ push:
 
 logsync:
 	rsync -av --delete sense:/var/log/exampy/ /home/georg/exampy/
+
+# Redacted OPNsense config snapshot (from the appliance/, formerly examsense).
+# Run ON the firewall: make -f appliance/Makefile or copy this logic there.
+config-snapshot:
+	sed -f appliance/bin/redact-opnsense.sed /conf/config.xml > appliance/files/conf_config.xml
