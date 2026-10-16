@@ -1,0 +1,1316 @@
+<?xml version="1.0"?>
+<opnsense>
+  <theme>opnsense</theme>
+  <sysctl version="1.0.2" persisted_at="1771508895.29" description="System Tunables">
+    <item uuid="47da98c3-3239-4147-9f40-113e604970b8">
+      <tunable>hint.uart.0.disabled</tunable>
+      <value>1</value>
+      <descr>ATKBD GIANT LOCK</descr>
+    </item>
+    <item uuid="e3b6a554-1b7e-4dde-abf9-bd8a5ba3e993">
+      <tunable>hint.uart.1.disabled</tunable>
+      <value>1</value>
+      <descr>ATKBD GIANT LOCK</descr>
+    </item>
+    <item uuid="67b8a80c-a6b6-42f8-97e1-f64cbfed4625">
+      <tunable>kern.maxswzone</tunable>
+      <value>67108864</value>
+      <descr>8GB SWAP</descr>
+    </item>
+    <item uuid="121fbce6-97dc-4e7e-a8c0-e81c2c7fce72">
+      <tunable>net.inet.tcp.blackhole</tunable>
+      <value>0</value>
+      <descr>Do not send RST on segments to closed ports</descr>
+    </item>
+    <item uuid="4fee1130-e168-4957-9e8d-46379dfb0d40">
+      <tunable>net.inet.udp.blackhole</tunable>
+      <value>0</value>
+      <descr>Do not send port unreachables for refused connects</descr>
+    </item>
+    <item uuid="aa683177-0e04-4bad-952f-9cf57723d101">
+      <tunable>linux_enable</tunable>
+      <value>YES</value>
+      <descr/>
+    </item>
+    <item uuid="7b81e52e-d9e5-4021-b92c-abf4c10a47e2">
+      <tunable>hw.usb.no_suspend</tunable>
+      <value>1</value>
+      <descr>USB BUS DONT SLEEP</descr>
+    </item>
+    <item uuid="685a9327-56ca-4938-8d25-d29f24512822">
+      <tunable>hw.usb.quirk.0</tunable>
+      <value>0x2357 0x0601 0 0xffff UQ_CFG_INDEX_0</value>
+      <descr>TPLINK UE 300 QUIRK</descr>
+    </item>
+    <item uuid="1f611f9a-defb-4991-a0aa-79ea5da306b8">
+      <tunable>hint.psm.0.disabled</tunable>
+      <value>1</value>
+      <descr>GIANT LOCK</descr>
+    </item>
+    <item uuid="f9404d5a-4d02-431d-aef9-525287958ae9">
+      <tunable>hint.atrtc.0.disabled</tunable>
+      <value>1</value>
+      <descr>WARN IO</descr>
+    </item>
+    <item uuid="402db136-9ab1-47fd-9f46-bcc95432bfd2">
+      <tunable>hint.spkr.0.disabled</tunable>
+      <value>1</value>
+      <descr>SpEAKER DISABLE</descr>
+    </item>
+  </sysctl>
+  <system>
+    <optimization>normal</optimization>
+    <hostname>sense</hostname>
+    <domain>internal</domain>
+    <dnsallowoverride>0</dnsallowoverride>
+    <dnsallowoverride_exclude/>
+    <group uuid="24ceade6-55a8-4309-ab04-829e4f9a3740">
+      <gid>1999</gid>
+      <name>admins</name>
+      <scope>system</scope>
+      <description>System Administrators</description>
+      <priv>page-all</priv>
+      <member>0</member>
+      <source_networks/>
+    </group>
+    <user uuid="a1200f22-742e-4743-be7e-a6c6f13340aa">
+      <uid>0</uid>
+      <name>root</name>
+      <disabled>0</disabled>
+      <scope>system</scope>
+      <expires/>
+      <authorizedkeys/>
+      <otp_seed/>
+      <shell>/usr/local/bin/bash</shell>
+      <password>Password not revealed.</password>
+      <pwd_changed_at/>
+      <landing_page/>
+      <comment/>
+      <email/>
+      <apikeys/>
+      <priv/>
+      <language/>
+      <descr>System Administrator</descr>
+      <dashboard/>
+    </user>
+    <timezone>Europe/Vienna</timezone>
+    <timeservers>0.opnsense.pool.ntp.org 1.opnsense.pool.ntp.org 2.opnsense.pool.ntp.org 3.opnsense.pool.ntp.org</timeservers>
+    <webgui>
+      <protocol>https</protocol>
+      <ssl-certref>6931e8cf80849</ssl-certref>
+      <port/>
+      <ssl-ciphers/>
+      <interfaces/>
+      <compression/>
+      <nodnsrebindcheck>1</nodnsrebindcheck>
+      <nohttpreferercheck>1</nohttpreferercheck>
+      <disablehttpredirect>1</disablehttpredirect>
+    </webgui>
+    <disablenatreflection>yes</disablenatreflection>
+    <usevirtualterminal>1</usevirtualterminal>
+    <powerd_ac_mode>hadp</powerd_ac_mode>
+    <powerd_battery_mode>hadp</powerd_battery_mode>
+    <powerd_normal_mode>hadp</powerd_normal_mode>
+    <bogons>
+      <interval>monthly</interval>
+    </bogons>
+    <pf_share_forward>1</pf_share_forward>
+    <ssh>
+      <group>admins</group>
+      <noauto>1</noauto>
+      <interfaces/>
+      <kex/>
+      <ciphers/>
+      <macs/>
+      <keys/>
+      <keysig/>
+      <rekeylimit/>
+      <enabled>enabled</enabled>
+      <passwordauth>1</passwordauth>
+      <permitrootlogin>1</permitrootlogin>
+    </ssh>
+    <rrdbackup>-1</rrdbackup>
+    <netflowbackup>-1</netflowbackup>
+    <firmware version="1.0.1" persisted_at="1764889241.47" description="Firmware settings">
+      <mirror>https://opnsense-mirror.hiho.ch</mirror>
+      <flavour/>
+      <plugins>os-isc-dhcp,os-virtualbox</plugins>
+      <type/>
+      <subscription/>
+      <reboot>1</reboot>
+    </firmware>
+    <serialspeed>115200</serialspeed>
+    <primaryconsole>efi</primaryconsole>
+    <sudo_allow_wheel>2</sudo_allow_wheel>
+    <language>en_US</language>
+    <dnsserver/>
+    <dns1gw>none</dns1gw>
+    <dns2gw>none</dns2gw>
+    <dns3gw>none</dns3gw>
+    <dns4gw>none</dns4gw>
+    <dns5gw>none</dns5gw>
+    <dns6gw>none</dns6gw>
+    <dns7gw>none</dns7gw>
+    <dns8gw>none</dns8gw>
+    <disablebeep>1</disablebeep>
+    <backupcount>21</backupcount>
+    <disablereplyto>yes</disablereplyto>
+    <maximumstates/>
+    <maximumfrags/>
+    <aliasesresolveinterval>60</aliasesresolveinterval>
+    <maximumtableentries/>
+    <skip_rules_gw_down>1</skip_rules_gw_down>
+    <pfdebug>urgent</pfdebug>
+    <pf_disable_force_gw>1</pf_disable_force_gw>
+  </system>
+  <interfaces>
+    <lo0>
+      <internal_dynamic>1</internal_dynamic>
+      <descr>Loopback</descr>
+      <enable>1</enable>
+      <if>lo0</if>
+      <ipaddr>127.0.0.1</ipaddr>
+      <ipaddrv6>::1</ipaddrv6>
+      <subnet>8</subnet>
+      <subnetv6>128</subnetv6>
+      <type>none</type>
+      <virtual>1</virtual>
+    </lo0>
+    <lan>
+      <if>usblan</if>
+      <descr/>
+      <enable>1</enable>
+      <lock>1</lock>
+      <spoofmac/>
+      <media>autoselect</media>
+      <ipaddr>192.168.21.1</ipaddr>
+      <subnet>24</subnet>
+      <hw_settings_overwrite>1</hw_settings_overwrite>
+      <disablechecksumoffloading>1</disablechecksumoffloading>
+      <disablesegmentationoffloading>1</disablesegmentationoffloading>
+      <disablelargereceiveoffloading>1</disablelargereceiveoffloading>
+      <disablevlanhwfilter>1</disablevlanhwfilter>
+    </lan>
+    <wan>
+      <if>usbwan</if>
+      <descr/>
+      <enable>1</enable>
+      <lock>1</lock>
+      <spoofmac/>
+      <ipaddr>dhcp</ipaddr>
+      <dhcphostname/>
+      <alias-address/>
+      <alias-subnet>32</alias-subnet>
+      <dhcprejectfrom/>
+      <adv_dhcp_pt_timeout/>
+      <adv_dhcp_pt_retry/>
+      <adv_dhcp_pt_select_timeout/>
+      <adv_dhcp_pt_reboot/>
+      <adv_dhcp_pt_backoff_cutoff/>
+      <adv_dhcp_pt_initial_interval/>
+      <adv_dhcp_pt_values>SavedCfg</adv_dhcp_pt_values>
+      <adv_dhcp_send_options/>
+      <adv_dhcp_request_options/>
+      <adv_dhcp_required_options/>
+      <adv_dhcp_option_modifiers/>
+      <adv_dhcp_config_advanced/>
+      <adv_dhcp_config_file_override/>
+      <adv_dhcp_config_file_override_path/>
+      <dhcphonourmtu>1</dhcphonourmtu>
+      <hw_settings_overwrite>1</hw_settings_overwrite>
+      <disablechecksumoffloading>1</disablechecksumoffloading>
+      <disablesegmentationoffloading>1</disablesegmentationoffloading>
+      <disablelargereceiveoffloading>1</disablelargereceiveoffloading>
+      <disablevlanhwfilter>2</disablevlanhwfilter>
+    </wan>
+  </interfaces>
+  <dnsmasq version="1.0.8" persisted_at="1767951811.14" description="Dnsmasq DNS and DHCP">
+    <enable>1</enable>
+    <regdhcp>0</regdhcp>
+    <regdhcpstatic>0</regdhcpstatic>
+    <dhcpfirst>0</dhcpfirst>
+    <strict_order>0</strict_order>
+    <domain_needed>0</domain_needed>
+    <no_private_reverse>0</no_private_reverse>
+    <no_resolv>0</no_resolv>
+    <log_queries>0</log_queries>
+    <no_hosts>0</no_hosts>
+    <strictbind>0</strictbind>
+    <dnssec>0</dnssec>
+    <regdhcpdomain/>
+    <interface>lan</interface>
+    <port>0</port>
+    <dns_forward_max/>
+    <cache_size/>
+    <local_ttl/>
+    <add_mac/>
+    <add_subnet>0</add_subnet>
+    <strip_subnet>0</strip_subnet>
+    <dhcp>
+      <no_interface/>
+      <fqdn>1</fqdn>
+      <domain/>
+      <local>1</local>
+      <lease_max/>
+      <authoritative>1</authoritative>
+      <default_fw_rules>1</default_fw_rules>
+      <reply_delay/>
+      <enable_ra>0</enable_ra>
+      <nosync>0</nosync>
+      <log_dhcp>0</log_dhcp>
+      <log_quiet>0</log_quiet>
+    </dhcp>
+    <no_ident>1</no_ident>
+    <hosts uuid="93bfbdd8-7551-490c-9b5d-9a5e110abe3d">
+      <host>tplink</host>
+      <domain>internal</domain>
+      <local>0</local>
+      <ip>192.168.21.3</ip>
+      <cnames/>
+      <client_id/>
+      <hwaddr>40:3f:8c:d9:aa:a4</hwaddr>
+      <lease_time/>
+      <ignore>0</ignore>
+      <set_tag/>
+      <descr/>
+      <comments/>
+      <aliases/>
+    </hosts>
+    <hosts uuid="41ee68fe-71dd-4da4-8400-728512e2faa7">
+      <host>cisco</host>
+      <domain>internal</domain>
+      <local>0</local>
+      <ip>192.168.21.4</ip>
+      <cnames/>
+      <client_id/>
+      <hwaddr>00:21:a0:d1:32:84</hwaddr>
+      <lease_time/>
+      <ignore>0</ignore>
+      <set_tag/>
+      <descr/>
+      <comments/>
+      <aliases/>
+    </hosts>
+    <hosts uuid="f68c4258-07dd-4b38-9da2-a31bf6de7bcb">
+      <host>dell</host>
+      <domain>internal</domain>
+      <local>0</local>
+      <ip>192.168.21.2</ip>
+      <cnames/>
+      <client_id/>
+      <hwaddr>f8:59:71:65:4a:6e</hwaddr>
+      <lease_time/>
+      <ignore>0</ignore>
+      <set_tag/>
+      <descr/>
+      <comments/>
+      <aliases/>
+    </hosts>
+    <hosts uuid="4ba01aa0-b795-4bbb-89c0-6d2149c8d4e3">
+      <host>tik</host>
+      <domain>internal</domain>
+      <local>0</local>
+      <ip>192.168.21.5</ip>
+      <cnames/>
+      <client_id/>
+      <hwaddr>f4:1e:57:d9:60:89</hwaddr>
+      <lease_time/>
+      <ignore>0</ignore>
+      <set_tag/>
+      <descr/>
+      <comments/>
+      <aliases/>
+    </hosts>
+    <dhcp_ranges uuid="3b8a3a34-c60e-4433-8210-30f046adadb2">
+      <interface>lan</interface>
+      <set_tag/>
+      <start_addr>192.168.21.7</start_addr>
+      <end_addr>192.168.21.247</end_addr>
+      <subnet_mask/>
+      <constructor/>
+      <mode/>
+      <prefix_len/>
+      <lease_time/>
+      <domain_type>range</domain_type>
+      <domain/>
+      <nosync>0</nosync>
+      <ra_mode/>
+      <ra_priority/>
+      <ra_mtu/>
+      <ra_interval/>
+      <ra_router_lifetime/>
+      <description/>
+    </dhcp_ranges>
+  </dnsmasq>
+  <snmpd>
+    <syslocation/>
+    <syscontact/>
+    <rocommunity>public</rocommunity>
+  </snmpd>
+  <filter>
+    <rule uuid="34f4fbf8-3cc1-4e4f-929f-c12c6d504b50">
+      <type>pass</type>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>floaty</descr>
+      <direction>in</direction>
+      <category>floaty</category>
+      <floating>yes</floating>
+      <log>1</log>
+      <quick>1</quick>
+      <source>
+        <network>(self)</network>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+      <updated>
+        <username>root@192.168.21.80</username>
+        <time>1773174117.86</time>
+        <description>/firewall_rules_edit.php made changes</description>
+      </updated>
+      <created>
+        <username>root@192.168.21.170</username>
+        <time>1765405353.46</time>
+        <description>/firewall_rules_edit.php made changes</description>
+      </created>
+    </rule>
+    <rule uuid="08c160fb-8eb5-42c1-b2be-53d55dbe9979">
+      <type>pass</type>
+      <interface>wan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <protocol>icmp</protocol>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <network>(self)</network>
+      </destination>
+      <updated>
+        <username>root@192.168.21.80</username>
+        <time>1765265673.40</time>
+        <description>/firewall_rules_edit.php made changes</description>
+      </updated>
+      <created>
+        <username>root@192.168.21.80</username>
+        <time>1765265673.40</time>
+        <description>/firewall_rules_edit.php made changes</description>
+      </created>
+    </rule>
+    <rule uuid="a6bebc62-5fd1-487c-9fe9-f3adba1067ac">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <direction>in</direction>
+      <quick>1</quick>
+      <source>
+        <any>1</any>
+      </source>
+      <destination>
+        <network>(self)</network>
+      </destination>
+      <updated>
+        <username>root@192.168.21.101</username>
+        <time>1765886565.88</time>
+        <description>/firewall_rules_edit.php made changes</description>
+      </updated>
+      <created>
+        <username>root@192.168.21.170</username>
+        <time>1765405960.05</time>
+        <description>/firewall_rules_edit.php made changes</description>
+      </created>
+    </rule>
+    <rule uuid="450e19ba-cd2a-4f78-8e57-2375203f4cdd">
+      <type>pass</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>infra</descr>
+      <direction>in</direction>
+      <category>infra</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <network>lan</network>
+      </source>
+      <destination>
+        <address>INFRA</address>
+      </destination>
+      <updated>
+        <username>root@192.168.21.80</username>
+        <time>1773175316.09</time>
+        <description>/firewall_rules_edit.php made changes</description>
+      </updated>
+      <created>
+        <username>root@192.168.21.80</username>
+        <time>1768038418.19</time>
+        <description>/firewall_rules_edit.php made changes</description>
+      </created>
+    </rule>
+    <rule uuid="e3e720e6-27fb-4565-b8cf-3a73cf682b54">
+      <type>reject</type>
+      <interface>lan</interface>
+      <ipprotocol>inet</ipprotocol>
+      <statetype>keep state</statetype>
+      <descr>doku</descr>
+      <direction>in</direction>
+      <category>doku</category>
+      <log>1</log>
+      <quick>1</quick>
+      <protocol>tcp/udp</protocol>
+      <source>
+        <network>lan</network>
+      </source>
+      <destination>
+        <address>DOKU</address>
+        <not>1</not>
+      </destination>
+      <updated>
+        <username>root@192.168.21.80</username>
+        <time>1773175341.02</time>
+        <description>/firewall_rules_edit.php made changes</description>
+      </updated>
+      <created>
+        <username>root@192.168.21.170</username>
+        <time>1765405596.14</time>
+        <description>/firewall_rules_edit.php made changes</description>
+      </created>
+      <disabled>1</disabled>
+    </rule>
+    <rule uuid="ff2e3e81-8819-4bdd-ab19-587a0abb5ecb">
+      <type>pass</type>
+      <ipprotocol>inet</ipprotocol>
+      <descr>Default allow LAN to any rule</descr>
+      <interface>lan</interface>
+      <source>
+        <network>lan</network>
+      </source>
+      <destination>
+        <any/>
+      </destination>
+    </rule>
+  </filter>
+  <rrd>
+    <enable/>
+  </rrd>
+  <ntpd>
+    <prefer>0.opnsense.pool.ntp.org</prefer>
+  </ntpd>
+  <revision>
+    <username>root@192.168.21.80</username>
+    <description>/firewall_rules.php made changes</description>
+    <time>1773175508.60</time>
+  </revision>
+  <OPNsense>
+    <wireguard>
+      <client version="1.0.0" persisted_at="1764878447.04">
+        <clients/>
+      </client>
+      <general version="0.0.1" persisted_at="1764878447.05">
+        <enabled>0</enabled>
+      </general>
+      <server version="1.0.1" persisted_at="1764881326.70" description="WireGuard instance configuration">
+        <servers/>
+      </server>
+    </wireguard>
+    <IPsec version="1.0.5" persisted_at="1764881327.35" description="IPsec settings">
+      <general>
+        <enabled/>
+        <preferred_oldsa>0</preferred_oldsa>
+        <disablevpnrules>0</disablevpnrules>
+        <passthrough_networks/>
+        <user_source/>
+        <local_group/>
+      </general>
+      <charon>
+        <max_ikev1_exchanges/>
+        <threads>16</threads>
+        <ikesa_table_size>32</ikesa_table_size>
+        <ikesa_table_segments>4</ikesa_table_segments>
+        <init_limit_half_open>1000</init_limit_half_open>
+        <ignore_acquire_ts>1</ignore_acquire_ts>
+        <install_routes>0</install_routes>
+        <cisco_unity>0</cisco_unity>
+        <make_before_break>0</make_before_break>
+        <retransmit_tries/>
+        <retransmit_timeout/>
+        <retransmit_base/>
+        <retransmit_jitter/>
+        <retransmit_limit/>
+        <reqid_base/>
+        <syslog>
+          <daemon>
+            <ike_name>1</ike_name>
+            <log_level>0</log_level>
+            <app>1</app>
+            <asn>1</asn>
+            <cfg>1</cfg>
+            <chd>1</chd>
+            <dmn>1</dmn>
+            <enc>1</enc>
+            <esp>1</esp>
+            <ike>1</ike>
+            <imc>1</imc>
+            <imv>1</imv>
+            <job>1</job>
+            <knl>1</knl>
+            <lib>1</lib>
+            <mgr>1</mgr>
+            <net>1</net>
+            <pts>1</pts>
+            <tls>1</tls>
+            <tnc>1</tnc>
+          </daemon>
+        </syslog>
+        <plugins>
+          <attr>
+            <subnet/>
+            <split-include/>
+            <x_28674/>
+            <x_28675/>
+            <x_28672/>
+            <x_28673>0</x_28673>
+            <x_28679/>
+            <dns/>
+            <nbns/>
+          </attr>
+          <eap-radius>
+            <servers/>
+            <accounting>0</accounting>
+            <class_group>0</class_group>
+          </eap-radius>
+          <xauth-pam>
+            <pam_service>ipsec</pam_service>
+            <session>0</session>
+            <trim_email>1</trim_email>
+          </xauth-pam>
+        </plugins>
+      </charon>
+      <keyPairs/>
+      <preSharedKeys/>
+    </IPsec>
+    <Swanctl version="1.0.0" persisted_at="1764878447.27">
+      <Connections/>
+      <locals/>
+      <remotes/>
+      <children/>
+      <Pools/>
+      <VTIs/>
+      <SPDs/>
+    </Swanctl>
+    <OpenVPNExport version="0.0.1" persisted_at="1764878448.06">
+      <servers/>
+    </OpenVPNExport>
+    <OpenVPN version="1.0.1" persisted_at="1764878448.08">
+      <Overwrites/>
+      <Instances/>
+      <StaticKeys/>
+    </OpenVPN>
+    <captiveportal version="1.0.4" persisted_at="1764878448.09">
+      <zones/>
+      <templates/>
+    </captiveportal>
+    <cron version="1.0.4" persisted_at="1766523702.38" description="Cron settings">
+      <jobs>
+        <job uuid="24a21141-c215-4268-9e48-e7a496f17189">
+          <origin>cron</origin>
+          <enabled>1</enabled>
+          <minutes>*</minutes>
+          <hours>*</hours>
+          <days>*</days>
+          <months>*</months>
+          <weekdays>*</weekdays>
+          <who>root</who>
+          <command>scan scan</command>
+          <parameters/>
+          <description>NMAP LAN SCAN</description>
+        </job>
+        <job uuid="00e767f0-87d0-47f8-862f-08be404b4997">
+          <origin>cron</origin>
+          <enabled>0</enabled>
+          <minutes>*/5</minutes>
+          <hours>*</hours>
+          <days>*</days>
+          <months>*</months>
+          <weekdays>*</weekdays>
+          <who>root</who>
+          <command>interface reconfigure</command>
+          <parameters/>
+          <description>Abst&#xFC;rzende Netzwerkkarten die zu billig sind</description>
+        </job>
+      </jobs>
+    </cron>
+    <DHCRelay version="1.0.1" persisted_at="1764878448.13"/>
+    <Firewall>
+      <Lvtemplate version="0.0.1" persisted_at="1764878448.14">
+        <templates/>
+      </Lvtemplate>
+      <Alias version="1.0.1" persisted_at="1768837477.98" description="Firewall aliases">
+        <geoip>
+          <url/>
+        </geoip>
+        <aliases>
+          <alias uuid="5f22a1ca-dc21-42ee-8d8f-fe98c81051c5">
+            <enabled>1</enabled>
+            <name>DOKU</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>1</counters>
+            <updatefreq/>
+            <content>learn.microsoft.com
+prisma.io
+registry.npmjs.org
+docs.oracle.com
+developer.mozilla.org
+fontawesome.com
+getbootstrap.com
+cdn.jsdelivr.net
+marketplace.visualstudio.com
+vsassets.io
+validator.w3.org
+jsr.io
+www.prisma.io
+npmjs.com
+www.w3schools.com
+css-tricks.com
+w3schools.com
+www.w3.org
+fakerjs.dev
+static.fastcmp.com</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <expire/>
+            <categories/>
+            <description>DOKU SERVERS</description>
+          </alias>
+          <alias uuid="870190e2-b85f-4396-b0b4-748d714441cc">
+            <enabled>1</enabled>
+            <name>INFRA</name>
+            <type>host</type>
+            <path_expression/>
+            <proto/>
+            <interface/>
+            <counters>1</counters>
+            <updatefreq/>
+            <content>www.msftconnecttest.com
+connectivity-check.ubuntu.com
+www.msftncsi.com
+captive.apple.com
+www.apple.com
+www.ibook.info
+connectivitycheck.gstatic.com
+fedoraproject.org
+ping.archlinux.org
+network-test.debian.org
+airport.us
+appleid.apple.com
+clients3.google.com
+connectivitycheck.android.com
+detectportal.firefox.com
+dns.msftncsi.com
+ipv6.msftconnecttest.com
+itools.info
+msedge.api.cdp.microsoft.com
+play.googleapis.com
+pool.ntp.org
+thinkdifferent.us
+time.apple.com
+time.google.com
+time.windows.com
+www.airport.us
+www.itools.info
+www.thinkdifferent.usipv6.msftconnecttest.com
+binaries.prisma.sh</content>
+            <password/>
+            <username/>
+            <authtype/>
+            <expire/>
+            <categories/>
+            <description>INFRA SERVERS</description>
+          </alias>
+        </aliases>
+      </Alias>
+      <Category version="1.0.0" persisted_at="1773175341.04" description="Firewall categories">
+        <categories>
+          <category uuid="90d40e59-e01a-4823-91e6-2a51a9e93cc7">
+            <name>floaty</name>
+            <auto>1</auto>
+            <color/>
+          </category>
+          <category uuid="34a665e8-ebb8-4518-8a5c-9a3bb3b3f24f">
+            <name>infra</name>
+            <auto>1</auto>
+            <color/>
+          </category>
+          <category uuid="3ee5dabd-5c66-4752-b4eb-0f79dae9fa83">
+            <name>doku</name>
+            <auto>1</auto>
+            <color/>
+          </category>
+        </categories>
+      </Category>
+      <Filter version="1.0.4" persisted_at="1773174875.41" description="Firewall rules (new)">
+        <rules/>
+        <snatrules/>
+        <npt/>
+        <onetoone/>
+      </Filter>
+    </Firewall>
+    <Netflow version="1.0.1" persisted_at="1764878448.15">
+      <capture>
+        <interfaces/>
+        <egress_only/>
+        <version>v9</version>
+        <targets/>
+      </capture>
+      <collect>
+        <enable>0</enable>
+      </collect>
+      <activeTimeout>1800</activeTimeout>
+      <inactiveTimeout>15</inactiveTimeout>
+    </Netflow>
+    <IDS version="1.1.2" persisted_at="1773172980.76" description="Intrusion detection">
+      <rules/>
+      <policies/>
+      <userDefinedRules/>
+      <files/>
+      <fileTags/>
+      <general>
+        <enabled>0</enabled>
+        <mode>pcap</mode>
+        <divert_listeners>1</divert_listeners>
+        <promisc>0</promisc>
+        <interfaces>wan</interfaces>
+        <homenet>192.168.0.0/16,10.0.0.0/8,172.16.0.0/12</homenet>
+        <defaultPacketSize/>
+        <UpdateCron/>
+        <AlertLogrotate>W0D23</AlertLogrotate>
+        <AlertSaveLogs>4</AlertSaveLogs>
+        <MPMAlgo/>
+        <detect>
+          <Profile/>
+          <toclient_groups/>
+          <toserver_groups/>
+        </detect>
+        <syslog>0</syslog>
+        <syslog_eve>0</syslog_eve>
+        <LogPayload>0</LogPayload>
+        <verbosity/>
+        <eveLog>
+          <http>
+            <enable>0</enable>
+            <extended>0</extended>
+            <dumpAllHeaders/>
+          </http>
+          <tls>
+            <enable>0</enable>
+            <extended>0</extended>
+            <sessionResumption>0</sessionResumption>
+            <custom/>
+          </tls>
+        </eveLog>
+      </general>
+    </IDS>
+    <Interfaces>
+      <loopbacks version="1.0.0" persisted_at="1764878450.07"/>
+      <neighbors version="1.0.0" persisted_at="1764878450.08"/>
+      <vxlans version="1.0.2" persisted_at="1764878450.26"/>
+      <settings version="1.0.0" persisted_at="1773172979.71" description="Global interface settings">
+        <disablechecksumoffloading>1</disablechecksumoffloading>
+        <disablesegmentationoffloading>1</disablesegmentationoffloading>
+        <disablelargereceiveoffloading>1</disablelargereceiveoffloading>
+        <disablevlanhwfilter>1</disablevlanhwfilter>
+        <disableipv6>1</disableipv6>
+        <dhcp6_norelease>0</dhcp6_norelease>
+        <dhcp6_debug>0</dhcp6_debug>
+        <dhcp6_duid/>
+        <dhcp6_ratimeout>10</dhcp6_ratimeout>
+      </settings>
+    </Interfaces>
+    <Kea>
+      <ctrl_agent version="0.0.1" persisted_at="1764878450.27">
+        <general>
+          <enabled>0</enabled>
+          <http_host>127.0.0.1</http_host>
+          <http_port>8000</http_port>
+        </general>
+      </ctrl_agent>
+      <dhcp4 version="1.0.4" persisted_at="1764878450.28">
+        <general>
+          <enabled>0</enabled>
+          <manual_config>0</manual_config>
+          <interfaces/>
+          <valid_lifetime>4000</valid_lifetime>
+          <fwrules>1</fwrules>
+          <dhcp_socket_type>raw</dhcp_socket_type>
+        </general>
+        <ha>
+          <enabled>0</enabled>
+          <this_server_name/>
+          <max_unacked_clients>2</max_unacked_clients>
+        </ha>
+        <subnets/>
+        <reservations/>
+        <ha_peers/>
+      </dhcp4>
+      <dhcp6 version="1.0.0" persisted_at="1764878450.29">
+        <general>
+          <enabled>0</enabled>
+          <manual_config>0</manual_config>
+          <interfaces/>
+          <valid_lifetime>4000</valid_lifetime>
+          <fwrules>1</fwrules>
+        </general>
+        <ha>
+          <enabled>0</enabled>
+          <this_server_name/>
+          <max_unacked_clients>2</max_unacked_clients>
+        </ha>
+        <subnets/>
+        <reservations/>
+        <pd_pools/>
+        <ha_peers/>
+      </dhcp6>
+    </Kea>
+    <monit version="1.0.14" persisted_at="1764881328.14" description="Monit settings">
+      <general>
+        <enabled>0</enabled>
+        <interval>120</interval>
+        <startdelay>120</startdelay>
+        <mailserver>127.0.0.1</mailserver>
+        <port>25</port>
+        <username/>
+        <password/>
+        <ssl>0</ssl>
+        <sslversion>auto</sslversion>
+        <sslverify>1</sslverify>
+        <logfile/>
+        <statefile/>
+        <eventqueuePath/>
+        <eventqueueSlots/>
+        <httpdEnabled>0</httpdEnabled>
+        <httpdUsername>root</httpdUsername>
+        <httpdPassword/>
+        <httpdPort>2812</httpdPort>
+        <httpdAllow/>
+        <mmonitUrl/>
+        <mmonitTimeout>5</mmonitTimeout>
+        <mmonitRegisterCredentials>1</mmonitRegisterCredentials>
+      </general>
+      <alert uuid="532fee5a-0f3c-45ad-bfec-bdb64e0b5e5d">
+        <enabled>0</enabled>
+        <recipient>root@localhost.local</recipient>
+        <noton>0</noton>
+        <events/>
+        <format/>
+        <reminder/>
+        <description/>
+      </alert>
+      <service uuid="57a01fb1-4d8c-4cc5-b30a-3a379def6a2b">
+        <enabled>1</enabled>
+        <name>$HOST</name>
+        <description/>
+        <type>system</type>
+        <pidfile/>
+        <match/>
+        <path/>
+        <timeout>300</timeout>
+        <starttimeout>30</starttimeout>
+        <address/>
+        <interface/>
+        <start/>
+        <stop/>
+        <tests>0b399346-93ab-403d-90e8-3741277548a1,deeee5d5-dd2f-441f-b0aa-f396ce1343d9,e6609b2f-d00d-43e9-a1d2-fb2f894c5f4d,3b6e59b2-99e4-44fa-9b88-6330af26efe6</tests>
+        <depends/>
+        <polltime/>
+      </service>
+      <service uuid="f96f566c-ca58-42ac-b963-3f01ee44f201">
+        <enabled>1</enabled>
+        <name>RootFs</name>
+        <description/>
+        <type>filesystem</type>
+        <pidfile/>
+        <match/>
+        <path>/</path>
+        <timeout>300</timeout>
+        <starttimeout>30</starttimeout>
+        <address/>
+        <interface/>
+        <start/>
+        <stop/>
+        <tests>9e959534-83e2-4127-8790-56b361b70124</tests>
+        <depends/>
+        <polltime/>
+      </service>
+      <service uuid="c7f7b2c0-25c7-4c61-9762-af664829e259">
+        <enabled>0</enabled>
+        <name>carp_status_change</name>
+        <description/>
+        <type>custom</type>
+        <pidfile/>
+        <match/>
+        <path>/usr/local/opnsense/scripts/monit/carp_status.php</path>
+        <timeout>300</timeout>
+        <starttimeout>30</starttimeout>
+        <address/>
+        <interface/>
+        <start/>
+        <stop/>
+        <tests>03dcacdd-12ce-468f-965b-e58860f7b667</tests>
+        <depends/>
+        <polltime/>
+      </service>
+      <service uuid="4026ae31-6f7c-4e15-8d6b-1f4244e07c3a">
+        <enabled>0</enabled>
+        <name>gateway_alert</name>
+        <description/>
+        <type>custom</type>
+        <pidfile/>
+        <match/>
+        <path>/usr/local/opnsense/scripts/monit/gateway_alert.php</path>
+        <timeout>300</timeout>
+        <starttimeout>30</starttimeout>
+        <address/>
+        <interface/>
+        <start/>
+        <stop/>
+        <tests>33a1b616-2cd1-441b-8f56-d5738f83f1be</tests>
+        <depends/>
+        <polltime/>
+      </service>
+      <test uuid="304048cb-5362-4e50-a763-a560527fc6f1">
+        <name>Ping</name>
+        <type>NetworkPing</type>
+        <condition>failed ping</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+      <test uuid="ed38f62a-5923-4a3a-9dc3-cd537d8bf8b4">
+        <name>NetworkLink</name>
+        <type>NetworkInterface</type>
+        <condition>failed link</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+      <test uuid="82e0a5cc-4422-4e3f-ac48-85caf4dc607a">
+        <name>NetworkSaturation</name>
+        <type>NetworkInterface</type>
+        <condition>saturation is greater than 75%</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+      <test uuid="0b399346-93ab-403d-90e8-3741277548a1">
+        <name>MemoryUsage</name>
+        <type>SystemResource</type>
+        <condition>memory usage is greater than 75%</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+      <test uuid="deeee5d5-dd2f-441f-b0aa-f396ce1343d9">
+        <name>CPUUsage</name>
+        <type>SystemResource</type>
+        <condition>cpu usage is greater than 75%</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+      <test uuid="e6609b2f-d00d-43e9-a1d2-fb2f894c5f4d">
+        <name>LoadAvg1</name>
+        <type>SystemResource</type>
+        <condition>loadavg (1min) is greater than 8</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+      <test uuid="3b6e59b2-99e4-44fa-9b88-6330af26efe6">
+        <name>LoadAvg5</name>
+        <type>SystemResource</type>
+        <condition>loadavg (5min) is greater than 6</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+      <test uuid="e2d0f6f4-35a7-4d94-a304-949a9c07cee6">
+        <name>LoadAvg15</name>
+        <type>SystemResource</type>
+        <condition>loadavg (15min) is greater than 4</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+      <test uuid="9e959534-83e2-4127-8790-56b361b70124">
+        <name>SpaceUsage</name>
+        <type>SpaceUsage</type>
+        <condition>space usage is greater than 75%</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+      <test uuid="03dcacdd-12ce-468f-965b-e58860f7b667">
+        <name>ChangedStatus</name>
+        <type>ProgramStatus</type>
+        <condition>changed status</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+      <test uuid="33a1b616-2cd1-441b-8f56-d5738f83f1be">
+        <name>NonZeroStatus</name>
+        <type>ProgramStatus</type>
+        <condition>status != 0</condition>
+        <action>alert</action>
+        <path/>
+      </test>
+    </monit>
+    <Gateways version="1.0.0" persisted_at="1764878450.37"/>
+    <Syslog version="1.0.2" persisted_at="1764878450.53">
+      <general>
+        <enabled>1</enabled>
+        <loglocal>1</loglocal>
+        <maxpreserve>31</maxpreserve>
+        <maxfilesize/>
+      </general>
+      <destinations/>
+    </Syslog>
+    <TrafficShaper version="1.0.3" persisted_at="1764878450.54">
+      <pipes/>
+      <queues/>
+      <rules/>
+    </TrafficShaper>
+    <trust>
+      <general version="1.0.1" persisted_at="1764878451.54">
+        <store_intermediate_certs>0</store_intermediate_certs>
+        <install_crls>0</install_crls>
+        <fetch_crls>0</fetch_crls>
+        <enable_legacy_sect>1</enable_legacy_sect>
+        <enable_config_constraints>0</enable_config_constraints>
+        <CipherString/>
+        <Ciphersuites/>
+        <SignatureAlgorithms/>
+        <groups/>
+        <MinProtocol/>
+        <MinProtocol_DTLS/>
+      </general>
+    </trust>
+    <unboundplus version="1.0.13" persisted_at="1767951149.18" description="Unbound configuration">
+      <general>
+        <enabled>1</enabled>
+        <port>53</port>
+        <stats>0</stats>
+        <active_interface/>
+        <dnssec>1</dnssec>
+        <dns64>0</dns64>
+        <dns64prefix/>
+        <noarecords>0</noarecords>
+        <regdhcp>0</regdhcp>
+        <regdhcpdomain/>
+        <regdhcpstatic>0</regdhcpstatic>
+        <noreglladdr6>1</noreglladdr6>
+        <noregrecords>0</noregrecords>
+        <txtsupport>0</txtsupport>
+        <cacheflush>0</cacheflush>
+        <safesearch>0</safesearch>
+        <local_zone_type>transparent</local_zone_type>
+        <outgoing_interface/>
+        <enable_wpad>0</enable_wpad>
+      </general>
+      <advanced>
+        <hideidentity>0</hideidentity>
+        <hideversion>0</hideversion>
+        <prefetch>1</prefetch>
+        <prefetchkey>0</prefetchkey>
+        <dnssecstripped>0</dnssecstripped>
+        <aggressivensec>0</aggressivensec>
+        <serveexpired>0</serveexpired>
+        <serveexpiredreplyttl/>
+        <serveexpiredttl/>
+        <serveexpiredttlreset>0</serveexpiredttlreset>
+        <serveexpiredclienttimeout/>
+        <qnameminstrict>0</qnameminstrict>
+        <extendedstatistics>0</extendedstatistics>
+        <logqueries>1</logqueries>
+        <logreplies>1</logreplies>
+        <logtagqueryreply>1</logtagqueryreply>
+        <logservfail>0</logservfail>
+        <loglocalactions>1</loglocalactions>
+        <logverbosity>1</logverbosity>
+        <valloglevel>0</valloglevel>
+        <privatedomain/>
+        <privateaddress>0.0.0.0/8,10.0.0.0/8,100.64.0.0/10,169.254.0.0/16,172.16.0.0/12,192.0.2.0/24,192.168.0.0/16,198.18.0.0/15,198.51.100.0/24,203.0.113.0/24,233.252.0.0/24,::1/128,2001:db8::/32,fc00::/8,fd00::/8,fe80::/10</privateaddress>
+        <insecuredomain/>
+        <msgcachesize>128m</msgcachesize>
+        <rrsetcachesize>256m</rrsetcachesize>
+        <outgoingnumtcp/>
+        <incomingnumtcp/>
+        <numqueriesperthread/>
+        <outgoingrange/>
+        <jostletimeout/>
+        <discardtimeout/>
+        <cachemaxttl/>
+        <cachemaxnegativettl/>
+        <cacheminttl/>
+        <infrahostttl/>
+        <infrakeepprobing>0</infrakeepprobing>
+        <infracachenumhosts>50000</infracachenumhosts>
+        <unwantedreplythreshold/>
+      </advanced>
+      <acls>
+        <default_action>allow</default_action>
+      </acls>
+      <dnsbl/>
+      <forwarding>
+        <enabled>0</enabled>
+      </forwarding>
+      <dots/>
+      <hosts>
+        <host uuid="4eb0b676-1d1f-4ecb-b7d4-69cb21ac6563">
+          <enabled>1</enabled>
+          <hostname>router</hostname>
+          <domain>internal</domain>
+          <rr>A</rr>
+          <mxprio/>
+          <mx/>
+          <ttl/>
+          <server>192.168.21.1</server>
+          <txtdata/>
+          <description/>
+        </host>
+        <host uuid="52ff0edb-2a65-49a2-8eec-40d7c036217c">
+          <enabled>1</enabled>
+          <hostname>tplink</hostname>
+          <domain>internal</domain>
+          <rr>A</rr>
+          <mxprio/>
+          <mx/>
+          <ttl/>
+          <server>192.168.21.3</server>
+          <txtdata/>
+          <description/>
+        </host>
+        <host uuid="31b4c149-4d26-4ca9-9df1-08b79035c19a">
+          <enabled>1</enabled>
+          <hostname>homegw</hostname>
+          <domain>internal</domain>
+          <rr>A</rr>
+          <mxprio/>
+          <mx/>
+          <ttl/>
+          <server>192.168.0.1</server>
+          <txtdata/>
+          <description/>
+        </host>
+        <host uuid="b39b0e3a-9e05-4d70-b193-f0307d46522b">
+          <enabled>1</enabled>
+          <hostname>aironet</hostname>
+          <domain>internal</domain>
+          <rr>A</rr>
+          <mxprio/>
+          <mx/>
+          <ttl/>
+          <server>192.168.21.4</server>
+          <txtdata/>
+          <description/>
+        </host>
+        <host uuid="218d2bd9-4f03-419a-80f7-fde3f167bead">
+          <enabled>1</enabled>
+          <hostname>dell</hostname>
+          <domain>internal</domain>
+          <rr>A</rr>
+          <mxprio/>
+          <mx/>
+          <ttl/>
+          <server>192.168.21.2</server>
+          <txtdata/>
+          <description/>
+        </host>
+        <host uuid="f50547e1-5ee8-4872-8f5d-9afb3e696e90">
+          <enabled>1</enabled>
+          <hostname>tik</hostname>
+          <domain>internal</domain>
+          <rr>A</rr>
+          <mxprio/>
+          <mx/>
+          <ttl/>
+          <server>192.168.21.5</server>
+          <txtdata/>
+          <description/>
+        </host>
+      </hosts>
+      <aliases/>
+    </unboundplus>
+    <Hostwatch version="1.0.0" persisted_at="1771508895.64" description="Host discovery">
+      <general>
+        <enabled>1</enabled>
+        <promisc>0</promisc>
+        <verbose>0</verbose>
+        <skip_nets/>
+        <interface/>
+      </general>
+    </Hostwatch>
+    <radvd version="1.0.0" persisted_at="1773172981.08" description="Radvd configuration"/>
+  </OPNsense>
+  <hasync version="1.0.2" persisted_at="1764878447.92">
+    <disablepreempt>0</disablepreempt>
+    <disconnectppps>0</disconnectppps>
+    <pfsyncinterface/>
+    <pfsyncpeerip/>
+    <pfsyncversion>1400</pfsyncversion>
+    <synchronizetoip/>
+    <verifypeer>0</verifypeer>
+    <username/>
+    <password/>
+    <syncitems/>
+  </hasync>
+  <openvpn/>
+  <ifgroups version="1.0.0" persisted_at="1764878449.43"/>
+  <bridges version="1.0.0" persisted_at="1764878449.87">
+    <bridged/>
+  </bridges>
+  <gifs version="1.0.0" persisted_at="1764878449.89">
+    <gif/>
+  </gifs>
+  <gres version="1.0.0" persisted_at="1764878449.89">
+    <gre/>
+  </gres>
+  <laggs version="1.0.0" persisted_at="1764878450.07">
+    <lagg/>
+  </laggs>
+  <virtualip version="1.0.1" persisted_at="1765887054.12" description="Virtual IP configuration"/>
+  <vlans version="1.0.0" persisted_at="1764878450.26">
+    <vlan/>
+  </vlans>
+  <staticroutes version="1.0.0" persisted_at="1764878450.36">
+    <route/>
+  </staticroutes>
+  <ppps>
+    <ppp/>
+  </ppps>
+  <wireless>
+    <clone/>
+  </wireless>
+  <ca/>
+  <dhcpd/>
+  <dhcpdv6/>
+  <cert uuid="afbeca64-5714-46ea-994d-317522a7f45b">
+    <refid>6931e8cf80849</refid>
+    <descr>Web GUI TLS certificate</descr>
+    <caref/>
+    <crt>LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUhFakNDQlBxZ0F3SUJBZ0lVR2pXTXg4Q2lRWXVNV2F2L2xaWlBzTk1YZ3FFd0RRWUpLb1pJaHZjTkFRRUwKQlFBd2dZWXhHakFZQmdOVkJBTU1FVTlRVG5ObGJuTmxMbWx1ZEdWeWJtRnNNUXN3Q1FZRFZRUUdFd0pPVERFVgpNQk1HQTFVRUNBd01XblZwWkMxSWIyeHNZVzVrTVJVd0V3WURWUVFIREF4TmFXUmtaV3hvWVhKdWFYTXhMVEFyCkJnTlZCQW9NSkU5UVRuTmxibk5sSUhObGJHWXRjMmxuYm1Wa0lIZGxZaUJqWlhKMGFXWnBZMkYwWlRBZUZ3MHkKTlRFeU1EUXlNREF5TWpoYUZ3MHlOekF4TURVeU1EQXlNamhhTUlHR01Sb3dHQVlEVlFRRERCRlBVRTV6Wlc1egpaUzVwYm5SbGNtNWhiREVMTUFrR0ExVUVCaE1DVGt3eEZUQVRCZ05WQkFnTURGcDFhV1F0U0c5c2JHRnVaREVWCk1CTUdBMVVFQnd3TVRXbGtaR1ZzYUdGeWJtbHpNUzB3S3dZRFZRUUtEQ1JQVUU1elpXNXpaU0J6Wld4bUxYTnAKWjI1bFpDQjNaV0lnWTJWeWRHbG1hV05oZEdVd2dnSWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUNEd0F3Z2dJSwpBb0lDQVFDRjZiNlhVc2VOSjZDMEpITXdmeGxJbEZBWEpiSjg4QklVWUplZkJwWVB5NHg4R3VPZjRPZW4vZURMCktYdWZlQ1dmWkxqamZ4REtsWHJZMlZ4VWJzeEl0KzZHZmRGYUtXRndvQ1FlNUR2bnB5VFRaUE5RMVVza1lFSHcKNFc4cEczUUxqUjZ4YjNvRGZ1MjRNeGhwMmhWR0pJL1JaNXFaSlZmSStuOXlIUTRaWEdpUjc5QTRuQUdDcEFVegowaFVZM3kwVGwwakQ2RUhYd2JIZ2JkYXJCTTBCc1RPUXdMZlU3bGZYR1U3ZmsyUWdNa1psWE1iSU1zYVdKUUtOCm9PdGpHY2YwK2pma3JZc3AzUFRnWDFuRENwUXlEYzdROFhUYWtubVNaKzI5Rm1vcGY2ZzNZRVM5OStENHZZQU8KU2tzaDJ2dHhEQnNYMkZRaUVQTnd2elZHTWxlL0o3NXRsRXArNG94b2JFdUVyT3pJNG1SYnBKc0VGcjJnYUY5ZgpPdnMydWk2UFpFVWVMUDlOZloya3hFb0FvYzI3NHl3WUdoS3JvbnJmZFRITlgvQTA2YVhlU0o0Y2JYQk1sN2NuCnR3S0tFRUlLTWxYZGQyM3BvQXB4K0MrVW42UHRVb2tkWmNEa0FYaW5xZnI3bUJWV0hFaGQ0cS93SHZhVzBGbVUKenlqb2Jwcm5aT3NBQUVURDZnOVh5ZnN2WFJrYzBnbllkb3BnbVZnZ1ZsbDVsMjAvdXdLZWNYNUV1MDlGMVlqdQpoeWVaS3pMb3BPbXhhbGg1dkhLUXUxYzRLaXNjVDdObnZBUDFkTW1HMWxTUFBMc29NRFVEY3BoVElySTBEMk4wCk9sVllTQ21DWWJJK0wvVjM2emsrU3Ruck1DbTd2Zld5L2FRblBoUlFLeDRvTWJqek53SURBUUFCbzRJQmREQ0MKQVhBd0NRWURWUjBUQkFJd0FEQVJCZ2xnaGtnQmh2aENBUUVFQkFNQ0JrQXdOQVlKWUlaSUFZYjRRZ0VOQkNjVwpKVTlRVG5ObGJuTmxJRWRsYm1WeVlYUmxaQ0JUWlhKMlpYSWdRMlZ5ZEdsbWFXTmhkR1V3SFFZRFZSME9CQllFCkZHeVNibFd2aER5cWNaMWdlN01nRkVwNmZaWG5NSUd3QmdOVkhTTUVnYWd3Z2FXaGdZeWtnWWt3Z1lZeEdqQVkKQmdOVkJBTU1FVTlRVG5ObGJuTmxMbWx1ZEdWeWJtRnNNUXN3Q1FZRFZRUUdFd0pPVERFVk1CTUdBMVVFQ0F3TQpXblZwWkMxSWIyeHNZVzVrTVJVd0V3WURWUVFIREF4TmFXUmtaV3hvWVhKdWFYTXhMVEFyQmdOVkJBb01KRTlRClRuTmxibk5sSUhObGJHWXRjMmxuYm1Wa0lIZGxZaUJqWlhKMGFXWnBZMkYwWllJVUdqV014OENpUVl1TVdhdi8KbFpaUHNOTVhncUV3SFFZRFZSMGxCQll3RkFZSUt3WUJCUVVIQXdFR0NDc0dBUVVGQ0FJQ01Bc0dBMVVkRHdRRQpBd0lGb0RBY0JnTlZIUkVFRlRBVGdoRlBVRTV6Wlc1elpTNXBiblJsY201aGJEQU5CZ2txaGtpRzl3MEJBUXNGCkFBT0NBZ0VBSW1EOWtoWHVLdWFGemFJZ1dHZFFEbzlmcXEzNFIvSFh5OTg1S29RNSsvZ1Iwd1hIMVVIRG5aaVgKM2dVbkV2VzgyeFZLditzbjhIckQvZDlkN0lFSWw4TzhoZDJTQlQ1N3ZWZDZEU0NWNTF5WVA2dW1rcWVsdGVCUgpvNXlSY1MvUGVZMHNZdVRlZ3NSNERMYjdKZWhJTmNibHJyemVWczZUZEdvSlA4bmg1K3A5YjdhVlB4N1RObCs3ClcxR3hSTnliQnhrSU9OK3AzemRJbG80Zjl2YU0zVEJKd2pyQlk1YjRHcXZ5NUVMNjZFeDdLOE0rMFhUaHhZdHcKb2xoVHhWNGZVWmZ5ZHlYWXc4TWVQT2p5bUVmdWpRNWNVVUJyWk11c0pYWmRSMXNEN2ZqK3BSS3REWmkrc0I1Vwp0dElBM01nbi9rZitBbmgxNURyRnJoc21aQjRhR044bkUvUlY0Mnk2a1E1aGZ3SEhPSWxiZFFNNWorcTVSOWMyClAzeHhhclBLem9RUmhYOVhJRDZPRFVaZ0JWT1ZQcEZLeWRhVHFXVUg4S3hHK3NxL0todkJsUXlMOHRhU3QwY1gKU3lOT1NQY0I4alpPbUxScFI2eERlbmtka2VnMExiZjllY2JuZjBGVU1udnBRV1V5RHljWTgrb0F1OVJJT0l0aQpnaHF6MVFyc0ZmMjBWY3B5d3BRWjdVcEpSMGg5WXZGcmY3VnhiT2JPM0pUcGhzcU9OUUNrUGoyV3ZrdVg4VXhlCjFBRmRnYms1MjRjUHRJL0JoUjFSb1lhdlR6a3Z5RkpUeFpUbEhMSUdyOGdkbmxkcnhNRkpIUUFzaTVDR2VXeFoKMUh0QjEvRVMyUE9Eb2Q3ZmlWSkN4L2pGZWFxMmlBdXZITWhxWXl6eW9WcGRZTlZ4aTFRPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==</crt>
+    <csr/>
+    <prv>Private key not revealed.</prv>
+  </cert>
+  <nat>
+    <outbound>
+      <mode>automatic</mode>
+    </outbound>
+    <rule/>
+  </nat>
+  <syslog>
+    <nologdefaultblock>1</nologdefaultblock>
+    <nologdefaultpass>1</nologdefaultpass>
+    <nologbogons>1</nologbogons>
+    <nologprivatenets>1</nologprivatenets>
+  </syslog>
+</opnsense>
