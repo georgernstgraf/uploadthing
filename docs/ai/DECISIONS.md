@@ -36,7 +36,10 @@
   end-to-end in `Deno.serve`, and port 8000 is unreachable from the
   network. Privileged-port workarounds (`mac_portacl`, lowering
   `net.inet.ip.portrange.reservedhigh`) were discarded — the loopback
-  binding plus DNAT makes them unnecessary.
+  binding plus DNAT makes them unnecessary. First upgrade-proof: the
+  OPNsense upgrade to 26.7.3_11 (2026-10-20, with reboot) left the DNAT
+  rule, GUI port 8443 + imported certificate, and the boot-started
+  loopback listener untouched.
 
 ## Deno-First Execution
 
