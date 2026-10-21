@@ -1,3 +1,6 @@
 tmp
 test-exam.py
 /bin/scan.py
+# gathered live state from sense — raw copies may contain secrets
+current/*
+!current/config.redacted.xml

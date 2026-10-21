@@ -211,6 +211,40 @@ archived). Layout:
   `appliance/bin/redact-opnsense.sed`; snapshots in the repo are
   redacted (verify before committing new ones).
 
+## Appliance State 2026-10-21 (gathered from sense)
+
+Full live state gathered into `appliance/current/` (gitignored except
+`config.redacted.xml`); `appliance/current/MANIFEST` records sha256 +
+mtime of every deployed custom script. Facts:
+
+- Deployed script home is still the old examsense checkout:
+  `/root/examsense/` (own `.git`, clean at `9583565` "config saves",
+  2026-06-03, remote = archived GitHub repo). `/root/bin` is a symlink
+  to `/root/examsense/bin`.
+- Drift deployed vs. repo: `devd/usbpersist.conf` matches
+  `em[0-9]+` live (repo says `ue[0-9]+`); repo's
+  `actions_exampy.conf` ("pfctl_ss") was never deployed — the live,
+  **untracked** file is `actions_scan.conf`, identical to live
+  `actions_exampy.conf` (section `[scan]` → `nmap_cron.sh`; cron job
+  "scan scan" runs the NMAP LAN scan **every minute**).
+- `enable/disable_doku_rule.sh` no longer exist on the appliance
+  (obsolete, repo copies deletable).
+- Deno on `sense`: the app runs from `~/.deno/bin/deno` **2.9.6
+  stable** (via `startloop.sh` + `.deno/env` PATH). Two stray copies:
+  `~/tmp/deno` (2.2.15 LTS, works) and `~/deno` (**broken** since the
+  2026-10-20 upgrade: `liblcms2.so.2 not found` — linux_base-rl9 has
+  no lcms2). Consolidation pending, see STATE.md.
+- `service uploadthing status` reports "not running" although the app
+  listens on 127.0.0.1:8000 — rc pidfile/status quirk, fix candidate.
+- Version inventory: OPNsense 26.7.3_11, FreeBSD
+  15.1-RELEASE-p3, Python 3.13.15, Nmap 7.991, all packages
+  up-to-date (`pkg version -vl "<"` empty). Only relevant Deno patch
+  bump available: 2.9.6 → 2.9.7.
+- **Deno deprecation** (2026-10-09, Cloudflare acquisition): fixes
+  pledged ~1 year, development shutdown 2027. Strategic consequence:
+  prioritize #133 (Drizzle — engine-free) and plan a runtime exit
+  (Node/Bun) medium-term.
+
 ## Database Sync Cycle (from the dev machine)
 
 Driven by the `Makefile` on the development machine:

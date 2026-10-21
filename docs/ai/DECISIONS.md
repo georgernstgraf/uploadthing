@@ -1,5 +1,24 @@
 # DECISIONS
 
+## Appliance Structure: current/ + rollout/ (2026-10-21, transition pending)
+
+- The `appliance/bin/` + `appliance/files/` split is replaced by two
+  subdirs: `appliance/current/` = gathered live state from `sense`
+  (gitignored raw copies + `MANIFEST`; only the single redacted
+  snapshot `config.redacted.xml` is committable) and
+  `appliance/rollout/` = canonical script sources going forward
+  (committed, 1:1 target-path mirror + `apply.sh`).
+- Workflow: gather → `current/`, edit versions in `rollout/`, apply,
+  re-gather until `current/` matches `rollout/`. `config.xml` is
+  gathered for context only — **no config re-application**; config
+  changes stay in the OPNsense GUI.
+- The old layout is deleted only after a rollout has been applied and
+  convergence is confirmed. `redact-opnsense.sed` moves to
+  `appliance/` root (used by the `config-snapshot` Makefile target).
+- Motivation: deployed state drifted from repo (hand edits on the
+  appliance after the last commit; an untracked live actions file),
+  and upcoming `exammode.sh` work needs a clear source of truth.
+
 ## Single-Repo Exam System (appliance/ Integration)
 
 - The sister repo `examsense` (OPNsense/FreeBSD appliance scripts:
