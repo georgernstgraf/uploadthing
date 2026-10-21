@@ -1,11 +1,12 @@
 # todo
 
 - timer auf students page
-- 127.0.0.1 im titel
+- 127.0.0.1 im titel (kommt aus .env)
 - registrierte Schüler SOFORT nach Namenswahl anzeigen, dzt. ist ein extra request notwendig ..
 - "fehlte x mal" greift nicht.
 - feature: "n Abgaben"
 - feature: Abgaben andere Farbe wenn danach druassen war
 - feature: unblock admin
-- opnsense upgrade bzw. api anschauen
+- opnsense upgrade bzw. api anschauen: FW change könnte schon per api call möglich sein!!!
+- anmeldung als lehrende nur von auth ips möglich ...
 
