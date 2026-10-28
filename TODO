@@ -9,4 +9,5 @@
 - feature: unblock admin
 - opnsense upgrade bzw. api anschauen: FW change könnte schon per api call möglich sein!!!
 - anmeldung als lehrende nur von auth ips möglich ...
+- Umbau event-driven
 

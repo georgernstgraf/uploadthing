@@ -1,16 +1,19 @@
 #!/usr/local/bin/python3
 import json
 from datetime import datetime
+from pathlib import Path
 
 import requests
 import urllib.request
+import ssl
 from requests.auth import HTTPBasicAuth
 
 
 MIKROTIK_IP = "tik.internal"
 USER = "service-monitor"
-PASS = "m.aro17f"
-API_URL = "http://192.168.21.1:8000/activeips"
+# Passwort nie im Repo: Datei auf dem Appliance-Host (root, mode 600)
+PASS_FILE = "/root/.tik-service-monitor"
+API_URL = "https://127.0.0.1:8000/activeips"
 REGISTRATION_TABLE_URL = (
     f"http://{MIKROTIK_IP}/rest/interface/wireless/registration-table"
 )
@@ -28,15 +31,23 @@ def send_ips_to_server(ips, url=API_URL):
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    response = urllib.request.urlopen(req)
+    # Loopback-Endpunkt der Appliance, selbstsigniertes Zertifikat
+    response = urllib.request.urlopen(req, context=ssl._create_unverified_context())
     result = response.read().decode("utf-8")
     return json.loads(result)
+
+
+def load_password():
+    try:
+        return Path(PASS_FILE).read_text(encoding="utf-8").strip()
+    except OSError as err:
+        raise SystemExit(f"MikroTik-Passwort nicht lesbar ({PASS_FILE}): {err}")
 
 
 def fetch_wireless_clients():
     response = requests.get(
         REGISTRATION_TABLE_URL,
-        auth=HTTPBasicAuth(USER, PASS),
+        auth=HTTPBasicAuth(USER, load_password()),
         params=REGISTRATION_TABLE_PARAMS,
         timeout=5,
     )
