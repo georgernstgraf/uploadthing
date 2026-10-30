@@ -1,0 +1,389 @@
+/**
+ * Playwright-Smoke-Suite für die examkritischen Browser-Flows (#135).
+ *
+ * Sechs Tests, ausschließlich nutzersichtbares Verhalten — keine
+ * htmx-Event-Interna. Damit ist die Suite auch die Abnahme für die
+ * htmx-4-Migration (#150). Selektoren: nur stabile `id`s aus den
+ * Templates, keine Text- oder CSS-Selektoren.
+ *
+ * Start über `deno task e2e` (scripts/e2e.sh): dort laufen Fixture-Seed
+ * und Testserver. Direkt aufrufbar ist die Datei nicht, sie braucht die
+ * Umgebung dieses Skripts.
+ */
+
+// Die `page.evaluate`-Callbacks laufen im Browser und brauchen DOM-Typen;
+// deno.json setzt keine `lib`-Option für den Server-Code.
+/// <reference lib="dom" />
+
+import { assert, assertEquals } from "@std/assert";
+import { chromium } from "playwright-core";
+import type { Browser } from "playwright-core";
+import { Buffer } from "node:buffer";
+import {
+    baseUrl,
+    cookieName,
+    sessionCookieValue,
+    STUDENT,
+    TEACHER,
+    UNTERLAGEN_FILE,
+} from "./fixtures.ts";
+
+const BASE_URL = baseUrl();
+
+/** Dateiname für den Erfolgs-Upload (Inhalt wird als ZIP erkannt). */
+const UPLOAD_FILENAME = "abgabe-e2e.zip";
+
+/** Minimale ZIP-Signatur (`PK\x03\x04…`) — wie in `test/endpoints_test.ts`. */
+const ZIP_BYTES = Uint8Array.from([
+    0x50,
+    0x4b,
+    0x03,
+    0x04,
+    0x14,
+    0x00,
+    0x00,
+    0x00,
+    0x08,
+    0x00,
+    0xb7,
+    0xac,
+    0xce,
+    0x34,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+]);
+
+/** Chromium aus dem System — es wird nichts heruntergeladen. */
+function chromeExecutable(): string {
+    const configured = Deno.env.get("E2E_CHROME_PATH");
+    const candidates = configured
+        ? [configured]
+        : [
+            "/usr/bin/google-chrome",
+            "/usr/bin/google-chrome-stable",
+            "/usr/bin/chromium",
+            "/usr/bin/chromium-browser",
+        ];
+
+    for (const candidate of candidates) {
+        try {
+            Deno.statSync(candidate);
+            return candidate;
+        } catch {
+            // nächster Kandidat
+        }
+    }
+
+    throw new Error(
+        "Kein Chromium gefunden (erwartet z. B. /usr/bin/google-chrome). E2E_CHROME_PATH setzen.",
+    );
+}
+
+/**
+ * Führt einen Test in einem eigenen Browser aus. Ein Browser pro Test
+ * kostet ~0,5 s, macht aber Zustand zwischen Tests unmöglich.
+ */
+async function withBrowser(fn: (browser: Browser) => Promise<void>): Promise<void> {
+    const browser = await chromium.launch({
+        executablePath: chromeExecutable(),
+        headless: Deno.env.get("E2E_HEADED") !== "1",
+        args: ["--no-sandbox"],
+    });
+    try {
+        await fn(browser);
+    } finally {
+        await browser.close();
+    }
+}
+
+/** Öffnet eine Seite mit der Sitzung des Fixture-Benutzers. */
+async function openPage(browser: Browser, email: string) {
+    const context = await browser.newContext({ baseURL: BASE_URL });
+    // Kein Login über LDAP: die Sitzung wird direkt gesetzt (seed.ts).
+    await context.addCookies([{
+        name: cookieName(),
+        value: await sessionCookieValue(email),
+        url: BASE_URL,
+    }]);
+    const page = await context.newPage();
+    return { context, page };
+}
+
+/**
+ * Admin-Aktion ohne Browser. Nur für das Setzen des Exam-Zustands vor
+ * einem Test — die getesteten Flows selbst laufen im Browser.
+ */
+async function adminPost(
+    path: string,
+    fields: Record<string, string> = {},
+): Promise<number> {
+    const response = await fetch(`${BASE_URL}${path}`, {
+        method: "POST",
+        headers: {
+            "content-type": "application/x-www-form-urlencoded",
+            cookie: `${cookieName()}=${await sessionCookieValue(TEACHER.email)}`,
+        },
+        body: new URLSearchParams(fields).toString(),
+    });
+    await response.text();
+    return response.status;
+}
+
+async function stopExam(): Promise<void> {
+    const status = await adminPost("/api/exam/stop");
+    assert(
+        status === 200 || status === 409,
+        `Examen stoppen lieferte unerwartet HTTP ${status}`,
+    );
+}
+
+async function startExam(minutes = 30): Promise<void> {
+    await stopExam();
+    const status = await adminPost("/api/exam/start", {
+        minutes: String(minutes),
+    });
+    assertEquals(status, 200, "Examen muss für den Flow startbar sein");
+}
+
+Deno.test({
+    name: "E2E: Countdown tickt nach dem Exam-Start",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await startExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, STUDENT.email);
+            try {
+                await page.goto("/");
+                await page.waitForSelector("#exam-countdown-badge");
+
+                const first = (await page.textContent("#exam-countdown-badge")) ?? "";
+                assert(
+                    /Restzeit:\s*\d{2}:\d{2}/.test(first),
+                    `Countdown-Anzeige erwartet, war: "${first}"`,
+                );
+
+                await page.waitForTimeout(1200);
+                const second = (await page.textContent("#exam-countdown-badge")) ?? "";
+                assert(
+                    second !== first,
+                    `Countdown muss ticken, blieb aber bei "${first}"`,
+                );
+            } finally {
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Upload während des Examens läuft durch (Panel + Toast)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await startExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, STUDENT.email);
+            try {
+                await page.goto("/");
+                await page.waitForSelector("#abgabe-form");
+
+                await page.setInputFiles("#abgabe-file-input", {
+                    name: UPLOAD_FILENAME,
+                    mimeType: "application/zip",
+                    buffer: Buffer.from(ZIP_BYTES),
+                });
+                await page.click("#abgabe-submit");
+
+                await page.waitForSelector("#toast-dialog");
+                const message = (await page.textContent("#toast-dialog-message")) ?? "";
+                assert(
+                    message.includes("Abgabe hochgeladen"),
+                    `Erfolgsmeldung erwartet, war: "${message}"`,
+                );
+                assertEquals(
+                    await page.getAttribute("#toast-dialog", "data-toast-type"),
+                    "success",
+                );
+
+                // Keine Erfolgsseite: das Formular bleibt stehen.
+                assertEquals(
+                    await page.locator("#abgabe-form").isVisible(),
+                    true,
+                    "Nach dem Upload muss das Formular stehen bleiben",
+                );
+                assertEquals(
+                    await page.locator("#abgabe-success").count(),
+                    0,
+                    "Der HTMX-Upload darf keine Erfolgsseite rendern",
+                );
+                assertEquals(page.url(), `${BASE_URL}/`);
+
+                await page.click("#toast-dialog-close");
+            } finally {
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Unterlagen sind außerhalb des Examens gesperrt (403)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, STUDENT.email);
+            try {
+                const response = await page.goto(`/unterlagen/${UNTERLAGEN_FILE}`);
+                assertEquals(response?.status(), 403);
+
+                const text = await page.evaluate(() => document.body.innerText);
+                assert(
+                    text.includes("Unterlagen sind nur während des Examens verfügbar."),
+                    `Meldung erwartet, war: "${text}"`,
+                );
+            } finally {
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Admin-Aktion tauscht das Examen-Panel aus",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await startExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, TEACHER.email);
+            try {
+                await page.goto("/admin/application");
+                await page.waitForSelector("#exam-pause-button");
+
+                // Markierung am alten Knoten: ist sie nach der Aktion weg,
+                // wurde das Panel wirklich ersetzt (outerHTML-Swap).
+                await page.evaluate(() => {
+                    const panel = document.getElementById("exam-admin-panel");
+                    if (panel) {
+                        panel.dataset.e2eMarker = "vorher";
+                    }
+                });
+
+                await page.click("#exam-pause-button");
+                await page.waitForSelector("#exam-resume-button");
+
+                assertEquals(
+                    await page.evaluate(() =>
+                        document.getElementById("exam-admin-panel")?.dataset
+                            .e2eMarker ?? null
+                    ),
+                    null,
+                    "Das Panel muss ausgetauscht worden sein",
+                );
+
+                const badge = (await page.textContent("#exam-status-badge")) ?? "";
+                assert(
+                    badge.includes("Examen pausiert"),
+                    `Statusanzeige erwartet, war: "${badge}"`,
+                );
+            } finally {
+                await stopExam();
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Fehlerantwort zeigt den globalen Toast",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await startExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, STUDENT.email);
+            try {
+                await page.goto("/");
+                await page.waitForSelector("#abgabe-form");
+
+                // .md ist während des Examens nicht erlaubt → 415 mit Text.
+                await page.setInputFiles("#abgabe-file-input", {
+                    name: "notiz.md",
+                    mimeType: "text/markdown",
+                    buffer: Buffer.from("# Notiz\n", "utf8"),
+                });
+                await page.click("#abgabe-submit");
+
+                await page.waitForSelector("#toast-dialog");
+                const message = (await page.textContent("#toast-dialog-message")) ?? "";
+                assert(
+                    message.includes("Nur .zip Dateien sind erlaubt."),
+                    `Fehlermeldung im Toast erwartet, war: "${message}"`,
+                );
+                assertEquals(
+                    await page.getAttribute("#toast-dialog", "data-toast-type"),
+                    "danger",
+                );
+
+                // Der Fehler darf das Formular nicht wegswappen.
+                assertEquals(await page.locator("#abgabe-form").isVisible(), true);
+
+                await page.click("#toast-dialog-close");
+            } finally {
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Doppelklick-Schutz deaktiviert den Button während der Anfrage",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await startExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, TEACHER.email);
+            try {
+                await page.goto("/admin/application");
+                await page.waitForSelector("#exam-pause-button");
+
+                // Antwort künstlich verzögern, damit der Zwischenzustand
+                // (Button deaktiviert) beobachtbar ist.
+                await page.route("**/api/exam/pause", async (route) => {
+                    await new Promise((resolve) => setTimeout(resolve, 1500));
+                    await route.continue();
+                });
+
+                await page.click("#exam-pause-button");
+
+                let disabled = false;
+                for (let attempt = 0; attempt < 20 && !disabled; attempt++) {
+                    disabled = await page.evaluate(() =>
+                        (document.getElementById("exam-pause-button") as HTMLButtonElement | null)
+                            ?.disabled ?? false
+                    );
+                    if (!disabled) {
+                        await page.waitForTimeout(50);
+                    }
+                }
+                assert(
+                    disabled,
+                    "hx-disabled-elt muss den Button während der Anfrage deaktivieren",
+                );
+
+                // Nach dem Swap zeigt das Panel den pausierten Zustand.
+                await page.waitForSelector("#exam-resume-button");
+                await page.unroute("**/api/exam/pause");
+            } finally {
+                await stopExam();
+                await context.close();
+            }
+        });
+    },
+});

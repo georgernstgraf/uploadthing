@@ -22,6 +22,8 @@ class Toast {
 
     createDialog() {
         const dialog = document.createElement("dialog");
+        dialog.id = "toast-dialog";
+        dialog.dataset.toastType = this.type;
         dialog.className = `toast-dialog toast-dialog--${this.type}`;
         dialog.setAttribute("role", "alertdialog");
         dialog.setAttribute("aria-modal", "true");
@@ -32,10 +34,10 @@ class Toast {
                 <div class="toast-dialog__icon">
                     ${this.getIcon()}
                 </div>
-                <div class="toast-dialog__message">
+                <div class="toast-dialog__message" id="toast-dialog-message">
                     ${this.message}
                 </div>
-                <button type="button" class="toast-dialog__close btn btn--${this.type}">
+                <button type="button" class="toast-dialog__close btn btn--${this.type}" id="toast-dialog-close">
                     OK
                 </button>
             </div>
