@@ -1,0 +1,7 @@
+@uuid;enabled;statetype;state-policy;sequence;action;quick;interfacenot;interface;direction;ipprotocol;protocol;icmptype;icmp6type;gateway;replyto;disablereplyto;log;allowopts;nosync;nopfsync;statetimeout;max-src-nodes;max-src-states;max-src-conn;max;max-src-conn-rate;max-src-conn-rates;overload;adaptivestart;adaptiveend;prio;set-prio;set-prio-low;tag;tagged;tcpflags1;tcpflags2;categories;sched;tos;shaper1;shaper2;description;source_not;source_net;source_port;destination_not;destination_net;destination_port
+34f4fbf8-3cc1-4e4f-929f-c12c6d504b50;1;keep;;1;pass;1;0;;in;inet;any;;;;;0;1;0;0;0;;;;;;;;;;;;;;;;;;floaty;;;;;floaty;0;(self);;0;any;
+08c160fb-8eb5-42c1-b2be-53d55dbe9979;1;keep;;11;pass;1;0;wan;in;inet;ICMP;;;;;0;0;0;0;0;;;;;;;;;;;;;;;;;;;;;;;;0;any;;0;(self);
+a6bebc62-5fd1-487c-9fe9-f3adba1067ac;1;keep;;21;pass;1;0;lan;in;inet;any;;;;;0;0;0;0;0;;;;;;;;;;;;;;;;;;;;;;;;0;any;;0;(self);
+450e19ba-cd2a-4f78-8e57-2375203f4cdd;1;keep;;31;pass;1;0;lan;in;inet;TCP/UDP;;;;;0;1;0;0;0;;;;;;;;;;;;;;;;;;infra;;;;;infra;0;lan;;0;INFRA;
+e3e720e6-27fb-4565-b8cf-3a73cf682b54;0;keep;;41;reject;1;0;lan;in;inet;TCP/UDP;;;;;0;1;0;0;0;;;;;;;;;;;;;;;;;;doku;;;;;doku;0;lan;;1;DOKU;
+ff2e3e81-8819-4bdd-ab19-587a0abb5ecb;1;keep;;51;pass;1;0;lan;in;inet;any;;;;;0;0;0;0;0;;;;;;;;;;;;;;;;;;;;;;;"Default allow LAN to any rule";0;lan;;0;any;

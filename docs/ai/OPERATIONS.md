@@ -67,6 +67,18 @@ only in the operator's head; it is now recorded here (see #132).
   2026-10-30 neu angelegt, weil der 26.7-Regelset-Migrationsschritt die
   Legacy-`<filter>`-Regel nicht übernommen hatte; der alte
   `<filter>`-Block mit `e3e720e6-…` ist toter Ballast und fällt in #144.
+  **Erledigt am 2026-10-30:** Der `Migration assistant`
+  (`/ui/firewall/migration`) hat den Legacy-Block exportiert
+  (`appliance/legacy-rules-2026-10-30.csv`, 6 Regeln, CSV mit
+  `;`-Trennern) und per `flush` gelöscht. Danach: kein `<filter>`-Block
+  mehr in der `config.xml`, keine `e3e720e6`-Referenz, der
+  Assistant wird nicht mehr eingeblendet, `pfctl` unverändert
+  40 Regeln. Die 27 aktiven Regeln (inkl. `doku`) liegen in
+  `<OPNsense><Firewall>`.
+- **Der Migration assistant ist kein Konverter**, sondern Export + Flush:
+  `countRules`, `downloadRules` (CSV), `flush` (löscht `filter.rule`).
+  Die eigentliche Übernahme passierte beim Upgrade automatisch; sie
+  übersprang die deaktivierte `doku`-Regel.
 - **Zustand:** Das Panel liest den Regelzustand bei jedem Rendern. Kein
   Polling, keine Heilung von Drift — Abweichungen werden sichtbar
   gemacht („Examen läuft · Internet frei", Modal mit API-Fehler).
