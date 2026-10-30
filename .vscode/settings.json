@@ -1,4 +1,3 @@
 {
-    "deno.enable": true,
-    "prisma.pinToPrisma6": true
+    "deno.enable": true
 }

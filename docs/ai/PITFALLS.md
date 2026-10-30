@@ -10,9 +10,10 @@
   `deno task test` ist dort grün (252 Tests).
 - `.env.local` wird von Deno nicht geladen; wer neue Pflichtvariablen
   einführt, muss sie in `.env` (und `.env.example`) nachziehen.
-- Läuft `deno task test` mit `no such table: examstate`, fehlt die
-  Migration im lokalen `DATABASE_URL`-Ziel: `deno task pmD` ausführen
-  (nicht die Tabelle von Hand anlegen).
+- Läuft `deno task test` mit `no such table: …`, fehlt die Migration im
+  lokalen `DATABASE_URL`-Ziel: `deno task db:migrate` ausführen (nicht die
+  Tabelle von Hand anlegen). Normalerweise passiert das nicht, weil der
+  App-Start die Migrationen mitzieht.
 
 ## Fail-Strict Configuration
 
@@ -40,13 +41,21 @@
 
 ## Persistence Gotchas
 
-- Persistence is hybrid: not everything goes through Prisma.
+- Persistence is deliberately split: Drizzle owns the schema, everything at
+  runtime is hand-written SQL through `@db/sqlite` (`repo/*.ts`). Do not
+  describe the app as ORM-based, and do not move repositories onto a query
+  builder "while we are at it".
 - Repositories using direct SQLite prepared statements expect UTC ISO timestamps.
-- Be careful not to document the app as Prisma-only.
-- Do not reintroduce runtime Prisma client usage for `users`; Prisma stays in the project for schema and migrations, while runtime user CRUD is handled in `repo/users.ts`.
-- Do not hand-edit index/drop-index migration SQL when the change belongs in Prisma schema state; remove or add indexes in `prisma/schema.prisma` first and generate the migration with `deno task pmd --name <migration_name>`.
-- If `deno task pmd` appears to pause, check the CLI invocation carefully: Prisma wants `--name <migration_name>` passed through the Deno task, and a malformed argument shape can fall back to an interactive migration-name prompt.
-- Prisma SQLite URLs such as `file:../uploadthing.db` are relative to the `prisma/` directory; if raw SQLite code resolves them relative to another directory, it can open the wrong database and surface missing-table errors like `no such table: ipfact`.
+- Do not hand-edit index/drop-index migration SQL when the change belongs in
+  Drizzle schema state; change `drizzle/schema.ts` first and generate the
+  migration with `deno task db:generate --name <migration_name>`.
+- `DATABASE_URL` stays Prisma-compatible: `file:../uploadthing.db` is resolved
+  relative to the former `prisma/` directory (`lib/dbpath.ts`). Resolving it
+  anywhere else opens the wrong database and surfaces missing-table errors
+  like `no such table: ipfact`.
+- Never mark a migration as applied by hand and never edit
+  `drizzle/meta/`. If a migration went in wrong, restore the DB backup and
+  fix the migration forward.
 
 ## Upload Safety
 
@@ -62,12 +71,20 @@
 - When a writable test or local database is needed, copy `vacuum.db` to the path referenced by `DATABASE_URL` instead.
 - Some endpoint tests and JSON fixtures still reference routes or behaviors that are stale, permissive, or destructive, such as `/admin/logs` and `/admin/wipe-abgaben`.
 - Read tests before changing behavior and do not assume they perfectly describe the current product surface.
-- If shutdown handling changes, remember that closing Prisma and SQLite alone is not enough; the `Deno.serve` server must also be stopped or the process will keep running after SIGINT.
+- If shutdown handling changes, remember that closing the SQLite handle alone is not enough; the `Deno.serve` server must also be stopped or the process will keep running after SIGINT.
 - Local developer activity mutates `uploadthing.db`, so forensic endpoint tests that depend on localhost state become flaky unless they explicitly clear and reseed `127.0.0.1` through shared fixtures first.
 
 ## External Dependency Risks
 
-- Prisma is hard-pinned to version 6 (`deno.json`/`deno.lock`) because the engines run as Linux binaries under FreeBSD's Linuxulator on the OPNsense production host; do not bump the version until the Drizzle migration (#133) removes Prisma. See `docs/ai/OPERATIONS.md`.
+- `drizzle-kit` must never become a runtime dependency: it carries esbuild
+  binaries and is only used on the development machine. Never add it to an
+  import chain that the app (or `deno task start`) loads. See
+  `docs/ai/OPERATIONS.md`.
+- `drizzle-kit` only resolves `drizzle-orm` when Deno materializes
+  `node_modules`; that is why `deno task db:generate` passes
+  `--node-modules-dir=auto`. Without it the CLI prints
+  "Please install latest version of drizzle-orm" and exits. The resulting
+  `node_modules/` is gitignored and belongs to the kit only.
 - LDAP access can be slow or unavailable; the code includes reconnect logic and retry timing.
 - Do not start LDAP connections at module import time; eager startup causes unrelated tests to leak timers, reads, and TLS handshakes.
 
@@ -144,7 +161,12 @@
 
 ## Generated Artifacts
 
-- `lib/prismaclient/` is no longer used by runtime code after the user-repository refactor; do not reintroduce it unless the project deliberately returns to generated Prisma client usage.
+- `drizzle/meta/` (journal + snapshots) and `drizzle/*.sql` are versioned in
+  the repo — they are the schema history. Do not delete or regenerate them;
+  a new migration is added, an applied one never changes.
+- `__drizzle_migrations` is the only schema state the app trusts. A stale
+  `_prisma_migrations` table may still exist in old databases; nothing reads
+  it, and it is not evidence about the current schema.
 - Do not reintroduce legacy agent scaffold artifacts such as `.openclaw/`, `memory/`, `SOUL.md`, `USER.md`, `IDENTITY.md`, `HEARTBEAT.md`, or `TOOLS.md`; durable project knowledge belongs in `docs/ai/` instead.
 
 ## Download Filename Truncation
@@ -192,3 +214,39 @@
   auffiel — `ipfact` lief sieben Tage leer.
 - Lehre: externe Datenerfassung braucht einen sichtbaren Frische-Indikator im
   Admin-Panel, nicht nur ein Logfile. Umsetzung in #145.
+
+## Drizzle-Migrationen
+
+- `drizzle-kit` läuft **nur auf dem Entwicklungsrechner** (`deno task
+  db:generate`). Auf der Appliance gibt es kein Node und kein esbuild; dort
+  migriert `lib/migrate.ts` über `@db/sqlite`.
+- Die Baseline `drizzle/0000_baseline.sql` ist absichtlich idempotent
+  (`IF NOT EXISTS`). Sie wird auf einer bestehenden Datenbank **nicht
+  ausgeführt**, wenn alle Objekte vorhanden sind — der Runner verbucht sie
+  nur in `__drizzle_migrations`. Fehlt etwas, führt er sie aus und gleicht
+  die Datenbank an. Wer die `IF NOT EXISTS`-Guards entfernt, macht den Start
+  auf jeder bestehenden Installation kaputt.
+- Das Journalformat muss Drizzles Format bleiben (`hash` = SHA-256 über den
+  rohen Dateiinhalt, `created_at` = Journal-`when` in ms, Tabelle
+  `__drizzle_migrations` mit `id SERIAL PRIMARY KEY`). Weicht der Runner ab,
+  sieht `drizzle-kit migrate` auf dem Entwicklungsrechner einen anderen
+  Stand als die Appliance.
+- `@db/sqlite` schneidet INTEGER-Werte über 2^31 **beim Lesen** auf int32 ab
+  (`1793390210849` kommt als `-1906118879` zurück). Gespeichert wird korrekt,
+  aber der Runner vergleicht deshalb nur Hashes und liest `created_at` nie
+  für Logik. Wer migrierte Zeitstempel prüfen will, nimmt
+  `CAST(created_at AS TEXT)`.
+- Kennt die Datenbank eine Migration, die der Programmstand nicht hat,
+  verweigert der Start mit deutscher Meldung. Das ist Absicht: kein halb
+  migriertes Schema, kein automatisches Zurück. Rollback ist das Backup
+  (#148).
+- Nach der Baseline (Stand 2026-10-30) nutzen die vier Forensik-Hot-Queries
+  ihre Composite-Indizes — geprüft mit `EXPLAIN QUERY PLAN` auf einer Kopie
+  der Produktionsdatenbank:
+  - `cookiepresents` `WHERE ip = ? AND at BETWEEN ? AND ? ORDER BY at DESC`
+    → `SEARCH cookiepresents USING INDEX cookiepresents_ip_at_idx`
+  - `registrations` dito → `USING INDEX registrations_ip_at_idx`
+  - `abgaben` dito → `USING INDEX abgaben_ip_at_idx`
+  - `ipfact` `SELECT DISTINCT ip … WHERE seen BETWEEN ? AND ?`
+    → `USING COVERING INDEX ipfact_seen_ip_idx` (+ temporärer B-tree für
+    DISTINCT, wie vorher)

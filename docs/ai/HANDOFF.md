@@ -1,4 +1,4 @@
-Last updated: 2026-10-30 (#142 umgesetzt — OPNsense-API-Client).
+Last updated: 2026-10-30 (#133 umgesetzt — Drizzle ersetzt Prisma).
 
 ## Sofort weiter mit
 
@@ -28,6 +28,19 @@ verschwunden.
 - Der Dell hostet die Sense als VirtualBox-VM (`sense-zvol-georg`); Sense und
   Tik sind nur zu Prüfungs-/Wartungszeiten online. „Daten seit Tagen alt" ist
   deshalb normal, kein Vorfall.
+
+## #133 — was beim Deployment zu beachten ist
+
+- Prisma ist weg: `deno.json` hat keine `pv/pg/pmd/pmD/pms/pmr/ps`-Tasks mehr,
+  `prisma/` und `lib/prismaclient/` sind gelöscht. Schema-Änderungen laufen
+  über `drizzle/schema.ts` + `deno task db:generate` (nur Dev-Rechner).
+- Die Migrationen laufen beim App-Start (`lib/migrate.ts`). Auf der Sense
+  steht die DB noch bei Prisma-Migration `20260307191214` (kein `examstate`,
+  keine Composite-Indizes); der erste Start der neuen Version gleicht das
+  automatisch an — vorher ein DB-Backup ziehen (#148 ist noch offen).
+- `_prisma_migrations` bleibt als Alt-Tabelle liegen; sie wird von niemandem
+  gelesen.
+- Der Prisma-6-Pin ist erledigt, nicht verschoben: es gibt keine Engines mehr.
 
 ## Kontext, der leicht verloren geht
 

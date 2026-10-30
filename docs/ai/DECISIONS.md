@@ -152,7 +152,7 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
 
 ## Exam Lifecycle State Machine
 
-- Exam duration is preset by the admin: `examstate` is a SQLite singleton (`idle`/`running`/`paused`/`stopped`) with duration, extra seconds, and accumulated pause time; Prisma owns the schema, runtime access is direct SQLite via `repo/exam.ts`.
+- Exam duration is preset by the admin: `examstate` is a SQLite singleton (`idle`/`running`/`paused`/`stopped`) with duration, extra seconds, and accumulated pause time; Drizzle owns the schema, runtime access is direct SQLite via `repo/exam.ts`.
 - `service/exam.ts` is authoritative for remaining time; the clock is injectable for tests. `updated_at` doubles as the pause-start anchor (pause()/resume() only touch it; addExtra during a pause deliberately does not).
 - Pause only stops the countdown — uploads and Unterlagen downloads stay allowed. Stop and natural expiry both mean exam mode off with internet released; there is no grace period.
 - Startup always resets to exam mode off / internet free and forces a stuck `running`/`paused` examstate to `stopped` — this reverses the earlier "block internet on startup" behavior.
@@ -164,22 +164,61 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
 - Allowed upload file types are initialized from env but can be changed by admins while the process is running.
 - Upload validation reads the current in-memory config value rather than treating the env-derived startup value as immutable.
 
-## Hybrid Persistence Strategy
+## 2026-10-30: Drizzle ersetzt Prisma als Schema- und Migrationsautorität (#133)
 
-- Prisma remains the schema and migration authority, but runtime persistence no longer uses a generated Prisma client.
-- Direct SQLite access is still used for `ipfact`, `registrations`, `cookiepresents`, `abgaben`, `examstate`, and `users`.
-- Historical origin: the raw-SQL runtime layer exists because the Prisma engines were a major pain on FreeBSD/OPNsense (Linuxulator) — it is a pragmatic workaround that hardened into the current architecture, not a design preference. The planned Drizzle migration (#133) resolves the underlying engine problem and thereby makes the workaround itself obsolete.
-- This hybrid approach is intentional for now and should remain unless there is a deliberate migration plan.
-- `users` repository operations are now SQL-backed as well, so runtime CRUD for `users` lives in `repo/users.ts` while Prisma stays responsible for schema state and migrations.
-- The long-term direction discussed in this cycle is a future move toward Drizzle, so current reporting-path optimizations should prefer SQL/query shapes that are easy to carry forward.
-- The Drizzle motivation is sharpened by the deployment reality (#133): Prisma engines are Linux binaries that only run on the OPNsense production host through the FreeBSD Linuxulator, which forces a hard pin on Prisma 6. Drizzle is engine-free pure TS and removes engines, the Linuxulator dependency, and the version pin in one move.
-- Runtime SQLite path resolution now derives from Prisma's `DATABASE_URL`, and only Prisma-style SQLite `file:` URLs are supported for raw SQL access.
+Ersetzt den früheren Abschnitt „Hybrid Persistence Strategy". Prisma ist aus
+dem Produktivpfad verschwunden: keine Prisma-Tasks, keine
+Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
+
+- **Drizzle besitzt Schema und Migrationen, nicht die Laufzeit.**
+  `drizzle/schema.ts` spiegelt den Ist-Zustand inklusive aller Indizes und
+  Unique-Constraints; `repo/*.ts` bleiben bei handgeschriebenem SQL über
+  `@db/sqlite`. Grund: `drizzle-orm@0.45.3` hat keinen `@db/sqlite`-Adapter
+  — verfügbar sind `libsql/*`, `sqlite-proxy`, `prisma/*` und der
+  Community-Adapter `@niuiic/drizzle-orm-dbsqlite`. Ein ORM-Umbau wäre kein
+  Nebenschritt, deshalb entfällt er; die forensisch optimierten Queries
+  bleiben unangetastet.
+- **`drizzle-kit` läuft nur auf dem Entwicklungsrechner** (`deno task
+  db:generate`, mit `--node-modules-dir=auto`, weil das Kit `drizzle-orm`
+  über Node/jiti auflöst und esbuild-Binaries mitbringt). Auf der Appliance
+  spielt `lib/migrate.ts` die erzeugten SQL-Dateien über `@db/sqlite` ein —
+  kein Node-Binary, kein esbuild auf der Firewall.
+- **Baseline statt Neuaufbau.** `drizzle/0000_baseline.sql` beschreibt den
+  Ist-Zustand idempotent (`IF NOT EXISTS`; zusätzlich `DROP INDEX IF EXISTS`
+  für die 2026 entfernten redundanten Einzelspalten-Indizes). Existiert der
+  Zustand bereits, verbucht der Runner die Migration, ohne sie auszuführen;
+  fehlt der Datenbank etwas (älterer Stand), gleicht derselbe Lauf sie an.
+  Dev und Produktion landen so auf demselben Schema — auch die Sense-DB, die
+  vor dem Umstieg noch bei der Prisma-Migration `20260307191214` stand (ohne
+  `examstate`, ohne die vier Composite-Indizes).
+- **Journalformat von drizzle-kit.** `__drizzle_migrations` wird mit `hash`
+  (SHA-256 über den Dateiinhalt), `created_at` (Journal-`when` in
+  Millisekunden) und Drizzles `id SERIAL PRIMARY KEY` geschrieben. Damit
+  sieht `drizzle-kit migrate` auf dem Entwicklungsrechner exakt denselben
+  Stand wie die Appliance.
+- **Migrationen laufen beim App-Start**, vor dem ersten Request, idempotent
+  und in `BEGIN EXCLUSIVE`. Kein externer Deploy-Schritt, den man vergessen
+  kann. Ist die Datenbank weiter als der Code (unbekannte Hashes im
+  Journal), verweigert der Start mit deutscher Meldung, statt halb migriert
+  weiterzulaufen.
+- **Forward-only.** Keine Down-Migrationen; der Rückweg ist das DB-Backup
+  (#148).
+- **`DATABASE_URL` bleibt Prisma-kompatibel.** `file:`-Pfade gelten
+  weiterhin relativ zum früheren `prisma/`-Verzeichnis (`lib/dbpath.ts`),
+  damit alle bestehenden `.env`-Dateien — auch die der Produktion —
+  unverändert gültig bleiben. Nur SQLite-`file:`-URLs werden akzeptiert.
+- **`_prisma_migrations` bleibt als Alt-Tabelle liegen.** Sie wird von
+  niemandem mehr gelesen; entfernen erst nach einem Backup (kein
+  Automatismus, kein Datenverlust-Risiko).
+- **Nach der Saison** wird die Runtime-Frage neu gestellt; ein Wechsel auf
+  Node + `drizzle-orm/better-sqlite3` bleibt möglich, ohne dieses Ticket zu
+  wiederholen.
 
 ## Admin Forensics Query Strategy
 
 - The admin forensics page was changed from per-IP N+1 reads to range-level table reads aggregated in memory in `service/ipadmin.ts`.
 - Composite indexes were added for the reporting hot path: `cookiepresents(ip, at)`, `registrations(ip, at)`, `abgaben(ip, at)`, and `ipfact(seen, ip)`.
-- After validating actual query plans, redundant single-column indexes `cookiepresents(ip)`, `registrations(ip)`, `ipfact(ip)`, and `ipfact(seen)` were removed through the Prisma migration workflow.
+- After validating actual query plans, redundant single-column indexes `cookiepresents(ip)`, `registrations(ip)`, `ipfact(ip)`, and `ipfact(seen)` were removed (back then through the Prisma migration workflow, today baked into the Drizzle baseline).
 - Query-shape tuning for the range aggregation now prefers reducing SQL-side global sorting and performing final per-IP ordering in application code when that avoids temp b-tree work without changing behavior.
 
 ## Exam-Oriented Authentication

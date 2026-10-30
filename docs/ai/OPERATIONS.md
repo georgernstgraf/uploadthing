@@ -11,24 +11,29 @@ only in the operator's head; it is now recorded here (see #132).
 - This is not a regular server: the app shares the machine with the
   firewall itself, so resource footprint and failure behavior matter.
 
-## Runtime: Deno On FreeBSD, Prisma Via Linuxulator
+## Runtime: Deno On FreeBSD, Keine Prisma-Engines Mehr
 
 - The runtime is **Deno on FreeBSD**.
-- Prisma's engines are platform-specific **Linux binaries**; they run on
-  the OPNsense only through the **Linuxulator** (FreeBSD's Linux binary
-  emulation).
-- Because of that, Prisma is **hard-pinned to version 6**
-  (`deno.json` imports + `deno.lock`). Newer engine versions are not
-  trustworthy under the Linuxulator, and an accidental version bump can
-  break migration capability on `sense` — typically discovered only at
-  the next deployment.
-- **Do not bump the Prisma version** until the planned Drizzle migration
-  (#133) removes Prisma entirely. Drizzle is engine-free pure TS and
-  eliminates the Linuxulator dependency and the pin in one move.
-- This engine pain is also the historical reason the runtime persistence
-  layer uses plain SQL with hand-written prepared statements instead of
-  Prisma queries (`repo/*.ts`); Prisma only remains in the loop for
-  schema and migrations.
+- Since #133 there are **no Prisma engines** in the stack. Prisma forced
+  platform-specific Linux binaries that only ran on the OPNsense through
+  the **Linuxulator** and hard-pinned the engine version to 6. Drizzle is
+  engine-free pure TypeScript, so the pin and the Linuxulator dependency
+  are gone.
+- **Schema and migrations**: `drizzle/schema.ts` plus `drizzle/*.sql`.
+  Migration SQL is generated on the development machine with
+  `deno task db:generate` (`drizzle-kit` carries esbuild binaries — never
+  put it on the appliance).
+- **Applying migrations** happens automatically at app start via
+  `lib/migrate.ts` over `@db/sqlite`, before the first request, in
+  `BEGIN EXCLUSIVE` and idempotently. There is **no deploy step to
+  forget**: start the app and the schema is current. A manual run is
+  available as `deno task db:migrate`.
+- If the database knows migrations the running code does not (downgrade
+  or a half-written deployment), the app refuses to start with a German
+  message instead of running on a half-migrated schema. Rollback path is
+  the database backup (#148), not a down-migration.
+- Runtime persistence is still plain SQL with hand-written prepared
+  statements (`repo/*.ts`); Drizzle is the schema authority only.
 
 ## Exam-Sperre über die OPNsense-API
 
@@ -77,9 +82,8 @@ only in the operator's head; it is now recorded here (see #132).
   recurring maintenance burden across major OPNsense upgrades — not
   worth it.
 - Consequence for this project: do not try to install native Deno from
-  packages on `sense`. The Linuxulator remains the pragmatic runtime
-  path, and the Drizzle migration (#133) shrinks what depends on it —
-  after that only Deno itself (if it runs emulated) or nothing.
+  packages on `sense`. The Linuxulator remains the pragmatic runtime path
+  for Deno itself; since #133 nothing else in the stack needs it.
 
 ## Unterlagen (Exam Task Materials)
 

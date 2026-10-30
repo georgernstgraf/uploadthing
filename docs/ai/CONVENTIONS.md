@@ -10,10 +10,11 @@
 ## Deno Task Execution
 
 - You may run `deno task` commands without asking for separate approval.
-- Common safe tasks are `deno task check`, `deno task lint`, `deno task test`, `deno task dev`, `deno task start`, `deno task pv`, `deno task pmD`, `deno task pmd`, `deno task pms`, `deno task pmr`, and `deno task ps`.
+- Common safe tasks are `deno task check`, `deno task lint`, `deno task test`, `deno task dev`, `deno task start`, `deno task db:generate`, and `deno task db:migrate`.
 - Treat `deno.json` as the source of truth if task names change.
-- For schema/index changes, treat `prisma/schema.prisma` as the source of truth and prefer the Prisma workflow: edit the schema first, then run `deno task pmd --name <migration_name>`, then inspect the generated migration instead of hand-authoring migration SQL.
-- When raw SQLite code needs the database file path, derive it from Prisma's `DATABASE_URL` using Prisma-relative `file:` semantics rather than introducing a separate runtime DB path setting.
+- Drizzle is the schema and migration authority: `drizzle/schema.ts` describes the database, `drizzle/*.sql` are the migrations. For schema/index changes, edit the schema first, then run `deno task db:generate --name <migration_name>` **on the development machine**, then inspect the generated SQL instead of hand-authoring it. `drizzle-kit` never runs on `sense`/Dell.
+- Migrations are applied at app start by `lib/migrate.ts` (idempotent, `BEGIN EXCLUSIVE`, forward-only). There is no separate deploy step, and a migration is never marked as applied by hand.
+- When raw SQLite code needs the database file path, derive it from `DATABASE_URL` via `lib/dbpath.ts` (Prisma-compatible `file:` semantics, relative to the former `prisma/` directory) rather than introducing a separate runtime DB path setting.
 
 ## Coding Style
 

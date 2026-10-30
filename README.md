@@ -11,7 +11,7 @@ The application fails to start if any required variable is missing.
 
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | Prisma-style SQLite URL, e.g. `file:../uploadthing.db` |
+| `DATABASE_URL` | SQLite URL in Prisma notation, e.g. `file:../uploadthing.db`; relative paths resolve from the former `prisma/` directory |
 | `ABGABEN_DIR` | Directory for uploaded submission files |
 | `UNTERLAGEN_DIR` | Directory for exam materials served to students |
 | `LISTEN_HOST` | IP address to bind to (e.g. `127.0.0.1`) |
@@ -63,6 +63,27 @@ certificate covers, or start the process with
 | `ADMIN_STALE_MINUTES` | `3` | Minutes before an IP is considered stale |
 | `ADMIN_REFRESH_SECONDS` | `15` | Auto-refresh interval for admin forensics page |
 | `PUBLIC_URL` | `http://<LISTEN_HOST>:<LISTEN_PORT>/` | URL displayed in the hero header (full URL incl. scheme, optionally with port); decoupled from `LISTEN_HOST`, which only determines the bind address |
+
+## Database Schema And Migrations
+
+Drizzle is the schema and migration authority: `drizzle/schema.ts` describes
+the tables, `drizzle/*.sql` are the versioned migrations, `drizzle/meta/`
+holds the journal and snapshots.
+
+Migrations are applied **automatically at app start** (`lib/migrate.ts`,
+idempotent, `BEGIN EXCLUSIVE`, forward-only) — there is no separate deploy
+step. Runtime access stays hand-written SQL via `@db/sqlite`.
+
+Schema changes (development machine only):
+
+```bash
+deno task db:generate --name <migration_name>   # drizzle-kit generate
+deno task db:migrate                            # apply pending migrations manually
+```
+
+`drizzle-kit` brings esbuild binaries and therefore never runs on the
+appliance; a database that knows a newer migration than the running code
+makes the app refuse to start instead of running half-migrated.
 
 ## Appliance Scripts (`appliance/`)
 

@@ -38,7 +38,7 @@ verschwunden.
 3. #144 Appliance-Cleanup (Root-Skripte, Cron, examsense)
 4. #145 Tik-Polling in der App
 5. #146 Schülerseite (eine Seite, zwei Spalten, Namenssuche)
-6. #133 Drizzle (Schema + Migrationen)
+6. ~~#133 Drizzle (Schema + Migrationen)~~ — erledigt 2026-10-30
 7. #134 Admin-Upload Unterlagen
 8. #147 MAC-Admin-Freigabe
 9. #148 Backups & Secrets (gpg/pass)
@@ -47,6 +47,15 @@ verschwunden.
 12. #150 htmx-4-Migration (Backlog, Februar 2027)
 
 ## Completed (this cycle)
+
+- [x] #133 Drizzle als Schema- und Migrationsautorität: `drizzle/schema.ts`
+      in Parität zu allen sechs Tabellen inklusive Indizes, Baseline
+      `drizzle/0000_baseline.sql` (idempotent), Migrations-Runner
+      `lib/migrate.ts` auf `@db/sqlite` (Start-migrierend, `BEGIN EXCLUSIVE`,
+      drizzle-kompatibles `__drizzle_migrations`), Prisma-Rückbau
+      (Tasks `pv/pg/pmd/pmD/pms/pmr/ps`, Dependencies, `lib/prismaclient/`,
+      `prisma/`). `EXPLAIN QUERY PLAN` auf einer Kopie der Produktions-DB:
+      alle vier Hot-Queries nutzen ihre Composite-Indizes.
 
 - [x] #142 OPNsense-API-Client: Exam-Sperre ausschließlich über die
       Firewall-API (`service/opnsense.ts`, `searchRule`/`toggleRule`/`apply`),
@@ -71,7 +80,7 @@ verschwunden.
 
 ## Pending
 
-- [ ] Der Epic-Plan oben; #142 ist abgeschlossen.
+- [ ] Der Epic-Plan oben; #142 und #133 sind abgeschlossen.
 - [ ] Deno-Hygiene auf `sense`: laufende 2.9.6 (`~/.deno/bin/deno`)
       konsolidieren, kaputtes `~/deno` (liblcms2 fehlt) und altes `~/tmp/deno`
       (2.2.15 LTS) entfernen; optional Patch-Bump auf 2.9.7.

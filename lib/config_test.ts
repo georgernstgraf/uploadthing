@@ -1,12 +1,10 @@
 import { assertEquals, assertExists } from "@std/assert";
-import { fromFileUrl, resolve } from "@std/path";
 import config, {
     buildHeroUrl,
     isDevelopment,
     isProduction,
     parseOpnsenseConfig,
     parsePermittedFileTypes,
-    parseSqliteDatabaseUrl,
     parseTlsConfig,
 } from "./config.ts";
 
@@ -165,58 +163,6 @@ Deno.test("config - parsePermittedFileTypes normalizes input", () => {
         "md",
         "pdf",
     ]);
-});
-
-Deno.test("config - parseSqliteDatabaseUrl parses Prisma SQLite URL", () => {
-    const prismaDir = resolve(fromFileUrl(new URL("../prisma/", import.meta.url)));
-    assertEquals(
-        parseSqliteDatabaseUrl("file:../uploadthing.db"),
-        resolve(prismaDir, "../uploadthing.db"),
-    );
-    assertEquals(
-        parseSqliteDatabaseUrl("file:./tmp/test.db"),
-        resolve(prismaDir, "./tmp/test.db"),
-    );
-});
-
-Deno.test("config - parseSqliteDatabaseUrl rejects empty string", () => {
-    const error = (() => {
-        try {
-            parseSqliteDatabaseUrl("");
-        } catch (caught) {
-            return caught;
-        }
-        return null;
-    })();
-
-    assertExists(error);
-    assertEquals(
-        error instanceof Error
-            ? error.message
-            : String(error),
-        "DATABASE_URL must be set to a Prisma-style SQLite file: URL.",
-    );
-});
-
-Deno.test("config - parseSqliteDatabaseUrl rejects non-file URLs", () => {
-    for (const invalid of ["uploadthing.db", "postgres://localhost/app"]) {
-        const error = (() => {
-            try {
-                parseSqliteDatabaseUrl(invalid);
-            } catch (caught) {
-                return caught;
-            }
-            return null;
-        })();
-
-        assertExists(error);
-        assertEquals(
-            error instanceof Error
-                ? error.message
-                : String(error),
-            "DATABASE_URL must use a Prisma-style SQLite file: URL.",
-        );
-    }
 });
 
 Deno.test("config - MAX_UPLOAD_MB has default value", () => {

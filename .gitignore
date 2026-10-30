@@ -6,8 +6,8 @@ skills/
 static/img/bg-dark.jpg
 static/img/bg-light.jpg
 static/theme.css
-/lib/prismaclient/
-/prisma/generated/
+# Nur von `deno task db:generate` (drizzle-kit) erzeugt, nie eingecheckt
+/node_modules/
 /.Trash-*/
 .DS_Store
 Thumbs.db
