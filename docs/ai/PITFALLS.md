@@ -405,3 +405,14 @@
   vergeben — bei statischer Adresse auf dem gelben Interface ein
   Adresskonflikt. Seit 2026-10-30 trägt er die MAC des USB-Adapters
   (`7c:c2:c6:15:cb:a8`).
+
+## `.section-heading` ist nur in einem Theme gestylt
+
+- Die Templates benutzen `class="section-heading text-uppercase"` als
+  Abschnittsüberschrift, aber die Klasse ist ausschließlich in
+  `static/leisure-pink-theme.css` definiert. In allen anderen Themes ist
+  sie wirkungslos — das Element erbt einfach die `h4`/`h5`-Standardgröße.
+- Neue Layouts deshalb auf Bootstrap-Utilities (`h6 text-uppercase
+  text-body-secondary`) stützen, nicht auf `.section-heading`. Wer die
+  Klasse mit Bedeutung füllt, muss sie in `theme.css`/`ui-shell.css`
+  global definieren, nicht in einem einzelnen Theme.
