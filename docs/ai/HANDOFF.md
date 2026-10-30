@@ -32,6 +32,10 @@ Umbauten — in dieser Reihenfolge:
 
 ## Was in dieser Session passiert ist
 
+- **#156:** Der Signalhandler beendet den Prozess jetzt selbst
+  (`lib/shutdown.ts`): Polling stoppen → HTTP auslaufen → SQLite
+  schließen → `Deno.exit(0)`, Watchdog 10 s, zweites Signal = sofort.
+  Gemessen unter 0,1 s statt 20 s; kein SIGKILL mehr im Journal.
 - **#155:** Der Hero im Kopf ist ein Link auf `/`. `/whoami` war für
   Schüler eine Sackgasse — keine Navigation (`nav.hbs` rendert nur für
   Admins), Anmeldesperre im Examen, also nur noch Browser-URL-Editieren.

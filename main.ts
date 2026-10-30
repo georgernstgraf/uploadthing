@@ -3,6 +3,7 @@ import config from "./lib/config.ts";
 import { sessionMiddleware, remoteIPMiddleware } from "./middleware/session.ts";
 import { Bindings, HonoContextVars } from "./lib/types.ts";
 import { shutdownSqlite } from "./repo/db.ts";
+import { createShutdown } from "./lib/shutdown.ts";
 import * as service from "./service/service.ts";
 
 import adminRouter from "./routes/admin.ts";
@@ -34,45 +35,42 @@ app.route("/api", apiRouter);
 app.route("/", filesRouter);
 
 const abortController = new AbortController();
-let shuttingDown = false;
 let tikPoller: ReturnType<typeof service.tik.startPolling> = null;
+let server: Deno.HttpServer | null = null;
 
-const shutdown = async (signal: Deno.Signal) => {
-    if (shuttingDown) {
-        return;
-    }
-    shuttingDown = true;
+// Reihenfolge und Notbremse stehen in lib/shutdown.ts (#156): erst das
+// Polling stoppen, dann den Server auslaufen lassen, dann SQLite
+// schließen, dann den Prozess beenden. Vorher blieb der Prozess nach
+// SIGTERM hängen und systemd musste ihn nach 20 s hart killen.
+const shutdown = createShutdown({
+    stopBackgroundWork: async () => {
+        // Ein laufender Abruf schreibt in die Datenbank und darf das
+        // SQLite-Handle nicht überleben.
+        await tikPoller?.stop();
+    },
+    drainServer: async () => {
+        abortController.abort();
+        await server?.finished;
+    },
+    closeDatabase: (signal) => {
+        shutdownSqlite(signal);
+    },
+    exit: (code) => Deno.exit(code),
+});
 
-    console.log(`Received ${signal}, shutting down HTTP server...`);
-
-    // Zuerst das Tik-Polling stoppen: ein laufender Abruf schreibt in
-    // die Datenbank und darf das SQLite-Handle nicht überleben.
-    await tikPoller?.stop();
-    abortController.abort();
-
-    shutdownSqlite(signal);
-
-    Deno.removeSignalListener("SIGINT", sigintHandler);
-    Deno.removeSignalListener("SIGTERM", sigtermHandler);
-};
-
-const sigintHandler = () => {
+Deno.addSignalListener("SIGINT", () => {
     void shutdown("SIGINT");
-};
-
-const sigtermHandler = () => {
+});
+Deno.addSignalListener("SIGTERM", () => {
     void shutdown("SIGTERM");
-};
-
-Deno.addSignalListener("SIGINT", sigintHandler);
-Deno.addSignalListener("SIGTERM", sigtermHandler);
+});
 
 await service.admin.runExamModeOnStartup();
 
 // Aktive IPs und MACs direkt aus dem MikroTik: Sofortabruf, dann alle 60 s.
 tikPoller = service.tik.startPolling();
 
-await Deno.serve(
+server = Deno.serve(
     {
         hostname: config.LISTEN_HOST,
         port: config.LISTEN_PORT,
@@ -86,3 +84,7 @@ await Deno.serve(
     },
     (req, info) => app.fetch(req, { info }),
 );
+
+// Der Server läuft, bis ein Signal kommt; `finished` löst nach dem Abort
+// auf. Der eigentliche Exit passiert im Shutdown-Handler.
+await server.finished;

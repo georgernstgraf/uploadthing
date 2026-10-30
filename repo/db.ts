@@ -18,7 +18,7 @@ runMigrations(db);
 
 let shuttingDown = false;
 
-export const shutdownSqlite = (signal: Deno.Signal) => {
+export const shutdownSqlite = (signal: string) => {
     if (shuttingDown) {
         return;
     }

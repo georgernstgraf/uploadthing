@@ -23,7 +23,7 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **IP-/MAC-Präsenz** per Tik-REST im App-Prozess (`service/tik.ts`);
   MikroTik-Konto `uploadthing`, strikt auf `192.168.21.2/32`, nur
   `monitoring-rest`.
-- **Tests**: 347 Deno-Tests (~5 s) plus acht Playwright-Smoke-Tests in
+- **Tests**: 352 Deno-Tests (~5 s) plus acht Playwright-Smoke-Tests in
   `deno task e2e` (~11 s, Chromium, eigene Wegwerf-DB auf Port 8099).
 
 ## Erledigt am 2026-10-30 (Abschlusssession)
@@ -58,6 +58,18 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - Boost-Navigation scrollt wieder nach oben: der afterSwap-Handler ruft
   `window.scrollTo({ top: 0 })` statt des seit #154 toten
   `#app-main.scrollTo(...)`.
+
+## Erledigt am 2026-10-31 (Sauberer Shutdown, #156)
+
+- **Der Dienst beendet sich jetzt selbst.** Vorher blieb der Prozess nach
+  SIGTERM stehen und systemd killte ihn nach `TimeoutStopSec=20`
+  (`State 'stop-sigterm' timed out`). Jetzt gilt die Reihenfolge
+  Polling stoppen → HTTP auslaufen → SQLite schließen → `Deno.exit(0)`;
+  ein Watchdog (10 s, unref'd) und ein zweites Signal als Notbremse.
+- Die Logik liegt in `lib/shutdown.ts` mit fünf Tests in
+  `lib/shutdown_test.ts`; `main.ts` verdrahtet nur noch die Schritte.
+  Gemessen: Restart unter 0,1 s statt 20 s. Details in `DECISIONS.md`,
+  Betriebsnotiz in `OPERATIONS.md`.
 
 ## Erledigt am 2026-10-31 (Code-Review-Funde)
 

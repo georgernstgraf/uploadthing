@@ -1,5 +1,34 @@
 # DECISIONS
 
+## 2026-10-31: Der Shutdown beendet den Prozess selbst (#156)
+
+- **Problem:** Der SIGTERM-Handler stoppte das Polling, schloss SQLite
+  und entfernte die Listener — rief aber nie `Deno.exit`. Der Prozess
+  blieb stehen, bis systemd nach `TimeoutStopSec=20` mit SIGKILL nachhalf.
+  Jeder Neustart dauerte 20 s und hinterließ „State 'stop-sigterm' timed
+  out".
+- **Reihenfolge statt Reihenfolge-Zufall:** erst Hintergrundarbeit
+  stoppen (ein laufender MikroTik-Abruf schreibt in die Datenbank), dann
+  den Server abbrechen und `server.finished` abwarten, **erst dann**
+  SQLite schließen, dann `Deno.exit(0)`. Vorher lag das SQLite-Handle zu
+  früh zu, während noch Anfragen bedient wurden.
+- **Zwei Rückfallebenen, nicht eine:** ein Watchdog-Timer
+  (`SHUTDOWN_GRACE_MS = 10_000`, `Deno.unrefTimer`) beendet den Prozess
+  hart, wenn ein Schritt hängt; `TimeoutStopSec=20` im Unit-File bleibt
+  als letzte Instanz. Der Timer ist unref'd, weil ein leerer Event-Loop
+  ohnehin der richtige natürliche Exit ist.
+- **Fehler blockieren einander nicht.** Jeder Schritt ist einzeln
+  abgesichert: ein kaputter Tik-Abruf verhindert weder das Auslaufen des
+  Servers noch das Schließen der Datenbank. Der Exit-Code bleibt 0, weil
+  der Shutdown angefordert war; Fehler stehen im Journal.
+- **Ein zweites Signal beendet sofort** (`exit(1)`) — das übliche
+  „Ctrl-C zweimal"-Verhalten, ohne auf den Watchdog zu warten.
+- **Testbar statt Skript:** die Logik liegt in `lib/shutdown.ts`
+  (`createShutdown(steps, options)`), `main.ts` verdrahtet nur noch
+  Poller, Server, SQLite und `Deno.exit`. `lib/shutdown_test.ts` prüft
+  Reihenfolge, Exit-Codes, zweites Signal, Watchdog und fehlschlagende
+  Schritte.
+
 ## 2026-10-31: Der Hero ist der Heimweg — auch ohne Navigation (#155)
 
 - **Problem:** `/whoami` (Namenskarte „Angemeldet als … · Ändern") ist
