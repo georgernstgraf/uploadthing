@@ -14,7 +14,9 @@ App, Sense = Firewall/DNS/DHCP. Runtime bleibt Deno, htmx bleibt 2.0.10 bis
 Februar 2027.
 
 Nächster Schritt: **#144** — Appliance-Cleanup auf der Sense. Die App läuft
-seit 2026-10-30 **auf dem Dell** (`~/uploadthing-app`, systemd,
+seit 2026-10-30 **auf dem Dell** (systemd-User-Unit aus
+`~/repos/georgernstgraf/uploadthing`, Env in
+`~/.config/uploadthing/uploadthing.env`, Daten in `~/uploadthing-data/`,
 `192.168.21.2:443`, `tst.spengergasse.at` per Unbound dorthin); die alte
 Instanz auf der Sense ist gestoppt, aber noch nicht gelöscht.
 

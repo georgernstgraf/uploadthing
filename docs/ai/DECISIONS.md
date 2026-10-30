@@ -210,7 +210,7 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
 - TLS is opt-in: `TLS_CERT_PATH` and `TLS_KEY_PATH` must be set together (fail-fast, German error) — unset means plain HTTP, unchanged behavior.
 - The certificate source is the Let's Encrypt harvest on the school host `kik` (internal repo KI-Kustodiat-intern issue #3; uploadthing issue #136 is linked as its sub-issue). Certificates are copied manually via `scp`; after each copy the service restarts, since Deno reads cert/key at startup.
 - Seit #143 terminiert die App selbst auf **443** auf dem Dell
-  (`AmbientCapabilities=CAP_NET_BIND_SERVICE`), mit den von der Sense
+  (User-Unit, `ip_unprivileged_port_start=443`), mit den von der Sense
   kopierten Let's-Encrypt-Dateien unter
   `~/certs/tst.spengergasse.at/`. Die frühere Sense-Topologie
   (Loopback 8000, GUI 8443, DNAT 443→8000) ist in `HISTORY.md` archiviert.
@@ -434,35 +434,57 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
 
 ## 2026-10-30: Produktionshost ist der Dell, nicht mehr die Sense (#143)
 
-- **Choice**: Die App läuft als systemd-Dienst auf dem Dell
-  (`~/uploadthing-app`, `systemd/uploadthing.service` im Repo),
-  gebunden auf `192.168.21.2:443` über
-  `AmbientCapabilities=CAP_NET_BIND_SERVICE`, `Restart=always`,
-  `EnvironmentFile` auf die Produktions-`.env` im Deployment-Verzeichnis.
-  Die Sense bleibt Firewall/DNS/DHCP.
+- **Choice**: Die App läuft als **systemd-User-Unit** auf dem Dell, direkt
+  aus dem Arbeits-Repo (`~/.config/systemd/user/uploadthing.service`,
+  Quelle `systemd/uploadthing.service`), gebunden auf
+  `192.168.21.2:443`, `Restart=always`. Die Sense bleibt Firewall/DNS/DHCP.
 - **Reason**: Die App soll nicht mehr auf dem Firewall-Gerät wohnen
   (Ressourcen, Fehlerverhalten, Deployment über `rc.d` + `startloop.sh`
   mit PIDfile-Problemen). Eigene 443 statt Loopback+DNAT macht den
   Datenpfad gerade und erlaubt der Sense, ihre GUI wieder auf 443 zu
   betreiben.
 - **Considered**: Auf der Sense bleiben und nur die Steuerung auf die API
-  umstellen (verworfen: der Prüfungsserver gehört nicht auf die Firewall);
-  Deno-Service als User-Unit (verworfen: Port 443 braucht
-  `CAP_NET_BIND_SERVICE`, das ist im System-Scope einfacher).
+  umstellen (verworfen: der Prüfungsserver gehört nicht auf die Firewall).
 - **Tradeoff**: Der Dell ist gleichzeitig Arbeitsgerät — ein Absturz oder
   Zuklappen trifft App und Sense-VM. Suspend ist deshalb per
   `logind.conf.d/uploadthing.conf` systemweit abgeschaltet
   (`systemd-inhibit` scheitert an polkit 127).
 
-## 2026-10-30: Getrenntes Deployment-Verzeichnis mit eigener `.env` (#143)
+## 2026-10-30: User-Unit statt System-Unit, 443 über sysctl (#143)
 
-- **Choice**: `~/uploadthing-app` ist ein eigener Klon; die
-  Produktions-`.env` liegt dort (Modus 600) und teilt sich nichts mit dem
-  Entwicklungs-Repo.
-- **Reason**: Das Dev-`.env` zeigt auf lokale Verzeichnisse und enthält
-  Testwerte; es darf die Produktion nicht überschreiben.
-- **Considered**: Deployment aus dem Arbeits-Repo per Symlink (verworfen:
-  `.env`-Kollision, ungewollte Mitnahme von Testartefakten).
+- **Choice**: Der Dienst läuft als **User-Unit** (`systemctl --user`,
+  `WantedBy=default.target`, `loginctl enable-linger georg`). Port 443 wird
+  über `net.ipv4.ip_unprivileged_port_start = 443`
+  (`/etc/sysctl.d/99-uploadthing-ports.conf`) freigegeben.
+- **Reason**: `AmbientCapabilities`/`CapabilityBoundingSet` sind im
+  User-Manager nicht verfügbar (er läuft selbst ohne Rechte); `setcap` auf
+  der Deno-Binary ginge, würde aber bei jedem Deno-Upgrade verloren gehen
+  und gilt dann für *jeden* Deno-Aufruf des Benutzers. Die sysctl-Zeile ist
+  eine Zeile, überlebt Upgrades und braucht keine Capability-Pflege.
+- **Considered**: System-Unit mit `AmbientCapabilities=CAP_NET_BIND_SERVICE`
+  (verworfen: Dienst dann root-nah verwaltet, obwohl der Prozess als
+  `georg` läuft); Socket-Activation über eine System-Socket-Unit
+  (verworfen: deutlich mehr bewegliche Teile).
+- **Tradeoff**: Auf diesem Einzelbenutzer-Rechner darf damit jeder Prozess
+  von `georg` auf Ports ≥ 443 binden — auf einem Mehrbenutzersystem wäre
+  das zu weitgehend.
+
+## 2026-10-30: Code aus dem Arbeits-Repo, Env und Daten außerhalb (#143)
+
+- **Choice**: `WorkingDirectory` ist
+  `/home/georg/repos/georgernstgraf/uploadthing`; die Produktions-Env
+  liegt als `~/.config/uploadthing/uploadthing.env` (Modus 600) daneben,
+  die Daten in `~/uploadthing-data/` (`uploadthing.db`, `abgaben/`,
+  `unterlagen/`).
+- **Reason**: Ein separates Deployment-Verzeichnis ist doppelte Pflege
+  (Pull, Divergenz, vergessene Commits). Zugleich darf die Produktion
+  weder das Dev-`.env` im Repo lesen noch in die Dev-DB schreiben.
+- **Considered**: Deployment-Klon `~/uploadthing-app` (verworfen: zweiter
+  Checkout, Treiber für Verwirrung); Produktionswerte im Repo-`.env`
+  (verworfen: Dev-Konfiguration würde überschrieben).
+- **Tradeoff**: `DATABASE_URL` muss ein **absoluter** `file:`-Pfad sein —
+  ein relatives `file:../uploadthing.db` würde relativ zum früheren
+  `prisma/`-Verzeichnis im Repo auf die Entwicklungs-DB zeigen.
 
 ## 2026-10-30: Interne CA für die Firewall-API (#142, #149)
 

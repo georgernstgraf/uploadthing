@@ -72,8 +72,10 @@ Last updated: 2026-10-30 (#143 Cutover erledigt — App läuft auf dem Dell).
 Die App läuft **nicht mehr auf der Sense**. Details in `OPERATIONS.md`
 (Abschnitt „Production Host: Dell").
 
-- Deployment: `~/uploadthing-app` (eigenes Verzeichnis, Klon von GitHub),
-  Produktions-`.env` dort (Modus 600, nicht im Repo).
+- Deployment: **User-Unit** aus dem Arbeits-Repo
+  (`~/.config/systemd/user/uploadthing.service`), Env in
+  `~/.config/uploadthing/uploadthing.env` (600), Daten in
+  `~/uploadthing-data/`.
 - `systemd/uploadthing.service` im Repo, installiert unter
   `/etc/systemd/system/`, `Restart=always`, `CAP_NET_BIND_SERVICE`,
   `ExecStartPre` prüft die Adresse `192.168.21.2` auf `enx7cc2c615cba8`.

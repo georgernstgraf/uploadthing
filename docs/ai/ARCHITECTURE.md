@@ -7,7 +7,7 @@ Overwritten when structural changes occur during a session.
 
 uploadthing ist eine **Deno**-Web-App (Hono, server-gerendert mit Handlebars,
 htmx 2.0.10, Bootstrap) für Abgaben bei Prüfungen an einer HTL. Sie läuft seit
-2026-10-30 als systemd-Dienst **auf dem Dell** (`~/uploadthing-app`), gebunden
+2026-10-30 als systemd-**User**-Dienst **auf dem Dell** (aus dem Repo), gebunden
 auf `192.168.21.2:443` mit eigenem TLS. Die OPNsense-Sense davor ist nur noch
 Firewall/DNS/DHCP; alles, was die Prüfungssituation steuert — Internet-Sperre,
 IP-/MAC-Präsenz, Anmeldefenster — läuft im App-Prozess. Persistenz ist eine
@@ -24,7 +24,7 @@ Prisma-Engines, keine Runtime-Abhängigkeit auf Prisma).
 | Repos | `repo/*.ts` | handgeschriebenes SQL mit prepared Statements |
 | Migrationen | `drizzle/schema.ts`, `drizzle/*.sql`, `lib/migrate.ts` | Schema + Start-Migration |
 | Config | `lib/config.ts` | fail-strict Env-Parsing (deutsche Fehler) |
-| Deployment | `systemd/uploadthing.service`, `~/uploadthing-app` | systemd-Dienst, Produktions-`.env`, Daten |
+| Deployment | `systemd/uploadthing.service` (User-Unit), `~/.config/uploadthing/uploadthing.env`, `~/uploadthing-data/` | Dienst, Produktions-Env, Daten |
 
 ## Knowledge Files (`docs/ai/`)
 
@@ -55,7 +55,7 @@ Prisma-Engines, keine Runtime-Abhängigkeit auf Prisma).
   (IP, MAC, `seen`). Grundlage für die MAC-basierte Admin-Freigabe.
 - **DNS**: Dell → `192.168.21.1` (Unbound auf der Sense; Host Overrides
   `tst` → `.2`, `tik.internal` → `.5`, `sense.internal` → `.1`).
-- **Datenbank**: `~/uploadthing-app/uploadthing.db` (WAL), Migrationen beim
+- **Datenbank**: `~/uploadthing-data/uploadthing.db` (WAL), Migrationen beim
   Start unter `BEGIN EXCLUSIVE`.
 
 ## Sicherheitsgrenzen

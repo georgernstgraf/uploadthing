@@ -5,20 +5,34 @@ only in the operator's head; it is now recorded here (see #132).
 
 ## Production Host: Dell (seit 2026-10-30)
 
-- Uploadthing läuft **auf dem Dell** unter `~/uploadthing-app` (eigenes
-  Deployment-Verzeichnis, **nicht** das Entwicklungs-Repo — dessen `.env`
-  ist eine Dev-Konfiguration).
-- Dienst: `systemd/uploadthing.service` (im Repo versioniert, installiert
-  unter `/etc/systemd/system/uploadthing.service`). `Restart=always`,
-  `EnvironmentFile=/home/georg/uploadthing-app/.env`,
-  `AmbientCapabilities=CAP_NET_BIND_SERVICE` für Port 443,
-  `WorkingDirectory=/home/georg/uploadthing-app`.
-- **Interface:** gelbe USB-NIC `enx7cc2c615cba8`, statisch **192.168.21.2/24**,
-  kein Gateway (`ipv4.never-default yes`), DNS **nur** `192.168.21.1`.
-  `ExecStartPre` prüft, dass diese Adresse da ist, bevor der Dienst startet.
-- **Daten:** `~/uploadthing-app/uploadthing.db` (WAL), `abgaben/`,
-  `unterlagen/`. Kopiert von der Sense am 2026-10-30 (105 Abgaben,
-  1 Unterlage, DB per `sqlite3.Connection.backup` inkl. WAL-Checkpoint).
+- Uploadthing läuft **auf dem Dell** direkt aus dem Arbeits-Repo
+  `/home/georg/repos/georgernstgraf/uploadthing` (kein separates
+  Deployment-Verzeichnis mehr).
+- Dienst: **systemd-User-Unit** `~/.config/systemd/user/uploadthing.service`
+  (Quelle im Repo: `systemd/uploadthing.service`), `Restart=always`,
+  `WorkingDirectory` = Repo, `EnvironmentFile` =
+  `~/.config/uploadthing/uploadthing.env` (Modus 600, **nicht** das
+  Dev-`.env` im Repo). Nach einer Änderung an der Unit-Datei im Repo:
+  `cp systemd/uploadthing.service ~/.config/systemd/user/ &&
+  systemctl --user daemon-reload && systemctl --user restart uploadthing`.
+- **Port 443 ohne root:** User-Units können kein `AmbientCapabilities`
+  setzen (der User-Manager hat keine Rechte). Stattdessen
+  `/etc/sysctl.d/99-uploadthing-ports.conf` mit
+  `net.ipv4.ip_unprivileged_port_start = 443` — damit darf jeder Prozess
+  von `georg` auf 443 binden, ohne Capability und ohne `setcap` auf der
+  Deno-Binary (das würde bei jedem Upgrade verloren gehen).
+- **Autostart ohne Login:** `loginctl enable-linger georg` (Linger=yes),
+  damit der User-Manager beim Boot läuft; die Unit hängt an
+  `default.target` (User-Scope).
+- **Interface:** gelbe USB-NIC `enx7cc2c615cba8`, statisch
+  **192.168.21.2/24**, kein Gateway (`ipv4.never-default yes`), DNS
+  **nur** `192.168.21.1`. `ExecStartPre` prüft, dass diese Adresse da
+  ist, bevor der Dienst startet.
+- **Daten liegen außerhalb des Repos:** `~/uploadthing-data/`
+  mit `uploadthing.db` (WAL), `abgaben/` (105 Dateien), `unterlagen/`
+  (1 Datei). `DATABASE_URL` ist deshalb ein **absoluter** `file:`-Pfad —
+  ein relatives `file:../uploadthing.db` würde im Repo auf die
+  Entwicklungs-DB zeigen.
 - **Suspend:** Der Dell ist ein Laptop. `systemd-inhibit` scheitert als
   `georg` an polkit („Access denied", und die JS-Regeln in
   `/etc/polkit-1/rules.d` werden von polkit 127 hier gar nicht geladen).
@@ -29,7 +43,7 @@ only in the operator's head; it is now recorded here (see #132).
   (ECDSA, gültig bis 2027-01-12, von der Sense kopiert). Der alte
   DNAT-Eintrag auf der Sense ist gelöscht; die Sense-GUI lauscht wieder
   auf **443**.
-- **Logs:** `journalctl -u uploadthing -f`.
+- **Logs:** `journalctl --user -u uploadthing -f`.
 
 ## Runtime: Deno On FreeBSD/Linux, Keine Prisma-Engines Mehr
 
@@ -217,7 +231,7 @@ only in the operator's head; it is now recorded here (see #132).
   Start). Kein Re-Import in die Sense mehr nötig — die Sense hat ihr
   eigenes internes Zertifikat (`sense.internal`).
 - **Dienst:** `systemctl {status,restart,stop} uploadthing`, Logs über
-  `journalctl -u uploadthing -f`. Frühere Sense-Details (`rc.d`,
+  `journalctl --user -u uploadthing -f`. Frühere Sense-Details (`rc.d`,
   `startloop.sh`, PIDfile-Quirk, `STOPPED`-Datei) sind mit #143/#144
   entfallen.
 - Public DNS für `tst.spengergasse.at` zeigt weiter auf `kik` (nötig für
