@@ -3,57 +3,21 @@ import { createHash } from "node:crypto";
 import config from "../lib/config.ts";
 import { getVersionedPath, safeFileComponent, writeAll } from "../lib/pathfuncs.ts";
 import * as service from "../service/service.ts";
-import * as hbs from "../lib/handlebars.ts";
 import { HonoContextVars } from "../lib/types.ts";
 import { AppError } from "../lib/errors.ts";
 import { UploadSchema } from "../lib/schemas.ts";
 import { validateUploadedFileType } from "../lib/upload_filetype.ts";
+import { buildPanel, respondWithStartPage } from "./render.ts";
 
 const uploadRouter = new Hono<{ Variables: HonoContextVars }>();
 
-function formatGermanFileTypes(types: string[]): { label: string; feedback: string } {
-    if (types.length === 1) {
-        return { label: `.${types[0]}`, feedback: `.${types[0]}` };
-    }
-    const allButLast = types.slice(0, -1).map((t) => `.${t}`);
-    const last = `.${types[types.length - 1]}`;
-    return { label: `${allButLast.join(" oder ")} oder ${last}`, feedback: `${allButLast.join(" oder ")} oder ${last}` };
-}
-
-uploadRouter.get("/", async (c) => {
-    const remote_user = c.get("remoteuser");
-    if (!remote_user) {
-        return c.redirect("/whoami");
-    }
-
-    const exam = await service.exam.getStatusView();
-    const types = config.PERMITTED_FILETYPES;
-    const germanTypes = formatGermanFileTypes(types);
-
-    const content = hbs.uploadTemplate({
-        permitted_types: types,
-        accept_attr: types.map((t) => `.${t}`).join(","),
-        types_label: germanTypes.label,
-        types_feedback: germanTypes.feedback,
-        exam_open: exam.open,
-        exam_ends_at_ms: exam.ends_at_ms ?? undefined,
-        exam_paused: exam.status === "paused",
-        exam_remaining_label: exam.remaining_label,
-    });
-
-    if (c.req.header("HX-Request") === "true") {
-        return c.html(content);
-    }
-
-    return c.html(hbs.indexTemplate({
-        remote_user,
-        remote_ip: c.get("remoteip"),
-        is_admin: c.get("is_admin"),
-        page_title: config.page_title,
-        hero_url: config.hero_url,
-        theme_asset_version: config.THEME_ASSET_VERSION,
-        content,
-    }));
+/**
+ * Die Abgabe liegt auf der Startseite (#146). Ein eigener Aufruf von
+ * `/upload` würde die Navigation umgehen, die Schüler nicht mehr haben —
+ * also zurück auf die eine Seite.
+ */
+uploadRouter.get("/", (c) => {
+    return c.redirect("/");
 });
 
 uploadRouter.post("/", async (c) => {
@@ -62,7 +26,7 @@ uploadRouter.post("/", async (c) => {
     const remote_user = c.get("remoteuser");
     const maxUploadBytes = config.MAX_UPLOAD_MB * 1024 * 1024;
     if (!remote_user) {
-        return c.redirect("/whoami");
+        return c.redirect("/");
     }
 
     if (!(await service.exam.isExamWindowOpen())) {
@@ -188,27 +152,29 @@ uploadRouter.post("/", async (c) => {
         );
     }
 
-    const content = hbs.successTemplate({
-        filename: real_filename,
-        filesize: bytesWritten.toString(),
-        md5sum,
-        duration_seconds: durationSeconds,
-        remote_ip,
-    });
+    // Das Formular bleibt stehen; der Erfolg kommt als Toast. Die
+    // Toast-Nachricht steht als Datenattribut im Panel und wird vom
+    // globalen afterSwap-Handler in `templates/index.hbs` angezeigt —
+    // ein `HX-Trigger`-Header ginge verloren, weil der auslösende
+    // Button beim Swap ersetzt wird.
+    const toastMessage = `Abgabe hochgeladen: ${real_filename}`;
 
     if (c.req.header("HX-Request") === "true") {
-        return c.html(content);
+        const panel = await buildPanel(c, {
+            toast_message: toastMessage,
+            toast_type: "success",
+        });
+        return c.html(panel);
     }
 
-    return c.html(hbs.indexTemplate({
-        remote_user,
-        remote_ip,
-        is_admin: c.get("is_admin"),
-        page_title: config.page_title,
-        hero_url: config.hero_url,
-        theme_asset_version: config.THEME_ASSET_VERSION,
-        content,
-    }));
+    return await respondWithStartPage(c, {
+        success: {
+            filename: real_filename,
+            filesize: bytesWritten.toString(),
+            duration_seconds: durationSeconds,
+            md5sum,
+        },
+    });
 });
 
 export default uploadRouter;

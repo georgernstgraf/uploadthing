@@ -10,13 +10,13 @@ import type { TikPanelState } from "../service/tik.ts";
 
 // --- 2. Template Data Type Definitions ---
 
-type DirIndexTemplateData = {
+type StartPageTemplateData = {
     files: string[];
-    unterlagen_dir: string;
+    panel_html: string;
+    registration_window_html?: string;
 };
 
-type UploadTemplateData = {
-    permitted_types?: string[];
+type AbgabeTemplateData = {
     accept_attr?: string;
     types_label?: string;
     types_feedback?: string;
@@ -24,18 +24,24 @@ type UploadTemplateData = {
     exam_ends_at_ms?: number;
     exam_paused?: boolean;
     exam_remaining_label?: string;
+    toast_message?: string;
+    toast_type?: string;
+    success?: {
+        filename: string;
+        filesize: string;
+        duration_seconds: string;
+        md5sum: string;
+    };
 };
 
-type SuccessTemplateData = {
-    filename: string;
-    filesize: string;
-    md5sum: string;
-    duration_seconds: string;
-    remote_ip: string;
+type LoginPanelTemplateData = {
+    title?: string;
+    error?: string;
 };
 
 type WhoamiTemplateData = {
     remote_user: UserType | null;
+    login_panel_html: string;
 };
 
 type NavTemplateData = TopType;
@@ -51,7 +57,15 @@ type IndexTemplateData = TopType & {
 };
 
 type LdapTemplateData = {
-    users: UserType[];
+    users: { email: string; label: string; klasse?: string }[];
+    error?: string;
+    empty?: boolean;
+    has_more?: boolean;
+};
+
+type AdminRegistrationWindowTemplateData = {
+    open: boolean;
+    remaining_label: string;
 };
 
 type AdminTemplateData = {
@@ -184,20 +198,25 @@ export const indexTemplate = Handlebars.compile<IndexTemplateData>(
 export const mainTemplate = Handlebars.compile<MainTemplateData>(
     Deno.readTextFileSync("templates/main.hbs"),
 );
-export const dirIndexTemplate = Handlebars.compile<DirIndexTemplateData>(
-    Deno.readTextFileSync("templates/dirindex.hbs"),
+export const startPageTemplate = Handlebars.compile<StartPageTemplateData>(
+    Deno.readTextFileSync("templates/home.hbs"),
 );
-export const uploadTemplate = Handlebars.compile<UploadTemplateData>(
-    Deno.readTextFileSync("templates/upload.hbs"),
+export const abgabeTemplate = Handlebars.compile<AbgabeTemplateData>(
+    Deno.readTextFileSync("templates/abgabe.hbs"),
 );
-export const successTemplate = Handlebars.compile<SuccessTemplateData>(
-    Deno.readTextFileSync("templates/success.hbs"),
+export const loginPanelTemplate = Handlebars.compile<LoginPanelTemplateData>(
+    Deno.readTextFileSync("templates/login-panel.hbs"),
 );
 export const ldapTemplate = Handlebars.compile<LdapTemplateData>(
     Deno.readTextFileSync("templates/ldap.hbs"),
 );
 export const whoamiTemplate = Handlebars.compile<WhoamiTemplateData>(
     Deno.readTextFileSync("templates/whoami.hbs"),
+);
+export const adminRegistrationWindowTemplate = Handlebars.compile<
+    AdminRegistrationWindowTemplateData
+>(
+    Deno.readTextFileSync("templates/admin-registration-window.hbs"),
 );
 export const adminTemplate = Handlebars.compile<AdminTemplateData>(
     Deno.readTextFileSync("templates/admin.hbs"),

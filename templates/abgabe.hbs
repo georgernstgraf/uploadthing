@@ -1,0 +1,107 @@
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
+        <h2 class="card-title mb-0">Deine Abgabe</h2>
+    </div>
+    <div class="card-body pt-3">
+        {{#if toast_message}}
+            <div id="abgabe-toast"
+                 data-message="{{toast_message}}"
+                 data-type="{{#if toast_type}}{{toast_type}}{{else}}success{{/if}}"
+                 hidden></div>
+        {{/if}}
+        {{#if success}}
+            <div id="abgabe-success"
+                 class="alert alert-success"
+                 role="alert">
+                <p class="fw-bold mb-2">Abgabe erfolgreich gespeichert.</p>
+                <div class="row g-2 small">
+                    <div class="col-12">
+                        <span class="d-block text-uppercase fw-bold">Dateiname</span>
+                        <span class="fw-bold text-break">{{success.filename}}</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="d-block text-uppercase fw-bold">Größe</span>
+                        <span>{{success.filesize}} Bytes</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="d-block text-uppercase fw-bold">Dauer</span>
+                        <span>{{success.duration_seconds}} Sekunden</span>
+                    </div>
+                    <div class="col-12">
+                        <span class="d-block text-uppercase fw-bold">MD5-Summe</span>
+                        <span class="font-monospace text-break">{{success.md5sum}}</span>
+                    </div>
+                </div>
+            </div>
+        {{/if}}
+        {{#if exam_open}}
+            <div x-data="{ fileName: 'Datei hier ablegen oder klicken' }">
+                {{#if exam_ends_at_ms}}
+                    <div id="exam-countdown"
+                         class="text-center mb-3"
+                         x-data="{ endsAt: {{exam_ends_at_ms}}, paused: {{#if exam_paused}}true{{else}}false{{/if}}, label: '{{exam_remaining_label}}', tick() { if (this.paused) { return; } const total = Math.max(0, Math.ceil((this.endsAt - Date.now()) / 1000)); const h = Math.floor(total / 3600); const m = Math.floor((total % 3600) / 60); const s = total % 60; this.label = (h > 0 ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'); } }"
+                         x-init="if (!paused) { tick(); setInterval(() => tick(), 1000); }">
+                        {{#if exam_paused}}
+                            <span id="exam-countdown-badge"
+                                  class="badge rounded-pill px-3 py-2 fs-6 text-bg-warning">Prüfungszeit pausiert &ndash; Restzeit: {{exam_remaining_label}}</span>
+                        {{else}}
+                            <span id="exam-countdown-badge"
+                                  class="badge rounded-pill px-3 py-2 fs-6 text-bg-primary">Restzeit: <span x-text="label">{{exam_remaining_label}}</span></span>
+                        {{/if}}
+                    </div>
+                {{/if}}
+                <form id="abgabe-form"
+                      hx-post="/upload"
+                      enctype="multipart/form-data"
+                      hx-target="#abgabe-panel"
+                      hx-swap="innerHTML"
+                      class="needs-validation"
+                      novalidate="">
+                    <div class="text-center">
+                        <h3 class="h5 mb-2 fw-bold">
+                            {{~#if types_label~}} Bitte {{types_label}} Datei auswählen
+                            {{else}} Bitte ZIP Datei auswählen {{~/if~}}
+                        </h3>
+                        <div class="mt-3 p-4 border border-2 border-dashed rounded-4 position-relative bg-body-tertiary shadow-sm"
+                             @dragover.prevent="$el.style.borderColor = 'var(--bs-primary)'"
+                             @dragleave.prevent="$el.style.borderColor = 'var(--bs-border-color)'"
+                             @drop.prevent="$refs.fileInput.files = $event.dataTransfer.files; $el.style.borderColor = 'var(--bs-border-color)'; fileName = $refs.fileInput.files[0]?.name || 'Datei hier ablegen oder klicken'">
+                            <input type="file"
+                                   x-ref="fileInput"
+                                   class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
+                                   name="file"
+                                   accept="{{#if accept_attr}}{{accept_attr}}{{else}}.zip{{/if}}"
+                                   required
+                                   @change="fileName = $el.files[0]?.name || 'Datei hier ablegen oder klicken'">
+                            <div class="d-flex align-items-center justify-content-center gap-2 fw-bold">
+                                <span x-text="fileName"></span>
+                            </div>
+                        </div>
+                        <div class="invalid-feedback">
+                            {{~#if types_feedback~}} Bitte eine {{types_feedback}} Datei auswählen.
+                            {{else}} Bitte eine ZIP-Datei auswählen. {{~/if~}}
+                        </div>
+                    </div>
+                    <div class="text-center pt-4">
+                        <p id="upload-early-hint" class="form-text text-body-secondary mb-2">Früh abgeben = kein Stress am Ende!</p>
+                        <button type="submit"
+                                class="btn btn-info btn-lg py-3 shadow-sm w-100 d-flex justify-content-center">
+                            <span class="fw-bold d-block text-center mx-auto">Abgabe hochladen</span>
+                            <span class="htmx-indicator">
+                                <span class="spinner-border spinner-border-sm"
+                                      role="status"
+                                      aria-hidden="true"></span> Wird hochgeladen... </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {{else}}
+            <div id="abgabe-closed"
+                 class="alert alert-warning text-center mb-0"
+                 role="alert">
+                <h3 class="alert-heading h5 mb-2">Uploads sind nur während des Examens möglich.</h3>
+                <p class="mb-0">Bitte warten Sie, bis Ihre Lehrperson das Examen gestartet hat.</p>
+            </div>
+        {{/if}}
+    </div>
+</div>

@@ -1,17 +1,17 @@
 import { Hono } from "hono";
 import { HonoContextVars } from "../lib/types.ts";
 import config from "../lib/config.ts";
-import { get_unterlagen } from "../lib/pathfuncs.ts";
 import * as hbs from "../lib/handlebars.ts";
+import { buildStartContent } from "./render.ts";
 
 const homeRouter = new Hono<{ Variables: HonoContextVars }>();
 
+/**
+ * Eine Seite (#146): links Angaben und Doku-Links, rechts Anmeldung bzw.
+ * Abgabe. HTMX-Anfragen (Navigation) bekommen nur den Inhalt.
+ */
 homeRouter.get("/", async (c) => {
-    const files = await get_unterlagen();
-    const content = hbs.dirIndexTemplate({
-        unterlagen_dir: config.UNTERLAGEN_DIR,
-        files,
-    });
+    const content = await buildStartContent(c);
 
     if (c.req.header("HX-Request") === "true") {
         return c.html(content);

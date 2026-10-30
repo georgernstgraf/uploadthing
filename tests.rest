@@ -7,7 +7,7 @@ email=grafg%40spengergasse.at
 GET http://localhost:8000/admin/users
 
 ###
-GET http://localhost:8000/ldap?email=graf
+GET http://localhost:8000/ldap?q=Graf
 
 ###
 GET http://localhost:8000/unterlagen

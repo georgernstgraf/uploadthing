@@ -8,7 +8,9 @@ import {
     AdminExamExtraSchema,
     AdminExamModeSchema,
     AdminExamStartSchema,
+    AdminRegistrationWindowSchema,
 } from "../lib/schemas.ts";
+import { buildRegistrationWindowPanel } from "./render.ts";
 
 /**
  * API-Router — wird in `main.ts` ausschließlich unter `/api` gemountet.
@@ -184,6 +186,34 @@ apiRouter.post("/exam/extra", requireAdmin, async (c) => {
     } catch (error) {
         return c.text((error as Error).message, 409);
     }
+});
+
+/**
+ * Notausgang für Neuanmeldungen während eines Examens (#146).
+ *
+ * Während des Examens ist keine Neuanmeldung als Schüler möglich, damit
+ * niemand den Namen wechselt. Dieser Endpunkt öffnet (oder schließt) das
+ * Anmeldefenster für fünf Minuten; die Freigabe lebt nur im
+ * Serverprozess und verfällt von selbst.
+ */
+apiRouter.post("/exam/registration-window", requireAdmin, async (c) => {
+    const formData = await c.req.formData();
+    const validation = AdminRegistrationWindowSchema.safeParse(formData);
+    if (!validation.success) {
+        return c.text(
+            validation.error.issues[0]?.message ||
+                "Ungültige Aktion für das Anmeldefenster.",
+            400,
+        );
+    }
+
+    if (validation.data.action === "open") {
+        service.exam.openRegistrationWindow();
+    } else {
+        service.exam.closeRegistrationWindow();
+    }
+
+    return c.html(await buildRegistrationWindowPanel());
 });
 
 /**

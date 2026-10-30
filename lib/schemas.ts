@@ -34,11 +34,27 @@ export const AdminMacDeleteSchema = zfd.formData({
 });
 
 export const LdapSearchSchema = z.object({
-    email: z.string().min(3, "Suchbegriff muss mindestens 3 Zeichen lang sein"),
+    q: z
+        .string({
+            required_error: "Bitte einen Namen eingeben.",
+        })
+        .trim()
+        .min(3, "Bitte mindestens 3 Zeichen eingeben."),
 });
 
 export const RegisterSchema = z.object({
     email: z.string().email("Ungültige E-Mail-Adresse"),
+});
+
+/** Notausgang für Neuanmeldungen während eines Examens (#146). */
+export const AdminRegistrationWindowSchema = zfd.formData({
+    action: zfd.text(
+        z.enum(["open", "close"], {
+            errorMap: () => ({
+                message: "Ungültige Aktion für das Anmeldefenster.",
+            }),
+        }),
+    ),
 });
 
 export const AdminQuerySchema = z.object({

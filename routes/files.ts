@@ -19,7 +19,7 @@ filesRouter.get(
     async (c, next) => {
         const remote_user = c.get("remoteuser");
         if (!remote_user) {
-            return c.redirect("/whoami");
+            return c.redirect("/");
         }
         if (!(await service.exam.isExamWindowOpen())) {
             return c.text("Unterlagen sind nur während des Examens verfügbar.", 403);

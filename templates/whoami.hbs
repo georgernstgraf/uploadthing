@@ -1,41 +1,5 @@
-<div id="user-lookup-card" class="card shadow-sm border-0 mx-auto w-100 col-lg-8 col-xl-6">
-    <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
-        <h2 class="card-title mb-0">Anmelden / Name ändern</h2>
-    </div>
-    <div class="card-body pt-4">
-    {{#if remote_user}}
-        <div class="alert alert-secondary mb-3"> Bereits angemeldet als: <strong>{{remote_user.email}}</strong>
-        </div>
-    {{/if}}
-    <div class="mb-4">
-        <label class="w-100 fw-bold mb-2">Suche nach Email</label>
-        <div class="position-relative">
-            <input type="text"
-                   class="form-control form-control-lg ps-5"
-                   id="email-search"
-                   name="email"
-                   placeholder="Anfangsbuchstaben meiner Email..."
-                   hx-get="/ldap"
-                   autofocus
-                   hx-trigger="keyup changed delay:500ms"
-                   hx-target="#user-email-options">
-            <span class="position-absolute top-50 start-0 translate-middle-y ms-3"> 🔍 </span>
-        </div>
-    </div>
-    <div class="mb-3">
-        <label class="w-100 fw-bold mb-2">Auswahl</label>
-        <select id="user-email-options"
-                class="form-select form-select-lg mt-1 bg-body-tertiary"
-                name="email"
-                size="10"
-                hx-post="/register"
-                hx-trigger="change"
-                hx-target="#app-main"
-                hx-swap="outerHTML">
-            <option value=""
-                    selected
-                    class="p-2 fst-italic">Bitte oben suchen...</option>
-        </select>
-    </div>
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8 col-xl-6">
+        {{{login_panel_html}}}
     </div>
 </div>

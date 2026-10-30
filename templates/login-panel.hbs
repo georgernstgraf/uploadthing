@@ -1,0 +1,39 @@
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
+        <h2 class="card-title mb-0">{{#if title}}{{title}}{{else}}Anmelden{{/if}}</h2>
+    </div>
+    <div class="card-body pt-3">
+        {{#if error}}
+            <div id="login-error"
+                 class="alert alert-danger"
+                 role="alert">{{error}}</div>
+        {{/if}}
+        <p class="text-body-secondary">Suche nach deinem Namen — drei Buchstaben genügen. Du kennst deinen Kontocode nicht? Dann tippe einfach deinen Vor- oder Nachnamen.</p>
+        <form id="login-form"
+              hx-get="/ldap"
+              hx-target="#ldap-results"
+              hx-swap="innerHTML"
+              hx-trigger="submit"
+              novalidate>
+            <label class="form-label fw-bold"
+                   for="login-search">Dein Name</label>
+            <input id="login-search"
+                   name="q"
+                   type="search"
+                   class="form-control form-control-lg"
+                   placeholder="Vorname, Nachname oder Klasse"
+                   autocomplete="off"
+                   autocapitalize="words"
+                   spellcheck="false"
+                   autofocus
+                   hx-get="/ldap"
+                   hx-target="#ldap-results"
+                   hx-swap="innerHTML"
+                   hx-trigger="input changed delay:400ms">
+            <div class="form-text">Mindestens 3 Zeichen. Klicke dann auf deinen Namen.</div>
+        </form>
+        <div id="ldap-results"
+             class="list-group mt-3"
+             aria-live="polite"></div>
+    </div>
+</div>

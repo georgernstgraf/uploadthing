@@ -55,10 +55,3 @@ export async function getUserByEmail(
 export async function registerUser(user: UserType) {
     await usersRepo.upsert(user);
 }
-
-/**
- * Upsert many users in a batch transaction.
- */
-export async function registerManyUsers(users: UserType[]) {
-    await usersRepo.upsertMany(users);
-}

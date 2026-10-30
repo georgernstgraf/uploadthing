@@ -1,15 +1,20 @@
-<nav id="main-nav"
-     hx-boost="true"
-     hx-target="#app-content"
-     class="d-flex justify-content-center gap-2 mb-3 mx-auto flex-wrap">
+{{#if is_admin}}
+    <nav id="main-nav"
+         hx-boost="true"
+         hx-target="#app-content"
+         class="d-flex justify-content-center gap-2 mb-3 mx-auto flex-wrap">
         <a href="/"
            class="btn btn-info btn-sm rounded-3 px-4 text-uppercase fw-semibold">ANGABE + DOKU</a>
-        {{#if is_admin}}
-            <a href="/admin/students"
-               class="btn btn-info btn-sm rounded-3 px-4 text-uppercase fw-semibold">Schüler</a>
-            <a href="/admin/application"
-               class="btn btn-info btn-sm rounded-3 px-4 text-uppercase fw-semibold">Admin</a>
-        {{/if}}
-         <a href="/upload"
-             class="btn btn-info btn-sm rounded-3 px-4 text-uppercase fw-semibold">Datei hochladen</a>
-</nav>
+        <a href="/admin/students"
+           class="btn btn-info btn-sm rounded-3 px-4 text-uppercase fw-semibold">Schüler</a>
+        <a href="/admin/application"
+           class="btn btn-info btn-sm rounded-3 px-4 text-uppercase fw-semibold">Admin</a>
+    </nav>
+{{else if remote_user}}
+    <div id="student-bar" class="d-flex justify-content-end mb-2">
+        <form method="post" action="/logout">
+            <button type="submit"
+                    class="btn btn-link btn-sm text-body-secondary p-0">Abmelden</button>
+        </form>
+    </div>
+{{/if}}

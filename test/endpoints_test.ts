@@ -69,11 +69,70 @@ Deno.test("GET /admin/logs - Admin logs", async () => {
     assertExists(text);
 });
 
-Deno.test("GET /ldap?email=graf - LDAP search", async () => {
-    const res = await fetch(`${BASE_URL}/ldap?email=graf`);
+Deno.test("GET /ldap?q=Graf - Namenssuche ab drei Zeichen (#146)", async () => {
+    // Unter drei Zeichen: Hinweis statt Trefferliste.
+    const shortRes = await fetch(`${BASE_URL}/ldap?q=Gr`);
+    assertEquals(shortRes.status, 200);
+    const shortHtml = await shortRes.text();
+    assertEquals(shortHtml.includes("Bitte mindestens 3 Zeichen eingeben."), true);
+    assertEquals(shortHtml.includes('hx-post="/register"'), false);
+
+    const res = await fetch(`${BASE_URL}/ldap?q=Graf`);
     assertEquals(res.status, 200);
-    const text = await res.text();
-    assertExists(text);
+    const html = await res.text();
+    assertExists(html);
+
+    // Anzeige aus givenName + sn — displayName wäre invertiert ("Graf Georg").
+    assertEquals(html.includes("Georg Graf · LehrendeR"), true);
+    assertEquals(html.includes("Petra Graf · LehrendeR"), true);
+    assertEquals(html.includes("Graf Georg"), false);
+
+    const labels = [...html.matchAll(/<span class="fw-semibold">([^<]*)<\/span>/g)]
+        .map((match) => match[1]);
+    assert(labels.length > 0, "Die Suche muss Treffer liefern");
+    for (const label of labels) {
+        assertEquals(
+            label.includes("@"),
+            false,
+            `Die Anzeige darf keine E-Mail enthalten: ${label}`,
+        );
+        assertEquals(label.includes(" "), true, `Anzeige „Vorname Nachname“: ${label}`);
+    }
+});
+
+Deno.test("Namenssuche legt keine Benutzer an (#146)", async () => {
+    const search = async (term: string) => {
+        const html = await (await fetch(`${BASE_URL}/ldap?q=${term}`)).text();
+        return [...html.matchAll(/hx-vals='\{"email": "([^"]+)"\}'/g)]
+            .map((match) => match[1]);
+    };
+
+    // Eine Person suchen, die lokal noch unbekannt ist — sonst wäre der
+    // Test wertlos, ohne dafür echte Datensätze zu löschen.
+    const findUnknown = async (): Promise<{ term: string; email: string } | null> => {
+        for (const term of ["Graf", "Gra", "Haim", "Gruber", "Schm"]) {
+            for (const email of await search(term)) {
+                if (!(await usersRepo.getByEmail(email))) {
+                    return { term, email };
+                }
+            }
+        }
+        return null;
+    };
+
+    const candidate = await findUnknown();
+    assertExists(
+        candidate,
+        "Mindestens eine Person der Trefferliste muss lokal noch unbekannt sein",
+    );
+
+    await search(candidate.term);
+
+    assertEquals(
+        await usersRepo.getByEmail(candidate.email),
+        null,
+        `${candidate.email} darf durch die Suche nicht angelegt werden`,
+    );
 });
 
 Deno.test("POST /register - Register User to own IP", async () => {
@@ -85,6 +144,159 @@ Deno.test("POST /register - Register User to own IP", async () => {
     });
     await res.text(); // consume body to avoid resource leak
     assertEquals(res.status, 200);
+});
+
+Deno.test("Startseite: Angaben, Doku und Anmeldung auf einer Seite (#146)", async () => {
+    const res = await fetch(`${BASE_URL}/`);
+    assertEquals(res.status, 200);
+    const html = await res.text();
+
+    // Linke Spalte: Angaben immer vollständig, Doku in eigenem Scrollbereich.
+    assertEquals(html.includes('id="angaben-list"'), true);
+    assertEquals(html.includes('id="doku-list"'), true);
+    assertEquals(html.includes("https://getbootstrap.com/"), true);
+    assertEquals(html.includes("https://developer.mozilla.org/"), true);
+    assertEquals(html.includes("https://www.w3schools.com/"), true);
+    // Angaben werden nicht abgeschnitten.
+    assertEquals(html.includes("text-truncate"), false);
+
+    // Rechte Spalte: die Anmeldung, kein eigener Upload-Link.
+    assertEquals(html.includes('id="abgabe-panel"'), true);
+    assertEquals(html.includes('id="login-form"'), true);
+    assertEquals(html.includes('id="ldap-results"'), true);
+    assertEquals(html.includes('href="/upload"'), false);
+
+    // Anonyme sehen keine Navigation, nur die Anmeldung.
+    assertEquals(html.includes('id="main-nav"'), false);
+    assertEquals(html.includes("Abmelden"), false);
+});
+
+Deno.test("Schüler sieht Angaben und Abgabe ohne Navigation (#146)", async () => {
+    clearExamState();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `start-page-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Start Page Student",
+        klasse: "5AHITM",
+    });
+
+    try {
+        const cookie = await registerAndGetCookie(studentEmail);
+        seedExamState("running");
+
+        const res = await fetch(`${BASE_URL}/`, {
+            headers: { Cookie: cookie },
+        });
+        assertEquals(res.status, 200);
+        const html = await res.text();
+
+        // Formular statt Maske, ohne Seitenwechsel und ohne Navigation.
+        assertEquals(html.includes('id="abgabe-form"'), true);
+        assertEquals(html.includes('id="exam-countdown"'), true);
+        assertEquals(html.includes('id="login-form"'), false);
+        assertEquals(html.includes('id="main-nav"'), false);
+        assertEquals(html.includes('href="/admin/students"'), false);
+        assertEquals(html.includes("Abmelden"), true);
+        assertEquals(html.includes("Deine Abgabe"), true);
+        assertEquals(html.includes("Abgabe hochladen"), true);
+        // Angaben bleiben auch nach der Anmeldung sichtbar.
+        assertEquals(html.includes('id="angaben-list"'), true);
+    } finally {
+        clearExamState();
+        await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
+Deno.test("GET /upload leitet auf die Startseite (#146)", async () => {
+    const res = await fetch(`${BASE_URL}/upload`, { redirect: "manual" });
+    assertEquals([301, 302, 303, 307, 308].includes(res.status), true);
+    assertEquals(res.headers.get("location"), "/");
+    await res.text(); // consume body to avoid resource leak
+});
+
+Deno.test("Anmeldesperre: keine Neuanmeldung als Schüler im Examen, Lehrperson ausgenommen (#146)", async () => {
+    clearExamState();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `login-lock-${suffix}@example.com`;
+    const teacherEmail = "grafg@spengergasse.at";
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Lock Student",
+        klasse: "5AHITM",
+    });
+
+    const register = (email: string) =>
+        fetch(`${BASE_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `email=${encodeURIComponent(email)}`,
+        });
+
+    const registrationWindow = (cookie: string, action: "open" | "close") =>
+        fetch(`${BASE_URL}/api/exam/registration-window`, {
+            method: "POST",
+            headers: {
+                "Cookie": cookie,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `action=${action}`,
+        });
+
+    let adminCookie = "";
+    try {
+        adminCookie = await registerAndGetCookie(teacherEmail);
+        seedExamState("running");
+
+        // Schüler: abgelehnt, Meldung in der rechten Spalte, keine Sitzung.
+        const blocked = await register(studentEmail);
+        const blockedHtml = await blocked.text();
+        assertEquals(blocked.status, 200);
+        assertEquals(
+            blockedHtml.includes("Während der Prüfung ist keine Neuanmeldung möglich."),
+            true,
+        );
+        assertEquals(blockedHtml.includes('id="login-form"'), true);
+        assertEquals(blocked.headers.get("set-cookie"), null);
+
+        // Lehrperson kommt weiterhin hinein (Sessionverlust des Lehrers).
+        const teacher = await register(teacherEmail);
+        const teacherHtml = await teacher.text();
+        assertEquals(teacher.status, 200);
+        assertExists(teacher.headers.get("set-cookie"));
+        assertEquals(teacherHtml.includes('id="abgabe-panel"'), true);
+
+        // Notausgang: fünf Minuten Anmeldefenster.
+        const openRes = await registrationWindow(adminCookie, "open");
+        const openHtml = await openRes.text();
+        assertEquals(openRes.status, 200);
+        assertEquals(openHtml.includes("Anmeldefenster ist offen"), true);
+
+        const allowed = await register(studentEmail);
+        await allowed.text();
+        assertEquals(allowed.status, 200);
+        assertExists(allowed.headers.get("set-cookie"));
+
+        // Fenster wieder zu: erneute Anmeldung ist gesperrt.
+        const closeRes = await registrationWindow(adminCookie, "close");
+        const closeHtml = await closeRes.text();
+        assertEquals(closeRes.status, 200);
+        assertEquals(closeHtml.includes("Anmeldefenster ist offen"), false);
+
+        const blockedAgain = await register(studentEmail);
+        const blockedAgainHtml = await blockedAgain.text();
+        assertEquals(
+            blockedAgainHtml.includes("Während der Prüfung ist keine Neuanmeldung möglich."),
+            true,
+        );
+        assertEquals(blockedAgain.headers.get("set-cookie"), null);
+    } finally {
+        if (adminCookie) {
+            await (await registrationWindow(adminCookie, "close")).text();
+        }
+        clearExamState();
+        await clearForensicsByUserEmail(studentEmail);
+    }
 });
 
 Deno.test("GET /unterlagen - Unterlagen directory", async () => {
@@ -222,10 +434,11 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(updateRes.status, 200);
     assertEquals(updateHtml.includes(".pdf"), true);
 
-    // Upload-Seite nur mit laufendem Examen vollständig prüfbar
+    // Abgabe-Seite nur mit laufendem Examen vollständig prüfbar (#146:
+    // Formular liegt auf der Startseite).
     seedExamState("running");
 
-    const uploadRes = await fetch(`${BASE_URL}/upload`, {
+    const uploadRes = await fetch(`${BASE_URL}/`, {
         headers: { "Cookie": cookie },
     });
     const uploadHtml = await uploadRes.text();
@@ -1103,8 +1316,8 @@ Deno.test("Exam-Gating: Upload und Unterlagen nur während Examenzeit", async ()
     try {
         const cookie = await registerAndGetCookie(studentEmail);
 
-        // Idle: Upload-Seite lesbar, aber ohne Formular und ohne Countdown.
-        const idlePageRes = await fetch(`${BASE_URL}/upload`, {
+        // Idle: Startseite lesbar, aber ohne Formular und ohne Countdown.
+        const idlePageRes = await fetch(`${BASE_URL}/`, {
             headers: { "Cookie": cookie },
         });
         assertEquals(idlePageRes.status, 200);
@@ -1134,9 +1347,9 @@ Deno.test("Exam-Gating: Upload und Unterlagen nur während Examenzeit", async ()
         assertEquals(homeRes.status, 200);
         await homeRes.text(); // consume body
 
-        // Running: Upload-Seite mit Formular, Countdown und Motivation.
+        // Running: Startseite mit Formular, Countdown und Motivation.
         seedExamState("running");
-        const runPageRes = await fetch(`${BASE_URL}/upload`, {
+        const runPageRes = await fetch(`${BASE_URL}/`, {
             headers: { "Cookie": cookie },
         });
         assertEquals(runPageRes.status, 200);
@@ -1170,7 +1383,7 @@ Deno.test("Exam-Gating: Upload und Unterlagen nur während Examenzeit", async ()
 
         // Paused: Gating bleibt offen, Countdown zeigt die Pause an.
         seedExamState("paused");
-        const pausedPageRes = await fetch(`${BASE_URL}/upload`, {
+        const pausedPageRes = await fetch(`${BASE_URL}/`, {
             headers: { "Cookie": cookie },
         });
         assertEquals(pausedPageRes.status, 200);
@@ -1189,7 +1402,7 @@ Deno.test("Exam-Gating: Upload und Unterlagen nur während Examenzeit", async ()
 
         // Stopped: Upload und Unterlagen wieder gesperrt.
         seedExamState("stopped");
-        const stoppedPageRes = await fetch(`${BASE_URL}/upload`, {
+        const stoppedPageRes = await fetch(`${BASE_URL}/`, {
             headers: { "Cookie": cookie },
         });
         assertEquals(stoppedPageRes.status, 200);

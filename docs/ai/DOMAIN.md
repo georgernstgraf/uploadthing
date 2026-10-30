@@ -16,10 +16,12 @@ This application supports supervised exam workflows where students identify them
 ## Exam Flow
 
 1. The app itself polls the MikroTik wireless registration table every 60 s and writes each connected client (IP + MAC) to `ipfact`. There is no reporting endpoint and no IP whitelist anymore.
-2. A user is searched in LDAP and selected through `/ldap` and `/register`.
-3. Registration binds that identity to the current socket IP and creates a session.
-4. The authenticated user can access `unterlagen` and upload an exam file.
-5. Teachers use `/admin/students` to correlate sightings, registrations, cookie presence, anomalies, and submissions, and `/admin/application` for runtime administration settings.
+2. `/` is the single student page: materials and documentation links on the left, login (or the submission form once logged in) on the right. Login and upload never leave that page.
+3. A person is found by a name search over `givenName`, `sn`, `mail` and `sAMAccountName` (minimum three characters); the search itself registers nobody.
+4. Logging in resolves the person against LDAP (local record as fallback), binds that identity to the current socket IP and creates a session.
+5. While an exam window is open, non-teachers cannot log in — the name on the submission must not change mid-exam. Teachers are exempt and can release a five-minute login window for everybody else.
+6. The authenticated user can access `unterlagen` and upload an exam file; the form stays in place and the success message appears as a toast.
+7. Teachers use `/admin/students` to correlate sightings, registrations, cookie presence, anomalies, and submissions, and `/admin/application` for runtime administration settings.
 
 ## Network Scan vs Upload Timing
 

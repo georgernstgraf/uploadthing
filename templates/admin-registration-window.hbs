@@ -1,0 +1,31 @@
+<div class="card shadow-sm border-0">
+    <div class="card-body py-3 px-3">
+        {{#if open}}
+            <p class="mb-2 fw-bold">Anmeldefenster ist offen – noch {{remaining_label}}.</p>
+            <p class="mb-3 small text-body-secondary">In dieser Zeit können sich Schüler neu anmelden. Danach ist die Anmeldung wieder gesperrt.</p>
+            <form hx-post="/api/exam/registration-window"
+                  hx-target="#registration-window-panel"
+                  hx-swap="innerHTML">
+                <input type="hidden"
+                       name="action"
+                       value="close">
+                <button type="submit"
+                        class="btn btn-outline-secondary btn-sm w-100"
+                        hx-disabled-elt="this">Anmeldefenster schließen</button>
+            </form>
+        {{else}}
+            <p class="mb-2 fw-bold">Keine Neuanmeldung während des Examens</p>
+            <p class="mb-3 small text-body-secondary">Schüler können sich derzeit nicht neu anmelden. Öffne das Anmeldefenster nur, wenn jemand wirklich neu einsteigen muss.</p>
+            <form hx-post="/api/exam/registration-window"
+                  hx-target="#registration-window-panel"
+                  hx-swap="innerHTML">
+                <input type="hidden"
+                       name="action"
+                       value="open">
+                <button type="submit"
+                        class="btn btn-warning btn-sm w-100"
+                        hx-disabled-elt="this">Anmeldefenster für 5 Minuten freigeben</button>
+            </form>
+        {{/if}}
+    </div>
+</div>

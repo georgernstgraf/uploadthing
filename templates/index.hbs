@@ -87,7 +87,22 @@
             if (evt.detail.target && evt.detail.target.id === 'exam-admin-panel') {
                 syncExamFirewallModal();
             }
+            if (evt.detail.target && evt.detail.target.id === 'abgabe-panel') {
+                showAbgabeToast();
+            }
         });
+
+        // Erfolg einer Abgabe kommt als Toast; das Formular bleibt stehen
+        // (#146). Die Meldung steht als Datenattribut im frisch getauschten
+        // Panel, damit sie den Swap überlebt.
+        function showAbgabeToast() {
+            const toast = document.getElementById('abgabe-toast');
+            if (!toast) {
+                return;
+            }
+            showToast(toast.dataset.message || 'Abgabe hochgeladen.', toast.dataset.type || 'success');
+            toast.remove();
+        }
 
         // Das Firewall-Modal liegt außerhalb des austauschbaren Panels und
         // wird nicht wegklickbar gezeigt, solange die Sperre nicht bestätigt

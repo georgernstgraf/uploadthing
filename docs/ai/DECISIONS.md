@@ -1,5 +1,45 @@
 # DECISIONS
 
+## 2026-10-30: Eine Schülerseite — Anmeldung und Abgabe auf `/` (#146)
+
+- **Eine Seite, kein Navigationsbutton.** `/` zeigt links die Angaben
+  (immer vollständig, nichts abgeschnitten) und darunter die festen
+  Doku-Links in einem eigenen Scrollbereich (`#doku-list`), rechts
+  Anmeldung bzw. Abgabe (`#abgabe-panel`). Schüler sehen keine
+  Navigation, nur einen kleinen „Abmelden"-Link; Admins behalten die
+  volle Navigation. `GET /upload` leitet auf `/` um, `POST /upload`
+  liefert das Panel zurück.
+- **Die Suche war das Problem, nicht der Button.** Ein Feld, Filter
+  `(|(givenName=…*)(sn=…*)(mail=…*)(sAMAccountName=…*))`, ab drei
+  Zeichen. Angezeigt wird „Vorname Nachname · Klasse" aus `givenName` +
+  `sn` — **nicht** `displayName` (der ist invertiert) und ohne E-Mail.
+  Der Suchwert wird nach RFC 4515 maskiert (`lib/ldap_filter.ts`).
+- **Die Suche schreibt nichts mehr.** `registerManyUsers` und
+  `repo.users.upsertMany` sind entfernt; registriert wird erst beim Klick
+  auf einen Treffer (`service.ldap.resolveLoginUser`: LDAP zuerst, damit
+  Name und Klasse aktuell sind, lokaler Datensatz als Fallback bei
+  LDAP-Ausfall).
+- **Anmeldesperre im Examen.** Während `service.exam.isExamWindowOpen()`
+  gilt, wird eine Neuanmeldung als Nicht-`LehrendeR` mit deutscher
+  Meldung in derselben Spalte abgelehnt. Die Entscheidung fällt nach dem
+  LDAP-Lookup — die Klasse ist vorher unbekannt, und die Mail-Endung sagt
+  nichts über die Rolle. Lehrpersonen sind ausgenommen, sonst käme der
+  Lehrer bei Sessionverlust nicht mehr hinein.
+- **Notausgang nur im Speicher.** `service.exam.openRegistrationWindow()`
+  öffnet für 5 Minuten; die Freigabe ist prozesslokal (kein DB-Feld),
+  verfällt nach Ablauf und wird bei Exam-Start und Exam-Ende
+  zurückgesetzt. Endpunkt: `POST /api/exam/registration-window` mit
+  `action=open|close`; der Knopf steht für Admins unter dem Formular,
+  solange ein Examen läuft.
+- **Erfolg als Toast, Formular bleibt.** Nach einer Abgabe antwortet
+  `POST /upload` mit dem Panel und einem `#abgabe-toast`-Datenattribut;
+  der globale afterSwap-Handler zeigt den Toast. Ein `HX-Trigger`-Header
+  wäre verloren gegangen, weil der auslösende Button beim Swap ersetzt
+  wird. Nur der klassische (Nicht-HTMX-)POST bekommt die Erfolgsdaten
+  als Alert im Panel — es gibt keine eigene Erfolgsseite mehr.
+- **Stabile IDs für die Playwright-Suite:** `#abgabe-form`,
+  `#angaben-list`, `#login-form`, `#exam-countdown`.
+
 ## 2026-10-30: Admin-Freigabe per MAC neben der LDAP-Klasse (#147)
 
 - **Die LDAP-Klasse bleibt die Rolle, die MAC ist der Gerätenachweis.**

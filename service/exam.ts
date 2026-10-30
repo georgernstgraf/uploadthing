@@ -38,6 +38,68 @@ export type ExamStatusView = {
 };
 
 /**
+ * Notausgang für Neuanmeldungen während eines Examens (#146).
+ *
+ * Während eines Examens ist keine Neuanmeldung als Schüler möglich, damit
+ * niemand den Namen wechselt. Der Admin-Knopf öffnet das Anmeldefenster
+ * für fünf Minuten; die Freigabe liegt **nur im Speicherprozess** und
+ * verfällt mit Ablauf, Neustart oder Exam-Ende von selbst.
+ */
+export const REGISTRATION_WINDOW_SECONDS = 5 * 60;
+
+let registrationWindowUntilMs: number | null = null;
+
+/** Gibt die Anmeldung für Nicht-Lehrpersonen für 5 Minuten frei. */
+export function openRegistrationWindow(
+    now: () => Date = () => new Date(),
+): void {
+    registrationWindowUntilMs = now().getTime() +
+        REGISTRATION_WINDOW_SECONDS * 1000;
+}
+
+/** Schließt das Anmeldefenster vorzeitig. */
+export function closeRegistrationWindow(): void {
+    registrationWindowUntilMs = null;
+}
+
+/** Restliche Sekunden des Notausgangs; 0 = geschlossen. */
+export function getRegistrationWindowRemainingSeconds(
+    now: () => Date = () => new Date(),
+): number {
+    if (registrationWindowUntilMs === null) {
+        return 0;
+    }
+
+    const remaining = Math.ceil(
+        (registrationWindowUntilMs - now().getTime()) / 1000,
+    );
+    if (remaining <= 0) {
+        registrationWindowUntilMs = null;
+        return 0;
+    }
+
+    return remaining;
+}
+
+/**
+ * Darf sich eine Nicht-Lehrperson gerade neu anmelden?
+ *
+ * Außerhalb eines Examens immer; während eines Examens nur, solange der
+ * Admin-Notausgang offen ist. Die Entscheidung fällt erst hier, weil die
+ * Klasse eines Menschen erst nach dem LDAP-Lookup bekannt ist.
+ */
+export async function isStudentRegistrationOpen(
+    now: () => Date = () => new Date(),
+    runner?: ExamModeRunner,
+): Promise<boolean> {
+    if (getRegistrationWindowRemainingSeconds(now) > 0) {
+        return true;
+    }
+
+    return !(await isExamWindowOpen(now, runner));
+}
+
+/**
  * Liest den aktuellen Exam-Zustand ohne Seiteneffekte
  * (null heißt: noch kein Exam zustandslos angelegt).
  */
@@ -70,6 +132,10 @@ export async function start(
 
     const startedAt = now();
     const result = await setInternetActive(false, runner);
+
+    // Ein Notausgang aus einem früheren Examen darf nicht in dieses
+    // hineinreichen.
+    closeRegistrationWindow();
 
     repo.exam.upsert({
         status: "running",
@@ -261,6 +327,9 @@ async function finishExam(
     state: RepoExamStateRecord,
     runner?: ExamModeRunner,
 ): Promise<ExamModeResult> {
+    // Mit dem Examen endet auch der Neuanmelde-Notausgang.
+    closeRegistrationWindow();
+
     repo.exam.upsert({
         ...state,
         status: "stopped",

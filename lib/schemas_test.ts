@@ -3,26 +3,54 @@ import {
     AdminExamModeSchema,
     AdminFileTypesSchema,
     AdminQuerySchema,
+    AdminRegistrationWindowSchema,
     LdapSearchSchema,
     RegisterSchema,
     UploadSchema,
 } from "./schemas.ts";
 
-Deno.test("LdapSearchSchema - accepts valid email", () => {
-    const result = LdapSearchSchema.safeParse({ email: "test@example.com" });
+Deno.test("LdapSearchSchema - accepts a name with three characters", () => {
+    const result = LdapSearchSchema.safeParse({ q: "Gra" });
     assertEquals(result.success, true);
 });
 
-Deno.test("LdapSearchSchema - accepts short search term", () => {
-    const result = LdapSearchSchema.safeParse({ email: "abc" });
-    assertEquals(result.success, true);
+Deno.test("LdapSearchSchema - rejects shorter terms with a German message", () => {
+    const result = LdapSearchSchema.safeParse({ q: "Gr" });
+    assertEquals(result.success, false);
+    if (!result.success) {
+        assertEquals(
+            result.error.issues[0].message,
+            "Bitte mindestens 3 Zeichen eingeben.",
+        );
+    }
 });
 
-Deno.test("LdapSearchSchema - rejects empty email", () => {
-    const result = LdapSearchSchema.safeParse({ email: "" });
+Deno.test("LdapSearchSchema - rejects an empty term", () => {
+    const result = LdapSearchSchema.safeParse({ q: "" });
     assertEquals(result.success, false);
     if (!result.success) {
         assertExists(result.error.issues[0].message);
+    }
+});
+
+Deno.test("AdminRegistrationWindowSchema - akzeptiert open und close", () => {
+    for (const action of ["open", "close"]) {
+        const form = new FormData();
+        form.append("action", action);
+        assertEquals(AdminRegistrationWindowSchema.safeParse(form).success, true);
+    }
+});
+
+Deno.test("AdminRegistrationWindowSchema - lehnt andere Aktionen ab", () => {
+    const form = new FormData();
+    form.append("action", "reset");
+    const result = AdminRegistrationWindowSchema.safeParse(form);
+    assertEquals(result.success, false);
+    if (!result.success) {
+        assertEquals(
+            result.error.issues[0].message,
+            "Ungültige Aktion für das Anmeldefenster.",
+        );
     }
 });
 

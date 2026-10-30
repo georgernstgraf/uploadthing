@@ -123,20 +123,6 @@ export function getByIds(ids: number[]): Promise<RepoUserRecord[]> {
 }
 
 /**
- * Upsert multiple users in a transaction.
- */
-export function upsertMany(users: UserType[]): Promise<RepoUserRecord[]> {
-    return Promise.resolve(db.transaction(() => {
-        return users.map((user) => {
-            const values = userToDbValues(user);
-            return mapUserRow(
-                upsertStmt.get(user.email, values.name, values.klasse, values.updatedat) as UserRow,
-            );
-        });
-    })());
-}
-
-/**
  * Fetch users by email list.
  */
 export function getByEmails(

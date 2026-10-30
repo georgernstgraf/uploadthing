@@ -27,8 +27,8 @@
         },
         {
             "method": "GET",
-            "path": "/ldap?email=graf",
-            "description": "Search LDAP by email prefix",
+            "path": "/ldap?q=Graf",
+            "description": "Namenssuche für die Anmeldung (#146)",
             "expectedOutput": {
                 "type": "HTML with user list"
             }

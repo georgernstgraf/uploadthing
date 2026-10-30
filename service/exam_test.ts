@@ -1,6 +1,6 @@
 import { assertEquals, assertRejects, assertThrows } from "@std/assert";
 import * as exam from "./exam.ts";
-import { clearExamState } from "../test/helpers/forensics_fixture.ts";
+import { clearExamState, seedExamState } from "../test/helpers/forensics_fixture.ts";
 import {
     fakeFirewall,
     TEST_OPNSENSE_CONFIG,
@@ -407,5 +407,69 @@ Deno.test("getRemainingSeconds liefert null ohne Examen und 0 nach Stopp", async
         assertEquals(await exam.getRemainingSeconds(clock.now), 0);
     } finally {
         clearExamState();
+    }
+});
+
+Deno.test("Anmeldefenster: außerhalb des Examens ist die Neuanmeldung offen", async () => {
+    clearExamState();
+    exam.closeRegistrationWindow();
+    try {
+        assertEquals(await exam.isStudentRegistrationOpen(), true);
+    } finally {
+        clearExamState();
+        exam.closeRegistrationWindow();
+    }
+});
+
+Deno.test("Anmeldefenster: im Examen gesperrt, Notausgang öffnet fünf Minuten", async () => {
+    clearExamState();
+    exam.closeRegistrationWindow();
+    try {
+        seedExamState("running");
+
+        assertEquals(await exam.isStudentRegistrationOpen(), false);
+
+        exam.openRegistrationWindow();
+        assertEquals(exam.getRegistrationWindowRemainingSeconds(), 300);
+        assertEquals(await exam.isStudentRegistrationOpen(), true);
+
+        exam.closeRegistrationWindow();
+        assertEquals(await exam.isStudentRegistrationOpen(), false);
+    } finally {
+        clearExamState();
+        exam.closeRegistrationWindow();
+    }
+});
+
+Deno.test("Anmeldefenster: Freigabe verfällt nach fünf Minuten", () => {
+    const clock = fakeClock(new Date().toISOString());
+    exam.closeRegistrationWindow();
+    try {
+        exam.openRegistrationWindow(clock.now);
+        clock.advance(299);
+        assertEquals(exam.getRegistrationWindowRemainingSeconds(clock.now), 1);
+
+        clock.advance(2);
+        assertEquals(exam.getRegistrationWindowRemainingSeconds(clock.now), 0);
+    } finally {
+        exam.closeRegistrationWindow();
+    }
+});
+
+Deno.test("Anmeldefenster: ein neues Examen schließt die Freigabe", async () => {
+    clearExamState();
+    try {
+        const clock = fakeClock("2026-10-12T08:00:00.000Z");
+        await exam.start(60, clock.now);
+        exam.openRegistrationWindow(clock.now);
+        assertEquals(exam.getRegistrationWindowRemainingSeconds(clock.now), 300);
+
+        await exam.stop();
+
+        assertEquals(exam.getRegistrationWindowRemainingSeconds(clock.now), 0);
+        assertEquals(await exam.isStudentRegistrationOpen(clock.now), true);
+    } finally {
+        clearExamState();
+        exam.closeRegistrationWindow();
     }
 });

@@ -1,4 +1,24 @@
-Last updated: 2026-10-30 (#147 umgesetzt — Admin-Freigabe per MAC).
+Last updated: 2026-10-30 (#146 umgesetzt — eine Schülerseite).
+
+## #146 — Eine Schülerseite (erledigt)
+
+- `/` ist die einzige Schülerseite: links Angaben (vollständig) und
+  Doku-Links (`#doku-list`, scrollbar), rechts Anmeldung bzw. Abgabe
+  (`#abgabe-panel`). Schüler sehen keine Navigation, nur „Abmelden";
+  Admins behalten die volle Navigation.
+- Namenssuche über `givenName`/`sn`/`mail`/`sAMAccountName` ab 3 Zeichen,
+  Anzeige „Vorname Nachname · Klasse" ohne E-Mail. Die Suche legt keine
+  Benutzer mehr an; registriert wird beim Klick (`resolveLoginUser`).
+- Während eines Examens ist die Neuanmeldung als Nicht-`LehrendeR`
+  gesperrt; Admins haben unter dem Formular den Knopf „Anmeldefenster für
+  5 Minuten freigeben" (`POST /api/exam/registration-window`, Freigabe nur
+  im Prozessspeicher).
+- `GET /upload` leitet auf `/`; `POST /upload` liefert das Panel plus
+  Toast, es gibt keine Erfolgsseite mehr. Die Vorlagen `upload.hbs`,
+  `dirindex.hbs` und `success.hbs` sind entfernt (`home.hbs`,
+  `abgabe.hbs`, `login-panel.hbs`, `admin-registration-window.hbs` neu).
+- Nach dem Deployment der Sense-Version gilt weiterhin: vorher DB-Backup
+  (#148). An dieser Stelle keine Schemaänderung — nur Verhalten und UI.
 
 ## #147 — Admin-Freigabe per MAC (erledigt)
 

@@ -1,4 +1,5 @@
 import cf from "../lib/config.ts";
+import { buildUserSearchFilter, escapeLdapFilterValue } from "../lib/ldap_filter.ts";
 import { localTimeString, sleep_seconds } from "../lib/timefunc.ts";
 import { LdapUserType } from "../lib/types.ts";
 import { Client } from "ldapts";
@@ -98,7 +99,7 @@ async function getOrCreateClient(): Promise<Client> {
  * Fetch an LDAP user by exact email.
  */
 export async function getUserByEmail(email: string): Promise<LdapUserType | null> {
-    const filter = `(mail=${email})`;
+    const filter = `(mail=${escapeLdapFilterValue(email)})`;
     const results = await searchUsers(filter);
     if (results.length === 0) {
         return null;
@@ -107,18 +108,25 @@ export async function getUserByEmail(email: string): Promise<LdapUserType | null
 }
 
 /**
- * Search LDAP for users with email starting with a prefix.
+ * Search LDAP for users whose given name, surname, mail or account name
+ * starts with `term` (#146). Callers must validate the minimum length.
  */
-export function getUsersMailStartingWith(initial: string): Promise<LdapUserType[]> {
-    const filter = `(mail=${initial}*)`;
-    return searchUsers(filter);
+export function searchUsersByTerm(term: string): Promise<LdapUserType[]> {
+    return searchUsers(buildUserSearchFilter(term));
 }
 
 /**
  * Execute an LDAP search with a raw filter string.
  */
 export async function searchUsers(filter: string): Promise<LdapUserType[]> {
-    const attributes = ["mail", "displayName", "physicalDeliveryOfficeName"];
+    const attributes = [
+        "mail",
+        "displayName",
+        "givenName",
+        "sn",
+        "sAMAccountName",
+        "physicalDeliveryOfficeName",
+    ];
     const options = {
         filter,
         scope: "sub" as const,
@@ -179,7 +187,10 @@ function resultFromEntry(entry: any): LdapUserType {
 
     return {
         displayName: getVal("displayName"),
+        givenName: getVal("givenName"),
+        sn: getVal("sn"),
         mail: getVal("mail"),
+        sAMAccountName: getVal("sAMAccountName"),
         physicalDeliveryOfficeName: getVal("physicalDeliveryOfficeName"),
     };
 }

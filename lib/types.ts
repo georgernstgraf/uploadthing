@@ -38,6 +38,9 @@ export type UserType = {
 };
 export type LdapUserType = {
     displayName: string;
+    givenName: string;
+    sn: string;
     mail: string;
+    sAMAccountName: string;
     physicalDeliveryOfficeName: string; // Klasse
 };

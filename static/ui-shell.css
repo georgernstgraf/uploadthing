@@ -56,6 +56,25 @@ body {
     display: none; /* Chrome, Safari, Opera */
 }
 
+/* Schüler sehen keine Navigation (#146): der Inhalt rückt unter den Kopf. */
+#app-main.no-nav {
+    margin-top: calc(var(--app-header-height) + 12px);
+    height: calc(100vh - var(--app-header-height) - 12px);
+}
+
+/*
+ * Die Dokumentationslinks stehen unter den Angaben in einem eigenen
+ * scrollbaren Bereich, damit die Angaben selbst immer vollständig
+ * sichtbar bleiben (#146).
+ */
+#doku-list {
+    max-height: 20rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0.25rem;
+    scrollbar-width: thin;
+}
+
 #main-nav {
     position: fixed;
     top: var(--app-nav-top);

@@ -5,15 +5,21 @@ import config from "../lib/config.ts";
 import { HonoContextVars } from "../lib/types.ts";
 import { LdapSearchSchema, RegisterSchema } from "../lib/schemas.ts";
 import { getSession } from "../middleware/session.ts";
-import { get_unterlagen } from "../lib/pathfuncs.ts";
-
-import { AppError } from "../lib/errors.ts";
+import { respondWithStartPage } from "./render.ts";
 
 const authRouter = new Hono<{ Variables: HonoContextVars }>();
 
+/**
+ * Anmeldung / Name ändern. Die eigentliche Anmeldung liegt auf der
+ * Startseite (#146); diese Seite bleibt für Lehrpersonen, die den Namen
+ * wechseln wollen.
+ */
 authRouter.get("/whoami", (c) => {
     const content = hbs.whoamiTemplate({
         remote_user: c.get("remoteuser"),
+        login_panel_html: hbs.loginPanelTemplate({
+            title: "Anmelden / Name ändern",
+        }),
     });
 
     if (c.req.header("HX-Request") === "true") {
@@ -31,48 +37,81 @@ authRouter.get("/whoami", (c) => {
     }));
 });
 
+/**
+ * Namenssuche für die Anmeldung (#146): ein Feld, Treffer ab drei
+ * Zeichen, Anzeige „Vorname Nachname · Klasse" ohne E-Mail.
+ * Es wird hier **nichts** registriert — das passiert erst beim Klick.
+ */
 authRouter.get("/ldap", async (c) => {
-    const query = c.req.query();
-    const validation = LdapSearchSchema.safeParse(query);
+    const validation = LdapSearchSchema.safeParse(c.req.query());
 
     if (!validation.success) {
-        return c.html(
-            hbs.ldapTemplate({
-                users: [{ email: "", name: validation.error.format().email?._errors[0] || "Ungültige Eingabe" }],
-            }),
-        );
+        return c.html(hbs.ldapTemplate({
+            users: [],
+            error: validation.error.issues[0]?.message ||
+                "Ungültiger Suchbegriff.",
+        }));
     }
 
     try {
-        const users = await service.ldap.searchUserByEmailStart(validation.data.email);
-        if (users.length === 0) {
-            users.push({
-                email: "",
-                name: `Keine Email beginnend mit ${validation.data.email} gefunden!`,
-            });
-        }
-        return c.html(hbs.ldapTemplate({ users }));
-    } catch (_e) {
-        return c.html(
-            hbs.ldapTemplate({
-                users: [{ email: "", name: "mindestens 3 Anfangsbuchstaben!" }],
-            }),
+        const result = await service.ldap.searchLoginCandidates(
+            validation.data.q,
         );
+        return c.html(hbs.ldapTemplate({
+            users: result.users,
+            empty: result.users.length === 0,
+            has_more: result.has_more,
+        }));
+    } catch (e) {
+        console.error("LDAP-Suche fehlgeschlagen:", (e as Error).message);
+        return c.html(hbs.ldapTemplate({
+            users: [],
+            error:
+                "Die Namenssuche ist gerade nicht erreichbar. Bitte melde dich bei deiner Lehrperson.",
+        }));
     }
 });
 
+/**
+ * Registriert die angeklickte Person und meldet sie an.
+ *
+ * Alle Fehlerfälle (unbekannte Person, LDAP weg, Anmeldesperre im
+ * Examen) werden in derselben rechten Spalte angezeigt — deshalb immer
+ * die Startseite als Antwort, auch bei Ablehnung.
+ */
 authRouter.post("/register", async (c) => {
     const body = await c.req.parseBody();
     const validation = RegisterSchema.safeParse(body);
 
     if (!validation.success) {
-        throw new AppError(validation.error.format().email?._errors[0] || "Ungültige Eingabe", 400);
+        return await respondWithStartPage(c, {
+            login_error: validation.error.issues[0]?.message ||
+                "Ungültige Eingabe.",
+        });
     }
 
     const email = validation.data.email;
-    const user = await service.user.getUserByEmail(email);
+    const user = await service.ldap.resolveLoginUser(email);
+
     if (!user) {
-        throw new AppError("User not found", 404);
+        return await respondWithStartPage(c, {
+            login_error:
+                "Zu dieser Person gibt es kein Benutzerkonto. Bitte suche deinen Namen erneut.",
+        });
+    }
+
+    // Anmeldesperre im Examen (#146): Ein Namenswechsel mitten in der
+    // Prüfung wäre ein Prüfungsunfall. Lehrpersonen sind ausgenommen,
+    // sonst käme der Lehrer nach Sessionverlust nicht mehr hinein. Die
+    // Klasse ist erst hier bekannt, deshalb wird nach dem Lookup
+    // entschieden — die Mail-Endung sagt nichts über die Rolle.
+    if (!service.user.isTeacher(user)) {
+        if (!(await service.exam.isStudentRegistrationOpen())) {
+            return await respondWithStartPage(c, {
+                login_error:
+                    "Während der Prüfung ist keine Neuanmeldung möglich. Bitte wende dich an deine Lehrperson.",
+            });
+        }
     }
 
     const remoteIp = c.get("remoteip");
@@ -92,10 +131,10 @@ authRouter.post("/register", async (c) => {
             mac: remoteMac,
         })
     ) {
-        throw new AppError(
-            "Registrierung als LehrendeR nur von autorisierten IP-Adressen oder MAC-Adressen möglich",
-            403,
-        );
+        return await respondWithStartPage(c, {
+            login_error:
+                "Anmeldung als LehrendeR ist nur von autorisierten Geräten möglich.",
+        });
     }
 
     await service.user.register(user, remoteIp);
@@ -106,24 +145,15 @@ authRouter.post("/register", async (c) => {
     c.set("remoteuser", user);
     // Admin ist man ausschließlich über die LDAP-Klasse — eine freigegebene
     // MAC öffnet nur den Login, sie verleiht keine Admin-Rechte.
-    const is_admin = service.user.isTeacher(user);
-    c.set("is_admin", is_admin);
+    c.set("is_admin", service.user.isTeacher(user));
 
-    const files = await get_unterlagen();
-    const content = hbs.dirIndexTemplate({
-        unterlagen_dir: config.UNTERLAGEN_DIR,
-        files,
-    });
+    return await respondWithStartPage(c);
+});
 
-    return c.html(hbs.mainTemplate({
-        remote_user: user,
-        remote_ip: remoteIp,
-        is_admin,
-        page_title: config.page_title,
-        hero_url: config.hero_url,
-        theme_asset_version: config.THEME_ASSET_VERSION,
-        content,
-    }));
+/** Meldet die laufende Sitzung ab und zeigt wieder die Anmeldung. */
+authRouter.post("/logout", (c) => {
+    getSession(c).logout();
+    return c.redirect("/");
 });
 
 export default authRouter;
