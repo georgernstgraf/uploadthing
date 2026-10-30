@@ -244,11 +244,14 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
 - Theme asset URLs are versioned with the runtime `THEME_ASSET_VERSION` value so a just-applied theme invalidates cached `theme.css` and background images on the next full-page render.
 - The admin theme selector uses the git-tracked source files in `themes/<key>/` as the source of truth and copies them into the unmanaged generic targets under `static/`.
 
-## Router Split: Machine Contract At Root, API Under /api
+## Router Split: API Under /api, keine Machine-Route mehr
 
-- `machineRouter` is mounted at the root and carries only `POST /activeips`, the external contract with the WLAN infrastructure (IP-whitelist via `ACTIVEIPS_ALLOWED_IPS`).
 - `apiRouter` is mounted only under `/api`.
-- The former dual mounting (`/` and `/api`) was removed; the shadow paths `/exammode` (root) and `/api/activeips` no longer exist.
+- Seit #145 gibt es **keinen** `machineRouter` mehr: `POST /activeips` und
+  `ACTIVEIPS_ALLOWED_IPS` sind entfernt, die IP-/MAC-Daten holt der Prozess
+  selbst vom MikroTik (`service/tik.ts`).
+- Die frühere Doppel-Mounting (`/` und `/api`) ist entfallen; die
+  Schattenpfade `/exammode` (root) und `/api/activeips` existieren nicht.
 
 ## Exam Lifecycle State Machine
 
@@ -387,8 +390,8 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
 
 - All security-relevant and operation-critical configuration is now required at startup.
 - `requireEnv()` throws immediately at module load time with a German error message if a required env var is missing, instead of silently falling back to a default.
-- `parseRequiredIpList()` enforces that IP whitelists (`ADMIN_IPS`, `ACTIVEIPS_ALLOWED_IPS`) are explicitly configured.
-- The following variables were changed from optional/fallback to required: `ABGABEN_DIR`, `UNTERLAGEN_DIR`, `LISTEN_PORT`, `COOKIE_SECRET`, `ADMIN_IPS`, `ACTIVEIPS_ALLOWED_IPS`, `SERVICE_DN`, `SERVICE_PW`, `SERVICE_URL`, `SEARCH_BASE`.
+- `parseRequiredIpList()` enforces that IP whitelists (`ADMIN_IPS`) are explicitly configured. `ACTIVEIPS_ALLOWED_IPS` ist mit #145 entfallen.
+- The following variables were changed from optional/fallback to required: `ABGABEN_DIR`, `UNTERLAGEN_DIR`, `LISTEN_PORT`, `COOKIE_SECRET`, `ADMIN_IPS`, `SERVICE_DN`, `SERVICE_PW`, `SERVICE_URL`, `SEARCH_BASE`. (`ACTIVEIPS_ALLOWED_IPS` stand hier ursprünglich auch — seit #145 entfernt, siehe `HISTORY.md`.)
 
 ## Internal Scroll Container for Fixed Navbar
 

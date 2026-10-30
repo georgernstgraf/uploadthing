@@ -54,7 +54,7 @@ no write to `/conf/config.xml`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OPNSENSE_API_URL` | — | Base URL of the firewall API, e.g. `https://192.168.21.1:8443`; required as soon as key and secret are set |
+| `OPNSENSE_API_URL` | — | Base URL of the firewall API, e.g. `https://sense.internal` (the Sense GUI listens on 443 again since #143); required as soon as key and secret are set. Requires `DENO_CERT=~/certs/sense-ca.pem` |
 | `OPNSENSE_API_KEY` | — | API key (HTTP Basic user); set together with `OPNSENSE_API_SECRET` or not at all |
 | `OPNSENSE_API_SECRET` | — | API secret (HTTP Basic password); set together with `OPNSENSE_API_KEY` or not at all |
 | `OPNSENSE_EXAMMODE_RULE_UUID` | — | UUID of the blocking rule (`descr=doku`, `type=reject`); required as soon as key and secret are set |
@@ -105,13 +105,18 @@ deno task db:migrate                            # apply pending migrations manua
 appliance; a database that knows a newer migration than the running code
 makes the app refuse to start instead of running half-migrated.
 
-## Appliance Scripts (`appliance/`)
+## Appliance Scripts (`appliance/`) — wird abgebaut
 
 The `appliance/` directory contains the OPNsense/FreeBSD appliance-side
 half of the exam system (exam mode toggle, scan helpers, rc.d service,
 redacted config snapshots, MikroTik artifacts). It was imported from the
-former `examsense` repository. See `appliance/README.md` and
-`docs/ai/OPERATIONS.md` ("Appliance Setup").
+former `examsense` repository.
+
+**Seit 2026-10-30 läuft die App auf dem Dell**; die Sense macht nur noch
+Firewall/DNS/DHCP. Exam-Sperre (OPNsense-API) und IP-/MAC-Erfassung
+(MikroTik-REST) sind im App-Prozess. Die Skripte hier werden mit #144
+gelöscht — neuer Code gehört nicht mehr in dieses Verzeichnis. Siehe
+`appliance/README.md` und `docs/ai/OPERATIONS.md` („Appliance Setup").
 
 ## Project Knowledge
 

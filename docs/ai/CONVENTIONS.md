@@ -73,7 +73,11 @@
 - For localhost-dependent forensic tests, use the shared helpers in `test/helpers/forensics_fixture.ts` to reset and seed deterministic DB state instead of relying on ambient rows already present in `uploadthing.db`.
 - Keep `127.0.0.1` as the canonical local test IP for forensic endpoint scenarios unless the project intentionally changes that policy.
 
-## Appliance Scripts (appliance/)
+## Appliance Scripts (appliance/) — wird in #144 entfernt
+
+> **Stand 2026-10-30:** Auf der Sense läuft die App nicht mehr; dieser
+> Abschnitt gilt nur noch für die Dateien, die bis #144 dort aufgeräumt
+> werden. Neuer Code gehört **nicht** mehr hierher.
 
 The `appliance/` directory (imported from the former examsense repo)
 follows its own conventions, driven by the FreeBSD/OPNsense target

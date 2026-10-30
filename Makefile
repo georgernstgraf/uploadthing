@@ -1,20 +1,8 @@
+# Datenbank-/Log-Sync gegen die Sense ist mit #143 entfallen: App, DB und
+# Logs liegen auf dem Dell (`journalctl -u uploadthing`, DB unter
+# ~/uploadthing-app). Backups laufen über #148, nicht über `make`.
 default:
-	@echo "no default action (pull / push / logsync)"
-
-pull:
-	! fuser uploadthing.db
-	rm -f uploadthing.db*
-	ssh sense copydb
-	scp sense:uploadthing.db .
-	cp uploadthing.db ~/OneDrive/
-
-push:
-	echo "vacuum into '/tmp/uploadthing.db'" | sqlite3 uploadthing.db
-	scp /tmp/uploadthing.db sense:uploadthing/
-	rm /tmp/uploadthing.db
-
-logsync:
-	rsync -av --delete sense:/var/log/exampy/ /home/georg/exampy/
+	@echo "Keine Sync-Ziele mehr (seit #143). Dienst: systemctl status uploadthing"
 
 # Redacted OPNsense config snapshot (from the appliance/, formerly examsense).
 # Run ON the firewall: make -f appliance/Makefile or copy this logic there.

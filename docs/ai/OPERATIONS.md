@@ -33,7 +33,9 @@ only in the operator's head; it is now recorded here (see #132).
 
 ## Runtime: Deno On FreeBSD/Linux, Keine Prisma-Engines Mehr
 
-- The runtime is **Deno on FreeBSD**.
+- The runtime is **Deno on Linux** (Dell, systemd). Bis 2026-10-30 lief
+  sie auf FreeBSD in der OPNsense-VM über den Linuxulator; das ist
+  entfallen.
 - Since #133 there are **no Prisma engines** in the stack. Prisma forced
   platform-specific Linux binaries that only ran on the OPNsense through
   the **Linuxulator** and hard-pinned the engine version to 6. Drizzle is
@@ -142,9 +144,10 @@ only in the operator's head; it is now recorded here (see #132).
   Deno this means building V8 from source: hours of build time plus
   recurring maintenance burden across major OPNsense upgrades — not
   worth it.
-- Consequence for this project: do not try to install native Deno from
-  packages on `sense`. The Linuxulator remains the pragmatic runtime path
-  for Deno itself; since #133 nothing else in the stack needs it.
+- Consequence for this project: on `sense` nothing of the app stack runs
+  any more (seit #143). The Linuxulator (Deno on FreeBSD) was only a
+  stopgap while the app lived in the OPNsense VM; on the Dell Deno runs
+  natively. Nothing in `appliance/` needs Deno.
 
 ## Unterlagen (Exam Task Materials)
 
@@ -185,16 +188,16 @@ only in the operator's head; it is now recorded here (see #132).
   chain, exactly how Certbot delivers `live/<name>/fullchain.pem`).
 - Certificates are Let's Encrypt certificates for
   `tst.spengergasse.at`, harvested on `kik` via HTTP-01 and delivered
-  to `sense` by manual `scp` (harvest/renewal details: internal project
+  by manual `scp` (harvest/renewal details: internal project
   KI-Kustodiat-intern #3).
-- Planned layout on `sense`: cert directory under georg's home,
-  e.g. `~/uploadthing/tls/` (readable by the unprivileged user),
-  `privkey.pem` with mode 600, owner `georg`.
-- Production env on `sense`: `DENO_ENV=production`, `LISTEN_PORT=8000`,
-  `LISTEN_HOST=127.0.0.1` (**loopback only** — port 8000 is not reachable
-  from the network), plus `TLS_CERT_PATH` =
-  `/home/georg/certs/tst.spengergasse.at/fullchain.pem` and the matching
-  `TLS_KEY_PATH`.
+- **Ablage auf dem Dell:** `~/certs/tst.spengergasse.at/fullchain.pem`
+  (Kette) und `privkey.pem` (Modus 600, Owner `georg`).
+- **Produktions-Env auf dem Dell:** `DENO_ENV=production`,
+  `LISTEN_HOST=192.168.21.2`, `LISTEN_PORT=443`,
+  `TLS_CERT_PATH=/home/georg/certs/tst.spengergasse.at/fullchain.pem`,
+  `TLS_KEY_PATH=…/privkey.pem`, `PUBLIC_URL=https://tst.spengergasse.at/`.
+  (Bis #143 stand hier `LISTEN_HOST=127.0.0.1`, `LISTEN_PORT=8000` hinter
+  dem DNAT der Sense — entfallen.)
 - **`PUBLIC_URL`** is the address the app presents itself under
   (`https://tst.spengergasse.at/`). Since #149 it also produces the
   browser tab title: `page_title` is the **hostname** of `PUBLIC_URL`
@@ -203,38 +206,30 @@ only in the operator's head; it is now recorded here (see #132).
   `<LISTEN_HOST>:<LISTEN_PORT>` (local development); an unparseable value
   aborts startup with a German message. Both values come from
   `buildHeroUrl()` / `buildPageTitle()` in `lib/config.ts`.
-- Clean URL `https://tst.spengergasse.at` without port — implemented
-  2026-10-16: the OPNsense GUI moved to **8443** (the real LE certificate
-  was imported into the OPNsense cert store, descr
-  "tst.spengergasse.at (uploadthing cert, ssh import)") and a DNAT port
-  forward on the LAN interface (`usblan`) translates
-  `192.168.21.1:443` → `127.0.0.1:8000` (`pf rdr`, NAT rule uuid
-  `cf776562-1412-47ec-af06-5c0a0cfebd0c`, associated pass rule
-  auto-generated via `pass=rule`). **No SNAT** → the real client IPs
-  stay visible to the app (verified via `pfctl -s state`); TLS stays
-  end-to-end in `Deno.serve`. Pre-change backups:
-  `/conf/config.xml.bak-20261016-*` on `sense`.
-- **Cert renewal caveat:** the OPNsense GUI uses a *snapshot* of the
-  certificate (imported once into the cert store). After each renewal
-  harvest on `kik` + `scp` to `sense`, the GUI's copy must be
-  re-imported (replace `crt`/`prv` of the cert item) — otherwise the
-  GUI on :8443 serves the stale certificate while the app on 443 is
-  current.
-- Service management on `sense`: rc.d script
-  `/usr/local/etc/rc.d/uploadthing` (`uploadthing_enable=YES`, boots
-  with the system), running `startloop.sh` (while-loop wrapper) via
-  `daemon -u georg`. Caveat: `service uploadthing restart` can no-op
-  when the loop shell survives with a stale pidfile — a clean restart
-  is: kill both the loop shell and the deno child, remove
-  `/var/run/uploadthing.pid`, then `service uploadthing start`. A
-  `STOPPED` file in `~/uploadthing` keeps the loop from starting deno
-  (deliberate downtime switch — check it before starting).
-- Public DNS for `tst.spengergasse.at` keeps pointing at `kik` (needed
-  for ACME HTTP-01 validation); clients reach `sense` through a
-  **split-DNS override** (`tst.spengergasse.at` → sense LAN IP,
-  configured in OPNsense Unbound).
+- Clean URL `https://tst.spengergasse.at` without port. **Bis 2026-10-30**
+  lief das über die Sense: GUI auf 8443, DNAT `192.168.21.1:443` →
+  `127.0.0.1:8000` ohne SNAT. Seit dem Umzug auf den Dell terminiert die
+  App selbst auf 443, die GUI der Sense ist wieder auf 443, GUI-Port 8443
+  und DNAT sind gelöscht. Die alte Topologie steht in `HISTORY.md`.
+- **Zertifikatserneuerung:** Ernte auf `kik` (`/etc/letsencrypt/live/…`),
+  `scp` nach `~/certs/tst.spengergasse.at/` auf dem Dell, dann
+  `systemctl restart uploadthing` (Deno liest Zertifikat und Key beim
+  Start). Kein Re-Import in die Sense mehr nötig — die Sense hat ihr
+  eigenes internes Zertifikat (`sense.internal`).
+- **Dienst:** `systemctl {status,restart,stop} uploadthing`, Logs über
+  `journalctl -u uploadthing -f`. Frühere Sense-Details (`rc.d`,
+  `startloop.sh`, PIDfile-Quirk, `STOPPED`-Datei) sind mit #143/#144
+  entfallen.
+- Public DNS für `tst.spengergasse.at` zeigt weiter auf `kik` (nötig für
+  ACME HTTP-01); im Prüfungsnetz löst **Unbound** auf der Sense den Namen
+  auf `192.168.21.2` auf (siehe Abschnitt „DNS und Hostnamen").
 
-## Appliance Setup (from the former examsense repo)
+## Appliance Setup (historisch — wird in #144 entfernt)
+
+> **Stand 2026-10-30:** Auf der Sense läuft nichts Eigenes mehr. Die
+> folgenden Abschnitte beschreiben die **alte** Appliance-Installation
+> und werden mit #144 gelöscht. Sie bleiben bis dahin als Nachschlagewerk
+> für das Aufräumen stehen.
 
 The `appliance/` directory holds the OPNsense/FreeBSD appliance-side
 half of the system (imported from the sister repo `examsense`, now
@@ -317,7 +312,7 @@ archived). Layout:
   `appliance/bin/redact-opnsense.sed`; snapshots in the repo are
   redacted (verify before committing new ones).
 
-## Appliance State 2026-10-21 (gathered from sense)
+## Appliance State 2026-10-21 (Stand vor dem Umzug, historisch)
 
 Full live state gathered into `appliance/current/` (gitignored except
 `config.redacted.xml`); `appliance/current/MANIFEST` records sha256 +
@@ -351,27 +346,25 @@ mtime of every deployed custom script. Facts:
   prioritize #133 (Drizzle — engine-free) and plan a runtime exit
   (Node/Bun) medium-term.
 
-## Database Sync Cycle (from the dev machine)
+## Database Sync Cycle — entfallen (2026-10-30)
 
-Driven by the `Makefile` on the development machine:
-
-- `make pull`: guard (`! fuser uploadthing.db` — local DB must not be
-  in use), remove local `uploadthing.db*`, `ssh sense copydb`, `scp`
-  the DB from `sense`, and copy it to `~/OneDrive/` as an off-site copy.
-- `make push`: `VACUUM INTO '/tmp/uploadthing.db'` locally, `scp` it to
-  `sense:uploadthing/`, remove the temp file.
-- `make logsync`: `rsync` app logs from `sense:/var/log/exampy/` into
-  the local `~/exampy/` directory.
+Der frühere `Makefile`-Zyklus (`make pull` / `make push` / `make logsync`
+gegen `sense`) ist mit dem Umzug überflüssig: App und DB liegen auf dem
+Dell, Backups laufen über #148 (gpg-verschlüsselt ins Repo). Die
+Makefile-Ziele zeigen noch auf `sense` — beim nächsten Anfassen
+entfernen, solange niemand sie benutzt.
 
 ## Open Points
 
-- Exact Deno install/version procedure on `sense` is not yet recorded;
-  to be filled in from operator knowledge or a future session on the
-  host. (The `exammode` script location — `appliance/bin/exammode.sh` →
-  `/root/bin/exammode` — is still recorded above, but the app no longer
-  calls it: the exam lock runs over the OPNsense API.)
-- Same gap applies to the TLS deployment from #137: how the app
-  service on `sense` is supervised/restarted (the repo's
-  `startloop.sh` respawn loop with a `STOPPED` marker file is a
-  candidate) and how the harvested certificates actually arrive from
-  `kik` are still to be recorded after a session on the host.
+- **#144 (offen):** Auf der Sense liegen noch `/home/georg/uploadthing`
+  (alter App-Ordner), `/usr/local/etc/rc.d/uploadthing`, die Root-Skripte,
+  der Cronjob `scan scan` und das archivierte `examsense`-Repo. Der Dienst
+  ist gestoppt (`uploadthing_enable=NO`), gelöscht ist nichts.
+- **#149 (offen):** Die App nutzt noch den Root-API-Key der Sense; ein
+  eigener Benutzer mit minimalen Rechten (Firewall + Dnsmasq/Unbound)
+  fehlt. `/root` ist noch 755. #136 ist noch nicht geschlossen.
+- **#148 (offen):** keine automatisierten Backups; das gpg-Backup der
+  `config.xml` und eine Restore-Probe fehlen.
+- Die TLS-/Zertifikatskette ist oben beschrieben; eine **einmalige
+  gedankliche Probe** der Erneuerung (Ernte auf `kik` → `scp` → Restart)
+  steht noch aus.

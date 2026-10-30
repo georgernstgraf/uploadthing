@@ -27,7 +27,7 @@ Instanz auf der Sense ist gestoppt, aber noch nicht gelöscht.
 - TLS: GUI-Zertifikat `CN=sense.internal` mit SAN `sense.internal` +
   `192.168.21.1`, signiert von der internen CA „uploadthing internal CA"
   (CA auf dem Dell: `~/certs/sense-ca.pem`, Deno braucht `DENO_CERT`).
-  `OPNSENSE_API_URL=https://sense.internal:8443`, verifiziert.
+  `OPNSENSE_API_URL=https://sense.internal`, verifiziert.
 - `getRule/{uuid}` ist auf 26.7 unbrauchbar (`[]`); gelesen wird über
   `searchRule`.
 

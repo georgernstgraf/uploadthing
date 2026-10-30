@@ -37,8 +37,8 @@ Last updated: 2026-10-30 (#143 Cutover erledigt — App läuft auf dem Dell).
   Toast, es gibt keine Erfolgsseite mehr. Die Vorlagen `upload.hbs`,
   `dirindex.hbs` und `success.hbs` sind entfernt (`home.hbs`,
   `abgabe.hbs`, `login-panel.hbs`, `admin-registration-window.hbs` neu).
-- Nach dem Deployment der Sense-Version gilt weiterhin: vorher DB-Backup
-  (#148). An dieser Stelle keine Schemaänderung — nur Verhalten und UI.
+- Deployment ist erfolgt (2026-10-30, Dell). Keine Schemaänderung in
+  diesem Ticket — nur Verhalten und UI.
 
 ## #147 — Admin-Freigabe per MAC (erledigt)
 
@@ -51,8 +51,8 @@ Last updated: 2026-10-30 (#143 Cutover erledigt — App läuft auf dem Dell).
 - MAC zur IP kommt aus der jüngsten `ipfact`-Sichtung; kein Tik-Abruf im
   Request-Pfad.
 - `ADMINS` ist entfernt (war im TypeScript nie gelesen).
-- Vor dem ersten Start der neuen Version auf der Sense weiterhin ein
-  DB-Backup ziehen (#148); die Migration legt nur eine Tabelle an.
+- Deployment ist erfolgt; die Migration legte nur eine Tabelle an
+  (`adminmac`).
 
 ## #145 — Tik-Polling (erledigt)
 
@@ -61,8 +61,7 @@ Last updated: 2026-10-30 (#143 Cutover erledigt — App läuft auf dem Dell).
   Admin-Panel. `POST /activeips`, `ACTIVEIPS_ALLOWED_IPS`,
   `routes/machine.ts` und `service/ipfact.ts` sind entfernt.
 - Migration `0001_ipfact_mac` (`ALTER TABLE ipfact ADD mac text`), läuft
-  beim App-Start. Auf der Sense gilt weiter: vor dem ersten Start der
-  neuen Version ein DB-Backup ziehen (#148).
+  beim App-Start. Auf dem Dell angewendet am 2026-10-30.
 - Für den Produktivbetrieb müssen `TIK_URL`, `TIK_USER`, `TIK_PASSWORD` in
   die Produktions-`.env`; ohne sie startet die App (Polling aus, Panel
   „nicht konfiguriert"), erfasst aber keine IPs.
@@ -118,6 +117,16 @@ mehr braucht:
 - Achtung: `/home/georg/uploadthing.db` (veraltet, Mar 2026) und
   `/home/georg/uploadthing/uploadthing.db` (echte Prod-DB) liegen auf der
   Sense — vor dem Löschen entscheiden, ob letztere als Notkopie bleibt.
+
+## Danach
+
+- **#149 (Ops-Rest):** eigener API-Benutzer statt Root-Key, `/root` auf 750,
+  #136 schließen, Zertifikats-Checkliste durchgehen.
+- **#148:** `config.xml` gpg-verschlüsselt ins Repo
+  (Key `19BA B05B F4D9 B55D 4907 1A9D EC23 CFDF DDA5 30BD`), Restore-Probe.
+- **#135:** Playwright-Smoke-Suite, zuletzt.
+- **Handy-Abnahme:** im Prüfungs-WLAN `doku` scharf schalten →
+  `example.com` scheitert, `learn.microsoft.com` geht; danach wieder aus.
 
 ## API-Zugang zur Sense (Ist-Stand)
 
