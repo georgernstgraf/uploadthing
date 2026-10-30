@@ -66,12 +66,18 @@
   `-`, `.`, Leerzeichen, Großschreibung oder als 12-Hex-Block werden
   normalisiert; alles andere wird mit deutscher Meldung abgelehnt.
 - **MAC zur IP kommt aus `ipfact`, nie aus einem Tik-Abruf im Request.**
-  `repo.ipfact.getLatestMacForIP()` liest die jüngste Sichtung mit MAC
-  (Index `ipfact_ip_seen_key`) — die Daten liegen durch das Polling (#145)
-  vor. Ein nicht erreichbarer Tik darf keinen Login aufhalten und kein
-  Request darf fünf Sekunden Wartezeit erben. Folge: Ein gerade erst
-  verbundenes Gerät ist erst nach dem nächsten Poll (60 s) per MAC
-  freigegeben.
+  `repo.ipfact.getLatestMacForIP()` liest die jüngste Sichtung im
+  Lookback-Fenster (Index `ipfact_ip_seen_key`) — die Daten liegen durch
+  das Polling (#145) vor. Ein nicht erreichbarer Tik darf keinen Login
+  aufhalten und kein Request darf fünf Sekunden Wartezeit erben. Folge:
+  Ein gerade erst verbundenes Gerät ist erst nach dem nächsten Poll (60 s)
+  per MAC freigegeben.
+- **Nur frische Sichtungen zählen, ohne Rückfall (#153).** Das Fenster ist
+  `MAC_LOOKBACK_SECONDS = 300` (fünf Poll-Intervalle): lang genug für einen
+  einzelnen verlorenen Abruf, kurz genug gegen eine DHCP-Weitervergabe.
+  Trägt die jüngste Sichtung **im** Fenster keine MAC, gilt das Gerät als
+  unbekannt; es wird **nicht** auf eine ältere Zeile zurückgefallen, sonst
+  bekäme ein fremdes Gerät die Freigabe des Vorgängers.
 - **Die Login-Sperre bleibt im Login.** `is_admin` im Session-Middleware
   hängt weiterhin nur an der Klasse. Eine laufende Admin-Sitzung wird nicht
   bei jedem Request gegen die MAC-Liste geprüft, damit ein ausgefallenes

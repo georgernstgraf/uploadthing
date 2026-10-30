@@ -128,31 +128,109 @@ Deno.test("adminmac service - isAllowed erkennt die Env-Freigabe (ADMIN_MACS)", 
     }
 });
 
-Deno.test("adminmac service - resolveMacForIp liefert die jüngste Sichtung", () => {
+Deno.test("adminmac service - resolveMacForIp liefert die jüngste Sichtung im Fenster", () => {
     const ip = "10.147.0.1";
-    const older = new Date("2026-10-30T07:00:00Z");
-    const newer = new Date("2026-10-30T07:30:00Z");
+    const now = new Date("2026-10-30T07:31:00Z");
 
     try {
-        ipfactRepo.registerSeen(ip, older, "02:00:00:00:00:aa");
-        ipfactRepo.registerSeen(ip, newer, "02:00:00:00:00:bb");
+        ipfactRepo.registerSeen(ip, new Date("2026-10-30T07:30:00Z"), "02:00:00:00:00:aa");
+        ipfactRepo.registerSeen(ip, new Date("2026-10-30T07:30:30Z"), "02:00:00:00:00:bb");
 
-        assertEquals(adminmac.resolveMacForIp(ip), "02:00:00:00:00:bb");
+        assertEquals(adminmac.resolveMacForIp(ip, now), "02:00:00:00:00:bb");
     } finally {
         db.exec(`DELETE FROM ipfact WHERE ip = '${ip}'`);
     }
 });
 
-Deno.test("adminmac service - resolveMacForIp ignoriert Sichtungen ohne MAC", () => {
+Deno.test("adminmac service - Sichtung ohne MAC ist unbekannt, kein Rückfall", () => {
     const ip = "10.147.0.2";
+    const now = new Date("2026-10-30T07:31:00Z");
 
     try {
-        ipfactRepo.registerSeen(ip, new Date("2026-10-30T07:00:00Z"), "02:00:00:00:00:cc");
-        ipfactRepo.registerSeen(ip, new Date("2026-10-30T07:30:00Z"), null);
+        // Ältere Sichtung mit MAC, jüngste ohne lesbare MAC: das aktuelle
+        // Gerät ist unbekannt — die alte MAC gehört einem anderen Gerät.
+        ipfactRepo.registerSeen(ip, new Date("2026-10-30T07:30:00Z"), "02:00:00:00:00:cc");
+        ipfactRepo.registerSeen(ip, new Date("2026-10-30T07:30:30Z"), null);
 
-        assertEquals(adminmac.resolveMacForIp(ip), "02:00:00:00:00:cc");
-        assertEquals(adminmac.resolveMacForIp("10.147.0.3"), null);
+        assertEquals(adminmac.resolveMacForIp(ip, now), null);
+        assertEquals(adminmac.resolveMacForIp("10.147.0.3", now), null);
     } finally {
+        db.exec(`DELETE FROM ipfact WHERE ip = '${ip}'`);
+    }
+});
+
+Deno.test("adminmac service - Sichtungen außerhalb des Lookbacks zählen nicht", () => {
+    const ip = "10.147.0.4";
+    const now = new Date("2026-10-30T07:31:00Z");
+    const outside = new Date(
+        now.getTime() - (adminmac.MAC_LOOKBACK_SECONDS * 1000) - 1,
+    );
+    const edge = new Date(
+        now.getTime() - (adminmac.MAC_LOOKBACK_SECONDS * 1000),
+    );
+
+    try {
+        ipfactRepo.registerSeen(ip, outside, "02:00:00:00:00:dd");
+        assertEquals(adminmac.resolveMacForIp(ip, now), null);
+
+        // Das Fenster ist inklusiv: genau MAC_LOOKBACK_SECONDS zählt noch.
+        ipfactRepo.registerSeen(ip, edge, "02:00:00:00:00:ee");
+        assertEquals(adminmac.resolveMacForIp(ip, now), "02:00:00:00:00:ee");
+    } finally {
+        db.exec(`DELETE FROM ipfact WHERE ip = '${ip}'`);
+    }
+});
+
+Deno.test("adminmac service - DHCP-Weitervergabe autorisiert kein fremdes Gerät", () => {
+    const originalIps = config.ADMIN_IPS;
+    const originalMacs = config.ADMIN_MACS;
+    const ip = "10.147.0.5";
+    const now = new Date("2026-10-30T07:31:00Z");
+    const teacher = { name: "Lehrperson", email: "l@example.com", klasse: "LehrendeR" };
+    const teacherDeviceMac = testMac();
+
+    try {
+        config.ADMIN_IPS = ["192.168.21.2"];
+        config.ADMIN_MACS = [];
+        adminmac.add(teacherDeviceMac, "lehrer-geraet");
+
+        // Gerät der Lehrperson war vor 10 Minuten auf der IP, jetzt sitzt
+        // dort ein fremdes Gerät ohne lesbare MAC.
+        ipfactRepo.registerSeen(
+            ip,
+            new Date(now.getTime() - 10 * 60_000),
+            teacherDeviceMac,
+        );
+        ipfactRepo.registerSeen(ip, new Date(now.getTime() - 30_000), null);
+
+        const mac = adminmac.resolveMacForIp(ip, now);
+        assertEquals(mac, null);
+        assertEquals(
+            adminmac.teacherRegistrationAllowed({ user: teacher, ip, mac }),
+            false,
+        );
+
+        // Zweites Gerät auf derselben IP mit fremder MAC: ebenfalls kein
+        // Zugang, obwohl die freigegebene MAC noch in der DB steht.
+        ipfactRepo.registerSeen(
+            ip,
+            new Date(now.getTime() - 20_000),
+            "02:00:00:00:00:ff",
+        );
+        const otherMac = adminmac.resolveMacForIp(ip, now);
+        assertEquals(otherMac, "02:00:00:00:00:ff");
+        assertEquals(
+            adminmac.teacherRegistrationAllowed({
+                user: teacher,
+                ip,
+                mac: otherMac,
+            }),
+            false,
+        );
+    } finally {
+        config.ADMIN_IPS = originalIps;
+        config.ADMIN_MACS = originalMacs;
+        clearMac(teacherDeviceMac);
         db.exec(`DELETE FROM ipfact WHERE ip = '${ip}'`);
     }
 });
@@ -242,15 +320,17 @@ Deno.test("adminmac service - Lehrerperson von Env-MAC (ADMIN_MACS) kommt durch"
     }
 });
 
-Deno.test("adminmac service - ohne konfigurierte ADMIN_IPS bleibt die Sperre aus", () => {
+Deno.test("adminmac service - leere ADMIN_IPS gibt nicht frei (fail-closed)", () => {
     const originalIps = config.ADMIN_IPS;
     const teacher = { name: "Lehrperson", email: "l@example.com", klasse: "LehrendeR" };
 
     try {
+        // Kann im Betrieb nicht mehr vorkommen (parseRequiredIpList bricht
+        // den Start ab, #153); falls doch, gilt die Sperre und nicht „offen".
         config.ADMIN_IPS = [];
         assertEquals(
             adminmac.teacherRegistrationAllowed({ user: teacher, ip: "10.0.0.5", mac: null }),
-            true,
+            false,
         );
     } finally {
         config.ADMIN_IPS = originalIps;

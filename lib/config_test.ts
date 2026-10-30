@@ -7,6 +7,7 @@ import config, {
     parseAdminMacList,
     parseOpnsenseConfig,
     parsePermittedFileTypes,
+    parseRequiredIpList,
     parseTikConfig,
     parseTlsConfig,
     parseUnterlagenFileTypes,
@@ -270,6 +271,30 @@ Deno.test("config - MAX_UPLOAD_MB has default value", () => {
 
 Deno.test("config - ADMIN_IPS is parsed as array", () => {
     assertEquals(Array.isArray(config.ADMIN_IPS), true);
+    // Fail-strict: eine leere Liste würde die Lehrpersonen-Sperre abschalten.
+    assertEquals(config.ADMIN_IPS.length > 0, true);
+});
+
+Deno.test("config - parseRequiredIpList liest eine komma-separierte Liste", () => {
+    assertEquals(
+        parseRequiredIpList("ADMIN_IPS", " 192.168.21.2 , 127.0.0.1 "),
+        ["192.168.21.2", "127.0.0.1"],
+    );
+    assertEquals(parseRequiredIpList("ADMIN_IPS", "192.168.21.2"), [
+        "192.168.21.2",
+    ]);
+});
+
+Deno.test("config - leere ADMIN_IPS bricht den Start ab", () => {
+    // Eine gesetzte, aber effektiv leere Liste darf nicht als „keine
+    // Sperre" durchgehen (#153).
+    for (const raw of ["", "   ", " , ", ",,,"]) {
+        assertThrows(
+            () => parseRequiredIpList("ADMIN_IPS", raw),
+            Error,
+            "ADMIN_IPS enthält keine gültige IP-Adresse",
+        );
+    }
 });
 
 Deno.test("config - TODAY_HOURS_CUTOFF has default value", () => {

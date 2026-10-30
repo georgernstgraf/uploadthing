@@ -20,8 +20,9 @@ import { isTeacher } from "./user.ts";
  * - `adminmac` in der Datenbank, gepflegt unter `/admin/application`,
  * - `ADMIN_MACS` aus der Env als Übergangslösung.
  *
- * Die MAC zu einer IP kommt ausschließlich aus `ipfact` (Polling, #145).
- * Im Request-Pfad wird nie der Tik gefragt: ein nicht erreichbarer Tik
+ * Die MAC zu einer IP kommt ausschließlich aus `ipfact` (Polling, #145),
+ * und nur aus Sichtungen der letzten `MAC_LOOKBACK_SECONDS`. Im
+ * Request-Pfad wird nie der Tik gefragt: ein nicht erreichbarer Tik
  * darf den Login nicht aufhalten, und ein Request darf keine Wartezeit
  * von bis zu fünf Sekunden erben.
  */
@@ -97,9 +98,31 @@ export function isAllowed(mac: string | null | undefined): boolean {
         repo.adminmac.exists(normalized);
 }
 
-/** Jüngste bekannte MAC zu einer IP aus `ipfact` (`null`, wenn unbekannt). */
-export function resolveMacForIp(ip: string): string | null {
-    return repo.ipfact.getLatestMacForIP(ip);
+/**
+ * Jüngste MAC zu einer IP aus `ipfact`, gezählt nur innerhalb von
+ * `MAC_LOOKBACK_SECONDS`. `null` heißt unbekannt: entweder wurde die IP im
+ * Fenster nicht gesehen oder die jüngste Sichtung trug keine MAC. In beiden
+ * Fällen gibt es **keinen** Rückfall auf ältere Sichtungen — die könnten zu
+ * einem früheren Gerät auf derselben IP gehören (#153).
+ */
+export function resolveMacForIp(ip: string, now: Date = new Date()): string | null {
+    return repo.ipfact.getLatestMacForIP(ip, macLookbackStart(now));
+}
+
+/**
+ * Wie weit zurück eine Sichtung für die MAC-Freigabe zählen darf.
+ *
+ * Das Polling läuft alle 60 s (`DEFAULT_POLL_INTERVAL_MS`). Fünf Minuten
+ * sind fünf Intervalle: lang genug, dass ein kurzer Tik-Ausfall oder ein
+ * einzelner verlorener Abruf die Freigabe nicht kippt, kurz genug, dass
+ * nach einer DHCP-Weitervergabe nicht mehr die MAC des Vorgängergeräts
+ * auf derselben IP zählt (#153).
+ */
+export const MAC_LOOKBACK_SECONDS = 300;
+
+/** Beginn des Sichtungsfensters für die MAC-Freigabe. */
+function macLookbackStart(now: Date): Date {
+    return new Date(now.getTime() - MAC_LOOKBACK_SECONDS * 1000);
 }
 
 export type TeacherRegistrationCheck = {
@@ -115,17 +138,17 @@ export type TeacherRegistrationCheck = {
  * - Nicht-Lehrpersonen sind von dieser Sperre nicht betroffen (`true`) —
  *   sie bekommen dadurch aber keine Admin-Rechte, das entscheidet allein
  *   `isTeacher()`.
- * - Ohne konfigurierte `ADMIN_IPS`-Liste bleibt die Sperre aus (bisheriges
- *   Verhalten).
- * - Sonst genügt eine freigegebene MAC aus Datenbank oder Env.
+ * - Eine IP aus `ADMIN_IPS` genügt.
+ * - Sonst genügt eine freigegebene MAC aus Datenbank oder Env. Unbekannte
+ *   MAC (`null`) gibt nicht frei.
+ *
+ * `ADMIN_IPS` ist fail-strict konfiguriert (`lib/config.ts`): eine leere
+ * Liste kann es nicht geben, sie würde die Sperre still abschalten (#153).
  */
 export function teacherRegistrationAllowed(
     options: TeacherRegistrationCheck,
 ): boolean {
     if (!isTeacher(options.user)) {
-        return true;
-    }
-    if (config.ADMIN_IPS.length === 0) {
         return true;
     }
     if (config.ADMIN_IPS.includes(options.ip)) {

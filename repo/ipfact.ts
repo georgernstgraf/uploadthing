@@ -6,11 +6,6 @@ const registerSeenStmt = db.prepare(
 const deleteOlderThanStmt = db.prepare(
     "DELETE FROM ipfact WHERE seen < ?",
 );
-const ipsInRangeStmt = db.prepare(
-    `SELECT DISTINCT ip FROM ipfact
-    WHERE seen BETWEEN
-    ? AND ?`,
-);
 const getInRangeStmt = db.prepare(
     `SELECT ip, seen FROM ipfact
     WHERE seen BETWEEN ? AND ?
@@ -66,12 +61,8 @@ export function registerSeenMany(entries: SeenEntry[], seen: Date): number {
     return db.changes;
 }
 /**
- * List distinct IPs seen within a UTC range.
+ * List IPs seen within a UTC range, most recent first.
  */
-export function ips_in_range(start: Date, end: Date): string[] {
-    return ipsInRangeStmt.all(start.toISOString(), end.toISOString()).map((row) => row.ip);
-}
-
 export function getInRange(
     start: Date,
     end: Date,
@@ -110,24 +101,31 @@ const getUniqueScanTimestampsStmt = db.prepare(
     ORDER BY seen ASC`,
 );
 /*
-Neueste MAC einer IP (#147): läuft rückwärts über den Index
-`ipfact_ip_seen_key` (ip, seen) und stoppt beim ersten Treffer mit MAC.
+Jüngste MAC einer IP seit `since` (#147, #153): läuft rückwärts über den
+Index `ipfact_ip_seen_key` (ip, seen) und liefert die MAC der jüngsten
+Sichtung im Fenster — auch wenn diese Sichtung keine MAC hat. Genau dann
+ist das Gerät „unbekannt"; ein Rückfall auf eine ältere Zeile würde nach
+einer DHCP-Weitervergabe die MAC des Vorgängergeräts liefern.
 Der Request-Pfad ruft nie den Tik; die Daten liegen durch das Polling
 (#145) bereits vor.
 */
 const latestMacForIpStmt = db.prepare(
     `SELECT mac FROM ipfact
-    WHERE ip = ? AND mac IS NOT NULL
+    WHERE ip = ? AND seen >= ?
     ORDER BY seen DESC
     LIMIT 1`,
 );
 
 /**
- * Jüngste bekannte MAC-Adresse zu einer IP, `null` wenn die IP nie mit
- * lesbarer MAC gesehen wurde. Grundlage der MAC-Freigabe im Login (#147).
+ * MAC-Adresse der jüngsten Sichtung einer IP seit `since` (UTC),
+ * `null` wenn die IP im Fenster nicht gesehen wurde oder die jüngste
+ * Sichtung keine lesbare MAC hat. Grundlage der MAC-Freigabe im Login
+ * (#147); das Fenster wählt der Service.
  */
-export function getLatestMacForIP(ip: string): string | null {
-    const row = latestMacForIpStmt.get(ip) as { mac: string | null } | undefined;
+export function getLatestMacForIP(ip: string, since: Date): string | null {
+    const row = latestMacForIpStmt.get(ip, since.toISOString()) as
+        | { mac: string | null }
+        | undefined;
     return row?.mac ?? null;
 }
 

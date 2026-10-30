@@ -224,6 +224,12 @@ export async function pollOnce(
     const finish = (outcome: TikPollOutcome): TikPollOutcome => {
         const at = now();
         status.last_attempt_at = at;
+        if (options.signal?.aborted) {
+            // Nach `stop()` schreibt auch ein bereits gelieferter Abruf
+            // nichts mehr: er gehört zu einem abgebrochenen Lauf.
+            status.last_error = "Abruf abgebrochen.";
+            return { ok: false, error: "Abruf abgebrochen." };
+        }
         if (outcome.ok) {
             try {
                 register(outcome.entries, at);

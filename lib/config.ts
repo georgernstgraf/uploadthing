@@ -9,9 +9,26 @@ function requireEnv(name: string, hint?: string): string {
     return value;
 }
 
-function parseRequiredIpList(name: string): string[] {
-    const raw = requireEnv(name, "komma-separierte IP-Liste");
-    return raw.split(",").map((s) => s.trim()).filter(Boolean);
+/**
+ * Pflichtliste von IPs (`ADMIN_IPS`).
+ *
+ * Fehlt die Variable, bricht der Start mit deutscher Meldung ab. Dasselbe
+ * gilt für eine gesetzte, aber effektiv leere Liste (`" , "`): sie würde
+ * die Lehrpersonen-Sperre in `service/adminmac.ts` still abschalten und
+ * jeden als Lehrperson anmelden lassen (#153). Analog zu
+ * `parseAdminMacList` ist der Fehler ein Startfehler, kein stiller Default.
+ *
+ * `raw` dient den Tests; im Betrieb kommt der Wert aus der Umgebung.
+ */
+export function parseRequiredIpList(name: string, raw?: string): string[] {
+    const value = raw ?? requireEnv(name, "komma-separierte IP-Liste");
+    const ips = value.split(",").map((s) => s.trim()).filter(Boolean);
+    if (ips.length === 0) {
+        throw new Error(
+            `${name} enthält keine gültige IP-Adresse (erwartet z. B. "192.168.21.2,127.0.0.1").`,
+        );
+    }
+    return ips;
 }
 
 /**
