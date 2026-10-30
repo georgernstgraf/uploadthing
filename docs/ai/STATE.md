@@ -13,10 +13,10 @@ App-Prozess, und die App verlässt die Sense vollständig — Dell = Hypervisor 
 App, Sense = Firewall/DNS/DHCP. Runtime bleibt Deno, htmx bleibt 2.0.10 bis
 Februar 2027.
 
-Nächster Schritt: **#143** — die App verlässt die Sense. #142
-(OPNsense-API-Client) ist umgesetzt: die Sperre läuft über die Firewall-API,
-`exammode.sh`/`EXAMMODE_COMMAND`/`INTERNET_ACTIVE` sind aus dem Code
-verschwunden.
+Nächster Schritt: **#144** — Appliance-Cleanup auf der Sense. Die App läuft
+seit 2026-10-30 **auf dem Dell** (`~/uploadthing-app`, systemd,
+`192.168.21.2:443`, `tst.spengergasse.at` per Unbound dorthin); die alte
+Instanz auf der Sense ist gestoppt, aber noch nicht gelöscht.
 
 ## Erledigt aus #142 (2026-10-30)
 
@@ -45,11 +45,11 @@ verschwunden.
 
 ## Reihenfolge (Epic #141)
 
-1. #142 OPNsense-API-Client + Exam-Mode-Toggle
-2. #143 Umzug der App auf den Dell (systemd)
-3. #144 Appliance-Cleanup (Root-Skripte, Cron, examsense)
-4. #145 Tik-Polling in der App
-5. #146 Schülerseite (eine Seite, zwei Spalten, Namenssuche)
+1. ~~#142 OPNsense-API-Client + Exam-Mode-Toggle~~ — erledigt 2026-10-30
+2. ~~#143 Umzug der App auf den Dell (systemd)~~ — erledigt 2026-10-30
+3. #144 Appliance-Cleanup (Root-Skripte, Cron, examsense) — **als Nächstes**
+4. ~~#145 Tik-Polling in der App~~ — erledigt 2026-10-30
+5. ~~#146 Schülerseite~~ — erledigt 2026-10-30
 6. ~~#133 Drizzle (Schema + Migrationen)~~ — erledigt 2026-10-30
 7. ~~#134 Admin-Upload Unterlagen~~ — erledigt 2026-10-30
 8. ~~#147 MAC-Admin-Freigabe~~ — erledigt 2026-10-30

@@ -117,6 +117,31 @@
 - LDAP access can be slow or unavailable; the code includes reconnect logic and retry timing.
 - Do not start LDAP connections at module import time; eager startup causes unrelated tests to leak timers, reads, and TLS handshakes.
 
+## OPNsense 26.7: Migration Assistant und der Legacy-Block
+
+- OPNsense 26.7 hält Firewall-Regeln an zwei Stellen: den **alten**
+  `<filter><rule>`-Block und den **neuen** Store unter
+  `<OPNsense><Firewall>`. Die API, das GUI und `pf` lesen den neuen Store.
+- `Firewall → Migration → Migration assistant` ist **kein Konverter**:
+  `countRules`, `downloadRules` (CSV) und `flush`. Die eigentliche Übernahme
+  passiert beim Upgrade automatisch. Regeln, die als „migriert" erscheinen
+  (`ref: ui/firewall/migration`, `legacy: true`), sind **Verweise auf den
+  Legacy-Block** — `flush` löscht deren Quelle und damit die Regeln selbst.
+- **2026-10-30 so passiert:** Nach dem Flush fehlten fünf Regeln, darunter
+  „Default allow LAN to any rule" → im Prüfungsnetz war kein Internet mehr
+  über die Sense, und DNS-Anfragen des Dell an `192.168.21.1:53` liefen ins
+  Leere. Wiederhergestellt aus dem vorher exportierten CSV
+  (`appliance/legacy-rules-2026-10-30.csv`), Reihenfolge und `doku`-Position
+  manuell geprüft.
+- **Lehre:** Vor `flush` immer `downloadRules` (CSV) ziehen **und** prüfen,
+  ob die im neuen Store sichtbaren Regeln nach dem Flush noch existieren.
+  Danach `pfctl -sr` gegen die erwartete Regelzahl stellen und einen
+  Konnektivitätstest über die Sense machen, nicht nur die GUI aufrufen.
+- Kategorien überleben den Flush nicht mit ihren Zuordnungen. Regeln
+  bekommen Kategorien per `setRule` **nur mit der Kategorie-UUID**
+  (`/api/firewall/category/searchItem` liefert sie); der Name wird mit
+  „Related category not found" abgelehnt.
+
 ## Firewall-API (Exam-Sperre)
 
 - Die Sperre läuft ausschließlich über die OPNsense-API. Kein `exammode.sh`,
@@ -133,11 +158,14 @@
   Panel (HTTP 200), nicht mit einem Fehlertext: Der Fehler gehört in das
   nicht wegklickbare Modal, der Schalter muss den echten Zustand zeigen.
   Nur „nicht konfiguriert" bleibt ein 400-Text.
-- TLS: `Deno.fetch` prüft den Hostnamen immer; `Deno.createHttpClient` kennt
-  in Deno 2.9 keine Option zum Abschalten mehr (wird still ignoriert). Wenn
-  das Zertifikat den API-Host nicht abdeckt, bleibt nur
-  `--unsafely-ignore-certificate-errors=<host>` beim Prozessstart oder ein
-  Hostname, den das Zertifikat abdeckt.
+- TLS gegen die Sense: Das GUI-Zertifikat ist `CN=sense.internal` mit SAN
+  `DNS:sense.internal, IP:192.168.21.1`, signiert von der internen CA
+  „uploadthing internal CA". Der CA-PEM liegt auf dem Dell
+  (`~/certs/sense-ca.pem`) und wird Deno über `DENO_CERT` bekannt gemacht —
+  keine Abschaltung der Prüfung, kein `--unsafely-ignore-certificate-errors`.
+  `OPNSENSE_API_URL=https://sense.internal` (seit 2026-10-30 Port 443, kein
+  `:8443` mehr). `Deno.createHttpClient` kennt in Deno 2.9 keine Option zum
+  Abschalten der Prüfung (wird still ignoriert).
 - Startfehler der Firewall beenden den Prozess **nicht** mehr. Wer
   `Deno.exit(1)` zurückbringt, macht die App auf jedem Host ohne
   API-Zugang unstartbar.

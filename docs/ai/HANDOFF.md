@@ -1,4 +1,4 @@
-Last updated: 2026-10-30 (#134 umgesetzt — Admin-Upload für Unterlagen).
+Last updated: 2026-10-30 (#143 Cutover erledigt — App läuft auf dem Dell).
 
 ## #134 — Admin-Upload Unterlagen (erledigt)
 
@@ -68,31 +68,68 @@ Last updated: 2026-10-30 (#134 umgesetzt — Admin-Upload für Unterlagen).
   „nicht konfiguriert"), erfasst aber keine IPs.
 - Darauf aufbauend ist #147 (MAC-basierte Admin-Freigabe) umgesetzt.
 
+## #143 — Umzug auf den Dell (erledigt am 2026-10-30)
+
+Die App läuft **nicht mehr auf der Sense**. Details in `OPERATIONS.md`
+(Abschnitt „Production Host: Dell").
+
+- Deployment: `~/uploadthing-app` (eigenes Verzeichnis, Klon von GitHub),
+  Produktions-`.env` dort (Modus 600, nicht im Repo).
+- `systemd/uploadthing.service` im Repo, installiert unter
+  `/etc/systemd/system/`, `Restart=always`, `CAP_NET_BIND_SERVICE`,
+  `ExecStartPre` prüft die Adresse `192.168.21.2` auf `enx7cc2c615cba8`.
+- Daten von der Sense kopiert (105 Abgaben, 1 Unterlage, DB per
+  `sqlite3.Connection.backup` inklusive WAL). Beim ersten Start:
+  `0000_baseline` als angewendet erkannt, `0001_ipfact_mac` und
+  `0002_adminmac` angewendet.
+- `tst.spengergasse.at` zeigt per **Unbound**-Host-Override auf
+  `192.168.21.2`; die Sense-GUI ist zurück auf **443**, der DNAT
+  443→8000 und der Port 8443 sind entfallen.
+- End-to-End geprüft: `https://tst.spengergasse.at/` → 200 mit gültigem
+  Zertifikat, Titel `tst.spengergasse.at`, neue Schülerseite; Dienst
+  überlebt `restart`; Tik-Polling liefert Clients.
+- Die alte Instanz auf der Sense ist gestoppt und `uploadthing_enable=NO`;
+  Verzeichnis und `rc.d`-Skript sind **noch nicht** gelöscht (#144).
+- **Suspend:** `systemd-inhibit` scheitert an polkit; gelöst über
+  `/etc/systemd/logind.conf.d/uploadthing.conf` (Lid-Switch/Idle ignorieren).
+
+## #149 — Code-Teil (erledigt)
+
+- `page_title` kommt aus `PUBLIC_URL` (Hostname), Fallback
+  `LISTEN_HOST:LISTEN_PORT`; unparsebare `PUBLIC_URL` ist ein Startfehler.
+- Offene Ops-Punkte von #149: eigener API-User mit minimalen Rechten
+  (aktuell läuft die App mit dem Root-Key), `/root` auf 750, #136
+  schließen, Zertifikats-Checkliste.
+
 ## Sofort weiter mit
 
-**#143 — Umzug der App auf den Dell (systemd).** Voraussetzung ist erfüllt:
-die Exam-Sperre läuft über die OPNsense-API, `EXAMMODE_COMMAND`,
-`INTERNET_ACTIVE`, `exammode.sh` und der Subprozess-Pfad sind aus der App
-verschwunden.
+**#144 — Appliance-Cleanup.** Auf der Sense aufräumen, was jetzt niemand
+mehr braucht:
 
-- **Regel `doku` neu angelegt (2026-10-30):** UUID
-  `69c0079a-7b83-4cc2-95b5-78183f4b222b` (`descr=doku`, `action=reject`,
-  LAN → alles außer Alias `DOKU`, erste Regel der LAN-Gruppe). Der
-  26.7-Migrationsschritt hatte die Legacy-`<filter>`-Regel
-  `e3e720e6-…` nicht übernommen. Anlegen, Position, `toggleRule` in beide
-  Richtungen und `apply` sind verifiziert; die Regel ist **deaktiviert**
-  (Internet frei). Den Handy-Test im Prüfungs-WLAN macht Georg.
-- **TLS gelöst:** Web-GUI-Zertifikat jetzt `CN=sense.internal`
-  (`SAN DNS:sense.internal, IP:192.168.21.1`), signiert von der internen
-  CA „uploadthing internal CA". CA liegt als `~/certs/sense-ca.pem` auf
-  dem Dell; Deno braucht `DENO_CERT` darauf. `OPNSENSE_API_URL` ist
-  `https://sense.internal:8443` — verifizierter `fetch` gegen die echte
-  Sense getestet.
-- **`GET getRule/{uuid}` antwortet auf 26.7 immer `[]`** (auch für
-  existierende Regeln) und ist als Lesequelle unbrauchbar; gelesen wird
-  über `POST /api/firewall/filter/searchRule`.
-- API-Key: `~/sense.internal_root_apikey.txt` (`key=`, `secret=`, jetzt
-  Modus 600). Werte nur in die Produktions-`.env`, nie ins Repo.
+- `/home/georg/uploadthing` und `/usr/local/etc/rc.d/uploadthing` löschen
+  (Dienst ist gestoppt, `uploadthing_enable=NO`).
+- `/root/examsense`, `/root/bin`, `/usr/local/sbin/exammode.sh`,
+  die `scan-*.py`-Skripte, `actions_scan.conf`/`actions_exampy.conf`,
+  `nmap_cron.sh` und den Cronjob `scan scan` entfernen.
+- MikroTik: `service-monitor` löschen (der neue User `uploadthing` mit
+  Gruppe `monitoring-rest` existiert, Zugriff auf `.2`/`.82` beschränkt).
+- `appliance/bin/`, `appliance/files/`, `appliance/current/root/examsense/`
+  und das GitHub-Repo `georgernstgraf/examsense` löschen.
+- Achtung: `/home/georg/uploadthing.db` (veraltet, Mar 2026) und
+  `/home/georg/uploadthing/uploadthing.db` (echte Prod-DB) liegen auf der
+  Sense — vor dem Löschen entscheiden, ob letztere als Notkopie bleibt.
+
+## API-Zugang zur Sense (Ist-Stand)
+
+- API-Key: `~/sense.internal_root_apikey.txt` (Modus 600), Werte nur in der
+  Produktions-`.env`.
+- Regel `doku`: UUID `69c0079a-7b83-4cc2-95b5-78183f4b222b`, deaktiviert
+  (Internet frei). Position, `toggleRule` und `apply` sind verifiziert;
+  der Handy-Test im Prüfungs-WLAN steht noch aus.
+- TLS: GUI-Zertifikat `CN=sense.internal` (SAN inkl. IP), interne CA unter
+  `~/certs/sense-ca.pem`, `DENO_CERT` zeigt darauf.
+- `GET /api/firewall/filter/getRule/{uuid}` antwortet auf 26.7 immer `[]`;
+  gelesen wird über `searchRule`.
 
 ## Offene Punkte außerhalb der Tickets
 
@@ -106,20 +143,25 @@ verschwunden.
 - Prisma ist weg: `deno.json` hat keine `pv/pg/pmd/pmD/pms/pmr/ps`-Tasks mehr,
   `prisma/` und `lib/prismaclient/` sind gelöscht. Schema-Änderungen laufen
   über `drizzle/schema.ts` + `deno task db:generate` (nur Dev-Rechner).
-- Die Migrationen laufen beim App-Start (`lib/migrate.ts`). Auf der Sense
-  steht die DB noch bei Prisma-Migration `20260307191214` (kein `examstate`,
-  keine Composite-Indizes); der erste Start der neuen Version gleicht das
-  automatisch an — vorher ein DB-Backup ziehen (#148 ist noch offen).
+- Die Migrationen laufen beim App-Start (`lib/migrate.ts`).
+- **Korrektur (2026-10-30):** Die Produktions-DB liegt in
+  `/home/georg/uploadthing/uploadthing.db` (relativ zu `prisma/`), **nicht**
+  in `/home/georg/uploadthing.db` — letztere ist ein veralteter Rest vom
+  März 2026. Die echte DB hatte alle Tabellen, `examstate` und alle
+  Composite-Indizes; beim Umzug wurden nur `ipfact.mac` und `adminmac`
+  ergänzt (Baseline erkannt, zwei Migrationen angewendet).
 - `_prisma_migrations` bleibt als Alt-Tabelle liegen; sie wird von niemandem
   gelesen.
 - Der Prisma-6-Pin ist erledigt, nicht verschoben: es gibt keine Engines mehr.
 
 ## Kontext, der leicht verloren geht
 
-- Die App läuft aktuell **in** der VM auf `127.0.0.1:8000`, erreichbar über
-  DNAT 443→8000; das Ziel ist der Umzug auf den Dell (#143).
-- Der Dell ist nicht hinter der Firewall (Default-Route über das graue Kabel).
-  Ob die Sperre greift, lässt sich nur von einem Client im Prüfungs-WLAN
+- Die App läuft **auf dem Dell**, gebunden auf `192.168.21.2:443`; die Sense
+  macht nur noch Firewall/DNS/DHCP. Der Dell hängt default-route-mäßig am
+  grauen Kabel, das gelbe Interface trägt das Prüfungsnetz.
+- Ob die Sperre greift, lässt sich nur von einem Client im Prüfungs-WLAN
   prüfen (Handy).
 - Die IP-Erfassung war seit 2026-10-23 defekt (Dateimodus 644 + fehlende
-  Passwortdatei) — wird durch #145 ersetzt, nicht repariert.
+  Passwortdatei) — ist durch #145 ersetzt, nicht repariert.
+- Der Dell hat **nur** `192.168.21.1` als DNS; ist die Sense aus, ist der
+  Dell offline, was Namensauflösung betrifft.

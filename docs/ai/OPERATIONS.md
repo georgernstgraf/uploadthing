@@ -3,15 +3,35 @@
 How this application is deployed and operated. Much of this used to live
 only in the operator's head; it is now recorded here (see #132).
 
-## Production Host: OPNsense Firewall
+## Production Host: Dell (seit 2026-10-30)
 
-- Uploadthing runs in production on the **OPNsense firewall**, reachable
-  via the SSH host alias `sense` (see `Makefile`: `ssh sense copydb`,
-  `scp ... sense:uploadthing/`).
-- This is not a regular server: the app shares the machine with the
-  firewall itself, so resource footprint and failure behavior matter.
+- Uploadthing läuft **auf dem Dell** unter `~/uploadthing-app` (eigenes
+  Deployment-Verzeichnis, **nicht** das Entwicklungs-Repo — dessen `.env`
+  ist eine Dev-Konfiguration).
+- Dienst: `systemd/uploadthing.service` (im Repo versioniert, installiert
+  unter `/etc/systemd/system/uploadthing.service`). `Restart=always`,
+  `EnvironmentFile=/home/georg/uploadthing-app/.env`,
+  `AmbientCapabilities=CAP_NET_BIND_SERVICE` für Port 443,
+  `WorkingDirectory=/home/georg/uploadthing-app`.
+- **Interface:** gelbe USB-NIC `enx7cc2c615cba8`, statisch **192.168.21.2/24**,
+  kein Gateway (`ipv4.never-default yes`), DNS **nur** `192.168.21.1`.
+  `ExecStartPre` prüft, dass diese Adresse da ist, bevor der Dienst startet.
+- **Daten:** `~/uploadthing-app/uploadthing.db` (WAL), `abgaben/`,
+  `unterlagen/`. Kopiert von der Sense am 2026-10-30 (105 Abgaben,
+  1 Unterlage, DB per `sqlite3.Connection.backup` inkl. WAL-Checkpoint).
+- **Suspend:** Der Dell ist ein Laptop. `systemd-inhibit` scheitert als
+  `georg` an polkit („Access denied", und die JS-Regeln in
+  `/etc/polkit-1/rules.d` werden von polkit 127 hier gar nicht geladen).
+  Gelöst über `/etc/systemd/logind.conf.d/uploadthing.conf`:
+  `HandleLidSwitch=ignore`, `HandleLidSwitchExternalPower=ignore`,
+  `IdleAction=ignore`. Gilt systemweit, auch für die Sense-VM.
+- **TLS:** `~/certs/tst.spengergasse.at/{fullchain.pem,privkey.pem}`
+  (ECDSA, gültig bis 2027-01-12, von der Sense kopiert). Der alte
+  DNAT-Eintrag auf der Sense ist gelöscht; die Sense-GUI lauscht wieder
+  auf **443**.
+- **Logs:** `journalctl -u uploadthing -f`.
 
-## Runtime: Deno On FreeBSD, Keine Prisma-Engines Mehr
+## Runtime: Deno On FreeBSD/Linux, Keine Prisma-Engines Mehr
 
 - The runtime is **Deno on FreeBSD**.
 - Since #133 there are **no Prisma engines** in the stack. Prisma forced
@@ -55,26 +75,43 @@ only in the operator's head; it is now recorded here (see #132).
   `~/certs/sense-ca.pem` auf dem Dell und wird dem Prozess über
   `DENO_CERT=/home/georg/certs/sense-ca.pem` bekannt gemacht — Deno
   prüft TLS vollständig, es gibt **keine** Abschaltung der Prüfung.
-  `OPNSENSE_API_URL=https://sense.internal:8443`; die IP-Adresse ist
-  kein SAN, und `tst.spengergasse.at` zeigt ab #143 auf die App.
+  `OPNSENSE_API_URL=https://sense.internal` — seit 2026-10-30 lauscht die
+  GUI wieder auf **443** (der DNAT 443→8000 und der alte Port 8443 sind
+  entfallen, die App braucht die Sense-443 nicht mehr). Die IP-Adresse
+  ist kein SAN, und `tst.spengergasse.at` zeigt seit dem Umzug auf die App.
 - **`getRule/{uuid}` ist auf 26.7 unbrauchbar** (antwortet `[]`, auch
   für existierende Regeln). Gelesen wird ausschließlich über
   `POST /api/firewall/filter/searchRule`; `toggleRule` liefert
   `{result: "Enabled"|"Disabled", changed: bool}`.
 - **Regel `doku`:** UUID `69c0079a-7b83-4cc2-95b5-78183f4b222b`
   (`descr=doku`, `action=reject`, LAN → alles außer Alias `DOKU`,
-  erste Regel der LAN-Gruppe, nach Anti-Lockout und DHCP). Sie wurde am
-  2026-10-30 neu angelegt, weil der 26.7-Regelset-Migrationsschritt die
-  Legacy-`<filter>`-Regel nicht übernommen hatte; der alte
-  `<filter>`-Block mit `e3e720e6-…` ist toter Ballast und fällt in #144.
-  **Erledigt am 2026-10-30:** Der `Migration assistant`
-  (`/ui/firewall/migration`) hat den Legacy-Block exportiert
-  (`appliance/legacy-rules-2026-10-30.csv`, 6 Regeln, CSV mit
-  `;`-Trennern) und per `flush` gelöscht. Danach: kein `<filter>`-Block
-  mehr in der `config.xml`, keine `e3e720e6`-Referenz, der
-  Assistant wird nicht mehr eingeblendet, `pfctl` unverändert
-  40 Regeln. Die 27 aktiven Regeln (inkl. `doku`) liegen in
-  `<OPNsense><Firewall>`.
+  erste Regel der LAN-Gruppe, direkt nach Anti-Lockout und DHCP).
+  Sie wurde am 2026-10-30 neu angelegt, weil der 26.7-Regelset-Schritt
+  die Legacy-`<filter>`-Regel nicht übernommen hatte.
+- **Legacy-Block ist weg (2026-10-30):** Der `Migration assistant`
+  (`/ui/firewall/migration`) hat die 6 Legacy-Regeln als CSV exportiert
+  (`appliance/legacy-rules-2026-10-30.csv`) und per `flush` gelöscht.
+  **Dabei gingen fünf aktive Regeln verloren** (u. a. „Default allow LAN
+  to any rule"), weil sie im neuen Store nur Verweise auf den Legacy-Block
+  waren — Details und Lehre in `PITFALLS.md`, Abschnitt „OPNsense 26.7:
+  Migration Assistant". Alle fünf wurden aus dem CSV neu angelegt; `pf`
+  hat jetzt 26 API-Regeln (6 eigene + 20 automatische), `doku` bleibt
+  deaktiviert.
+- **Kategorien:** `doku`, `infra`, `floaty` existieren weiter und sind den
+  Regeln zugeordnet (Farben `#74B9FF`, `#44BD32`, `#FBC531`). Zuordnung
+  per API **nur mit Kategorie-UUID**, nicht mit dem Namen.
+
+## DNS und Hostnamen auf der Sense
+
+- **Unbound** beantwortet DNS auf Port 53 (`sockstat` zeigt `unbound`,
+  nicht `dnsmasq`). Host-Einträge wie `tst.spengergasse.at` liegen daher
+  unter `/api/unbound/settings/searchHostOverride` — die dnsmasq-Einträge
+  (`/api/dnsmasq/settings/searchHost`) sehen im GUI gleich aus, werden
+  aber nicht aufgelöst.
+- `tst.spengergasse.at → 192.168.21.2` (Dell), `tik.internal → 192.168.21.5`,
+  `sense.internal → 192.168.21.1` (und `.0.38` über das graue Interface).
+- Der Dell fragt **ausschließlich** `192.168.21.1` (beide NM-Profile,
+  `ipv4.ignore-auto-dns yes`). Ist die Sense aus, hat der Dell kein DNS.
 - **Der Migration assistant ist kein Konverter**, sondern Export + Flush:
   `countRules`, `downloadRules` (CSV), `flush` (löscht `filter.rule`).
   Die eigentliche Übernahme passierte beim Upgrade automatisch; sie
