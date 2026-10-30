@@ -4,120 +4,96 @@ Current status as of 2026-10-30.
 
 ## Current Focus
 
-**Epic #141 — Exam-Infrastruktur 2026/27.** Die Planung ist abgeschlossen und
-vollständig in Tickets abgelegt; die Ausführungsreihenfolge steht im Epic.
+**Epic #141 — Exam-Infrastruktur 2026/27 — abgeschlossen am 2026-10-30.**
+Alle zwölf Sub-Issues sind zu (#133, #134, #142–#149, #135, #151); #150
+(htmx-4-Migration) wurde aus dem Epic gelöst und ist ein eigenständiges
+Backlog-Ticket für Februar 2027.
 
-Kernentscheidungen: Firewall-Steuerung ausschließlich über die OPNsense-API
-(kein `sudo`, kein `exammode.sh`), IP-Präsenz per Tik-REST direkt im
-App-Prozess, und die App verlässt die Sense vollständig — Dell = Hypervisor +
-App, Sense = Firewall/DNS/DHCP. Runtime bleibt Deno, htmx bleibt 2.0.10 bis
-Februar 2027.
+Das System läuft so, wie es das Epic beschrieben hat:
 
-Nächster Schritt: **#144** — Appliance-Cleanup auf der Sense. Die App läuft
-seit 2026-10-30 **auf dem Dell** (systemd-User-Unit aus
-`~/repos/georgernstgraf/uploadthing`, Env in
-`~/.config/uploadthing/uploadthing.env`, Daten in `~/uploadthing-data/`,
-`192.168.21.2:443`, `tst.spengergasse.at` per Unbound dorthin); die alte
-Instanz auf der Sense ist gestoppt, aber noch nicht gelöscht.
+- **Dell** = Hypervisor + App: User-Unit aus `~/repos/georgernstgraf/uploadthing`,
+  Env in `~/.config/uploadthing/uploadthing.env`, Daten in
+  `~/uploadthing-data/`, gebunden auf `192.168.21.2:443`,
+  `tst.spengergasse.at` per Unbound dorthin.
+- **Sense** = Firewall/DNS/DHCP, ohne eigene Skripte, ohne Cronjob, ohne
+  `rc.d`-Eintrag; das GitHub-Repo `examsense` ist gelöscht.
+- **Steuerung** ausschließlich über die OPNsense-API als eigener Benutzer
+  `uploadthing-api` mit dem Privileg `page-filter-api`; der Root-Key ist
+  nur noch für den Menschen.
+- **IP-/MAC-Präsenz** per Tik-REST im App-Prozess (`service/tik.ts`);
+  MikroTik-Konto `uploadthing`, strikt auf `192.168.21.2/32`, nur
+  `monitoring-rest`.
+- **Tests**: 336 Deno-Tests (~5 s) plus sechs Playwright-Smoke-Tests in
+  `deno task e2e` (~9 s, Chromium, eigene Wegwerf-DB auf Port 8099).
 
-## Erledigt aus #142 (2026-10-30)
+## Erledigt am 2026-10-30 (Abschlusssession)
 
-- Regel `doku` neu angelegt: UUID `69c0079a-7b83-4cc2-95b5-78183f4b222b`
-  (`reject`, LAN → alles außer Alias `DOKU`, erste LAN-Regel,
-  deaktiviert). Die Legacy-`<filter>`-Regel `e3e720e6-…` hatte der
-  26.7-Migrationsschritt nicht übernommen.
-- TLS: GUI-Zertifikat `CN=sense.internal` mit SAN `sense.internal` +
-  `192.168.21.1`, signiert von der internen CA „uploadthing internal CA"
-  (CA auf dem Dell: `~/certs/sense-ca.pem`, Deno braucht `DENO_CERT`).
-  `OPNSENSE_API_URL=https://sense.internal`, verifiziert.
-- `getRule/{uuid}` ist auf 26.7 unbrauchbar (`[]`); gelesen wird über
-  `searchRule`.
-
-## Erledigt aus #149 (Code-Teil, 2026-10-30)
-
-- `page_title` kommt aus `PUBLIC_URL`: der Tab zeigt den Hostnamen
-  (`tst.spengergasse.at`), nicht mehr `LISTEN_HOST:LISTEN_PORT`. Ohne
-  `PUBLIC_URL` gilt der alte Fallback `<LISTEN_HOST>:<LISTEN_PORT>`; eine
-  gesetzte, unparsebare URL bricht den Start mit deutscher Meldung ab
-  (`buildPageTitle()` in `lib/config.ts`, Tests in `lib/config_test.ts`).
-- Der TODO „127.0.0.1 im titel" ist gestrichen.
-- Die Ops-Punkte aus #149 (dnsmasq `tst` → `192.168.21.2`, `dell`-Eintrag,
-  `ADMIN_IPS` in der Produktions-`.env`, eigener API-User, `chmod`,
-  Zertifikats-Checkliste) laufen separat auf den Hosts.
-
-## Reihenfolge (Epic #141)
-
-1. ~~#142 OPNsense-API-Client + Exam-Mode-Toggle~~ — erledigt 2026-10-30
-2. ~~#143 Umzug der App auf den Dell (systemd)~~ — erledigt 2026-10-30
-3. #144 Appliance-Cleanup (Root-Skripte, Cron, examsense) — **als Nächstes**
-4. ~~#145 Tik-Polling in der App~~ — erledigt 2026-10-30
-5. ~~#146 Schülerseite~~ — erledigt 2026-10-30
-6. ~~#133 Drizzle (Schema + Migrationen)~~ — erledigt 2026-10-30
-7. ~~#134 Admin-Upload Unterlagen~~ — erledigt 2026-10-30
-8. ~~#147 MAC-Admin-Freigabe~~ — erledigt 2026-10-30
-9. #148 Backups & Secrets (gpg/pass)
-10. #149 Netz-, DNS- und Ops-Hygiene
-11. #135 Playwright (zuletzt)
-12. #150 htmx-4-Migration (Backlog, Februar 2027)
-
-## Completed (this cycle)
-
-- [x] #133 Drizzle als Schema- und Migrationsautorität: `drizzle/schema.ts`
-      in Parität zu allen sechs Tabellen inklusive Indizes, Baseline
-      `drizzle/0000_baseline.sql` (idempotent), Migrations-Runner
-      `lib/migrate.ts` auf `@db/sqlite` (Start-migrierend, `BEGIN EXCLUSIVE`,
-      drizzle-kompatibles `__drizzle_migrations`), Prisma-Rückbau
-      (Tasks `pv/pg/pmd/pmD/pms/pmr/ps`, Dependencies, `lib/prismaclient/`,
-      `prisma/`). `EXPLAIN QUERY PLAN` auf einer Kopie der Produktions-DB:
-      alle vier Hot-Queries nutzen ihre Composite-Indizes.
-
-- [x] #142 OPNsense-API-Client: Exam-Sperre ausschließlich über die
-      Firewall-API (`service/opnsense.ts`, `searchRule`/`toggleRule`/`apply`),
-      Zustand wird bei jedem Panel-Rendern gelesen, Fehler- und
-      Unbekannt-Zustand inkl. nicht wegklickbarem Modal, Start sperrt
-      implizit. `EXAMMODE_COMMAND`, `INTERNET_ACTIVE` und der
-      Subprozess-Pfad sind entfernt; 252 Tests grün.
-
-- [x] #147 MAC-Admin-Freigabe: Tabelle `adminmac` (Migration `0002_adminmac`),
-      `repo/adminmac.ts` + `service/adminmac.ts`, Anmeldung als `LehrendeR`
-      von `ADMIN_IPS` **oder** freigegebener MAC (DB/`ADMIN_MACS`),
-      Verwaltung unter `/admin/application`, `ADMINS` entfernt.
-      Die Klasse bleibt die Rolle — ein Schüler von freigegebener MAC wird
-      nicht Admin; 296 Tests grün.
-
-- [x] #134 Admin-Upload für Unterlagen: `service/unterlagen.ts`,
-      `/admin/unterlagen` (hochladen/ersetzen), `…/delete`, `…/delete-all`,
-      eigene Env `UNTERLAGEN_PERMITTED_FILETYPES` (Default `md`), flache
-      Ablage ohne Versionierung, unabhängig vom Examenfenster; 328 Tests
-      grün.
-
-- [x] Planungssession 2026-10-30: Ist-Zustand auf `sense`, `tik` und im
-      Schul-LDAP erhoben; Epic #141 plus zwölf Sub-Issues angelegt, jedes mit
-      Abschnitt „Entscheidungen".
-- [x] #140 in #142 (Firewall-API) und #145 (Tik-Polling) aufgeteilt und
-      geschlossen.
-- [x] #136 geschlossen: Code gemergt, Deployment 2026-10-16 erfolgt; Restpunkte
-      (Renewal, DNS) nach #149 verschoben.
-- [x] `.env.example`, TLS-Deploy-Abschnitt, natives TLS via `Deno.serve` (#137)
-- [x] Prisma-Modell `examstate`, Exam-State-Machine, `requireAdmin`,
-      Router-Split, Exam-Admin-API, Startup-Reset, Gating (#131)
-- [x] Admin-Prüfungs-Panel und Schüler-Countdown (#131)
-- [x] TLS-Betrieb auf `sense`: `.env` final, GUI 8443 mit LE-Zertifikat,
-      DNAT 443→8000, Smoke-Tests (#137)
+- **#144:** Appliance-Cleanup auf der Sense (Cronjob `scan scan` per API,
+  `/root/examsense`, `/root/bin`, `exammode.sh`, `actions_*.conf`,
+  `nmap_cron.sh`, `rc.d/uploadthing`, `/home/georg/uploadthing`,
+  veraltete DB) und im Repo; `examsense` auf GitHub gelöscht, Historie
+  als Bundle in `~/uploadthing-archive/`.
+- **#148:** `scripts/backup-config.sh`, gpg-Chiffrat in
+  `appliance/backups/` + `MANIFEST`, Doku; Restore-Probe auf XML-Ebene
+  (byte-identisch zur Live-Config). Die Redaktion
+  (`appliance/bin/redact-opnsense.sed`) deckt jetzt auch `<apikeys>`,
+  `<user_apitoken>`, `<ldap_bindpw>`, `<bindpw>`, `<pre-shared-key>`
+  und `<community>` ab — vorher lagen die API-Key-Hälften im
+  öffentlichen Snapshot.
+- **#149:** eigener API-Benutzer + Minimalrechtsprobe, `/root` 750,
+  dnsmasq-`dell`-Eintrag auf die USB-MAC, Zertifikats-Checkliste,
+  DNS-/IP-Übersicht.
+- **#135:** Playwright-Smoke-Suite (`deno task e2e`), sechs Tests.
+- **#151:** gefunden von der E2E-Suite und gleich behoben —
+  `hx-disabled-elt="this"` war an Formular-Submits wirkungslos; jetzt
+  `hx-disabled-elt="find button[type='submit']"` am Formular.
 
 ## Pending
 
-- [ ] Der Epic-Plan oben; #142 und #133 sind abgeschlossen.
-- [ ] Deno-Hygiene auf `sense`: laufende 2.9.6 (`~/.deno/bin/deno`)
-      konsolidieren, kaputtes `~/deno` (liblcms2 fehlt) und altes `~/tmp/deno`
-      (2.2.15 LTS) entfernen; optional Patch-Bump auf 2.9.7.
+- [ ] **#150 htmx-4-Migration** (Februar 2027, wenn htmx 4 `latest`
+      wird, und erst nach grüner E2E-Suite — die ist jetzt da).
+- [ ] **Restore-Probe auf einer Wegwerf-VM** (XML-Ebene ist geprüft,
+      Rückspielen in eine laufende Box nicht). Checkliste steht in
+      `docs/ai/OPERATIONS.md`. Achtung: erster Start nur mit
+      „Not attached", sonst kollidiert `192.168.21.1`.
+- [ ] **GPG-Key ohne Passphrase** — bewusst offen: Passphrase heißt,
+      dass ein Restore nicht mehr unbeaufsichtigt läuft. Entscheidung
+      steht aus.
+- [ ] **Zertifikatserneuerung `tst.spengergasse.at`** bis 2027-01-12;
+      Erinnerung im Dezember, Checkliste in `OPERATIONS.md`.
+- [ ] **Handy-Abnahme der Sperre** im Prüfungs-WLAN: `doku` scharf →
+      `example.com` scheitert, `learn.microsoft.com` geht; danach aus.
+- [ ] **Lehrer-Login vom Dell** einmal mit echten LDAP-Daten bestätigen
+      (`.2` steht in `ADMIN_IPS`).
+- [ ] Deno-Hygiene auf der Sense ist mit dem Cleanup entfallen; auf dem
+      Dell läuft 2.9.7.
 - [ ] Runtime-Frage nach der Saison 2026/27 neu stellen (Deno-Deprecation;
-      Ziel wäre Node auf einem Linux-Host, dann `drizzle-orm/better-sqlite3`).
+      Ziel wäre Node auf Linux, dann `drizzle-orm/better-sqlite3`).
 
-## Erledigt durch den Umzugsplan (nicht mehr separat verfolgen)
+## Completed (Epic #141, chronologisch)
 
-- [x] rc.d-Status-Quirk — entfällt mit #143 (systemd statt `rc.d`/`startloop.sh`).
-- [x] `appliance/rollout/`-Ausbau — entfällt; `appliance/` schrumpft in #144.
+- [x] #142 OPNsense-API-Client: Exam-Sperre ausschließlich über die
+      Firewall-API (`searchRule`/`toggleRule`/`apply`), kein
+      `exammode.sh`, kein Subprozess.
+- [x] #143 Umzug auf den Dell als systemd-User-Unit; Daten und DB
+      migriert, End-to-End mit gültigem Zertifikat geprüft.
+- [x] #145 Tik-Polling im App-Prozess (`tik.ts` → `ipfact` mit MAC),
+      `POST /activeips` und `routes/machine.ts` entfernt.
+- [x] #146 Eine Schülerseite (`/`): Angaben + Doku-Links links,
+      Anmeldung/Abgabe rechts, Namenssuche ab drei Zeichen,
+      Registrierungssperre im Examenfenster mit Admin-Freigabe.
+- [x] #133 Drizzle als Schema- und Migrationsautorität, Prisma-Rückbau,
+      Migrationen beim App-Start (`BEGIN EXCLUSIVE`).
+- [x] #134 Admin-Upload für Unterlagen (`/admin/application`),
+      eigene Env `UNTERLAGEN_PERMITTED_FILETYPES`.
+- [x] #147 MAC-basierte Admin-Freigabe (Tabelle `adminmac`, Migration
+      `0002_adminmac`), `ADMINS` entfernt.
+- [x] #144, #148, #149, #135, #151 — siehe oben.
+
+## Erledigt aus früheren Sitzungen (Auszug)
+
+- #142/#137 TLS, #131 Exam-State-Machine, #136 natives TLS (geschlossen),
+  #140 in #142/#145 aufgeteilt.
 
 ## Blockers
 
@@ -125,6 +101,7 @@ None.
 
 ## Next Session Suggestion
 
-Mit #142 beginnen. Der API-Key liegt in `~/sense.internal_root_apikey.txt`;
-die verifizierten Endpunkte stehen im Ticket. Abnahme für die Sperre ist ein
-Client im Prüfungs-WLAN (Handy), nicht der Dell.
+Der Betrieb ist vollständig; die nächsten Schritte sind Abnahmen, keine
+Umbauten: Handy-Test der Sperre im Prüfungsnetz, Lehrer-Login vom Dell,
+Zertifikatserneuerung im Dezember. Wer Code anfassen will, nimmt #150 —
+aber erst, wenn htmx 4 `latest` ist.
