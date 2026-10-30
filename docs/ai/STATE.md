@@ -4,10 +4,10 @@ Current status as of 2026-10-30.
 
 ## Current Focus
 
-**Epic #141 — Exam-Infrastruktur 2026/27 — abgeschlossen am 2026-10-30.**
-Alle zwölf Sub-Issues sind zu (#133, #134, #142–#149, #135, #151); #150
-(htmx-4-Migration) wurde aus dem Epic gelöst und ist ein eigenständiges
-Backlog-Ticket für Februar 2027.
+**Epic #141 — Exam-Infrastruktur 2026/27 — abgeschlossen am 2026-10-31.**
+Alle Sub-Issues sind zu (#133, #134, #142–#149, #135, nebst den im
+Code-Review gefundenen #151–#154); #150 (htmx-4-Migration) wurde aus dem
+Epic gelöst und ist ein eigenständiges Backlog-Ticket für Februar 2027.
 
 Das System läuft so, wie es das Epic beschrieben hat:
 
@@ -48,8 +48,40 @@ Das System läuft so, wie es das Epic beschrieben hat:
   `hx-disabled-elt="this"` war an Formular-Submits wirkungslos; jetzt
   `hx-disabled-elt="find button[type='submit']"` am Formular.
 
+## Erledigt am 2026-10-31 (Code-Review-Funde)
+
+Das Review über den Epic-Diff (`310e95a..HEAD`) fand vier Blocker; alle
+sind behoben:
+
+- **#152:** Admin-Ablehnungen lieferten **400 + komplettes Panel-HTML**,
+  das im Toast als HTML landete; jetzt `c.text(<Meldung>, 4xx)`.
+  `static/toast.js` baut den Dialog ohne `innerHTML`. Vier tote
+  `hx-confirm`-Dialoge (u. a. vor der Datenbankbereinigung) funktionieren
+  wieder, die Anmeldesperre erreicht auch angemeldete Schüler.
+- **#153:** Die MAC-Freigabe las die MAC einer IP **ohne Zeitschranke** und
+  übersprang Sichtungen ohne MAC — nach DHCP-Weitervergabe hätte das
+  Vorgängergerät autorisiert. Jetzt `MAC_LOOKBACK_SECONDS = 300`, keine
+  Freigabe ohne frische Sichtung mit MAC. `ADMIN_IPS` ist fail-strict,
+  `startPolling` hat Tests, `ips_in_range` (toter Code) ist weg.
+- **#154:** Die Handy-Ansicht war ein Scroll-Käfig (Body `overflow:
+  hidden`, innerer Scrollcontainer mit ausgeblendeter Scrollbar, dritter
+  Scrollbereich für die Doku-Links) und der Inhalt lag unter dem
+  umbrechenden Kopf. Jetzt normales Dokument-Scrolling mit sticky Kopf.
+  Auf kleinen Viewports steht das Anmelde-/Abgabe-Panel **vor**
+  Angaben/Doku. Die Identitätskarte („Angemeldet als … · Ändern") sehen
+  alle Angemeldeten; **„Abmelden" und `/logout` sind entfernt** — die
+  Sitzung ist langlebig, die Identität wechselt über die Karte.
+- Sekundärtext war im hellen Modus fast weiß (`--CTBS-SecondaryColor` aus
+  der dunklen Palette) — Platzhalter und Hilfetexte waren unlesbar; jetzt
+  `rgba(Body, 0.65)`.
+
 ## Pending
 
+- [ ] **Entscheidung: anonyme Namenssuche.** `/ldap` liefert ohne
+      Anmeldung Namen **und Klasse** ab drei Zeichen (bewusst so in #146
+      entschieden). Damit sind alle Schüler und Lehrpersonen im Netz
+      aufzählbar. Optionen stehen in `DECISIONS.md`; es ist eine
+      Betreiber-Entscheidung.
 - [ ] **#150 htmx-4-Migration** (Februar 2027, wenn htmx 4 `latest`
       wird, und erst nach grüner E2E-Suite — die ist jetzt da).
 - [ ] **Restore-Probe auf einer Wegwerf-VM** (XML-Ebene ist geprüft,

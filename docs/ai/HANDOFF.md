@@ -16,6 +16,9 @@ Umbauten — in dieser Reihenfolge:
 
 ## Offene Entscheidungen
 
+- **Anonyme Namenssuche.** `/ldap` liefert ohne Anmeldung Namen und Klasse
+  ab drei Zeichen — gewollt für die Anmeldung (#146), aber damit
+  aufzählbar. Optionen in `DECISIONS.md` („Offen — anonyme Namenssuche").
 - **Restore-Probe auf einer Wegwerf-VM.** Die XML-Ebene ist geprüft
   (Chiffrat entschlüsselt, byte-identisch zur Live-Config, alle Regeln
   und Benutzer enthalten). Das Rückspielen in eine laufende OPNsense
@@ -30,9 +33,15 @@ Umbauten — in dieser Reihenfolge:
 ## Was in dieser Session passiert ist
 
 - Epic #141 (Exam-Infrastruktur 2026/27) abgeschlossen: #133, #134,
-  #142–#149, #135 und das neu gefundene #151 sind zu. #150
-  (htmx-4-Migration) wurde aus dem Epic gelöst und bleibt für Februar
-  2027 liegen.
+  #142–#149, #135 sowie die im Code-Review gefundenen #151–#154 sind zu.
+  #150 (htmx-4-Migration) wurde aus dem Epic gelöst und bleibt für
+  Februar 2027 liegen.
+- **Verhalten geändert (bitte nicht zurückdrehen):** kein „Abmelden" und
+  kein `/logout` mehr — die Sitzung ist langlebig, der Namenswechsel läuft
+  über die Karte „Angemeldet als … · Ändern" (`/whoami`), die jetzt alle
+  Angemeldeten sehen. Das Scroll-Layout ist normales Dokument-Scrolling
+  mit sticky Kopf (eine Scrollfläche, keine Höhen-Offsets). Beides steht
+  in `docs/ai/DECISIONS.md`.
 - **#144** auf der Sense durchgezogen: Cronjob `scan scan` per API
   (`/api/cron/settings/delJob`, dann `configctl cron restart`),
   `/root/examsense`, `/root/bin`, `/usr/local/sbin/exammode.sh`,

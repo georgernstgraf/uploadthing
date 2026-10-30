@@ -662,3 +662,31 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
   Doppelabgaben existierten faktisch nicht.
 - **Tradeoff**: `find` nimmt nur den ersten Treffer — Formulare mit
   mehreren Submit-Buttons brauchen einen expliziten Selektor.
+
+## 2026-10-31: Produktion läuft aus dem Arbeits-Repo (bewusst, #143)
+
+- **Choice**: Die User-Unit startet `main.ts` direkt aus
+  `~/repos/georgernstgraf/uploadthing`, `Restart=always` inklusive. Es gibt
+  kein separates Deployment-Verzeichnis.
+- **Reason**: Bei der Größe des Projekts wiegt der eine Befehl
+  (`systemctl --user restart`) mehr als die Trennung. Die gefährliche
+  Hälfte der ursprünglichen Sorge ist entschärft: die `.env` kommt über
+  `EnvironmentFile` aus `~/.config/uploadthing/`, nicht aus dem Repo.
+- **Tradeoff**: Ein halbfertiger Stand im Arbeitsbaum wird beim nächsten
+  Neustart zum Produktionsstand. Regel daraus: **erst grün testen, dann
+  committen, dann neu starten** — und nie einen Rebuild im Arbeitsbaum
+  liegen lassen, wenn eine Prüfung ansteht.
+
+## 2026-10-31: Offen — anonyme Namenssuche gibt Namen und Klasse preis
+
+- **Befund**: `/ldap` ist ohne Anmeldung erreichbar und sucht ab drei
+  Zeichen über `givenName`/`sn`/`mail`/`sAMAccountName`; Treffer zeigen
+  „Vorname Nachname · Klasse" (bewusst so entschieden in #146). Damit sind
+  Namen und Klassen aller Schüler und Lehrpersonen im Prüfungsnetz
+  aufzählbar („Gra", „Hai", „Gru" …), ohne Rate-Limit.
+- **Status**: offen — bewusst noch nicht entschieden. Optionen: Suche an
+  eine bestehende Sitzung binden, Treffer auf 5 begrenzen, Klasse erst
+  nach der Anmeldung zeigen, oder ein Rate-Limit pro IP.
+- **Warum nicht stillschweigend ändern**: Es ist genau die Usability, die
+  #146 wollte („Du kennst deinen Kontocode nicht?"). Die Abwägung gehört
+  dem Betreiber, nicht dem Agenten.

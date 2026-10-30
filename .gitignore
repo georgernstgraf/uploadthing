@@ -15,7 +15,6 @@ Thumbs.db
 /*.db-wal
 /*.db-shm
 STOPPED
-startloop.log
 /browser_cache/
 opencode.json
 /errors/

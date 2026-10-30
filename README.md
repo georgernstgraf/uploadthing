@@ -64,10 +64,13 @@ admin panel shows “Nicht konfiguriert”. Setting only one of the two aborts
 startup with a German error message.
 
 TLS: the appliance presents its GUI certificate on the API address. Deno
-always verifies the hostname, and verification can only be disabled
-process-wide and host-scoped. Either make `OPNSENSE_API_URL` use a name the
-certificate covers, or start the process with
-`--unsafely-ignore-certificate-errors=<api-host>`.
+always verifies the hostname — verification is **not** switched off. The
+supported path is the internal CA: put `~/certs/sense-ca.pem` into
+`DENO_CERT` (the systemd unit exports it via the production env) and use an
+`OPNSENSE_API_URL` whose name the certificate covers
+(`https://sense.internal`). `--unsafely-ignore-certificate-errors` exists as
+a Deno flag, but this project does not use it: it disables verification for
+the whole process.
 
 ### Optional
 

@@ -235,7 +235,13 @@
 
 ## Download Filename Truncation
 
-- In `routes/admin.ts:234`, the download-abgaben timestamp uses `.slice(0, 15)` which truncates the minutes to one digit. The correct slice is `.slice(0, 16)` to capture the full `HH-MM` portion (e.g., `2026-04-29_09-37` instead of `2026-04-29_09-3`).
+- Der Download-Dateiname der Abgaben wird aus `new Date().toISOString()`
+  gebaut und dann `slice(0, 16)` genommen (`routes/admin.ts`, um Zeile
+  422): `2026-04-29_09-37`. Ein `slice(0, 15)` schneidet die letzte Ziffer
+  der Minute ab (`09-3`) — 2026-10-30 behoben, der Test deckt es ab.
+- Lehre: bei Zeitstempeln im Dateinamen die **Länge des gewünschten
+  Formats** ausrechnen, nicht raten; `toISOString()` liefert
+  `YYYY-MM-DDTHH:MM:SS.sssZ`, der Teil bis zur Minute sind 16 Zeichen.
 
 ## Test Isolation Pitfall
 
