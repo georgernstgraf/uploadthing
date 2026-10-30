@@ -13,7 +13,7 @@
         </div>
     </div>
     {{> nav}}
-    {{#if is_admin}}{{> userbadge}}{{/if}}
+    {{#if remote_user}}{{> userbadge}}{{/if}}
     <div id="app-ip-banner" class="text-center mb-2 opacity-50">
         <span class="small text-uppercase text-body-secondary">Meine IP: {{remote_ip}}</span>
     </div>

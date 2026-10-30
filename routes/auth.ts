@@ -150,10 +150,4 @@ authRouter.post("/register", async (c) => {
     return await respondWithStartPage(c);
 });
 
-/** Meldet die laufende Sitzung ab und zeigt wieder die Anmeldung. */
-authRouter.post("/logout", (c) => {
-    getSession(c).logout();
-    return c.redirect("/");
-});
-
 export default authRouter;

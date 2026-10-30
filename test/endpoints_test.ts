@@ -197,7 +197,11 @@ Deno.test("Schüler sieht Angaben und Abgabe ohne Navigation (#146)", async () =
         assertEquals(html.includes('id="login-form"'), false);
         assertEquals(html.includes('id="main-nav"'), false);
         assertEquals(html.includes('href="/admin/students"'), false);
-        assertEquals(html.includes("Abmelden"), true);
+        // Kein Abmelden mehr (#141): die Identität wechselt nur über die
+        // Karte „Angemeldet als …" (/whoami), die Sitzung bleibt bestehen.
+        assertEquals(html.includes("Abmelden"), false);
+        assertEquals(html.includes('id="user-badge-panel"'), true);
+        assertEquals(html.includes('href="/whoami"'), true);
         assertEquals(html.includes("Deine Abgabe"), true);
         assertEquals(html.includes("Abgabe hochladen"), true);
         // Angaben bleiben auch nach der Anmeldung sichtbar.

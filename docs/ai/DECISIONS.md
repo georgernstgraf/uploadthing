@@ -614,3 +614,45 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
   nicht veröffentlichte Bibliotheksversion kann es nicht blockieren.
 - **Tradeoff**: Die Verbindung ist nur noch im Text von #150 sichtbar,
   nicht in der Sub-Issue-Liste.
+
+## 2026-10-31: Kein Abmelden — die Sitzung lebt, die Identität wechselt per Karte (#154)
+
+- **Choice**: Es gibt keinen „Abmelden"-Knopf und keinen `/logout`-Endpunkt
+  mehr. Die Karte „Angemeldet als … · Ändern" (`/whoami`) ist der einzige
+  Weg, den Namen zu wechseln; sie wird jetzt für **alle** Angemeldeten
+  gerendert, nicht nur für Admins.
+- **Reason**: Das Cookie ist langlebig gedacht — die Geräte im
+  Prüfungsnetz sind bekannt, und ein versehentliches Abmelden mitten in
+  der Prüfung ist reine Reibung. Wer den Platz wechselt, ändert den
+  Namen, statt sich ab- und neu anzumelden.
+- **Tradeoff**: Auf einem geteilten Gerät bleibt die alte Anmeldung
+  gültig, bis jemand den Namen ändert — es gibt keinen „schnellen
+  Ausstieg" mehr. Bei Bedarf lässt sich das Cookie im Browser löschen;
+  ein UI-Weg ist bewusst nicht vorgesehen.
+
+## 2026-10-31: Normales Dokument-Scrolling statt Scroll-Käfig (#154)
+
+- **Choice**: Eine Scrollfläche (das Dokument), `position: sticky` für den
+  Kopf, keine Höhen-Offsets mehr (`--app-main-offset`,
+  `--app-header-height`, `--app-nav-top` sind entfernt), `#doku-list` ohne
+  eigenen Scrollbereich. Die Admin-Navigation steht im Fluss statt
+  `position: fixed`.
+- **Reason**: Das alte Layout rechnete mit einer festen Kopfhöhe von
+  76px; am Handy bricht der Kopf um (131px), der Inhalt lag darunter, und
+  die Scrollbar war per CSS ausgeblendet. Auf dem Handy war damit nicht
+  erkennbar, dass es überhaupt weitergeht.
+- **Tradeoff**: Der Kopf scrollt nicht mehr weg (sticky), sondern bleibt
+  stehen — auf kleinen Displays kostet das dauerhaft Höhe. Dafür ist das
+  Verhalten überall dasselbe wie in jeder anderen Webseite.
+
+## 2026-10-31: Bestätigungs- und Deaktivierungsattribute am anfragenden Element (#151, #152)
+
+- **Choice**: `hx-confirm` und `hx-disabled-elt` stehen an dem Element,
+  das die Anfrage stellt — bei `hx-post` am `<form>` also am Formular,
+  mit `find button[type='submit']` für den Button.
+- **Reason**: htmx liest beide Attribute nur vom anfragenden Element und
+  von dessen Vorfahren. Am Submit-Button waren sie wirkungslos; die
+  Rückfrage vor dem Löschen der Datenbankeinträge und der Schutz vor
+  Doppelabgaben existierten faktisch nicht.
+- **Tradeoff**: `find` nimmt nur den ersten Treffer — Formulare mit
+  mehreren Submit-Buttons brauchen einen expliziten Selektor.

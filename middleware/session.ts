@@ -108,11 +108,6 @@ export class Session {
         }
     }
 
-    logout(): void {
-        this.shouldDelete = true;
-        this.data = null;
-    }
-
     isModified(): boolean {
         return this.modified;
     }

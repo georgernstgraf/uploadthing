@@ -115,10 +115,18 @@
 
 ## Scroll Container Layout
 
-- Body has `overflow: hidden` and `height: 100vh` — no body scrolling.
-- `#app-main` is the internal scroll container with `overflow-y: auto` and constrained height.
-- Scrollbar is hidden via `scrollbar-width: none` (Firefox) and `::-webkit-scrollbar { display: none }` (Chrome/Safari/Edge/Opera).
-- This keeps content from sliding behind the fixed glassmorphism navbar while preserving scroll functionality.
+- Es gibt **genau eine** Scrollfläche: das Dokument. `html`/`body` sind
+  nicht mehr auf `100vh` mit `overflow: hidden` festgenagelt, und
+  `#app-main` ist **kein** eigener Scrollcontainer mehr.
+- Der Kopf (`body > header`) ist `position: sticky; top: 0` — er bleibt
+  sichtbar, ohne einen Magic-Number-Offset zu brauchen. Höhen-Offsets
+  wie `--app-main-offset`/`--app-header-height` sind mit dem alten
+  Layout entfallen: sie stimmten nie, sobald der Kopf am Handy umbrach.
+- Keine verschachtelten Scrollbereiche (früher: `#doku-list` mit
+  `max-height: 20rem`). Listen laufen im Dokumentfluss mit.
+- Grund: Auf dem Handy war nicht erkennbar, dass es weitergeht —
+  Scrollbar ausgeblendet, Inhalt unter dem Kopf, zwei Scrollflächen
+  übereinander.
 
 ## External Library Management
 

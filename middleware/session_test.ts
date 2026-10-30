@@ -131,16 +131,6 @@ Deno.test("Session class - login sets data and marks new", () => {
     assertEquals(session.isLoggedIn(), true);
 });
 
-Deno.test("Session class - logout marks for deletion", () => {
-    const data = { email: "test@example.com", createdAt: Date.now() };
-    const session = new Session(data, false);
-    session.logout();
-
-    assertEquals(session.isLoggedIn(), false);
-    assertEquals(session.needsDelete(), true);
-    assertEquals(session.getData(), null);
-});
-
 Deno.test("Session class - refreshTimestamp updates time", () => {
     const originalTime = Date.now() - 10000;
     const data = { email: "test@example.com", createdAt: originalTime };

@@ -10,11 +10,4 @@
         <a href="/admin/application"
            class="btn btn-info btn-sm rounded-3 px-4 text-uppercase fw-semibold">Admin</a>
     </nav>
-{{else if remote_user}}
-    <div id="student-bar" class="d-flex justify-content-end mb-2">
-        <form method="post" action="/logout">
-            <button type="submit"
-                    class="btn btn-link btn-sm text-body-secondary p-0">Abmelden</button>
-        </form>
-    </div>
 {{/if}}

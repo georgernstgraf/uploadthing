@@ -8,19 +8,26 @@
     --CTBS-GlassBlur: 8px;
 
     --app-background-image: url("/static/img/bg-light.jpg");
-    --app-header-height: 76px;
-    --app-nav-top: 72px;
-    --app-main-offset: 116px;
 }
 
-html,
+/*
+ * Normales Dokument-Scrolling. Früher war der Body auf 100vh mit
+ * overflow:hidden festgenagelt, #app-main war ein eigener
+ * Scrollcontainer mit ausgeblendeter Scrollbar, und die Doku-Links
+ * hatten einen dritten, verschachtelten Scrollbereich. Auf dem Handy
+ * war damit nicht erkennbar, dass es überhaupt weitergeht, und der
+ * Inhalt lag unter dem fixierten Kopf. Jetzt: eine Scrollbar, der Kopf
+ * klebt oben, sonst nichts.
+ */
 body {
-    overflow: hidden;
-}
-
-body {
-    height: 100vh;
+    min-height: 100vh;
     font-family: "IBM Plex Sans", var(--bs-body-font-family), system-ui, sans-serif;
+}
+
+body > header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
 }
 
 #user-badge-panel {
@@ -43,48 +50,27 @@ body {
 }
 
 #app-main {
-    margin-top: var(--app-main-offset);
-    height: calc(100vh - var(--app-main-offset));
-    overflow-y: auto;
-    overflow-x: hidden;
-    /* Hide scrollbar while keeping scroll functionality */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-}
-
-#app-main::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-}
-
-/* Schüler sehen keine Navigation (#146): der Inhalt rückt unter den Kopf. */
-#app-main.no-nav {
-    margin-top: calc(var(--app-header-height) + 12px);
-    height: calc(100vh - var(--app-header-height) - 12px);
+    /* Kein eigener Scrollcontainer, keine Höhenrechnung: der Kopf steht
+       im Fluss, die Seite scrollt als Ganzes. */
+    min-height: 1px;
 }
 
 /*
- * Die Dokumentationslinks stehen unter den Angaben in einem eigenen
- * scrollbaren Bereich, damit die Angaben selbst immer vollständig
- * sichtbar bleiben (#146).
+ * Die Dokumentationslinks stehen unter den Angaben. Früher waren sie
+ * zusätzlich in einen 20rem hohen Scrollbereich gezwungen (#146), damit
+ * die Angaben sichtbar bleiben — auf dem Handy unbrauchbar, weil zwei
+ * Scrollflächen übereinander lagen.
  */
 #doku-list {
-    max-height: 20rem;
-    overflow-y: auto;
-    overflow-x: hidden;
     padding-right: 0.25rem;
-    scrollbar-width: thin;
 }
 
 #main-nav {
-    position: fixed;
-    top: var(--app-nav-top);
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1020;
     width: max-content;
-    max-width: calc(100vw - 1rem);
+    max-width: 100%;
 }
 
+/* Der Hintergrund liegt fest hinter dem scrollenden Inhalt. */
 body::before {
     content: "";
     position: fixed;
@@ -106,19 +92,7 @@ details > summary::-webkit-details-marker {
     display: none;
 }
 
-@media (max-width: 991.98px) {
-    :root {
-        --app-nav-top: 76px;
-        --app-main-offset: 120px;
-    }
-}
-
 @media (max-width: 767.98px) {
-    :root {
-        --app-nav-top: 84px;
-        --app-main-offset: 152px;
-    }
-
     .user-badge-card {
         width: 100%;
     }

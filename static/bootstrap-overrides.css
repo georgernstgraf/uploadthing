@@ -76,8 +76,8 @@
   --bs-body-bg-rgb: var(--CTBS-BodyBgRgb);
   --bs-emphasis-color: var(--CTBS-EmphasisColor);
   --bs-emphasis-color-rgb: var(--CTBS-EmphasisColorRgb);
-  --bs-secondary-color: var(--CTBS-SecondaryColor);
-  --bs-secondary-color-rgb: var(--CTBS-SecondaryColorRgb);
+  --bs-secondary-color: rgba(var(--CTBS-BodyColorRgb), 0.65);
+  --bs-secondary-color-rgb: var(--CTBS-BodyColorRgb);
   --bs-secondary-bg: var(--CTBS-SecondaryBg);
   --bs-secondary-bg-rgb: var(--CTBS-SecondaryBgRgb);
   --bs-tertiary-color: var(--CTBS-TertiaryColor);
@@ -964,10 +964,19 @@
 }
 
 /* 3. ACCESSIBILITY SAFETY OVERRIDES (AAA-oriented) */
+/* Sekundärtext muss gegen den eigenen Hintergrund lesbar sein: die
+   Theme-Paletten liefern --CTBS-SecondaryColor aus dem dunklen Set
+   (fast weiß), obwohl der Fließtext schwarz ist. Deshalb im hellen
+   Modus ein abgeschwächtes Body-Schwarz statt der Palettenfarbe. */
 :root,
-[data-bs-theme=light],
+[data-bs-theme=light] {
+  --bs-secondary-color: rgba(var(--CTBS-BodyColorRgb), 0.65);
+  --bs-secondary-color-rgb: var(--CTBS-BodyColorRgb);
+}
+
 [data-bs-theme=dark] {
-  --bs-secondary-color: var(--CTBS-SecondaryColor);
+  --bs-secondary-color: var(--CTBS-DarkThemeSecondaryColor);
+  --bs-secondary-color-rgb: var(--CTBS-DarkThemeSecondaryColorRgb);
 }
 
 .text-body-secondary,

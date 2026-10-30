@@ -3,15 +3,19 @@
      hx-target="#app-content"
      class="d-flex justify-content-center mb-2">
     <a href="/whoami"
-       class="user-badge-card card shadow-sm border-0 text-reset text-decoration-none">
+       class="user-badge-card card shadow-sm border-0 text-reset text-decoration-none"
+       aria-label="Angemeldet als {{remote_user.name}} — Namen ändern">
         {{#if remote_user}}
             <div class="card-body py-2 px-3 d-flex align-items-center gap-3 user-badge-wrap-sm">
                 <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-bg-primary fw-bold flex-shrink-0 user-badge-avatar-size">
                     {{givenNameInitial remote_user.name}}
                 </div>
                 <div class="d-flex flex-column text-start user-badge-body-min">
-                    <span class="fw-bold lh-sm">{{remote_user.name}}</span>
-                    <span class="small">{{remote_user.email}} / {{remote_user.klasse}}</span>
+                    <span class="small text-uppercase text-body-secondary">Angemeldet als</span>
+                    <span class="fw-bold lh-sm text-break">{{remote_user.name}}</span>
+                    {{#if remote_user.klasse}}
+                        <span class="small text-body-secondary">{{remote_user.klasse}}</span>
+                    {{/if}}
                 </div>
                 <span class="badge text-bg-light rounded-pill flex-shrink-0 user-badge-action-end-sm">Ändern</span>
             </div>
