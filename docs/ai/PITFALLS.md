@@ -141,6 +141,13 @@
   bekommen Kategorien per `setRule` **nur mit der Kategorie-UUID**
   (`/api/firewall/category/searchItem` liefert sie); der Name wird mit
   „Related category not found" abgelehnt.
+- **`setRule` mit Teil-Payload ist nicht harmlos.** Ein Aufruf mit nur
+  `{"rule":{"categories":"<uuid>"}}` lieferte `saved`, und die API meldete
+  für die Sperrregel anschließend kurzzeitig `enabled=1`, obwohl in der
+  `config.xml` `<enabled>0</enabled>` stand. Nach **jedem** `setRule`
+  den Zustand erneut über `searchRule` lesen und mit `pfctl -sr`
+  gegenprüfen, dass keine `reject`-Regel aktiv ist — sonst sperrt ein
+  Kategorien-Setzen im Zweifel das Netz.
 
 ## Firewall-API (Exam-Sperre)
 
