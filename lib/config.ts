@@ -1,4 +1,5 @@
 import { parseSqliteDatabaseUrl } from "./dbpath.ts";
+import { normalizeMac } from "./mac.ts";
 
 function requireEnv(name: string, hint?: string): string {
     const value = Deno.env.get(name);
@@ -11,6 +12,41 @@ function requireEnv(name: string, hint?: string): string {
 function parseRequiredIpList(name: string): string[] {
     const raw = requireEnv(name, "komma-separierte IP-Liste");
     return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+/**
+ * `ADMIN_MACS` ist die Übergangsfreigabe für Lehrpersonen-Geräte (#147),
+ * bis die Liste im Admin-Bereich gepflegt wird.
+ *
+ * Fehlt die Variable oder ist sie leer, gibt es keine Freigabe über die
+ * Env — das ist kein Startfehler. Ein Eintrag, der keine MAC-Adresse ist,
+ * ist dagegen ein Tippfehler, der eine Freigabe still unwirksam machen
+ * würde: er bricht den Start mit deutscher Meldung ab. Die Werte werden
+ * kanonisiert (`aa:bb:cc:dd:ee:ff`), doppelte Einträge fallen weg.
+ */
+export function parseAdminMacList(raw: string | undefined): string[] {
+    const value = raw?.trim() ?? "";
+    if (!value) {
+        return [];
+    }
+
+    const macs = new Set<string>();
+    for (const entry of value.split(",")) {
+        const trimmed = entry.trim();
+        if (!trimmed) {
+            continue;
+        }
+
+        const mac = normalizeMac(trimmed);
+        if (!mac) {
+            throw new Error(
+                `ADMIN_MACS enthält keine gültige MAC-Adresse: "${trimmed}" (erwartet z. B. aa:bb:cc:dd:ee:ff).`,
+            );
+        }
+        macs.add(mac);
+    }
+
+    return [...macs];
 }
 
 export function parsePermittedFileTypes(raw: string): string[] {
@@ -232,6 +268,9 @@ const config = {
     SESSION_REFRESH_THRESHOLD_MS: 7 * 24 * 60 * 60 * 1000, // 1 week in ms
     DENO_ENV: Deno.env.get("DENO_ENV") || "development",
     ADMIN_IPS: parseRequiredIpList("ADMIN_IPS"),
+    // Übergangsfreigabe für Lehrpersonen-Geräte (#147); fehlend = keine
+    // MAC-Freigabe über die Env, die DB-Allowlist bleibt davon unberührt.
+    ADMIN_MACS: parseAdminMacList(Deno.env.get("ADMIN_MACS")),
     THEME_ASSET_VERSION: `${Date.now()}`,
 };
 

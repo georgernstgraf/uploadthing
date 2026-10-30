@@ -1,5 +1,45 @@
 # DECISIONS
 
+## 2026-10-30: Admin-Freigabe per MAC neben der LDAP-Klasse (#147)
+
+- **Die LDAP-Klasse bleibt die Rolle, die MAC ist der Gerätenachweis.**
+  Admin ist man ausschließlich über `klasse === "LehrendeR"`
+  (`service/user.isTeacher()`). Die MAC-Allowlist entscheidet nur, *von
+  welchem Gerät* sich eine Lehrperson anmelden darf: Ein `LehrendeR` von
+  einer IP aus `ADMIN_IPS` **oder** von einer freigegebenen MAC kommt
+  durch, auch wenn die IP nicht in `ADMIN_IPS` steht. Ein Schüler von
+  einer freigegebenen MAC wird **nicht** Admin — die Klasse schlägt nicht
+  um.
+- **MAC-Spoofing ist trivial.** Die Freigabe ist Komfort („Lehrender von
+  diesem Gerät"), keine Sicherheitsgrenze. Wer MAC-Adressen fälschen kann,
+  umgeht sie; die Identitätsprüfung im Examen bleibt die visuelle
+  Kontrolle durch die Lehrperson plus das signierte Session-Cookie.
+- **Zwei Quellen, eine Semantik.** Die DB-Tabelle `adminmac` (gepflegt
+  unter `/admin/application`, Migration `0002_adminmac`) ist die
+  dauerhafte Liste; `ADMIN_MACS` aus der Env ist die Übergangslösung, weil
+  die Einträge dort schon stehen. Fehlt `ADMIN_MACS` oder ist sie leer,
+  gibt es keine Env-Freigabe — **kein** Startfehler. Ein Eintrag, der keine
+  MAC-Adresse ist, bricht den Start dagegen mit deutscher Meldung ab: ein
+  Tippfehler würde eine Freigabe sonst still unwirksam machen.
+- **Kanonische Schreibweise.** Gespeichert, verglichen und angezeigt wird
+  `aa:bb:cc:dd:ee:ff` (klein, Doppelpunkte, `lib/mac.ts`). Eingaben mit
+  `-`, `.`, Leerzeichen, Großschreibung oder als 12-Hex-Block werden
+  normalisiert; alles andere wird mit deutscher Meldung abgelehnt.
+- **MAC zur IP kommt aus `ipfact`, nie aus einem Tik-Abruf im Request.**
+  `repo.ipfact.getLatestMacForIP()` liest die jüngste Sichtung mit MAC
+  (Index `ipfact_ip_seen_key`) — die Daten liegen durch das Polling (#145)
+  vor. Ein nicht erreichbarer Tik darf keinen Login aufhalten und kein
+  Request darf fünf Sekunden Wartezeit erben. Folge: Ein gerade erst
+  verbundenes Gerät ist erst nach dem nächsten Poll (60 s) per MAC
+  freigegeben.
+- **Die Login-Sperre bleibt im Login.** `is_admin` im Session-Middleware
+  hängt weiterhin nur an der Klasse. Eine laufende Admin-Sitzung wird nicht
+  bei jedem Request gegen die MAC-Liste geprüft, damit ein ausgefallenes
+  Polling niemandem mitten im Examen die Admin-Rechte entzieht.
+- **`ADMINS` entfällt.** Die Variable wurde im TypeScript nie gelesen und
+  ist aus `.env.example`/`.env.local` und der Doku entfernt; eine
+  E-Mail-Allowlist für Admins gibt es damit nicht.
+
 ## 2026-10-30: Tik-Polling im App-Prozess statt Loopback-Endpunkt (#145)
 
 - **Die App liest die WLAN-Registrierungstabelle selbst.** `service/tik.ts`

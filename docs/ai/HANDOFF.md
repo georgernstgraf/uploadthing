@@ -1,4 +1,18 @@
-Last updated: 2026-10-30 (#145 umgesetzt — Tik-Polling ersetzt `/activeips`).
+Last updated: 2026-10-30 (#147 umgesetzt — Admin-Freigabe per MAC).
+
+## #147 — Admin-Freigabe per MAC (erledigt)
+
+- Neue Tabelle `adminmac` (`mac`, `comment`, `created_at`), Migration
+  `0002_adminmac`, läuft beim App-Start. Gepflegt unter
+  `/admin/application` (hinzufügen mit Kommentar, entfernen).
+- Anmeldung als `LehrendeR` von einer IP aus `ADMIN_IPS` **oder** von einer
+  freigegebenen MAC (DB oder `ADMIN_MACS`). Die Klasse bleibt zwingend:
+  ein Schüler von freigegebener MAC wird nicht Admin.
+- MAC zur IP kommt aus der jüngsten `ipfact`-Sichtung; kein Tik-Abruf im
+  Request-Pfad.
+- `ADMINS` ist entfernt (war im TypeScript nie gelesen).
+- Vor dem ersten Start der neuen Version auf der Sense weiterhin ein
+  DB-Backup ziehen (#148); die Migration legt nur eine Tabelle an.
 
 ## #145 — Tik-Polling (erledigt)
 
@@ -12,7 +26,7 @@ Last updated: 2026-10-30 (#145 umgesetzt — Tik-Polling ersetzt `/activeips`).
 - Für den Produktivbetrieb müssen `TIK_URL`, `TIK_USER`, `TIK_PASSWORD` in
   die Produktions-`.env`; ohne sie startet die App (Polling aus, Panel
   „nicht konfiguriert"), erfasst aber keine IPs.
-- Nächster Schritt darauf: #147 (MAC-basierte Admin-Freigabe).
+- Darauf aufbauend ist #147 (MAC-basierte Admin-Freigabe) umgesetzt.
 
 ## Sofort weiter mit
 

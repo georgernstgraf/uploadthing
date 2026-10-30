@@ -213,7 +213,14 @@ export const remoteIPMiddleware = createMiddleware<
 
             await service.cookiepresents.recordByEmail(session.email, remoteip);
 
-            is_admin = remoteuser?.klasse === "LehrendeR";
+            // Admin-Rechte hängen allein an der LDAP-Klasse. Die
+            // Gerätefreigabe per MAC (#147) greift beim Login
+            // (routes/auth.ts); sie ist eine Zusatzbedingung für
+            // Lehrpersonen und macht aus einem Schüler keinen Admin. Eine
+            // Freigabe wird hier bewusst nicht erneut geprüft: ein
+            // ausgefallenes Tik-Polling darf eine laufende Admin-Sitzung
+            // nicht stillschweigend entziehen.
+            is_admin = service.user.isTeacher(remoteuser);
         }
     }
 

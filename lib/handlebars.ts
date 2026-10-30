@@ -81,6 +81,10 @@ type AdminTemplateData = {
 type AdminFileTypesTemplateData = {
     permitted_filetypes: string;
     current_filetypes: string[];
+    /** Freigegebene MACs aus der Datenbank (#147). */
+    allowed_macs: { mac: string; comment: string; created_at: string }[];
+    /** Zusätzliche Freigaben aus `ADMIN_MACS` (nur lesbar). */
+    env_admin_macs: string[];
     exam_panel_html: string;
     available_themes: { key: string; label: string }[];
     current_theme_key: string | null;

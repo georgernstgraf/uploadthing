@@ -19,7 +19,7 @@ The application fails to start if any required variable is missing.
 | `TLS_CERT_PATH` | Path to a PEM certificate chain (e.g. `fullchain.pem`) — enables native TLS via `Deno.serve`; must be set together with `TLS_KEY_PATH` |
 | `TLS_KEY_PATH` | Path to a PEM private key (e.g. `privkey.pem`); must be set together with `TLS_CERT_PATH` |
 | `COOKIE_SECRET` | HMAC key for session cookies (long random string) |
-| `ADMIN_IPS` | Comma-separated IPs allowed to register as teacher, e.g. `127.0.0.1,192.168.21.2` |
+| `ADMIN_IPS` | Comma-separated IPs allowed to register as teacher, e.g. `127.0.0.1,192.168.21.2`; a teacher may also register from a device whose MAC is approved (see `ADMIN_MACS` and `/admin/application`) |
 | `SERVICE_DN` | LDAP service account DN |
 | `SERVICE_PW` | LDAP service account password |
 | `SERVICE_URL` | LDAP server URL, e.g. `ldaps://ldap.example.com` |
@@ -81,6 +81,7 @@ certificate covers, or start the process with
 | `TODAY_HOURS_CUTOFF` | `12` | Hours before midnight for admin time filter default |
 | `ADMIN_STALE_MINUTES` | `3` | Minutes before an IP is considered stale |
 | `ADMIN_REFRESH_SECONDS` | `15` | Auto-refresh interval for admin forensics page |
+| `ADMIN_MACS` | — | Comma-separated MAC addresses allowed to log in as teacher in addition to `ADMIN_IPS`; empty/absent means no MAC approval via env (the in-app allowlist still works). Invalid entries abort startup with a German message |
 | `PUBLIC_URL` | `http://<LISTEN_HOST>:<LISTEN_PORT>/` | URL displayed in the hero header (full URL incl. scheme, optionally with port); decoupled from `LISTEN_HOST`, which only determines the bind address |
 
 ## Database Schema And Migrations

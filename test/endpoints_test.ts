@@ -668,6 +668,141 @@ Deno.test("GET /admin/students shows user anomalies without shared-IP anomalies"
     }
 });
 
+Deno.test("Admin: MAC-Freigabe anlegen, ablehnen, entfernen (#147)", async () => {
+    const suffix = crypto.randomUUID().slice(0, 6);
+    const mac = `02:00:01:${suffix.slice(0, 2)}:${suffix.slice(2, 4)}:${suffix.slice(4, 6)}`;
+    const comment = `htmx-test-${suffix}`;
+    const cookie = await registerAndGetCookie("grafg@spengergasse.at");
+
+    const postMac = (path: string, body: string) =>
+        fetch(`${BASE_URL}${path}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie,
+            },
+            body,
+        });
+
+    try {
+        // Anlegen: die MAC erscheint kanonisch samt Kommentar in der Liste.
+        const addRes = await postMac(
+            "/admin/adminmac",
+            `mac=${encodeURIComponent(mac.toUpperCase())}&comment=${
+                encodeURIComponent(comment)
+            }`,
+        );
+        const addHtml = await addRes.text();
+        assertEquals(addRes.status, 200);
+        assertEquals(addHtml.includes(`MAC-Adresse freigegeben: ${mac}`), true);
+        assertEquals(addHtml.includes(comment), true);
+        assertEquals(addHtml.includes("Admin-Freigabe per MAC"), true);
+
+        // Doppelte Freigabe: Fehler sichtbar, non-2xx für den Toast.
+        const duplicateRes = await postMac(
+            "/admin/adminmac",
+            `mac=${encodeURIComponent(mac)}&comment=${encodeURIComponent(comment)}`,
+        );
+        const duplicateHtml = await duplicateRes.text();
+        assertEquals(duplicateRes.status, 400);
+        assertEquals(
+            duplicateHtml.includes(`Die MAC-Adresse ${mac} ist bereits freigegeben.`),
+            true,
+        );
+
+        // Ungültige Schreibweise wird abgelehnt, nicht gespeichert.
+        const invalidRes = await postMac(
+            "/admin/adminmac",
+            "mac=aa%3Abb%3Acc%3Add%3Aee&comment=kaputt",
+        );
+        const invalidHtml = await invalidRes.text();
+        assertEquals(invalidRes.status, 400);
+        assertEquals(invalidHtml.includes("Ungültige MAC-Adresse"), true);
+
+        // Leerer Kommentar ist nicht erlaubt.
+        const noCommentRes = await postMac(
+            "/admin/adminmac",
+            `mac=${encodeURIComponent(mac)}&comment=`,
+        );
+        const noCommentHtml = await noCommentRes.text();
+        assertEquals(noCommentRes.status, 400);
+        assertEquals(noCommentHtml.includes("Bitte einen Kommentar angeben"), true);
+
+        // Entfernen: die MAC verschwindet aus der Liste.
+        const deleteRes = await postMac(
+            "/admin/adminmac/delete",
+            `mac=${encodeURIComponent(mac)}`,
+        );
+        const deleteHtml = await deleteRes.text();
+        assertEquals(deleteRes.status, 200);
+        assertEquals(deleteHtml.includes(`MAC-Freigabe entfernt: ${mac}`), true);
+        assertEquals(deleteHtml.includes(comment), false);
+
+        // Erneutes Entfernen meldet den Fehler, statt still zu gelingen.
+        const deleteAgainRes = await postMac(
+            "/admin/adminmac/delete",
+            `mac=${encodeURIComponent(mac)}`,
+        );
+        const deleteAgainHtml = await deleteAgainRes.text();
+        assertEquals(deleteAgainRes.status, 400);
+        assertEquals(
+            deleteAgainHtml.includes(`Die MAC-Adresse ${mac} war nicht freigegeben.`),
+            true,
+        );
+    } finally {
+        db.exec(`DELETE FROM adminmac WHERE mac = '${mac}'`);
+    }
+});
+
+Deno.test("Schüler von freigegebener MAC wird nicht Admin (#147)", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `mac-student-${suffix}@example.com`;
+    const mac = `02:00:02:${suffix.slice(0, 2)}:${suffix.slice(2, 4)}:${suffix.slice(4, 6)}`;
+
+    try {
+        await upsertFixtureUser({
+            email: studentEmail,
+            name: "Mac Student",
+            klasse: "5AHITM",
+        });
+        // Die Test-IP ist mit genau dieser MAC gesehen und die MAC ist
+        // freigegeben — der Login bleibt trotzdem ohne Admin-Rechte.
+        ipfactRepo.registerSeen(LOCAL_TEST_IP, new Date(), mac);
+        db.prepare("INSERT INTO adminmac (mac, comment, created_at) VALUES (?, ?, ?)")
+            .run(mac, "schueler-geraet", new Date().toISOString());
+
+        const cookie = await registerAndGetCookie(studentEmail);
+
+        const adminRes = await fetch(`${BASE_URL}/admin/application`, {
+            headers: { "Cookie": cookie },
+        });
+        await adminRes.text();
+        assertEquals(adminRes.status, 403);
+
+        const macRes = await fetch(`${BASE_URL}/admin/adminmac`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie,
+            },
+            body: `mac=${encodeURIComponent(mac)}&comment=fremd`,
+        });
+        await macRes.text();
+        assertEquals(macRes.status, 403);
+
+        const homeRes = await fetch(`${BASE_URL}/`, {
+            headers: { "Cookie": cookie },
+        });
+        const homeHtml = await homeRes.text();
+        assertEquals(homeRes.status, 200);
+        assertEquals(homeHtml.includes('href="/admin/application"'), false);
+    } finally {
+        db.exec(`DELETE FROM adminmac WHERE mac = '${mac}'`);
+        await clearForensicsByIp(LOCAL_TEST_IP);
+        await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
 async function registerAndGetCookie(email: string): Promise<string> {
     const registerRes = await fetch(`${BASE_URL}/register`, {
         method: "POST",
@@ -725,6 +860,8 @@ Deno.test("requireAdmin: alle /admin-Routen liefern ohne Admin 403", async () =>
         ["/admin/application", "POST"],
         ["/admin/ip-detail?ip=127.0.0.1", "GET"],
         ["/admin/theme", "POST"],
+        ["/admin/adminmac", "POST"],
+        ["/admin/adminmac/delete", "POST"],
         ["/admin/download-abgaben", "GET"],
         ["/admin/wipe-abgaben", "POST"],
         ["/admin/cleanup-database", "POST"],

@@ -38,8 +38,10 @@ This application supports supervised exam workflows where students identify them
 
 ## Role Meaning
 
-- `klasse === "LehrendeR"` represents a teacher/admin role in the current model.
+- `klasse === "LehrendeR"` represents a teacher/admin role in the current model; it is the only source of admin rights (`service/user.isTeacher()`).
 - Additional IP restrictions for teacher registration can be configured with `ADMIN_IPS`.
+- A teacher may also register from a device whose MAC address is approved — either in the `adminmac` allowlist maintained under `/admin/application` or via `ADMIN_MACS` in the environment (#147). The MAC is an additional device proof, not a role: it only relaxes the login restriction and never turns a student into an admin.
+- The MAC for a request comes from the newest `ipfact` sighting of the socket IP; there is no Tik lookup in the request path.
 - In the admin forensics view, IP cards are split by role: the most recent `cookie_presents[0]` user decides whether an IP appears in students or in teachers.
 - An IP with no cookie presence stays in the "unknown" section regardless of registration history role.
 

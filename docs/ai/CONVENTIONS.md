@@ -42,6 +42,7 @@
 
 - Security-relevant and operation-critical env vars must use `requireEnv()` to fail at startup with a descriptive German error message.
 - IP whitelists (`ADMIN_IPS`) must use `parseRequiredIpList()`.
+- MAC lists (`ADMIN_MACS`) are optional by design (missing = no approval via env, not a startup error) but every entry must be a valid MAC; parse them with `parseAdminMacList()` so a typo aborts startup instead of silently disabling an approval. Store and compare MACs only in the canonical form from `lib/mac.ts` (`aa:bb:cc:dd:ee:ff`).
 - Connection settings that need multiple secrets are all-or-nothing: `OPNSENSE_*` and `TIK_*` are either fully set or fully absent; partial settings abort startup with a German message. Never add a fallback that silently disables a security- or operations-relevant integration.
 - Do not add new optional env vars with silent fallbacks for anything that affects security or runtime behavior.
 - The old `!` non-null assertion pattern on `Deno.env.get()` is no longer sufficient; convert to `requireEnv()`.

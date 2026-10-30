@@ -109,6 +109,27 @@ const getUniqueScanTimestampsStmt = db.prepare(
     WHERE seen BETWEEN ? AND ?
     ORDER BY seen ASC`,
 );
+/*
+Neueste MAC einer IP (#147): läuft rückwärts über den Index
+`ipfact_ip_seen_key` (ip, seen) und stoppt beim ersten Treffer mit MAC.
+Der Request-Pfad ruft nie den Tik; die Daten liegen durch das Polling
+(#145) bereits vor.
+*/
+const latestMacForIpStmt = db.prepare(
+    `SELECT mac FROM ipfact
+    WHERE ip = ? AND mac IS NOT NULL
+    ORDER BY seen DESC
+    LIMIT 1`,
+);
+
+/**
+ * Jüngste bekannte MAC-Adresse zu einer IP, `null` wenn die IP nie mit
+ * lesbarer MAC gesehen wurde. Grundlage der MAC-Freigabe im Login (#147).
+ */
+export function getLatestMacForIP(ip: string): string | null {
+    const row = latestMacForIpStmt.get(ip) as { mac: string | null } | undefined;
+    return row?.mac ?? null;
+}
 
 /**
  * Get all unique scan timestamps within a time range.

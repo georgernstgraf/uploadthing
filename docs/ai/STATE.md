@@ -40,7 +40,7 @@ verschwunden.
 5. #146 Schülerseite (eine Seite, zwei Spalten, Namenssuche)
 6. ~~#133 Drizzle (Schema + Migrationen)~~ — erledigt 2026-10-30
 7. #134 Admin-Upload Unterlagen
-8. #147 MAC-Admin-Freigabe
+8. ~~#147 MAC-Admin-Freigabe~~ — erledigt 2026-10-30
 9. #148 Backups & Secrets (gpg/pass)
 10. #149 Netz-, DNS- und Ops-Hygiene
 11. #135 Playwright (zuletzt)
@@ -63,6 +63,13 @@ verschwunden.
       Unbekannt-Zustand inkl. nicht wegklickbarem Modal, Start sperrt
       implizit. `EXAMMODE_COMMAND`, `INTERNET_ACTIVE` und der
       Subprozess-Pfad sind entfernt; 252 Tests grün.
+
+- [x] #147 MAC-Admin-Freigabe: Tabelle `adminmac` (Migration `0002_adminmac`),
+      `repo/adminmac.ts` + `service/adminmac.ts`, Anmeldung als `LehrendeR`
+      von `ADMIN_IPS` **oder** freigegebener MAC (DB/`ADMIN_MACS`),
+      Verwaltung unter `/admin/application`, `ADMINS` entfernt.
+      Die Klasse bleibt die Rolle — ein Schüler von freigegebener MAC wird
+      nicht Admin; 296 Tests grün.
 
 - [x] Planungssession 2026-10-30: Ist-Zustand auf `sense`, `tik` und im
       Schul-LDAP erhoben; Epic #141 plus zwölf Sub-Issues angelegt, jedes mit

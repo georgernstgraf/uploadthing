@@ -6,6 +6,7 @@ import * as users from "./users.ts";
 import * as abgaben from "./abgaben.ts";
 import * as exam from "./exam.ts";
 import * as ldap from "./ldapuser.ts";
+import * as adminmac from "./adminmac.ts";
 
 export {
     db,
@@ -17,4 +18,5 @@ export {
     users,
     abgaben,
     exam,
+    adminmac,
 };

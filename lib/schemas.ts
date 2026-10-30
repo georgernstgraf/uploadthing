@@ -1,5 +1,37 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { normalizeMac } from "./mac.ts";
+
+const macField = zfd.text(
+    z.string({ required_error: "Bitte eine MAC-Adresse angeben." })
+        .trim()
+        .min(1, "Bitte eine MAC-Adresse angeben.")
+        .refine(
+            (value) => normalizeMac(value) !== null,
+            "Ungültige MAC-Adresse (erwartet z. B. aa:bb:cc:dd:ee:ff).",
+        ),
+);
+
+/** Freigabe einer MAC-Adresse samt Kommentar (#147). */
+export const AdminMacSchema = zfd.formData({
+    mac: macField,
+    comment: zfd.text(
+        z.string({
+            // zfd.text liefert für ein leeres Feld `undefined`; ohne
+            // deutsche required-Meldung stünde „Required" in der UI.
+            required_error:
+                "Bitte einen Kommentar angeben (z. B. welches Gerät).",
+        })
+            .trim()
+            .min(1, "Bitte einen Kommentar angeben (z. B. welches Gerät).")
+            .max(120, "Der Kommentar darf höchstens 120 Zeichen lang sein."),
+    ),
+});
+
+/** Entfernen einer Freigabe; die MAC wird zusätzlich im Service validiert. */
+export const AdminMacDeleteSchema = zfd.formData({
+    mac: macField,
+});
 
 export const LdapSearchSchema = z.object({
     email: z.string().min(3, "Suchbegriff muss mindestens 3 Zeichen lang sein"),

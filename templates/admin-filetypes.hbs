@@ -123,6 +123,107 @@
             <div class="card-body p-4">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
                     <div>
+                        <h3 class="h5 mb-1">Admin-Freigabe per MAC</h3>
+                        <div class="text-body-secondary">
+                            Lehrpersonen dürfen sich auch von einer IP anmelden, die nicht in
+                            <code>ADMIN_IPS</code> steht, wenn ihr Gerät hier freigegeben ist.
+                            Die LDAP-Klasse <code>LehrendeR</code> bleibt Voraussetzung — eine
+                            freigegebene MAC-Adresse allein macht niemanden zum Admin.
+                        </div>
+                    </div>
+                </div>
+
+                <form hx-post="/admin/adminmac"
+                      hx-target="#app-content"
+                      hx-swap="innerHTML"
+                      class="mx-auto w-100 col-xl-8">
+                    <label class="form-label fw-bold" for="adminmac_mac">MAC-Adresse</label>
+                    <input id="adminmac_mac"
+                           name="mac"
+                           type="text"
+                           class="form-control form-control-lg text-center font-monospace"
+                           placeholder="aa:bb:cc:dd:ee:ff"
+                           autocomplete="off"
+                           required>
+                    <div class="form-text text-center mb-3">
+                        Doppelpunkte, Bindestriche oder Punkte sind optional; gespeichert wird kleingeschrieben mit Doppelpunkten.
+                    </div>
+                    <label class="form-label fw-bold" for="adminmac_comment">Kommentar</label>
+                    <input id="adminmac_comment"
+                           name="comment"
+                           type="text"
+                           class="form-control form-control-lg"
+                           placeholder="grg-usblan"
+                           autocomplete="off"
+                           required>
+                    <div class="form-text mb-3">Welches Gerät ist gemeint? Der Kommentar erscheint in der Liste.</div>
+                    <div class="d-grid">
+                        <button type="submit"
+                                class="btn btn-info btn-lg">MAC-Adresse freigeben</button>
+                    </div>
+                </form>
+
+                <div class="mt-4">
+                    <div class="section-heading text-uppercase mb-2">Freigegebene Geräte</div>
+                    {{#if allowed_macs}}
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">MAC-Adresse</th>
+                                        <th scope="col">Kommentar</th>
+                                        <th scope="col">Angelegt</th>
+                                        <th scope="col" class="text-end">Aktion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#each allowed_macs}}
+                                        <tr>
+                                            <td class="font-monospace">{{this.mac}}</td>
+                                            <td>{{this.comment}}</td>
+                                            <td>{{this.created_at}}</td>
+                                            <td class="text-end">
+                                                <form hx-post="/admin/adminmac/delete"
+                                                      hx-target="#app-content"
+                                                      hx-swap="innerHTML"
+                                                      hx-confirm="MAC-Adresse {{this.mac}} wirklich entfernen?">
+                                                    <input type="hidden" name="mac" value="{{this.mac}}">
+                                                    <button type="submit"
+                                                            class="btn btn-outline-warning btn-sm">Entfernen</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {{/each}}
+                                </tbody>
+                            </table>
+                        </div>
+                    {{else}}
+                        <div class="text-body-secondary">Keine MAC-Adresse freigegeben.</div>
+                    {{/if}}
+                </div>
+
+                <div class="mt-3 text-center">
+                    <div class="section-heading text-uppercase mb-1">Aus der Konfiguration (<code>ADMIN_MACS</code>)</div>
+                    {{#if env_admin_macs}}
+                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                            {{#each env_admin_macs}}
+                                <span class="badge text-bg-secondary font-monospace">{{this}}</span>
+                            {{/each}}
+                        </div>
+                        <div class="form-text">
+                            Übergangslösung: Diese Einträge stehen in der <code>.env</code> und lassen sich hier nicht entfernen.
+                        </div>
+                    {{else}}
+                        <div class="text-body-secondary">Keine Freigabe über <code>ADMIN_MACS</code>.</div>
+                    {{/if}}
+                </div>
+            </div>
+        </section>
+
+        <section class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
+                    <div>
                         <h3 class="h5 mb-1">Datenbank bereinigen</h3>
                     </div>
                 </div>

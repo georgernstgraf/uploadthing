@@ -5,6 +5,23 @@ import * as registrationsRepo from "../repo/registrations.ts";
 import * as cookiepresentsService from "./cookiepresents.ts";
 
 /**
+ * LDAP-Klasse, die Lehrpersonen kennzeichnet. Sie ist die einzige Quelle
+ * für Admin-Rechte: eine freigegebene MAC (#147) regelt nur, *von welchem
+ * Gerät* sich eine Lehrperson anmelden darf, nicht *ob* sie Admin ist.
+ */
+export const TEACHER_CLASS = "LehrendeR";
+
+/**
+ * Ist dieser User eine Lehrperson? `false` für `null`, für Schüler und für
+ * User ohne Klasse.
+ */
+export function isTeacher(
+    user: { klasse?: string | null } | null | undefined,
+): boolean {
+    return user?.klasse === TEACHER_CLASS;
+}
+
+/**
  * Fetch the latest registered user for a single IP.
  */
 export async function getRegisteredByIp(ip: string): Promise<UserType | null> {

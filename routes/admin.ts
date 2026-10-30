@@ -1,13 +1,16 @@
 import { Context, Hono } from "hono";
 import { HonoContextVars } from "../lib/types.ts";
-import { localDateString, localTimeString } from "../lib/timefunc.ts";
+import { localDateString, localTimeString, dateTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
 import config, { parsePermittedFileTypes } from "../lib/config.ts";
+import { normalizeMac } from "../lib/mac.ts";
 import { requireAdmin } from "../middleware/admin.ts";
 import {
     AdminCleanupDatabaseSchema,
     AdminFileTypesSchema,
+    AdminMacDeleteSchema,
+    AdminMacSchema,
     AdminQuerySchema,
     AdminThemeSchema,
 } from "../lib/schemas.ts";
@@ -40,6 +43,12 @@ async function renderApplicationPage(
     const content = hbs.adminFileTypesTemplate({
         permitted_filetypes: config.PERMITTED_FILETYPES.join(", "),
         current_filetypes: config.PERMITTED_FILETYPES,
+        allowed_macs: service.adminmac.list().map((entry) => ({
+            mac: entry.mac,
+            comment: entry.comment,
+            created_at: dateTimeString(entry.created_at.toISOString()),
+        })),
+        env_admin_macs: service.adminmac.envAllowedMacs(),
         exam_panel_html: hbs.adminExamModeTemplate({
             exam_status: exam.status,
             exam_remaining_label: exam.remaining_label,
@@ -233,6 +242,60 @@ adminRouter.post("/application", async (c) => {
     return renderApplicationPage(
         c,
         `Erlaubte Dateitypen aktualisiert: ${fileTypes.map((type) => "." + type).join(", ")}`,
+    );
+});
+
+adminRouter.post("/adminmac", async (c) => {
+    const formData = await c.req.formData();
+    const validation = AdminMacSchema.safeParse(formData);
+    if (!validation.success) {
+        return renderApplicationPage(
+            c,
+            undefined,
+            validation.error.issues[0]?.message || "Ungültige MAC-Adresse",
+        );
+    }
+
+    try {
+        const entry = service.adminmac.add(
+            validation.data.mac,
+            validation.data.comment,
+        );
+        return renderApplicationPage(
+            c,
+            `MAC-Adresse freigegeben: ${entry.mac} (${entry.comment})`,
+        );
+    } catch (error) {
+        // Ungültige Schreibweise oder bereits vorhandene Freigabe: die
+        // Meldung nennt den Grund, damit der Fehler sichtbar bleibt.
+        return renderApplicationPage(c, undefined, (error as Error).message);
+    }
+});
+
+adminRouter.post("/adminmac/delete", async (c) => {
+    const formData = await c.req.formData();
+    const validation = AdminMacDeleteSchema.safeParse(formData);
+    if (!validation.success) {
+        return renderApplicationPage(
+            c,
+            undefined,
+            validation.error.issues[0]?.message || "Ungültige MAC-Adresse",
+        );
+    }
+
+    if (!service.adminmac.remove(validation.data.mac)) {
+        return renderApplicationPage(
+            c,
+            undefined,
+            `Die MAC-Adresse ${validation.data.mac} war nicht freigegeben.`,
+        );
+    }
+
+    return renderApplicationPage(
+        c,
+        `MAC-Freigabe entfernt: ${
+            normalizeMac(validation.data.mac) ?? validation.data.mac
+        }`,
     );
 });
 

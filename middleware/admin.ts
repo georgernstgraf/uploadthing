@@ -4,10 +4,11 @@ import type { HonoContextVars } from "../lib/types.ts";
 /**
  * Administrator-Sperre für Admin-Routen.
  *
- * `is_admin` wird in `middleware/session.ts` gesetzt
- * (Session-User mit `klasse === "LehrendeR"`). Anonyme und
- * Schüleranfragen werden mit 403 blockiert, bevor der
- * Routen-Handler läuft.
+ * `is_admin` wird in `middleware/session.ts` gesetzt (Session-User mit
+ * `klasse === "LehrendeR"`, siehe `service.user.isTeacher()`). Die
+ * MAC-Freigabe (#147) ändert daran nichts: sie regelt nur, von welchem
+ * Gerät sich eine Lehrperson anmelden darf. Anonyme und Schüleranfragen
+ * werden mit 403 blockiert, bevor der Routen-Handler läuft.
  */
 export const requireAdmin = createMiddleware<{ Variables: HonoContextVars }>(
     async (c, next) => {

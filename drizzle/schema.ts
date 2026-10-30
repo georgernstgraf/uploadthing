@@ -5,7 +5,7 @@
  * Umstieg) ab, damit die Baseline-Migration keine Schemaänderung ist:
  *
  * - Tabellen: `users`, `ipfact`, `cookiepresents`, `registrations`,
- *   `abgaben`, `examstate`
+ *   `abgaben`, `examstate`, `adminmac`
  * - Alle Indizes und Unique-Constraints mit den historisch gewachsenen
  *   Namen — die Forensik-Hot-Queries hängen an
  *   `cookiepresents(ip, at)`, `registrations(ip, at)`, `abgaben(ip, at)`
@@ -131,6 +131,28 @@ export const abgaben = sqliteTable(
         index("abgaben_at_idx").on(table.at),
         index("abgaben_ip_at_idx").on(table.ip, table.at),
     ],
+);
+
+/**
+ * Freigegebene Geräte für die Lehrpersonen-Anmeldung (#147).
+ *
+ * Eine MAC-Adresse ist der natürliche Schlüssel des Eintrags; sie wird
+ * kanonisch (`aa:bb:cc:dd:ee:ff`) gespeichert und ist deshalb eindeutig.
+ * `comment` hält fest, welches Gerät gemeint ist („grg-usblan").
+ *
+ * Die Freigabe ist eine Zusatzbedingung zur LDAP-Klasse `LehrendeR`, keine
+ * Rolle: eine freigegebene MAC macht niemanden zum Admin. MAC-Spoofing ist
+ * trivial, die Liste ist Komfort, keine Sicherheitsgrenze.
+ */
+export const adminmac = sqliteTable(
+    "adminmac",
+    {
+        id: integer("id").primaryKey({ autoIncrement: true }),
+        mac: text("mac").notNull(),
+        comment: text("comment").notNull(),
+        created_at: datetime("created_at").notNull(),
+    },
+    (table) => [uniqueIndex("adminmac_mac_key").on(table.mac)],
 );
 
 /**

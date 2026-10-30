@@ -77,13 +77,23 @@ authRouter.post("/register", async (c) => {
 
     const remoteIp = c.get("remoteip");
 
+    // Die IP-Sperre für Lehrpersonen (#147): erlaubt ist eine IP aus
+    // ADMIN_IPS oder ein Gerät mit freigegebener MAC (Datenbank-Allowlist
+    // oder ADMIN_MACS). Die MAC zur IP stammt aus ipfact — dem Polling des
+    // MikroTik, nicht aus einem Abruf im Request-Pfad.
+    const remoteMac = service.user.isTeacher(user)
+        ? service.adminmac.resolveMacForIp(remoteIp)
+        : null;
+
     if (
-        user.klasse === "LehrendeR" &&
-        config.ADMIN_IPS.length > 0 &&
-        !config.ADMIN_IPS.includes(remoteIp)
+        !service.adminmac.teacherRegistrationAllowed({
+            user,
+            ip: remoteIp,
+            mac: remoteMac,
+        })
     ) {
         throw new AppError(
-            "Registrierung als LehrendeR nur von autorisierten IP-Adressen möglich",
+            "Registrierung als LehrendeR nur von autorisierten IP-Adressen oder MAC-Adressen möglich",
             403,
         );
     }
@@ -94,7 +104,9 @@ authRouter.post("/register", async (c) => {
     session.login(email);
 
     c.set("remoteuser", user);
-    const is_admin = user.klasse === "LehrendeR";
+    // Admin ist man ausschließlich über die LDAP-Klasse — eine freigegebene
+    // MAC öffnet nur den Login, sie verleiht keine Admin-Rechte.
+    const is_admin = service.user.isTeacher(user);
     c.set("is_admin", is_admin);
 
     const files = await get_unterlagen();

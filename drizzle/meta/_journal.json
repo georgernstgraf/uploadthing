@@ -15,6 +15,13 @@
       "when": 1793390842842,
       "tag": "0001_ipfact_mac",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793391372511,
+      "tag": "0002_adminmac",
+      "breakpoints": true
     }
   ]
 }

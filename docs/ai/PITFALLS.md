@@ -28,6 +28,15 @@
 - `main_test.ts` is only a placeholder and not the active test harness.
 - The required validation commands are `deno task check`, `deno task lint`, and `deno task test`.
 
+## Formular-Validierung mit zod-form-data
+
+- `zfd.text()` macht aus einem **leeren** Formularfeld `undefined`, nicht
+  `""`. Ohne `required_error` liefert Zod dann `"Required"` und die
+  englische Meldung landet in der deutschen UI. Bei Pflichtfeldern deshalb
+  `z.string({ required_error: "<deutsche Meldung>" })` setzen und die
+  Meldung zusätzlich bei `.min(1, …)` wiederholen (für reine
+  Leerzeichen-Eingaben).
+
 ## IP Trust Assumptions
 
 - Do not introduce logic that trusts `X-Forwarded-For` or similar headers without an explicit architectural change.
@@ -35,9 +44,18 @@
 
 ## Admin Role Assumptions
 
-- Admin access is currently inferred from `remoteuser?.klasse === "LehrendeR"`.
-- Teacher registration may also be restricted by `ADMIN_IPS`.
-- Do not assume there is a separate role table or permission framework.
+- Admin access is inferred from `remoteuser?.klasse === "LehrendeR"` via
+  `service/user.isTeacher()`. Since #147 a teacher may additionally log in
+  from an approved device MAC (table `adminmac` or `ADMIN_MACS`) when the
+  socket IP is not in `ADMIN_IPS`; that device approval never grants admin
+  rights on its own. Do not assume there is a separate role table or
+  permission framework.
+- Do not re-check the MAC/IP gate on every request: the restriction belongs
+  to the login (`routes/auth.ts`), so a failing Tik poll cannot strip admin
+  rights from a running session.
+- The MAC for an IP comes from the newest `ipfact` row with a MAC. Never add
+  a Tik call to the request path (login latency, five-second timeout, Tik
+  outages).
 
 ## Persistence Gotchas
 

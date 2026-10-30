@@ -1,8 +1,9 @@
-import { assertEquals, assertExists } from "@std/assert";
+import { assertEquals, assertExists, assertThrows } from "@std/assert";
 import config, {
     buildHeroUrl,
     isDevelopment,
     isProduction,
+    parseAdminMacList,
     parseOpnsenseConfig,
     parsePermittedFileTypes,
     parseTikConfig,
@@ -174,6 +175,36 @@ Deno.test("config - parsePermittedFileTypes normalizes input", () => {
         "md",
         "pdf",
     ]);
+});
+
+Deno.test("config - ADMIN_MACS is parsed and normalized", () => {
+    assertEquals(config.ADMIN_MACS, []);
+});
+
+Deno.test("config - parseAdminMacList ohne Wert bedeutet keine Freigabe", () => {
+    assertEquals(parseAdminMacList(undefined), []);
+    assertEquals(parseAdminMacList(""), []);
+    assertEquals(parseAdminMacList("   "), []);
+    assertEquals(parseAdminMacList(" , , "), []);
+});
+
+Deno.test("config - parseAdminMacList kanonisiert und entdoppelt", () => {
+    assertEquals(
+        parseAdminMacList("AA-BB-CC-DD-EE-FF, aabbccddeeff , aa:bb:cc:dd:ee:ff"),
+        ["aa:bb:cc:dd:ee:ff"],
+    );
+    assertEquals(
+        parseAdminMacList("aa:bb:cc:dd:ee:01,aa:bb:cc:dd:ee:02"),
+        ["aa:bb:cc:dd:ee:01", "aa:bb:cc:dd:ee:02"],
+    );
+});
+
+Deno.test("config - parseAdminMacList bricht bei ungültigem Eintrag ab", () => {
+    assertThrows(
+        () => parseAdminMacList("aa:bb:cc:dd:ee:01, geen-mac"),
+        Error,
+        "ADMIN_MACS enthält keine gültige MAC-Adresse",
+    );
 });
 
 Deno.test("config - MAX_UPLOAD_MB has default value", () => {
