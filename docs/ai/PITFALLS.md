@@ -145,3 +145,22 @@
 ## Missed Count After Submission
 
 - The `missed_count` calculation in `service/ipadmin.ts` previously counted ongoing absence after the last scan, even if the student had already submitted their work and left. A student who leaves after submitting should not be penalized; scans after their most recent submission are excluded from `missed_count`.
+
+## App-Start beendet den Prozess bei Firewall-Fehler
+
+- `runExamModeOnStartup()` ruft beim Start `setInternetActive(true)` und macht
+  `Deno.exit(1)`, wenn das Kommando scheitert. Solange `EXAMMODE_COMMAND` auf
+  `/usr/local/sbin/exammode.sh` zeigt, startet die App **nur auf der Sense** —
+  auf jedem anderen Host bricht sie beim Boot ab.
+- Das ist der Grund, warum der App-Umzug (#143) zwingend nach dem
+  API-Client (#142) kommt. Wer die Reihenfolge umdreht, bekommt eine App, die
+  nicht hochkommt.
+
+## MikroTik-Scanner scheiterte still
+
+- Der OPNsense-Cronjob rief `/root/bin/scan.py` (Symlink auf `scan-tik.py`).
+  Nach einer Kopie mit Modus `644` und ohne die referenzierte Passwortdatei
+  schlug er **jede Minute** fehl („Permission denied"), ohne dass es jemandem
+  auffiel — `ipfact` lief sieben Tage leer.
+- Lehre: externe Datenerfassung braucht einen sichtbaren Frische-Indikator im
+  Admin-Panel, nicht nur ein Logfile. Umsetzung in #145.

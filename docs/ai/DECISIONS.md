@@ -1,23 +1,38 @@
 # DECISIONS
 
-## Appliance Structure: current/ + rollout/ (2026-10-21, transition pending)
+## 2026-10-30: Exam-Infrastruktur — API-only, App verlässt die Sense
 
-- The `appliance/bin/` + `appliance/files/` split is replaced by two
-  subdirs: `appliance/current/` = gathered live state from `sense`
-  (gitignored raw copies + `MANIFEST`; only the single redacted
-  snapshot `config.redacted.xml` is committable) and
-  `appliance/rollout/` = canonical script sources going forward
-  (committed, 1:1 target-path mirror + `apply.sh`).
-- Workflow: gather → `current/`, edit versions in `rollout/`, apply,
-  re-gather until `current/` matches `rollout/`. `config.xml` is
-  gathered for context only — **no config re-application**; config
-  changes stay in the OPNsense GUI.
-- The old layout is deleted only after a rollout has been applied and
-  convergence is confirmed. `redact-opnsense.sed` moves to
-  `appliance/` root (used by the `config-snapshot` Makefile target).
-- Motivation: deployed state drifted from repo (hand edits on the
-  appliance after the last commit; an untracked live actions file),
-  and upcoming `exammode.sh` work needs a clear source of truth.
+Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
+(2026-10-21). Getrackt in Epic #141.
+
+- **Firewall-Steuerung ausschließlich über die OPNsense-API**
+  (`POST /api/firewall/filter/toggleRule/{uuid}` + `apply`,
+  `GET …/getRule/{uuid}`), Credentials als `OPNSENSE_API_KEY`/`_SECRET` in
+  `.env`. Kein `sudo`, kein `exammode.sh`, kein Schreiben in
+  `/conf/config.xml`. Die Regel-UUID steht in der Konfiguration, nicht im Code.
+- **IP-Präsenz kommt per REST aus dem MikroTik** in den App-Prozess
+  (`registration-table`, 60 s). `POST /activeips` und die Scanner-Skripte
+  entfallen — der frühere Cronjob auf der Firewall war ein Umweg über
+  Loopback-HTTP und Root-Skripte.
+- **Die App verlässt die Sense.** Dell = Hypervisor (VirtualBox) + App als
+  systemd-Dienst, Sense = Firewall/DNS/DHCP. Damit entfallen `rc.d`,
+  `startloop.sh` und der PIDfile-Status-Quirk; die App ist nicht mehr hinter
+  der Firewall, sondern ein Peer im Prüfungsnetz.
+- **Kein Polling des Firewall-Zustands.** Der Zustand wird beim Rendern des
+  Admin-Panels und bei Aktionen gelesen; Drift wird sichtbar gemacht
+  („Examen läuft · Internet frei"), aber nicht automatisch geheilt.
+- **Exam-Start sperrt implizit** und schreibt `examstate` auch dann, wenn die
+  Sperre scheitert — der Schalter zeigt dann den echten Zustand, ein Modal
+  nennt den API-Fehler.
+- **App-Start bleibt fail-safe:** `examstate` → `stopped`, Internet frei.
+  Bewusst akzeptiert: ein Absturz während des Examens öffnet das Netz.
+- **`appliance/rollout/` wird nicht gebaut.** Nach dem Cleanup bleiben
+  `usbpersist.conf`, `redact-opnsense.sed`, Doku und verschlüsselte
+  Config-Backups (gpg/pass, nie Klartext im public Repo).
+- **Tik-Zugang:** eigener User mit `read` + `rest-api`, auf die App-IP
+  beschränkt. Passwörter nie im Repo — auch nicht in der History.
+- **Runtime bleibt Deno, htmx bleibt 2.0.10** bis Februar 2027; die
+  Node-Frage wird nach der Saison neu gestellt.
 
 ## Single-Repo Exam System (appliance/ Integration)
 

@@ -1,44 +1,71 @@
 # Project State
 
-Current status as of 2026-10-21.
+Current status as of 2026-10-30.
 
 ## Current Focus
-Appliance-side reorganization (2026-10-21 session): current state gathered
-from `sense` into `appliance/current/` (scripts, MANIFEST, redacted config
-snapshot). Target structure agreed: `appliance/current/` (gathered live
-state, gitignored except `config.redacted.xml`) + `appliance/rollout/`
-(canonical script sources, committed); legacy `appliance/bin/` and
-`appliance/files/` are deleted once the rollout cycle converges.
-First planned rollout content: an `exammode.sh` edit. Details:
-`docs/ai/OPERATIONS.md` section "Appliance State 2026-10-21".
+
+**Epic #141 — Exam-Infrastruktur 2026/27.** Die Planung ist abgeschlossen und
+vollständig in Tickets abgelegt; die Ausführungsreihenfolge steht im Epic.
+
+Kernentscheidungen: Firewall-Steuerung ausschließlich über die OPNsense-API
+(kein `sudo`, kein `exammode.sh`), IP-Präsenz per Tik-REST direkt im
+App-Prozess, und die App verlässt die Sense vollständig — Dell = Hypervisor +
+App, Sense = Firewall/DNS/DHCP. Runtime bleibt Deno, htmx bleibt 2.0.10 bis
+Februar 2027.
+
+Nächster Schritt: **#142** (OPNsense-API-Client), danach **#143** (Umzug).
+
+## Reihenfolge (Epic #141)
+
+1. #142 OPNsense-API-Client + Exam-Mode-Toggle
+2. #143 Umzug der App auf den Dell (systemd)
+3. #144 Appliance-Cleanup (Root-Skripte, Cron, examsense)
+4. #145 Tik-Polling in der App
+5. #146 Schülerseite (eine Seite, zwei Spalten, Namenssuche)
+6. #133 Drizzle (Schema + Migrationen)
+7. #134 Admin-Upload Unterlagen
+8. #147 MAC-Admin-Freigabe
+9. #148 Backups & Secrets (gpg/pass)
+10. #149 Netz-, DNS- und Ops-Hygiene
+11. #135 Playwright (zuletzt)
+12. #150 htmx-4-Migration (Backlog, Februar 2027)
 
 ## Completed (this cycle)
-- [x] `.env.example` (git-tracked, Platzhalter, TLS-Block mit Beides-oder-keins-Hinweis) (#137)
-- [x] TLS-Deploy-Abschnitt in `docs/ai/OPERATIONS.md` (#137)
-- [x] Prisma model `examstate` + migration, direct-SQLite repo with upsert singleton (#131)
-- [x] Exam state machine `start/pause/resume/stop/addExtra` with injectable clock in `service/exam.ts` (#131)
-- [x] `requireAdmin` middleware replacing 8 inline admin checks (#131)
-- [x] Router split: `machineRouter` at root (`POST /activeips` only), `apiRouter` under `/api` only (#131)
-- [x] Exam admin API `/api/exam/{start,pause,resume,stop,extra}` + public-to-login `GET /api/exam/state` (#131)
-- [x] Native TLS via `Deno.serve` (Code-Seite, #136)
-- [x] Startup reset to exam mode off / internet free, examstate forced to stopped (#131)
-- [x] #137 Host-Arbeit auf `sense`: `.env` final (loopback 8000, `DENO_ENV=production`), Service-Restart-Prozedur verifiziert, OPNsense-GUI → 8443 mit LE-Zertifikat, DNAT 443→127.0.0.1:8000, Smoke-Tests von 192.168.21.2
-- [x] Exam-time gating for `POST /upload` and `GET /unterlagen/*` (#131)
-- [x] Admin exam control panel (duration, start/pause/resume/stop/extra) and student countdown with early-submission encouragement (#131)
+
+- [x] Planungssession 2026-10-30: Ist-Zustand auf `sense`, `tik` und im
+      Schul-LDAP erhoben; Epic #141 plus zwölf Sub-Issues angelegt, jedes mit
+      Abschnitt „Entscheidungen".
+- [x] #140 in #142 (Firewall-API) und #145 (Tik-Polling) aufgeteilt und
+      geschlossen.
+- [x] #136 geschlossen: Code gemergt, Deployment 2026-10-16 erfolgt; Restpunkte
+      (Renewal, DNS) nach #149 verschoben.
+- [x] `.env.example`, TLS-Deploy-Abschnitt, natives TLS via `Deno.serve` (#137)
+- [x] Prisma-Modell `examstate`, Exam-State-Machine, `requireAdmin`,
+      Router-Split, Exam-Admin-API, Startup-Reset, Gating (#131)
+- [x] Admin-Prüfungs-Panel und Schüler-Countdown (#131)
+- [x] TLS-Betrieb auf `sense`: `.env` final, GUI 8443 mit LE-Zertifikat,
+      DNAT 443→8000, Smoke-Tests (#137)
 
 ## Pending
-- [ ] Appliance-Restrukturierung: `appliance/rollout/` aufbauen (kanonische Skripte inkl. Live-Wahrheit von `usbpersist.conf` + `actions_scan.conf`), `exammode.sh`-Edit, `apply.sh`; danach `bin/`+`files/` löschen, Makefile (`config-snapshot` → `appliance/redact-opnsense.sed` → `current/`) + Docs nachziehen
-- [ ] Deno-Hygiene auf `sense`: laufende 2.9.6 (`~/.deno/bin/deno`) konsolidieren, kaputtes `~/deno` (liblcms2 fehlt) und altes `~/tmp/deno` (2.2.15 LTS) entfernen; optional Patch-Bump auf 2.9.7
-- [ ] rc.d-Status-Quirk: `service uploadthing status` meldet "not running", obwohl der Daemon auf 127.0.0.1:8000 lebt (Pidfile-Mismatch im rc-Script)
-- [ ] **Deno-Deprecation** (2026-10-09, Cloudflare-Akquisition; Support-Auslauf 2027): strategisch — Drizzle-Migration (#133) hochstufen, mittelfristig Runtime-Exit (Node/Bun) planen
-- [x] #137 — TLS-Betrieb auf sense: Host-Arbeit abgeschlossen 2026-10-16 (`.env` final, Restart-Prozedur, GUI 8443 + LE-Zertifikat, DNAT 443→8000, Smoke-Tests bestanden). Verbleibt operativ: Zertifikats-Renewal (Ernte auf `kik` + `scp` nach `sense`)
-- [ ] #133 — Prisma → Drizzle Migration (Engines/Linuxulator/Pin eliminieren)
-- [ ] #134 — Admin-Upload für Unterlagen (SSH-Handgriff ersetzen)
-- [ ] #136 — Native TLS (Code fertig; Deployment: scp der geernteten Zertifikate, Ziel-Maschine + Split-DNS offen) → Deployment läuft jetzt als #137
-- [ ] #135 — Playwright-Smoke-Suite für examkritische Browser-Flows (vor der htmx-4-Migration)
+
+- [ ] Der Epic-Plan oben. Kein Punkt davon ist begonnen.
+- [ ] Deno-Hygiene auf `sense`: laufende 2.9.6 (`~/.deno/bin/deno`)
+      konsolidieren, kaputtes `~/deno` (liblcms2 fehlt) und altes `~/tmp/deno`
+      (2.2.15 LTS) entfernen; optional Patch-Bump auf 2.9.7.
+- [ ] Runtime-Frage nach der Saison 2026/27 neu stellen (Deno-Deprecation;
+      Ziel wäre Node auf einem Linux-Host, dann `drizzle-orm/better-sqlite3`).
+
+## Erledigt durch den Umzugsplan (nicht mehr separat verfolgen)
+
+- [x] rc.d-Status-Quirk — entfällt mit #143 (systemd statt `rc.d`/`startloop.sh`).
+- [x] `appliance/rollout/`-Ausbau — entfällt; `appliance/` schrumpft in #144.
 
 ## Blockers
+
 None.
 
 ## Next Session Suggestion
-Possible follow-ups from #131 (not part of the issue scope): admin exemption from Unterlagen gating, student countdown polling after resume.
+
+Mit #142 beginnen. Der API-Key liegt in `~/sense.internal_root_apikey.txt`;
+die verifizierten Endpunkte stehen im Ticket. Abnahme für die Sperre ist ein
+Client im Prüfungs-WLAN (Handy), nicht der Dell.
