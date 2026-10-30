@@ -1,0 +1,1 @@
+ALTER TABLE `ipfact` ADD `mac` text;

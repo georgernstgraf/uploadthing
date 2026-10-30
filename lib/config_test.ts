@@ -5,6 +5,7 @@ import config, {
     isProduction,
     parseOpnsenseConfig,
     parsePermittedFileTypes,
+    parseTikConfig,
     parseTlsConfig,
 } from "./config.ts";
 
@@ -153,8 +154,18 @@ Deno.test("config - parseOpnsenseConfig requires rule UUID", () => {
     );
 });
 
-Deno.test("config - OPNSENSE is null without credentials", () => {
-    assertEquals(config.OPNSENSE, null);
+Deno.test("config - OPNSENSE is null or complete", () => {
+    const opnsense = config.OPNSENSE;
+    if (opnsense === null) {
+        return;
+    }
+    // Auf Produktionsrechnern (und im dell-Checkout) sind die Credentials
+    // gesetzt; beide Zustände sind gültig, eine halbe Konfiguration nicht.
+    assertEquals(typeof opnsense.apiUrl, "string");
+    assertEquals(opnsense.apiUrl.length > 0, true);
+    assertEquals(opnsense.apiKey.length > 0, true);
+    assertEquals(opnsense.apiSecret.length > 0, true);
+    assertEquals(opnsense.ruleUuid.length > 0, true);
 });
 
 Deno.test("config - parsePermittedFileTypes normalizes input", () => {
@@ -192,6 +203,52 @@ Deno.test("config - COOKIE_MAX_AGE_S is calculated correctly", () => {
 Deno.test("config - SESSION_REFRESH_THRESHOLD_MS is calculated correctly", () => {
     const expected = 7 * 24 * 60 * 60 * 1000;
     assertEquals(config.SESSION_REFRESH_THRESHOLD_MS, expected);
+});
+
+Deno.test("config - parseTikConfig returns null without any value", () => {
+    assertEquals(parseTikConfig({}), null);
+    assertEquals(parseTikConfig({ url: "  ", user: "", password: "" }), null);
+});
+
+Deno.test("config - parseTikConfig strips trailing slashes from the URL", () => {
+    assertEquals(
+        parseTikConfig({
+            url: " http://tik.internal/ ",
+            user: " monitoring-rest ",
+            password: "geheim",
+        }),
+        {
+            url: "http://tik.internal",
+            user: "monitoring-rest",
+            password: "geheim",
+        },
+    );
+});
+
+Deno.test("config - parseTikConfig rejects partial credentials", () => {
+    for (
+        const options of [
+            { url: "http://tik.internal" },
+            { user: "monitoring-rest" },
+            { password: "geheim" },
+            { url: "http://tik.internal", user: "monitoring-rest" },
+        ]
+    ) {
+        const error = (() => {
+            try {
+                parseTikConfig(options);
+            } catch (caught) {
+                return caught;
+            }
+            return null;
+        })();
+
+        assertExists(error);
+        assertEquals(
+            error instanceof Error ? error.message : String(error),
+            "TIK_URL, TIK_USER und TIK_PASSWORD müssen gemeinsam gesetzt sein.",
+        );
+    }
 });
 
 Deno.test("config - parseTlsConfig returns null when neither path is set", () => {

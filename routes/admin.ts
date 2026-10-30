@@ -124,6 +124,7 @@ adminRouter.get("/students", async (c) => {
         endDateTime,
         !endtimeProvided,
     );
+    const tik = service.tik.getPanel();
 
     const content = hbs.adminTemplate({
         remote_user,
@@ -142,6 +143,11 @@ adminRouter.get("/students", async (c) => {
         endtimeInFuture,
         endtimeProvided,
         admin_refresh_seconds: refreshSeconds,
+        tik_state: tik.state,
+        tik_last_attempt: tik.last_attempt,
+        tik_last_success: tik.last_success,
+        tik_last_count: tik.count,
+        tik_error: tik.error,
     });
 
     if (c.req.header("HX-Request") === "true") {

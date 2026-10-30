@@ -79,6 +79,44 @@ export function parseOpnsenseConfig(
     return { apiUrl, apiKey, apiSecret, ruleUuid };
 }
 
+export type TikConfig = {
+    url: string;
+    user: string;
+    password: string;
+};
+
+/**
+ * Zugang zum MikroTik-REST-Endpunkt (#145).
+ *
+ * Die drei Variablen sind gemeinsam oder gar nicht gesetzt: fehlen alle,
+ * ist das Polling deaktiviert (lokale Entwicklung ohne Prüfungsnetz) und
+ * das Admin-Panel zeigt „nicht konfiguriert". Fehlt auch nur eine, ist das
+ * ein Startfehler — ein halb konfigurierter Client würde sonst
+ * stillschweigend keine IP-Adressen erfassen.
+ *
+ * Das Passwort bleibt ausschließlich in der `.env`; es taucht in keiner
+ * Fehlermeldung und keinem Log auf.
+ */
+export function parseTikConfig(
+    options: { url?: string; user?: string; password?: string },
+): TikConfig | null {
+    const url = options.url?.trim().replace(/\/+$/, "") ?? "";
+    const user = options.user?.trim() ?? "";
+    const password = options.password ?? "";
+
+    if (!url && !user && !password) {
+        return null;
+    }
+
+    if (!url || !user || !password) {
+        throw new Error(
+            "TIK_URL, TIK_USER und TIK_PASSWORD müssen gemeinsam gesetzt sein.",
+        );
+    }
+
+    return { url, user, password };
+}
+
 export function parseTlsConfig(
     certPath: string | undefined,
     keyPath: string | undefined,
@@ -130,6 +168,11 @@ const config = {
         apiSecret: Deno.env.get("OPNSENSE_API_SECRET"),
         apiUrl: Deno.env.get("OPNSENSE_API_URL"),
         ruleUuid: Deno.env.get("OPNSENSE_EXAMMODE_RULE_UUID"),
+    }),
+    TIK: parseTikConfig({
+        url: Deno.env.get("TIK_URL"),
+        user: Deno.env.get("TIK_USER"),
+        password: Deno.env.get("TIK_PASSWORD"),
     }),
     page_title: `${Deno.env.get("LISTEN_HOST") || "localhost"}:${
         Deno.env.get("LISTEN_PORT")
@@ -189,7 +232,6 @@ const config = {
     SESSION_REFRESH_THRESHOLD_MS: 7 * 24 * 60 * 60 * 1000, // 1 week in ms
     DENO_ENV: Deno.env.get("DENO_ENV") || "development",
     ADMIN_IPS: parseRequiredIpList("ADMIN_IPS"),
-    ACTIVEIPS_ALLOWED_IPS: parseRequiredIpList("ACTIVEIPS_ALLOWED_IPS"),
     THEME_ASSET_VERSION: `${Date.now()}`,
 };
 

@@ -9,13 +9,13 @@ This application supports supervised exam workflows where students identify them
 - `users`: known identities, synchronized from LDAP and stored locally.
 - `registrations`: current exam mappings of user identity to machine IP.
 - `forensic_registrations`: archived past registration mappings for audit history.
-- `ipfact`: sightings of active IP addresses during an exam window.
+- `ipfact`: sightings of active IP addresses and their MAC address during an exam window (polled from the MikroTik; the MAC column is the basis for later MAC-based admin approval).
 - `abgaben`: submitted files and their metadata.
 - `unterlagen`: teacher-provided materials served to authenticated users from the filesystem.
 
 ## Exam Flow
 
-1. Machines report active IPs through `/activeips`.
+1. The app itself polls the MikroTik wireless registration table every 60 s and writes each connected client (IP + MAC) to `ipfact`. There is no reporting endpoint and no IP whitelist anymore.
 2. A user is searched in LDAP and selected through `/ldap` and `/register`.
 3. Registration binds that identity to the current socket IP and creates a session.
 4. The authenticated user can access `unterlagen` and upload an exam file.
@@ -23,12 +23,12 @@ This application supports supervised exam workflows where students identify them
 
 ## Network Scan vs Upload Timing
 
-- POST `/activeips` comes from the WLAN infrastructure (firewall/access point), scanning for active IPs on the network.
-- POST `/upload` comes from the student's browser when they submit their exam file.
-- These are independent HTTP requests from different sources on different timelines; scan timestamps and submission timestamps should not be assumed to align.
-- The ipfact table records per-scan IP sightings; the abgaben table records per-submission metadata.
-- A student's IP must appear in ipfact at every scan timestamp since their last submission for a resubmission to be allowed.
-- POST `/activeips` is protected by an IP whitelist (`ACTIVEIPS_ALLOWED_IPS`). Only the WLAN device's IP is allowed to report active IPs.
+- The IP sightings come from the MikroTik REST polling inside the app process (`service/tik.ts`, every 60 s plus an immediate poll at startup); the upload comes from the student's browser when they submit their exam file.
+- These are independent timelines; poll timestamps and submission timestamps should not be assumed to align.
+- The ipfact table records per-poll IP/MAC sightings; the abgaben table records per-submission metadata.
+- A student's IP must appear in ipfact at every poll timestamp since their last submission for a resubmission to be allowed.
+- The Tik credentials are read-only and live only in `.env`; there is no HTTP endpoint, no IP whitelist and no write path to the Tik.
+- The admin forensics page distinguishes "Tik not reachable" from "Tik reachable but no clients connected", so a silent polling outage cannot look like an empty WLAN.
 
 ## Security Model
 

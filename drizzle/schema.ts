@@ -56,6 +56,11 @@ export const ipfact = sqliteTable(
         id: integer("id").primaryKey({ autoIncrement: true }),
         ip: text("ip").notNull(),
         seen: datetime("seen").notNull(),
+        /**
+         * MAC-Adresse des Geräts zum Zeitpunkt der Sichtung (#145).
+         * Nullable: ältere Zeilen und Clients ohne lesbare MAC bleiben gültig.
+         */
+        mac: text("mac"),
     },
     (table) => [
         uniqueIndex("ipfact_ip_seen_key").on(table.ip, table.seen),

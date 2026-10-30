@@ -1,6 +1,5 @@
 import { assertEquals, assertExists } from "@std/assert";
 import {
-    ActiveIpsSchema,
     AdminExamModeSchema,
     AdminFileTypesSchema,
     AdminQuerySchema,
@@ -39,33 +38,6 @@ Deno.test("RegisterSchema - rejects invalid email", () => {
 
 Deno.test("RegisterSchema - rejects email without domain", () => {
     const result = RegisterSchema.safeParse({ email: "user" });
-    assertEquals(result.success, false);
-});
-
-Deno.test("ActiveIpsSchema - accepts valid IPv4", () => {
-    const result = ActiveIpsSchema.safeParse({ ips: ["192.168.1.1"] });
-    assertEquals(result.success, true);
-});
-
-Deno.test("ActiveIpsSchema - accepts valid IPv6", () => {
-    const result = ActiveIpsSchema.safeParse({ ips: ["::1", "2001:db8::1"] });
-    assertEquals(result.success, true);
-});
-
-Deno.test("ActiveIpsSchema - accepts multiple IPs", () => {
-    const result = ActiveIpsSchema.safeParse({
-        ips: ["10.0.0.1", "10.0.0.2", "10.0.0.3"],
-    });
-    assertEquals(result.success, true);
-});
-
-Deno.test("ActiveIpsSchema - rejects invalid IP", () => {
-    const result = ActiveIpsSchema.safeParse({ ips: ["not.an.ip"] });
-    assertEquals(result.success, false);
-});
-
-Deno.test("ActiveIpsSchema - rejects empty array", () => {
-    const result = ActiveIpsSchema.safeParse({ ips: [] });
     assertEquals(result.success, false);
 });
 

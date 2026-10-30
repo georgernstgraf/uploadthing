@@ -6,6 +6,33 @@
          hx-swap="innerHTML"
          hx-select="#admin-report-panel > *"
          hx-include="#admin-time-filter form">
+    <section id="admin-tik-panel"
+             class="card shadow-sm border-0 mb-2 mx-auto w-100">
+        <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-center gap-2 text-center">
+            {{#if (eq tik_state "nicht-konfiguriert")}}
+                <span id="admin-tik-badge"
+                      class="badge text-bg-secondary rounded-pill px-3 py-2">MikroTik nicht konfiguriert</span>
+                <span class="small">TIK_URL, TIK_USER und TIK_PASSWORD sind nicht gesetzt. Es werden keine IP-Adressen und MAC-Adressen erfasst.</span>
+            {{else if (eq tik_state "unbekannt")}}
+                <span id="admin-tik-badge"
+                      class="badge text-bg-secondary rounded-pill px-3 py-2">MikroTik-Zustand unbekannt</span>
+                <span class="small">Es ist noch kein Abruf abgeschlossen.</span>
+            {{else if (eq tik_state "ok")}}
+                <span id="admin-tik-badge"
+                      class="badge text-bg-success rounded-pill px-3 py-2">MikroTik erreichbar</span>
+                <span class="small">Letzter Abruf: {{tik_last_attempt}} · {{tik_last_count}} aktive Clients erfasst.</span>
+            {{else if (eq tik_state "leer")}}
+                <span id="admin-tik-badge"
+                      class="badge text-bg-info rounded-pill px-3 py-2">MikroTik erreichbar · keine Clients verbunden</span>
+                <span class="small">Letzter Abruf: {{tik_last_attempt}} · Die Registrierungstabelle ist leer.</span>
+            {{else}}
+                <span id="admin-tik-badge"
+                      class="badge text-bg-danger rounded-pill px-3 py-2">MikroTik nicht erreichbar</span>
+                <span class="small">{{#if tik_last_success}}Keine IP-Daten seit: {{tik_last_success}}.{{else}}Noch kein erfolgreicher Abruf seit dem Start.{{/if}}</span>
+                {{#if tik_error}}<span class="small text-danger">{{tik_error}}</span>{{/if}}
+            {{/if}}
+        </div>
+    </section>
     <h2 class="text-center mb-0 fs-4">SchülerInnen und IP Adressen</h2>
     <h6 class="text-center mb-2 small"> Zeitraum: {{#unless withinTimeCutoff}}
             {{startdate}}

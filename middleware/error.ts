@@ -13,11 +13,6 @@ export function errorHandler(err: Error, c: Context) {
         console.error(err);
     }
 
-    // Special handling for /activeips to ensure JSON format if it ever bubbles up here
-    if (c.req.path === "/activeips") {
-         return c.json({ "ok": "false", "message": err.message }, 400);
-    }
-
     if (err instanceof AppError) {
         return c.text(err.message, err.statusCode as ContentfulStatusCode);
     }

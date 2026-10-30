@@ -12,8 +12,6 @@ import {
 
 /**
  * API-Router — wird in `main.ts` ausschließlich unter `/api` gemountet.
- * Der externe `POST /activeips`-Vertrag liegt in `routes/machine.ts`
- * am Root-Mount.
  */
 const apiRouter = new Hono<{ Variables: HonoContextVars }>();
 

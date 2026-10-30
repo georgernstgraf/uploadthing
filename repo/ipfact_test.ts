@@ -136,3 +136,46 @@ Deno.test("getUniqueScanTimestamps returns multiple distinct timestamps from dif
         db.exec(`DELETE FROM ipfact WHERE ip IN ('${testIp1}', '${testIp2}')`);
     }
 });
+Deno.test("registerSeenMany speichert die MAC je Sichtung", () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const testIp1 = `10.0.8.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
+    const testIp2 = `10.0.9.${Number.parseInt(suffix.slice(2, 4), 16) % 250 + 1}`;
+    const seen = new Date("2026-04-01T10:00:00Z");
+
+    try {
+        const inserted = ipfactRepo.registerSeenMany([
+            { ip: testIp1, mac: "aa:bb:cc:dd:ee:01" },
+            { ip: testIp2, mac: null },
+        ], seen);
+        assertEquals(inserted, 2);
+
+        const rows = db.prepare(
+            "SELECT ip, mac FROM ipfact WHERE seen = ? ORDER BY ip",
+        ).all(seen.toISOString()) as { ip: string; mac: string | null }[];
+
+        assertEquals(rows, [
+            { ip: testIp1, mac: "aa:bb:cc:dd:ee:01" },
+            { ip: testIp2, mac: null },
+        ]);
+    } finally {
+        db.exec(`DELETE FROM ipfact WHERE ip IN ('${testIp1}', '${testIp2}')`);
+    }
+});
+
+Deno.test("registerSeen speichert die MAC einer einzelnen Sichtung", () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const testIp = `10.0.10.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
+    const seen = new Date("2026-04-01T11:00:00Z");
+
+    try {
+        ipfactRepo.registerSeen(testIp, seen, "aa:bb:cc:dd:ee:02");
+
+        const row = db.prepare(
+            "SELECT mac FROM ipfact WHERE ip = ? AND seen = ?",
+        ).get(testIp, seen.toISOString()) as { mac: string | null } | undefined;
+
+        assertEquals(row?.mac, "aa:bb:cc:dd:ee:02");
+    } finally {
+        db.exec(`DELETE FROM ipfact WHERE ip = '${testIp}'`);
+    }
+});

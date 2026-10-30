@@ -76,18 +76,6 @@ Deno.test("GET /ldap?email=graf - LDAP search", async () => {
     assertExists(text);
 });
 
-Deno.test("POST /activeips - Register active IPs", async () => {
-    const res = await fetch(`${BASE_URL}/activeips`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ips: ["10.10.10.10", "7.7.7.7", "8.8.1.1"] }),
-    });
-    assertEquals(res.status, 200);
-    const json = await res.json();
-    assertEquals(json.ok, "true");
-    assertExists(json.count);
-});
-
 Deno.test("POST /register - Register User to own IP", async () => {
     const testEmail = "grafg@spengergasse.at";
     const res = await fetch(`${BASE_URL}/register`, {
@@ -174,6 +162,9 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(adminRes.status, 200);
     assertEquals(adminHtml.includes("Abgaben &amp; Datenbank herunterladen (TAR.GZ)"), false);
     assertEquals(adminHtml.includes("Abgaben-Verzeichnis leeren"), false);
+    // Tik-Polling-Panel (#145): im Testlauf ohne TIK_* klar als nicht
+    // konfiguriert erkennbar, nicht als leeres WLAN.
+    assertEquals(adminHtml.includes("MikroTik nicht konfiguriert"), true);
 
     // Die Firewall-Steuerung läuft ausschließlich über die OPNsense-API.
     // Ohne Credentials bleibt sie deaktiviert: POST muss mit einer deutschen
@@ -717,16 +708,6 @@ async function getExamState(cookie: string): Promise<ExamStateResponse> {
     return await res.json();
 }
 
-Deno.test("Router-Split: /api/activeips ist nach dem Split 404", async () => {
-    const res = await fetch(`${BASE_URL}/api/activeips`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ips: ["10.10.10.10"] }),
-    });
-    await res.text(); // consume body to avoid resource leak
-    assertEquals(res.status, 404);
-});
-
 Deno.test("Router-Split: /exammode am Root ist nach dem Split 404", async () => {
     const res = await fetch(`${BASE_URL}/exammode`, {
         method: "POST",
@@ -735,21 +716,6 @@ Deno.test("Router-Split: /exammode am Root ist nach dem Split 404", async () => 
     });
     await res.text(); // consume body to avoid resource leak
     assertEquals(res.status, 404);
-});
-
-Deno.test("Router-Split: /activeips bleibt am Root mit IP-Whitelist gemountet", async () => {
-    // Whitelist-Verhalten unverändert: Anfragen von nicht erlaubten
-    // IPs werden weiterhin mit 403 abgewiesen (der Testlauf kommt von
-    // 127.0.0.1, das in der Whitelist steht — deshalb prüfen wir hier
-    // den Happy Path als Kanoniker gegen das Root-Mount).
-    const res = await fetch(`${BASE_URL}/activeips`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ips: ["10.10.10.10"] }),
-    });
-    assertEquals(res.status, 200);
-    const json = await res.json();
-    assertEquals(json.ok, "true");
 });
 
 Deno.test("requireAdmin: alle /admin-Routen liefern ohne Admin 403", async () => {

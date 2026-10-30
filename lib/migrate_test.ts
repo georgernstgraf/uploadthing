@@ -65,10 +65,11 @@ const EXPECTED_INDEXES = [
     "users_email_key",
 ];
 
-Deno.test("migrate - loadMigrations liefert Baseline aus dem Journal", () => {
+Deno.test("migrate - loadMigrations liefert alle Migrationen aus dem Journal", () => {
     const migrations = loadMigrations(MIGRATIONS_DIR);
-    assertEquals(migrations.length, 1);
+    assertEquals(migrations.length, 2);
     assertEquals(migrations[0].tag, "0000_baseline");
+    assertEquals(migrations[1].tag, "0001_ipfact_mac");
     assertEquals(
         migrations[0].hash,
         createHash("sha256")
@@ -82,10 +83,15 @@ Deno.test("migrate - leere Datenbank wird vollständig aufgebaut", async () => {
     await withTempDb((db) => {
         const outcome = runMigrations(db, { log: quiet });
 
-        assertEquals(outcome.applied, ["0000_baseline"]);
+        assertEquals(outcome.applied, ["0000_baseline", "0001_ipfact_mac"]);
         assertEquals(outcome.marked, []);
         assertEquals(objectNames(db, "table"), EXPECTED_TABLES);
         assertEquals(objectNames(db, "index"), EXPECTED_INDEXES);
+
+        const columns = db.prepare("PRAGMA table_info(ipfact)").all() as {
+            name: string;
+        }[];
+        assertEquals(columns.some((column) => column.name === "mac"), true);
     });
 });
 
@@ -94,9 +100,12 @@ Deno.test("migrate - schreibt das Drizzle-Journalformat", async () => {
         runMigrations(db, { log: quiet });
 
         const rows = appliedRows(db);
-        assertEquals(rows.length, 1);
-        assertEquals(rows[0].hash, loadMigrations()[0].hash);
-        assertEquals(rows[0].created_at, String(loadMigrations()[0].when));
+        const migrations = loadMigrations();
+        assertEquals(rows.length, migrations.length);
+        assertEquals(rows[0].hash, migrations[0].hash);
+        assertEquals(rows[0].created_at, String(migrations[0].when));
+        assertEquals(rows[1].hash, migrations[1].hash);
+        assertEquals(rows[1].created_at, String(migrations[1].when));
     });
 });
 
@@ -107,8 +116,8 @@ Deno.test("migrate - zweiter Lauf ist idempotent", async () => {
 
         assertEquals(outcome.applied, []);
         assertEquals(outcome.marked, []);
-        assertEquals(outcome.skipped, ["0000_baseline"]);
-        assertEquals(appliedRows(db).length, 1);
+        assertEquals(outcome.skipped, ["0000_baseline", "0001_ipfact_mac"]);
+        assertEquals(appliedRows(db).length, 2);
     });
 });
 
@@ -116,15 +125,17 @@ Deno.test("migrate - Baseline auf bestehender Datenbank wird markiert, nicht aus
     await withTempDb((db) => {
         runMigrations(db, { log: quiet });
         db.exec(`DELETE FROM "${MIGRATIONS_TABLE}"`);
+        // Stand vor #145: ipfact kennt die MAC-Spalte noch nicht.
+        db.exec("ALTER TABLE ipfact DROP COLUMN mac");
         db.exec(
             "INSERT INTO users (email, name, updatedat) VALUES ('a@b.at', 'Test', 1)",
         );
 
         const outcome = runMigrations(db, { log: quiet });
 
-        assertEquals(outcome.applied, []);
+        assertEquals(outcome.applied, ["0001_ipfact_mac"]);
         assertEquals(outcome.marked, ["0000_baseline"]);
-        assertEquals(appliedRows(db).length, 1);
+        assertEquals(appliedRows(db).length, 2);
 
         const users = db.prepare("SELECT email FROM users").all() as {
             email: string;
@@ -137,18 +148,23 @@ Deno.test("migrate - ältere Datenbank wird auf den Ist-Zustand gebracht", async
     await withTempDb((db) => {
         runMigrations(db, { log: quiet });
         db.exec(`DELETE FROM "${MIGRATIONS_TABLE}"`);
-        // Stand vor den Forensik-Indizes und vor examstate.
+        // Stand vor den Forensik-Indizes, vor examstate und vor #145.
         db.exec("DROP TABLE examstate");
         db.exec("DROP INDEX abgaben_ip_at_idx");
         db.exec("CREATE INDEX cookiepresents_ip_idx ON cookiepresents (ip)");
+        db.exec("ALTER TABLE ipfact DROP COLUMN mac");
 
         const outcome = runMigrations(db, { log: quiet });
 
-        assertEquals(outcome.applied, ["0000_baseline"]);
+        assertEquals(outcome.applied, ["0000_baseline", "0001_ipfact_mac"]);
         assertEquals(outcome.marked, []);
         assertEquals(objectNames(db, "index"), EXPECTED_INDEXES);
         assert(objectNames(db, "table").includes("examstate"));
-        assertEquals(appliedRows(db).length, 1);
+        const columns = db.prepare("PRAGMA table_info(ipfact)").all() as {
+            name: string;
+        }[];
+        assertEquals(columns.some((column) => column.name === "mac"), true);
+        assertEquals(appliedRows(db).length, 2);
     });
 });
 

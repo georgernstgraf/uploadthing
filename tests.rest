@@ -10,14 +10,6 @@ GET http://localhost:8000/admin/users
 GET http://localhost:8000/ldap?email=graf
 
 ###
-POST http://localhost:8000/activeips
-Content-Type: application/json
-
-{
-    "ips": ["10.10.10.10", "7.7.7.7", "8.8.1.1"]
-}
-
-###
 GET http://localhost:8000/unterlagen
 ###
 GET http://localhost:8000/admin

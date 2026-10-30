@@ -1,4 +1,18 @@
-Last updated: 2026-10-30 (#133 umgesetzt — Drizzle ersetzt Prisma).
+Last updated: 2026-10-30 (#145 umgesetzt — Tik-Polling ersetzt `/activeips`).
+
+## #145 — Tik-Polling (erledigt)
+
+- `service/tik.ts` pollt `registration-table` beim Start und alle 60 s,
+  speichert IP + MAC in `ipfact` und hält den Abrufzustand für das
+  Admin-Panel. `POST /activeips`, `ACTIVEIPS_ALLOWED_IPS`,
+  `routes/machine.ts` und `service/ipfact.ts` sind entfernt.
+- Migration `0001_ipfact_mac` (`ALTER TABLE ipfact ADD mac text`), läuft
+  beim App-Start. Auf der Sense gilt weiter: vor dem ersten Start der
+  neuen Version ein DB-Backup ziehen (#148).
+- Für den Produktivbetrieb müssen `TIK_URL`, `TIK_USER`, `TIK_PASSWORD` in
+  die Produktions-`.env`; ohne sie startet die App (Polling aus, Panel
+  „nicht konfiguriert"), erfasst aber keine IPs.
+- Nächster Schritt darauf: #147 (MAC-basierte Admin-Freigabe).
 
 ## Sofort weiter mit
 

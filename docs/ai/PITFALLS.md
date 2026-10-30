@@ -250,3 +250,32 @@
   - `ipfact` `SELECT DISTINCT ip … WHERE seen BETWEEN ? AND ?`
     → `USING COVERING INDEX ipfact_seen_ip_idx` (+ temporärer B-tree für
     DISTINCT, wie vorher)
+
+## MikroTik-Polling (seit #145)
+
+- Die IP-/MAC-Erfassung läuft im App-Prozess (`service/tik.ts`), nicht
+  mehr über einen HTTP-Endpunkt. `POST /activeips`, `ACTIVEIPS_ALLOWED_IPS`
+  und der OPNsense-Cronjob sind Geschichte — wer sie wieder einführt,
+  baut einen toten, ungeschützten Meldeweg.
+- Der Tik wird **nur gelesen**. Der User ist read-only; im Code darf kein
+  `/rest/.../set`, `reboot` oder ähnlicher Schreibpfad auftauchen.
+  `TIK_PASSWORD` steht ausschließlich in der `.env` und nie in Logs,
+  Fehlermeldungen, Fixtures oder Commit-Messages.
+- `TIK_URL`, `TIK_USER` und `TIK_PASSWORD` sind gemeinsam oder gar nicht
+  gesetzt. Eine halbe Konfiguration ist ein Startfehler, keine stille
+  Abschaltung.
+- Fehler und Leerlauf sind zwei Zustände: Der Poller merkt sich
+  `last_success_at`, `last_attempt_at`, `last_count` und `last_error`;
+  das Admin-Panel zeigt „nicht erreichbar" getrennt von „keine Clients
+  verbunden". Ein Ausfall darf nie wie ein leeres WLAN aussehen.
+- `ipfact.mac` ist nullable: ältere Zeilen und Clients ohne lesbare MAC
+  bleiben gültig. Die MAC wird kleingeschrieben gespeichert; die
+  MAC-Freigabe (#147) baut darauf auf, nicht auf einer zweiten Tabelle.
+- Kein Test ruft den echten Tik auf: `fetch` wird injiziert, der Poller
+  wird in Tests nicht gestartet, und `scripts/test-with-server.sh` setzt
+  `TIK_*` leer, damit der Testserver nicht echte Clients in die Test-DB
+  schreibt.
+- Beim Shutdown wird zuerst der Poller gestoppt (`stop()` bricht den
+  laufenden Abruf ab und wartet ihn ab), dann das SQLite-Handle
+  geschlossen. Sonst schreibt ein spätes Poll-Ergebnis in eine bereits
+  geschlossene Datenbank.

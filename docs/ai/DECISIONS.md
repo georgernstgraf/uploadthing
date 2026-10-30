@@ -1,5 +1,34 @@
 # DECISIONS
 
+## 2026-10-30: Tik-Polling im App-Prozess statt Loopback-Endpunkt (#145)
+
+- **Die App liest die WLAN-Registrierungstabelle selbst.** `service/tik.ts`
+  ruft `GET /rest/interface/wireless/registration-table` mit
+  `.proplist=last-ip,mac-address,uptime,interface` per HTTP Basic ab —
+  beim Start sofort, danach alle 60 s. Kein Cronjob, kein externes Skript,
+  kein `POST /activeips`.
+- **Nur Lesen.** Der Tik-User ist auf `read`/`rest-api` beschränkt; der
+  Code kennt keinen Schreibpfad (`set`, `reboot`, …). Das Passwort steht
+  ausschließlich in der `.env` und erscheint in keiner Fehlermeldung.
+- **Konfiguration ist dreifach oder gar nicht.** `TIK_URL`, `TIK_USER` und
+  `TIK_PASSWORD` sind gemeinsam gesetzt (Polling aktiv) oder alle leer
+  (Polling aus, Panel zeigt „nicht konfiguriert"). Eine halbe Konfiguration
+  bricht den Start mit deutscher Meldung ab — dasselbe Muster wie
+  `OPNSENSE_API_KEY`/`_SECRET`.
+- **Fehler ≠ Leerlauf.** Der letzte Abrufzustand (Zeitpunkt, Anzahl,
+  Fehler) liegt im Speicher und wird im Admin-Panel gerendert:
+  „MikroTik erreichbar", „Tik erreichbar · keine Clients verbunden",
+  „MikroTik nicht erreichbar" (mit „keine IP-Daten seit X") und
+  „nicht konfiguriert" sind getrennte Zustände.
+- **MAC je Sichtung.** `ipfact` bekommt eine nullable `mac`-Spalte
+  (Drizzle-Migration `0001_ipfact_mac`); die MAC-Freigabe selbst ist #147.
+- **Der Endpunkt wird gelöscht, nicht stillgelegt.** `routes/machine.ts`,
+  `ActiveIpsSchema` und `ACTIVEIPS_ALLOWED_IPS` sind entfernt — ein toter
+  Endpunkt mit IP-Whitelist wäre Angriffsfläche ohne Nutzen.
+- **Tests injizieren `fetch` und starten keinen Poller.** Das
+  Test-Startskript setzt `TIK_*` leer, damit der Testserver nie echte
+  WLAN-Clients liest oder in die Test-DB schreibt.
+
 ## 2026-10-30: OPNsense-API-Client für die Exam-Sperre (#142)
 
 Konkretisiert die Entscheidung aus dem Epic #141 nach den ersten echten

@@ -10,7 +10,6 @@ import homeRouter from "./routes/home.ts";
 import uploadRouter from "./routes/upload.ts";
 import authRouter from "./routes/auth.ts";
 import apiRouter from "./routes/api.ts";
-import machineRouter from "./routes/machine.ts";
 import filesRouter from "./routes/files.ts";
 
 import { errorHandler } from "./middleware/error.ts";
@@ -28,20 +27,24 @@ app.route("/admin", adminRouter);
 app.route("/upload", uploadRouter);
 app.route("/", homeRouter);
 app.route("/", authRouter);
-app.route("/", machineRouter);
 app.route("/api", apiRouter);
 app.route("/", filesRouter);
 
 const abortController = new AbortController();
 let shuttingDown = false;
+let tikPoller: ReturnType<typeof service.tik.startPolling> = null;
 
-const shutdown = (signal: Deno.Signal) => {
+const shutdown = async (signal: Deno.Signal) => {
     if (shuttingDown) {
         return;
     }
     shuttingDown = true;
 
     console.log(`Received ${signal}, shutting down HTTP server...`);
+
+    // Zuerst das Tik-Polling stoppen: ein laufender Abruf schreibt in
+    // die Datenbank und darf das SQLite-Handle nicht überleben.
+    await tikPoller?.stop();
     abortController.abort();
 
     shutdownSqlite(signal);
@@ -62,6 +65,9 @@ Deno.addSignalListener("SIGINT", sigintHandler);
 Deno.addSignalListener("SIGTERM", sigtermHandler);
 
 await service.admin.runExamModeOnStartup();
+
+// Aktive IPs und MACs direkt aus dem MikroTik: Sofortabruf, dann alle 60 s.
+tikPoller = service.tik.startPolling();
 
 await Deno.serve(
     {

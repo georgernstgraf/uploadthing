@@ -20,11 +20,30 @@ The application fails to start if any required variable is missing.
 | `TLS_KEY_PATH` | Path to a PEM private key (e.g. `privkey.pem`); must be set together with `TLS_CERT_PATH` |
 | `COOKIE_SECRET` | HMAC key for session cookies (long random string) |
 | `ADMIN_IPS` | Comma-separated IPs allowed to register as teacher, e.g. `127.0.0.1,192.168.21.2` |
-| `ACTIVEIPS_ALLOWED_IPS` | Comma-separated IPs allowed to report active IPs via `/activeips`, e.g. `10.0.0.1,192.168.21.2` |
 | `SERVICE_DN` | LDAP service account DN |
 | `SERVICE_PW` | LDAP service account password |
 | `SERVICE_URL` | LDAP server URL, e.g. `ldaps://ldap.example.com` |
 | `SEARCH_BASE` | LDAP search base DN |
+
+### MikroTik (active IPs and MACs)
+
+The app polls the MikroTik wireless registration table itself every 60 s
+(`GET /rest/interface/wireless/registration-table` over HTTP Basic,
+read-only) and stores IP and MAC per sighting in `ipfact`. There is no
+HTTP endpoint and no IP whitelist for reporting active IPs anymore. The
+admin forensics page shows whether the last poll succeeded, was empty,
+or could not reach the Tik.
+
+| Variable | Description |
+|----------|-------------|
+| `TIK_URL` | Base URL of the Tik REST API, e.g. `http://tik.internal` |
+| `TIK_USER` | Read-only REST user (`monitoring-rest`) |
+| `TIK_PASSWORD` | Password of that user — only in `.env`, never in the repository |
+
+All three must be set together or not at all. Without them polling is
+disabled (local development) and the admin page shows “nicht
+konfiguriert”; setting only some of them aborts startup with a German
+error message.
 
 ### Exam lock (OPNsense API)
 

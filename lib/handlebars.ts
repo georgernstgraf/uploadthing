@@ -6,6 +6,7 @@ import type {
     ServiceIpAdmin,
 } from "../service/ipadmin.ts";
 import type { FirewallState } from "../service/admin.ts";
+import type { TikPanelState } from "../service/tik.ts";
 
 // --- 2. Template Data Type Definitions ---
 
@@ -70,6 +71,11 @@ type AdminTemplateData = {
     endtimeInFuture: boolean;
     endtimeProvided: boolean;
     admin_refresh_seconds: number;
+    tik_state: TikPanelState;
+    tik_last_attempt: string;
+    tik_last_success: string;
+    tik_last_count: number;
+    tik_error: string;
 };
 
 type AdminFileTypesTemplateData = {

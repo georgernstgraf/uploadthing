@@ -207,15 +207,13 @@ archived). Layout:
 
 ### Scan helper / configd integration
 
-- `appliance/bin/scan-pfctl.py` posts active IPs discovered from
-  `pfctl -ss` (this is the data source for the app's `/activeips`
-  endpoint).
-- Deploy `appliance/files/usr_local_opnsense_scripts_custom_nmap_cron.sh`
-  as `/usr/local/opnsense/scripts/custom/nmap_cron.sh`.
-- Deploy
-  `appliance/files/usr_local_opnsense_service_conf_actions.d_actions_exampy.conf`
-  into `/usr/local/opnsense/service/conf/actions.d/`, then
-  `service configd restart` and create the cron job in the GUI.
+- Since #145 the app polls the MikroTik REST API itself (every 60 s, from
+  the app process). `POST /activeips` no longer exists, so the old
+  `nmap_cron.sh`/`scan-*.py` path must not be re-created: it posted to a
+  removed endpoint and had been failing every minute since 2026-10-23.
+- The appliance files (`appliance/files/…_nmap_cron.sh`, the configd
+  `actions.d` snippet, `appliance/bin/scan-*.py`) remain only until the
+  separate cleanup ticket deletes them; nothing wires them into the app.
 
 ### Uploadthing rc.d service
 

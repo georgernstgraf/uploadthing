@@ -1,7 +1,7 @@
 import { db } from "./db.ts";
 
 const registerSeenStmt = db.prepare(
-    "INSERT INTO ipfact (ip, seen) VALUES (?, ?)",
+    "INSERT INTO ipfact (ip, seen, mac) VALUES (?, ?, ?)",
 );
 const deleteOlderThanStmt = db.prepare(
     "DELETE FROM ipfact WHERE seen < ?",
@@ -28,10 +28,20 @@ Zu den Zeiten:
 DATENBANK speichert Zeiten in UTC.
 */
 /**
+ * Ein Gerät, das zum Abrufzeitpunkt im WLAN sichtbar war.
+ * `mac` ist nullable, weil ältere Zeilen und Clients ohne lesbare
+ * MAC-Adresse gültig bleiben.
+ */
+export type SeenEntry = {
+    ip: string;
+    mac?: string | null;
+};
+
+/**
  * Insert a single IP seen timestamp.
  */
-export function registerSeen(ip: string, seen: Date) {
-    registerSeenStmt.run(ip, seen.toISOString());
+export function registerSeen(ip: string, seen: Date, mac: string | null = null) {
+    registerSeenStmt.run(ip, seen.toISOString(), mac);
 }
 
 export function deleteOlderThan(cutoff: Date): number {
@@ -39,14 +49,21 @@ export function deleteOlderThan(cutoff: Date): number {
     return db.changes;
 }
 /**
- * Insert multiple IP seen timestamps in one statement.
+ * Insert multiple seen entries in one statement. `null`/leere MACs werden
+ * als `NULL` gespeichert.
  */
-export function registerSeenMany(ips: string[], seen: Date) {
-    const placeholders = ips.map(() => "(?, ?)").join(", ");
-    const sql = `INSERT INTO ipfact (ip, seen) VALUES ${placeholders}`;
+export function registerSeenMany(entries: SeenEntry[], seen: Date): number {
+    if (entries.length === 0) {
+        return 0;
+    }
+
+    const placeholders = entries.map(() => "(?, ?, ?)").join(", ");
+    const sql = `INSERT INTO ipfact (ip, seen, mac) VALUES ${placeholders}`;
     const stmt = db.prepare(sql);
-    const params = ips.flatMap((ip) => [ip, seen.toISOString()]);
-    return stmt.run(params);
+    const iso = seen.toISOString();
+    const params = entries.flatMap((entry) => [entry.ip, iso, entry.mac ?? null]);
+    stmt.run(params);
+    return db.changes;
 }
 /**
  * List distinct IPs seen within a UTC range.
