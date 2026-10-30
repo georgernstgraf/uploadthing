@@ -123,7 +123,11 @@ only in the operator's head; it is now recorded here (see #132).
   nicht `dnsmasq`). Host-Einträge wie `tst.spengergasse.at` liegen daher
   unter `/api/unbound/settings/searchHostOverride` — die dnsmasq-Einträge
   (`/api/dnsmasq/settings/searchHost`) sehen im GUI gleich aus, werden
-  aber nicht aufgelöst.
+  aber nicht aufgelöst. **dnsmasq bedient nur DHCP** (Port 67); ein
+  dnsmasq-Eintrag mit `hwaddr` ist eine DHCP-Reservierung. Der
+  `dell`-Eintrag zeigt seit 2026-10-30 auf die MAC des USB-Adapters
+  (`7c:c2:c6:15:cb:a8`) statt auf die WLAN-MAC — sonst hätte ein WLAN-
+  Client `.2` zusätzlich bekommen (siehe `PITFALLS.md`).
 - `tst.spengergasse.at → 192.168.21.2` (Dell), `tik.internal → 192.168.21.5`,
   `sense.internal → 192.168.21.1` (und `.0.38` über das graue Interface).
 - Der Dell fragt **ausschließlich** `192.168.21.1` (beide NM-Profile,
@@ -212,6 +216,13 @@ only in the operator's head; it is now recorded here (see #132).
   `TLS_KEY_PATH=…/privkey.pem`, `PUBLIC_URL=https://tst.spengergasse.at/`.
   (Bis #143 stand hier `LISTEN_HOST=127.0.0.1`, `LISTEN_PORT=8000` hinter
   dem DNAT der Sense — entfallen.)
+- **`ADMIN_IPS`** (Produktions-`.env`): `192.168.21.2, .6, .7, .8, .10`.
+  Admin wird nur, wer Klasse `LehrendeR` **hat** und von einer dieser
+  Adressen (oder von einer freigegebenen MAC) kommt. `.2` ist der Dell
+  selbst — ohne diesen Eintrag scheitert ein Lehrer-Login vom
+  Prüfungsserver. Neue Lehrer-Arbeitsplätze brauchen einen Eintrag,
+  sonst bleibt der Login bei „Kein Zugriff" stehen; die MAC-Freigabe
+  unter `/admin/application` ist der Weg ohne Neustart.
 - **`PUBLIC_URL`** is the address the app presents itself under
   (`https://tst.spengergasse.at/`). Since #149 it also produces the
   browser tab title: `page_title` is the **hostname** of `PUBLIC_URL`
@@ -230,6 +241,8 @@ only in the operator's head; it is now recorded here (see #132).
   `systemctl restart uploadthing` (Deno liest Zertifikat und Key beim
   Start). Kein Re-Import in die Sense mehr nötig — die Sense hat ihr
   eigenes internes Zertifikat (`sense.internal`).
+- **Ablauf:** `tst.spengergasse.at` ist gültig bis **2027-01-12**.
+  Erinnerung im Dezember; Checkliste unten.
 - **Dienst:** `systemctl {status,restart,stop} uploadthing`, Logs über
   `journalctl --user -u uploadthing -f`. Frühere Sense-Details (`rc.d`,
   `startloop.sh`, PIDfile-Quirk, `STOPPED`-Datei) sind mit #143/#144
@@ -237,6 +250,45 @@ only in the operator's head; it is now recorded here (see #132).
 - Public DNS für `tst.spengergasse.at` zeigt weiter auf `kik` (nötig für
   ACME HTTP-01); im Prüfungsnetz löst **Unbound** auf der Sense den Namen
   auf `192.168.21.2` auf (siehe Abschnitt „DNS und Hostnamen").
+
+### Zertifikats-Checkliste (manuell, 2×/Jahr)
+
+1. Auf `kik` ernten: `certbot renew` bzw. die bestehende HTTP-01-Prozedur
+   (KI-Kustodiat-intern #3).
+2. `scp /etc/letsencrypt/live/<name>/{fullchain.pem,privkey.pem}`
+   nach `~/certs/tst.spengergasse.at/` auf dem Dell.
+3. Rechte prüfen: `privkey.pem` Modus 600, Owner `georg`.
+4. `systemctl --user restart uploadthing` — Deno liest Zertifikat und Key
+   **nur beim Start**.
+5. Prüfen: `curl -sSI https://tst.spengergasse.at/` → 200, und
+   `openssl s_client -connect 192.168.21.2:443 -servername tst.spengergasse.at </dev/null 2>/dev/null | openssl x509 -noout -dates`
+   zeigt das neue `notAfter`.
+6. `journalctl --user -u uploadthing -n 20` muss
+   „Listening on https://192.168.21.2:443/" zeigen — bei einem
+   Zertifikatsfehler startet der Dienst nicht.
+
+## OPNsense-API-Zugang der App
+
+- Die App liest und schaltet **nur** `api/firewall/filter/*`
+  (`searchRule`, `toggleRule`, `apply`). Genau dafür existiert der eigene
+  Benutzer **`uploadthing-api`** (uid 2000, Scope `user`, Shell
+  `nologin`) mit dem einzigen Privileg **`page-filter-api`**
+  („Firewall: Rules [new]", definiert in
+  `/usr/local/opnsense/mvc/app/models/OPNsense/Firewall/ACL/ACL.xml`).
+- Sein Key/Secret steht als `OPNSENSE_API_KEY` / `OPNSENSE_API_SECRET` in
+  `~/.config/uploadthing/uploadthing.env` (Modus 600). Der **Root-Key**
+  in `~/sense.internal_root_apikey.txt` (600) ist nur noch für den
+  Menschen da, nicht für die App.
+- **Rotation:** `POST /api/auth/user/addApiKey/uploadthing-api` liefert
+  ein neues Paar; altes Paar danach mit
+  `POST /api/auth/user/delApiKey/{id}` (IDs über
+  `searchApiKey/{username}`) entfernen. Die `.env` ändern und
+  `systemctl --user restart uploadthing` — der Start löst die Sperre und
+  schlägt im Log fehl, wenn die Rechte nicht reichen.
+- **Minimalitätsprobe** (muss 403 liefern): derselbe Key gegen
+  `api/dnsmasq/settings/searchHost` und `api/auth/user/search`.
+- `priv` in der API als **Komma-String** senden, nicht als JSON-Array
+  (siehe `PITFALLS.md`).
 
 ## Appliance-Artefakte (Restbestand seit #144)
 
@@ -299,8 +351,9 @@ WireGuard-Schlüssel; das Repo ist public. Deshalb liegt der Klartext
 - `appliance/backups/MANIFEST` — TAB-getrennt: Datum,
   OPNsense-Version, sha256 des **Chiffrats**, Empfänger-Key-ID, Datei.
 - Der **private Schlüssel liegt nicht im Repo**, sondern nur im Keyring
-  des Entwicklungsrechners (Passphrase über `pass`). Verschlüsseln
-  braucht keine Passphrase, Entschlüsseln schon.
+  des Entwicklungsrechners. Verschlüsseln braucht keinen Secret-Key,
+  Entschlüsseln den Keyring — der Key hat **derzeit keine Passphrase**
+  (Risiko notiert unter „Restore-Probe").
 
 Der redigierte Snapshot (`make config-snapshot` →
 `appliance/current/config.redacted.xml`) bleibt zusätzlich bestehen und
@@ -361,7 +414,7 @@ Wegwerf-VM (siehe unten).
    `MANIFEST`-Zeile vergleichen (Abschnitt „Backup prüfen").
 2. **Entschlüsseln** auf dem Rechner mit dem Secret-Key:
    `gpg --output config.xml --decrypt appliance/backups/config-YYYY-MM-DD.xml.gpg`
-   (Passphrase aus `pass`). Das Ergebnis ist Klartext mit allen Secrets:
+   (ohne Passphrase, siehe Risiko-Hinweis). Das Ergebnis ist Klartext mit allen Secrets:
    nach dem Restore löschen (`shred -u config.xml`), niemals committen,
    nicht nach `appliance/` kopieren.
 3. **Zielsystem angleichen** (siehe „Was nach dem Restore gilt"):
@@ -409,14 +462,28 @@ Wegwerf-VM (siehe unten).
   ausschließlich die Firewall-Konfiguration; DB-Backups liegen beim
   App-Betrieb auf dem Dell.
 
-### Restore-Probe — offen (Checkliste)
+### Restore-Probe
 
-Wird mit dem Nutzer auf einer Wegwerf-VM durchgeführt, nicht auf der
-Sense. Ergebnis hier eintragen.
+**Was am 2026-10-30 geprüft wurde (XML-Ebene, ohne VM):**
 
-- [ ] Chiffrat aus dem Repo entschlüsseln, sha256 gegen `MANIFEST`
+- Chiffrat `appliance/backups/config-2026-10-30.xml.gpg` entschlüsselt,
+  sha256 gegen `MANIFEST` geprüft.
+- Das Ergebnis ist **byte-identisch** mit `/conf/config.xml` auf der Sense
+  (sha256 `3749dfe3…`), wohlgeformt, 30 Top-Level-Bereiche.
+- Inhaltlich geprüft: Interfaces `lo0`/`lan`/`wan`, beide Benutzer
+  (`root`, `uploadthing-api`), alle sechs Automation-Regeln unter
+  `OPNsense/Firewall/Filter/rules` (inklusive `doku`, `enabled=0`), keine
+  Reste des gelöschten Cronjobs `scan scan`. Klartext danach gelöscht.
+- **Nicht geprüft:** der Weg über die GUI bzw. `/conf/config.xml` auf
+  einer laufenden Box. Dafür ist eine Wegwerf-VM nötig, die **nicht** ins
+  Prüfungsnetz darf — ein Boot mit `192.168.21.1` kollidiert mit der
+  produktiven Sense.
+
+**Offene Checkliste für die VM-Probe:**
+
+- [x] Chiffrat aus dem Repo entschlüsseln, sha256 gegen `MANIFEST`
 - [ ] OPNsense-VM in VirtualBox mit derselben Version (`26.7.3_11`)
-      aufsetzen, ohne Anschluss an das Prüfungsnetz
+      aufsetzen, **ohne** Anschluss an das Prüfungsnetz
 - [ ] Plugin-Set der VM gegen den Stand im Backup angleichen
 - [ ] Restore über die GUI mit „Reboot after restore"
 - [ ] Nach dem Boot: Interface-Zuordnung, LAN-Adresse (`192.168.21.1`),
@@ -424,33 +491,47 @@ Sense. Ergebnis hier eintragen.
       Filterregeln und Aliase vollständig, WireGuard-Peers,
       Zertifikate gültig
 - [ ] API-Zugriff mit Key/Secret aus der `.env` testen
-      (`GET /api/firewall/filter/getRule/…`), Exam-Sperre schalten
+      (`POST /api/firewall/filter/searchRule`), Exam-Sperre schalten
 - [ ] Abweichungen notieren (Datum, Version, was fehlte)
+- [ ] Hinweis am VM-Netzadapter: erster Start nur mit „Not attached",
+      IP danach auf etwas anderes als `.1` setzen
+
+> **Risiko, offen:** Der GPG-Key `EC23CFDFDDA530BD` hat derzeit **keine
+> Passphrase** — Entschlüsseln läuft ohne Rückfrage, d. h. wer Zugriff auf
+> `~/.gnupg` hat, hat auch die Firewall-Secrets. Abwägung: Passphrase
+> bedeutet, dass ein Restore nicht mehr unbeaufsichtigt möglich ist.
+> Entscheidung steht noch aus; bis dahin bleibt der Keyring der
+> Schutzmechanismus (Modus 700, keine Kopie im Repo).
 
 ## Database Sync Cycle — entfallen (2026-10-30)
 
 Der frühere `Makefile`-Zyklus (`make pull` / `make push` / `make logsync`
-gegen `sense`) ist mit dem Umzug überflüssig: App und DB liegen auf dem
-Dell, Backups laufen über #148 (gpg-verschlüsselt ins Repo). Die
-Makefile-Ziele zeigen noch auf `sense` — beim nächsten Anfassen
-entfernen, solange niemand sie benutzt.
+gegen `sense`) ist mit dem Umzug überflüssig; das `Makefile` hat nur noch
+`config-snapshot`. App und DB liegen auf dem Dell, Backups laufen über
+`scripts/backup-config.sh`.
 
 ## Open Points
 
-- **#144 (Repo-Teil erledigt):** `appliance/` ist auf Redaktionsskript,
-  `usb_persist.conf`, MikroTik-Material, redigierten Snapshot und die
-  Legacy-CSV geschrumpft. Auf der Sense selbst sind `/home/georg/uploadthing`,
-  `/usr/local/etc/rc.d/uploadthing`, die Root-Skripte, der Cronjob
-  `scan scan` und das archivierte `examsense`-Repo **noch** vorhanden —
-  der Dienst ist gestoppt (`uploadthing_enable=NO`), gelöscht ist dort
-  nichts.
-- **#149 (offen):** Die App nutzt noch den Root-API-Key der Sense; ein
-  eigener Benutzer mit minimalen Rechten (Firewall + Dnsmasq/Unbound)
-  fehlt. `/root` ist noch 755. #136 ist noch nicht geschlossen.
-- **#148 (Repo-Teil erledigt):** verschlüsselte Konfigurationsbackups
-  liegen in `appliance/backups/` (`scripts/backup-config.sh`, siehe
-  „Konfigurations-Backup"). Offen ist die **Restore-Probe** auf einer
-  Wegwerf-VM; Cron-Automatisierung ist bewusst nicht gebaut.
+- **#144 (erledigt 2026-10-30):** Repo-Teil (siehe oben) und Sense:
+  Cronjob `scan scan` per API entfernt (`configctl cron restart`),
+  `/root/examsense`, `/root/bin`, `/usr/local/sbin/exammode.sh`,
+  `actions_scan.conf`/`actions_exampy.conf`, `nmap_cron.sh`,
+  `rc.d/uploadthing`, `/home/georg/uploadthing` und die alte
+  `uploadthing.db` gelöscht; configd neu gestartet. MikroTik:
+  `service-monitor` entfernt, `uploadthing` strikt auf
+  `192.168.21.2/32`. GitHub-Repo `georgernstgraf/examsense` gelöscht
+  (Bundle + Tarball in `~/uploadthing-archive/`). Abnahme: keine Treffer
+  mehr unter `/root`, `/usr/local`, `/home/georg`; `grep -c "scan scan"`
+  in `config.xml` und den Crontabs → 0.
+- **#149 (erledigt 2026-10-30):** eigener API-Benutzer
+  `uploadthing-api` mit `page-filter-api` (Root-Key nur noch für den
+  Menschen), `/root` auf 750, Key-Datei 600, `page_title` aus
+  `PUBLIC_URL`, `ADMIN_IPS` enthält `.2`, dnsmasq-`dell`-Eintrag auf die
+  USB-MAC korrigiert, Zertifikats-Checkliste oben. #136 war bereits
+  geschlossen.
+- **#148 (Repo-Teil erledigt):** siehe „Konfigurations-Backup".
+  Restore-Probe auf XML-Ebene durchgeführt; die VM-Probe bleibt offen
+  (Checkliste oben).
 - Die TLS-/Zertifikatskette ist oben beschrieben; eine **einmalige
   gedankliche Probe** der Erneuerung (Ernte auf `kik` → `scp` → Restart)
   steht noch aus.

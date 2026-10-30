@@ -528,3 +528,89 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
 - **Tradeoff**: Wer im GUI den DHCP-/dnsmasq-Bereich bearbeitet, ändert
   nichts an der Namensauflösung; nach jeder Änderung `dig @192.168.21.1`
   prüfen.
+
+## 2026-10-30: dnsmasq-Einträge sind DHCP-Reservierungen (#149)
+
+- **Choice**: Die dnsmasq-Host-Einträge bleiben bestehen und werden als
+  das behandelt, was sie sind — **DHCP-Reservierungen**, nicht DNS. Der
+  Eintrag `dell` trägt jetzt die MAC des USB-Adapters
+  (`7c:c2:c6:15:cb:a8`) statt der WLAN-MAC.
+- **Reason**: Ergänzung zur Entscheidung „DNS-Hostnamen liegen in
+  Unbound": wirkungslos für die Auflösung heißt nicht wirkungslos (Port
+  67 lauscht dnsmasq). Mit der WLAN-MAC hätte ein WLAN-Client `.2` ein
+  zweites Mal bekommen.
+- **Tradeoff**: Zwei Orte mit ähnlich aussehenden Host-Einträgen bleiben
+  eine Fehlerquelle; im Zweifel `dig @192.168.21.1 <name>` statt GUI.
+
+## 2026-10-30: Eigener API-Benutzer für die App (#149)
+
+- **Choice**: Die App authentifiziert sich als **`uploadthing-api`**
+  (Scope `user`, Shell `nologin`) mit dem einzigen Privileg
+  **`page-filter-api`**. Der Root-API-Key bleibt ausschließlich für den
+  Menschen in `~/sense.internal_root_apikey.txt`.
+- **Reason**: Die App braucht genau drei Endpunkte
+  (`searchRule`/`toggleRule`/`apply`); ein Root-Key im Dienst-Env ist
+  mehr Rechte, als der Prozess je braucht. Verifiziert: derselbe Key
+  liefert 200 auf `api/firewall/filter/searchRule` und 403 auf
+  `api/dnsmasq/…` und `api/auth/user/…`.
+- **Tradeoff**: Eine Rotation ist jetzt ein zusätzlicher Schritt (Key in
+  der `.env` tauschen, Dienst neu starten). Der Start löst die Sperre
+  und protokolliert einen Rechtefehler, startet aber weiter — ein
+  falscher Key bleibt also nicht als kaputter Dienst stehen, sondern als
+  Fehler im Panel.
+
+## 2026-10-30: Appliance-Cleanup endgültig (#144)
+
+- **Choice**: Cron `scan scan` per API (`/api/cron/settings/delJob`) plus
+  `configctl cron restart`; Skripte, `actions_*.conf`, `nmap_cron.sh`,
+  `/root/examsense`, `/root/bin`, `/usr/local/sbin/exammode.sh`,
+  `rc.d/uploadthing` und `/home/georg/uploadthing` sind gelöscht. Das
+  GitHub-Repo `georgernstgraf/examsense` ist **gelöscht**, die Historie
+  liegt als `~/uploadthing-archive/examsense-2026-10-30.bundle` (plus
+  Tarball des Checkouts) auf dem Dell.
+- **Reason**: Nach #142/#145 holte niemand mehr etwas aus diesen
+  Artefakten; das Repo stand öffentlich mit einem Klartext-Passwort in
+  der History.
+- **Tradeoff**: Die Löschung auf GitHub ist irreversibel. Vorher wurden
+  Bundle, Tarball und die alte Sense-Instanz (`legacy-uploadthing-…`)
+  gesichert; ohne diese Sicherung wäre der Stand weg.
+
+## 2026-10-30: Backup-Route und Redaktion (#148)
+
+- **Choice**: Das Backup-Skript liegt in `scripts/backup-config.sh`
+  (nicht in `appliance/bin/`), die Chiffrate in
+  `appliance/backups/config-YYYY-MM-DD.xml.gpg` mit `MANIFEST`. Die
+  Redaktionsliste `appliance/bin/redact-opnsense.sed` deckt jetzt auch
+  `<apikeys>`, `<ldap_bindpw>`, `<bindpw>`, `<pre-shared-key>` und
+  `<community>` ab.
+- **Reason**: `appliance/` enthält seit #144 keinen Laufzeitcode mehr;
+  ein Backup-Skript dort hätte die gerade gezogene Grenze wieder
+  verwischt. Die Redaktion war lückenhaft: der getrackte Snapshot enthielt
+  die API-Key-Hälften im Klartext (öffentliches Repo).
+- **Tradeoff**: Verschlüsseln braucht nur den Public Key, Entschlüsseln
+  die Passphrase — die Restore-Probe bleibt ein manueller Schritt mit
+  dem Menschen.
+
+## 2026-10-30: htmx-Doppelklick-Schutz am Formular (#151)
+
+- **Choice**: Bei `hx-post` am `<form>` steht
+  `hx-disabled-elt="find button[type='submit']"` am Formular; das
+  Attribut am Submit-Button entfällt.
+- **Reason**: htmx löst `this` gegen das **anfragende** Element auf und
+  sucht Attribute nur nach oben. `hx-disabled-elt="this"` am Button war
+  deshalb wirkungslos, solange das Formular die Anfrage stellte — der
+  Doppelklick-Schutz fehlte faktisch bei „Abgabe hochladen" und
+  „Examen starten".
+- **Tradeoff**: `find` liefert nur den ersten Treffer; Formulare mit
+  mehreren Submit-Buttons brauchen einen expliziten Selektor.
+
+## 2026-10-30: #150 verlässt das Epic #141
+
+- **Choice**: Die htmx-4-Migration (#150) ist kein Sub-Issue von #141
+  mehr, sondern ein eigenständiges Backlog-Ticket (Februar 2027, wenn
+  htmx 4 `latest` wird).
+- **Reason**: Das Epic beschreibt den Umbau der Exam-Infrastruktur, der
+  mit #144/#148/#149 abgeschlossen ist; eine Migration auf eine noch
+  nicht veröffentlichte Bibliotheksversion kann es nicht blockieren.
+- **Tradeoff**: Die Verbindung ist nur noch im Text von #150 sichtbar,
+  nicht in der Sub-Issue-Liste.

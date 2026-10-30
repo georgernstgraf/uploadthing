@@ -355,3 +355,47 @@
   Arbeitsverzeichnis laufen lassen. Snapshot-Verzeichnisse nie als
   „harmlos, weil ungetrackt" abtun, und Belegdateien nur redigiert
   übernehmen.
+- **2026-10-30 nachgezogen:** `appliance/current/config.xml`, `usr/` und
+  das alte `MANIFEST` sind gelöscht (der Klartext ist durch das
+  gpg-Chiffrat aus #148 ersetzt).
+
+## config.xml-Redaktion deckte API-Keys nicht ab
+
+- `appliance/bin/redact-opnsense.sed` ersetzte nur `<password>` und
+  `<prv>`. `<apikeys>` (OPNsense speichert dort `<key>|<hash>`) blieb
+  stehen — und `appliance/current/config.redacted.xml` ist **getrackt**
+  und das Repo ist **öffentlich**. Bis 2026-10-30 lagen damit die
+  API-Key-Hälften (inklusive des Root-Keys) im Klartext im Repo.
+- Die Filterliste deckt jetzt zusätzlich `<apikeys>`, `<ldap_bindpw>`,
+  `<bindpw>`, `<pre-shared-key>` und `<community>` ab.
+- **Lehre:** Ein Redaktionsfilter ist eine **Allowlist-Umkehrung**: jede
+  neue Secret-Art in OPNsense (`config.xml`) muss dort eingetragen
+  werden. Nach jedem neuen Snapshot `grep -E '\$2y\$|<apikeys>[A-Za-z0-9]'`
+  laufen lassen, bevor committet wird.
+
+## CSVListField will einen String, kein Array (OPNsense-API)
+
+- `POST /api/auth/user/set/{uuid}` mit `{"user":{"priv":["page-filter-api"]}}`
+  endet in `{"errorMessage":"Unexpected error, check log for details"}` —
+  ohne PHP-Log, also nicht diagnostizierbar. Mit
+  `{"user":{"priv":"page-filter-api"}}` (Komma-String) liefert derselbe
+  Aufruf `saved`.
+- Betroffen sind alle `CSVListField`-Felder der Modelle. Für
+  Mehrfachwerte komma-separiert senden, nicht als JSON-Array.
+- `POST /api/auth/user/add` verlangt `name` und `password`; ein
+  mitgesendetes `priv`-Array lässt den ganzen Aufruf scheitern. Erst
+  minimal anlegen, dann `set` mit dem Komma-String.
+
+## Unbound beantwortet DNS, dnsmasq bedient nur DHCP
+
+- `sockstat -4 -l | grep :53` zeigt ausschließlich `unbound`; dnsmasq
+  lauscht auf `:67` (DHCP). Host-Einträge unter
+  `/api/dnsmasq/settings/searchHost` sehen im GUI wie DNS aus, werden
+  aber nicht aufgelöst — `tst.spengergasse.at` und `dell.internal`
+  kommen aus `/api/unbound/settings/searchHostOverride`.
+- Trotzdem sind die dnsmasq-Einträge nicht wirkungslos: ein Eintrag mit
+  `hwaddr` ist eine **DHCP-Reservierung**. Der `dell`-Eintrag zeigte auf
+  die WLAN-MAC des Dell und hätte bei WLAN-Betrieb `.2` ein zweites Mal
+  vergeben — bei statischer Adresse auf dem gelben Interface ein
+  Adresskonflikt. Seit 2026-10-30 trägt er die MAC des USB-Adapters
+  (`7c:c2:c6:15:cb:a8`).

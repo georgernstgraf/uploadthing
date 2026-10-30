@@ -92,18 +92,19 @@
       <landing_page/>
       <comment/>
       <email/>
-      <apikeys/>
+      <apikeys>API key not revealed.</apikeys>
       <priv/>
       <language/>
       <descr>System Administrator</descr>
       <dashboard/>
+      <menu_favorites/>
     </user>
     <timezone>Europe/Vienna</timezone>
     <timeservers>0.opnsense.pool.ntp.org 1.opnsense.pool.ntp.org 2.opnsense.pool.ntp.org 3.opnsense.pool.ntp.org</timeservers>
     <webgui>
       <protocol>https</protocol>
-      <ssl-certref>168e7bf963564</ssl-certref>
-      <port>8443</port>
+      <ssl-certref>6ae4f83ecabe4</ssl-certref>
+      <port>443</port>
       <ssl-ciphers/>
       <interfaces/>
       <compression/>
@@ -167,6 +168,27 @@
     <skip_rules_gw_down>1</skip_rules_gw_down>
     <pfdebug>urgent</pfdebug>
     <pf_disable_force_gw>1</pf_disable_force_gw>
+    <user uuid="437e3ae6-28fc-42ac-bdf5-753ecf9df759">
+      <uid>2000</uid>
+      <name>uploadthing-api</name>
+      <disabled>0</disabled>
+      <scope>user</scope>
+      <expires/>
+      <authorizedkeys/>
+      <otp_seed/>
+      <shell/>
+      <password>Password not revealed.</password>
+      <pwd_changed_at>1793399572.5365</pwd_changed_at>
+      <landing_page/>
+      <comment/>
+      <email/>
+      <apikeys>API key not revealed.</apikeys>
+      <priv>page-filter-api</priv>
+      <language/>
+      <descr/>
+      <dashboard/>
+      <menu_favorites/>
+    </user>
   </system>
   <interfaces>
     <lo0>
@@ -234,7 +256,7 @@
       <gatewayv6/>
     </wan>
   </interfaces>
-  <dnsmasq version="1.0.9" persisted_at="1791990190.02" description="Dnsmasq DNS and DHCP">
+  <dnsmasq version="1.0.9" persisted_at="1793399507.06" description="Dnsmasq DNS and DHCP">
     <enable>1</enable>
     <regdhcp>0</regdhcp>
     <regdhcpstatic>0</regdhcpstatic>
@@ -310,7 +332,7 @@
       <ip>192.168.21.2</ip>
       <cnames/>
       <client_id/>
-      <hwaddr>f8:59:71:65:4a:6e</hwaddr>
+      <hwaddr>7c:c2:c6:15:cb:a8</hwaddr>
       <lease_time/>
       <ignore>0</ignore>
       <set_tag/>
@@ -397,14 +419,14 @@
       <host>tst</host>
       <domain>spengergasse.at</domain>
       <local>0</local>
-      <ip>192.168.21.1</ip>
+      <ip>192.168.21.2</ip>
       <cnames/>
       <client_id/>
       <hwaddr/>
       <lease_time/>
       <ignore>0</ignore>
       <set_tag/>
-      <descr/>
+      <descr>uploadthing auf dem Dell (seit 2026-10-30)</descr>
       <comments/>
       <aliases/>
     </hosts>
@@ -434,161 +456,15 @@
     <syscontact/>
     <rocommunity>public</rocommunity>
   </snmpd>
-  <filter>
-    <rule uuid="34f4fbf8-3cc1-4e4f-929f-c12c6d504b50">
-      <type>pass</type>
-      <ipprotocol>inet</ipprotocol>
-      <statetype>keep state</statetype>
-      <descr>floaty</descr>
-      <direction>in</direction>
-      <category>floaty</category>
-      <floating>yes</floating>
-      <log>1</log>
-      <quick>1</quick>
-      <source>
-        <network>(self)</network>
-      </source>
-      <destination>
-        <any>1</any>
-      </destination>
-      <updated>
-        <username>root@192.168.21.80</username>
-        <time>1773174117.86</time>
-        <description>/firewall_rules_edit.php made changes</description>
-      </updated>
-      <created>
-        <username>root@192.168.21.170</username>
-        <time>1765405353.46</time>
-        <description>/firewall_rules_edit.php made changes</description>
-      </created>
-    </rule>
-    <rule uuid="08c160fb-8eb5-42c1-b2be-53d55dbe9979">
-      <type>pass</type>
-      <interface>wan</interface>
-      <ipprotocol>inet</ipprotocol>
-      <statetype>keep state</statetype>
-      <direction>in</direction>
-      <quick>1</quick>
-      <protocol>icmp</protocol>
-      <source>
-        <any>1</any>
-      </source>
-      <destination>
-        <network>(self)</network>
-      </destination>
-      <updated>
-        <username>root@192.168.21.80</username>
-        <time>1765265673.40</time>
-        <description>/firewall_rules_edit.php made changes</description>
-      </updated>
-      <created>
-        <username>root@192.168.21.80</username>
-        <time>1765265673.40</time>
-        <description>/firewall_rules_edit.php made changes</description>
-      </created>
-    </rule>
-    <rule uuid="a6bebc62-5fd1-487c-9fe9-f3adba1067ac">
-      <type>pass</type>
-      <interface>lan</interface>
-      <ipprotocol>inet</ipprotocol>
-      <statetype>keep state</statetype>
-      <direction>in</direction>
-      <quick>1</quick>
-      <source>
-        <any>1</any>
-      </source>
-      <destination>
-        <network>(self)</network>
-      </destination>
-      <updated>
-        <username>root@192.168.21.101</username>
-        <time>1765886565.88</time>
-        <description>/firewall_rules_edit.php made changes</description>
-      </updated>
-      <created>
-        <username>root@192.168.21.170</username>
-        <time>1765405960.05</time>
-        <description>/firewall_rules_edit.php made changes</description>
-      </created>
-    </rule>
-    <rule uuid="450e19ba-cd2a-4f78-8e57-2375203f4cdd">
-      <type>pass</type>
-      <interface>lan</interface>
-      <ipprotocol>inet</ipprotocol>
-      <statetype>keep state</statetype>
-      <descr>infra</descr>
-      <direction>in</direction>
-      <category>infra</category>
-      <log>1</log>
-      <quick>1</quick>
-      <protocol>tcp/udp</protocol>
-      <source>
-        <network>lan</network>
-      </source>
-      <destination>
-        <address>INFRA</address>
-      </destination>
-      <updated>
-        <username>root@192.168.21.80</username>
-        <time>1773175316.09</time>
-        <description>/firewall_rules_edit.php made changes</description>
-      </updated>
-      <created>
-        <username>root@192.168.21.80</username>
-        <time>1768038418.19</time>
-        <description>/firewall_rules_edit.php made changes</description>
-      </created>
-    </rule>
-    <rule uuid="e3e720e6-27fb-4565-b8cf-3a73cf682b54">
-      <type>reject</type>
-      <interface>lan</interface>
-      <ipprotocol>inet</ipprotocol>
-      <statetype>keep state</statetype>
-      <descr>doku</descr>
-      <direction>in</direction>
-      <category>doku</category>
-      <log>1</log>
-      <quick>1</quick>
-      <protocol>tcp/udp</protocol>
-      <source>
-        <network>lan</network>
-      </source>
-      <destination>
-        <address>DOKU</address>
-        <not>1</not>
-      </destination>
-      <updated>
-        <username>root@192.168.21.80</username>
-        <time>1773175341.02</time>
-        <description>/firewall_rules_edit.php made changes</description>
-      </updated>
-      <created>
-        <username>root@192.168.21.170</username>
-        <time>1765405596.14</time>
-        <description>/firewall_rules_edit.php made changes</description>
-      </created>
-      <disabled>1</disabled>
-    </rule>
-    <rule uuid="ff2e3e81-8819-4bdd-ab19-587a0abb5ecb">
-      <type>pass</type>
-      <ipprotocol>inet</ipprotocol>
-      <descr>Default allow LAN to any rule</descr>
-      <interface>lan</interface>
-      <source>
-        <network>lan</network>
-      </source>
-      <destination>
-        <any/>
-      </destination>
-    </rule>
-  </filter>
+  <filter/>
   <ntpd>
     <prefer>0.opnsense.pool.ntp.org</prefer>
   </ntpd>
   <revision>
-    <username>(root)</username>
-    <description>/usr/local/opnsense/mvc/script/run_migrations.php made changes</description>
-    <time>1792492937.61</time>
+    <username>uploadthing-api@192.168.21.2</username>
+    <user_apitoken>API token not revealed.</user_apitoken>
+    <description>/api/firewall/filter/toggleRule/69c0079a-7b83-4cc2-95b5-78183f4b222b made changes</description>
+    <time>1793399594.67</time>
   </revision>
   <OPNsense>
     <wireguard>
@@ -699,21 +575,8 @@
       <zones/>
       <templates/>
     </captiveportal>
-    <cron version="1.0.4" persisted_at="1766523702.38" description="Cron settings">
+    <cron version="1.0.4" persisted_at="1793399444.75" description="Cron settings">
       <jobs>
-        <job uuid="24a21141-c215-4268-9e48-e7a496f17189">
-          <origin>cron</origin>
-          <enabled>1</enabled>
-          <minutes>*</minutes>
-          <hours>*</hours>
-          <days>*</days>
-          <months>*</months>
-          <weekdays>*</weekdays>
-          <who>root</who>
-          <command>scan scan</command>
-          <parameters/>
-          <description>NMAP LAN SCAN</description>
-        </job>
         <job uuid="00e767f0-87d0-47f8-862f-08be404b4997">
           <origin>cron</origin>
           <enabled>0</enabled>
@@ -822,28 +685,389 @@ binaries.prisma.sh</content>
           </alias>
         </aliases>
       </Alias>
-      <Category version="1.0.0" persisted_at="1773175341.04" description="Firewall categories">
+      <Category version="1.0.0" persisted_at="1793396059.61" description="Firewall categories">
         <categories>
           <category uuid="90d40e59-e01a-4823-91e6-2a51a9e93cc7">
             <name>floaty</name>
             <auto>1</auto>
-            <color/>
+            <color>FBC531</color>
           </category>
           <category uuid="34a665e8-ebb8-4518-8a5c-9a3bb3b3f24f">
             <name>infra</name>
             <auto>1</auto>
-            <color/>
+            <color>44BD32</color>
           </category>
           <category uuid="3ee5dabd-5c66-4752-b4eb-0f79dae9fa83">
             <name>doku</name>
             <auto>1</auto>
-            <color/>
+            <color>74B9FF</color>
           </category>
         </categories>
       </Category>
-      <Filter version="1.0.6" persisted_at="1789123346.41" description="Firewall rules (new)">
+      <Filter version="1.0.6" persisted_at="1793399594.67" description="Firewall rules (new)">
         <general/>
-        <rules/>
+        <rules>
+          <rule uuid="69c0079a-7b83-4cc2-95b5-78183f4b222b">
+            <enabled>0</enabled>
+            <statetype>keep</statetype>
+            <state-policy/>
+            <sequence>100</sequence>
+            <action>reject</action>
+            <quick>1</quick>
+            <interfacenot>0</interfacenot>
+            <interface>lan</interface>
+            <received-on-not>0</received-on-not>
+            <received-on/>
+            <direction>in</direction>
+            <ipprotocol>inet</ipprotocol>
+            <protocol>TCP/UDP</protocol>
+            <icmptype/>
+            <icmp6type/>
+            <source_net>lan</source_net>
+            <source_not>0</source_not>
+            <source_port/>
+            <destination_net>DOKU</destination_net>
+            <destination_not>1</destination_not>
+            <destination_port/>
+            <divert-to/>
+            <gateway/>
+            <replyto/>
+            <disablereplyto>0</disablereplyto>
+            <log>1</log>
+            <allowopts>0</allowopts>
+            <nosync>0</nosync>
+            <nopfsync>0</nopfsync>
+            <statetimeout/>
+            <udp-first/>
+            <udp-multiple/>
+            <udp-single/>
+            <max-src-nodes/>
+            <max-src-states/>
+            <max-src-conn/>
+            <max/>
+            <max-src-conn-rate/>
+            <max-src-conn-rates/>
+            <max-pkt-rate-number/>
+            <max-pkt-rate-seconds/>
+            <overload/>
+            <adaptivestart/>
+            <adaptiveend/>
+            <prio/>
+            <set-prio/>
+            <set-prio-low/>
+            <tag/>
+            <tagged/>
+            <tcpflags1/>
+            <tcpflags2/>
+            <tcpflags_any>0</tcpflags_any>
+            <categories>3ee5dabd-5c66-4752-b4eb-0f79dae9fa83</categories>
+            <sched/>
+            <tos/>
+            <shaper1/>
+            <shaper2/>
+            <description>doku</description>
+          </rule>
+          <rule uuid="8409b704-c820-445a-8cee-046993460952">
+            <enabled>1</enabled>
+            <statetype>keep</statetype>
+            <state-policy/>
+            <sequence>200</sequence>
+            <action>pass</action>
+            <quick>1</quick>
+            <interfacenot>0</interfacenot>
+            <interface/>
+            <received-on-not>0</received-on-not>
+            <received-on/>
+            <direction>in</direction>
+            <ipprotocol>inet</ipprotocol>
+            <protocol>TCP/UDP</protocol>
+            <icmptype/>
+            <icmp6type/>
+            <source_net>(self)</source_net>
+            <source_not>0</source_not>
+            <source_port/>
+            <destination_net>any</destination_net>
+            <destination_not>0</destination_not>
+            <destination_port/>
+            <divert-to/>
+            <gateway/>
+            <replyto/>
+            <disablereplyto>0</disablereplyto>
+            <log>1</log>
+            <allowopts>0</allowopts>
+            <nosync>0</nosync>
+            <nopfsync>0</nopfsync>
+            <statetimeout/>
+            <udp-first/>
+            <udp-multiple/>
+            <udp-single/>
+            <max-src-nodes/>
+            <max-src-states/>
+            <max-src-conn/>
+            <max/>
+            <max-src-conn-rate/>
+            <max-src-conn-rates/>
+            <max-pkt-rate-number/>
+            <max-pkt-rate-seconds/>
+            <overload/>
+            <adaptivestart/>
+            <adaptiveend/>
+            <prio/>
+            <set-prio/>
+            <set-prio-low/>
+            <tag/>
+            <tagged/>
+            <tcpflags1/>
+            <tcpflags2/>
+            <tcpflags_any>0</tcpflags_any>
+            <categories>90d40e59-e01a-4823-91e6-2a51a9e93cc7</categories>
+            <sched/>
+            <tos/>
+            <shaper1/>
+            <shaper2/>
+            <description>floaty</description>
+          </rule>
+          <rule uuid="bdade668-82a3-4751-a3be-d18b1ca36eca">
+            <enabled>1</enabled>
+            <statetype>keep</statetype>
+            <state-policy/>
+            <sequence>300</sequence>
+            <action>pass</action>
+            <quick>1</quick>
+            <interfacenot>0</interfacenot>
+            <interface>wan</interface>
+            <received-on-not>0</received-on-not>
+            <received-on/>
+            <direction>in</direction>
+            <ipprotocol>inet</ipprotocol>
+            <protocol>ICMP</protocol>
+            <icmptype/>
+            <icmp6type/>
+            <source_net>any</source_net>
+            <source_not>0</source_not>
+            <source_port/>
+            <destination_net>(self)</destination_net>
+            <destination_not>0</destination_not>
+            <destination_port/>
+            <divert-to/>
+            <gateway/>
+            <replyto/>
+            <disablereplyto>0</disablereplyto>
+            <log>0</log>
+            <allowopts>0</allowopts>
+            <nosync>0</nosync>
+            <nopfsync>0</nopfsync>
+            <statetimeout/>
+            <udp-first/>
+            <udp-multiple/>
+            <udp-single/>
+            <max-src-nodes/>
+            <max-src-states/>
+            <max-src-conn/>
+            <max/>
+            <max-src-conn-rate/>
+            <max-src-conn-rates/>
+            <max-pkt-rate-number/>
+            <max-pkt-rate-seconds/>
+            <overload/>
+            <adaptivestart/>
+            <adaptiveend/>
+            <prio/>
+            <set-prio/>
+            <set-prio-low/>
+            <tag/>
+            <tagged/>
+            <tcpflags1/>
+            <tcpflags2/>
+            <tcpflags_any>0</tcpflags_any>
+            <categories/>
+            <sched/>
+            <tos/>
+            <shaper1/>
+            <shaper2/>
+            <description/>
+          </rule>
+          <rule uuid="af255cec-a730-46cf-95b1-3ce266c44703">
+            <enabled>1</enabled>
+            <statetype>keep</statetype>
+            <state-policy/>
+            <sequence>400</sequence>
+            <action>pass</action>
+            <quick>1</quick>
+            <interfacenot>0</interfacenot>
+            <interface>lan</interface>
+            <received-on-not>0</received-on-not>
+            <received-on/>
+            <direction>in</direction>
+            <ipprotocol>inet</ipprotocol>
+            <protocol>TCP/UDP</protocol>
+            <icmptype/>
+            <icmp6type/>
+            <source_net>any</source_net>
+            <source_not>0</source_not>
+            <source_port/>
+            <destination_net>(self)</destination_net>
+            <destination_not>0</destination_not>
+            <destination_port/>
+            <divert-to/>
+            <gateway/>
+            <replyto/>
+            <disablereplyto>0</disablereplyto>
+            <log>0</log>
+            <allowopts>0</allowopts>
+            <nosync>0</nosync>
+            <nopfsync>0</nopfsync>
+            <statetimeout/>
+            <udp-first/>
+            <udp-multiple/>
+            <udp-single/>
+            <max-src-nodes/>
+            <max-src-states/>
+            <max-src-conn/>
+            <max/>
+            <max-src-conn-rate/>
+            <max-src-conn-rates/>
+            <max-pkt-rate-number/>
+            <max-pkt-rate-seconds/>
+            <overload/>
+            <adaptivestart/>
+            <adaptiveend/>
+            <prio/>
+            <set-prio/>
+            <set-prio-low/>
+            <tag/>
+            <tagged/>
+            <tcpflags1/>
+            <tcpflags2/>
+            <tcpflags_any>0</tcpflags_any>
+            <categories/>
+            <sched/>
+            <tos/>
+            <shaper1/>
+            <shaper2/>
+            <description/>
+          </rule>
+          <rule uuid="e58f753d-1643-4656-8261-5ec7d1c0af04">
+            <enabled>1</enabled>
+            <statetype>keep</statetype>
+            <state-policy/>
+            <sequence>500</sequence>
+            <action>pass</action>
+            <quick>1</quick>
+            <interfacenot>0</interfacenot>
+            <interface>lan</interface>
+            <received-on-not>0</received-on-not>
+            <received-on/>
+            <direction>in</direction>
+            <ipprotocol>inet</ipprotocol>
+            <protocol>TCP/UDP</protocol>
+            <icmptype/>
+            <icmp6type/>
+            <source_net>lan</source_net>
+            <source_not>0</source_not>
+            <source_port/>
+            <destination_net>INFRA</destination_net>
+            <destination_not>0</destination_not>
+            <destination_port/>
+            <divert-to/>
+            <gateway/>
+            <replyto/>
+            <disablereplyto>0</disablereplyto>
+            <log>1</log>
+            <allowopts>0</allowopts>
+            <nosync>0</nosync>
+            <nopfsync>0</nopfsync>
+            <statetimeout/>
+            <udp-first/>
+            <udp-multiple/>
+            <udp-single/>
+            <max-src-nodes/>
+            <max-src-states/>
+            <max-src-conn/>
+            <max/>
+            <max-src-conn-rate/>
+            <max-src-conn-rates/>
+            <max-pkt-rate-number/>
+            <max-pkt-rate-seconds/>
+            <overload/>
+            <adaptivestart/>
+            <adaptiveend/>
+            <prio/>
+            <set-prio/>
+            <set-prio-low/>
+            <tag/>
+            <tagged/>
+            <tcpflags1/>
+            <tcpflags2/>
+            <tcpflags_any>0</tcpflags_any>
+            <categories>34a665e8-ebb8-4518-8a5c-9a3bb3b3f24f</categories>
+            <sched/>
+            <tos/>
+            <shaper1/>
+            <shaper2/>
+            <description>infra</description>
+          </rule>
+          <rule uuid="532750fe-3878-4a3f-9ad8-10d39547f112">
+            <enabled>1</enabled>
+            <statetype>keep</statetype>
+            <state-policy/>
+            <sequence>600</sequence>
+            <action>pass</action>
+            <quick>1</quick>
+            <interfacenot>0</interfacenot>
+            <interface>lan</interface>
+            <received-on-not>0</received-on-not>
+            <received-on/>
+            <direction>in</direction>
+            <ipprotocol>inet</ipprotocol>
+            <protocol>TCP/UDP</protocol>
+            <icmptype/>
+            <icmp6type/>
+            <source_net>lan</source_net>
+            <source_not>0</source_not>
+            <source_port/>
+            <destination_net>any</destination_net>
+            <destination_not>0</destination_not>
+            <destination_port/>
+            <divert-to/>
+            <gateway/>
+            <replyto/>
+            <disablereplyto>0</disablereplyto>
+            <log>0</log>
+            <allowopts>0</allowopts>
+            <nosync>0</nosync>
+            <nopfsync>0</nopfsync>
+            <statetimeout/>
+            <udp-first/>
+            <udp-multiple/>
+            <udp-single/>
+            <max-src-nodes/>
+            <max-src-states/>
+            <max-src-conn/>
+            <max/>
+            <max-src-conn-rate/>
+            <max-src-conn-rates/>
+            <max-pkt-rate-number/>
+            <max-pkt-rate-seconds/>
+            <overload/>
+            <adaptivestart/>
+            <adaptiveend/>
+            <prio/>
+            <set-prio/>
+            <set-prio-low/>
+            <tag/>
+            <tagged/>
+            <tcpflags1/>
+            <tcpflags2/>
+            <tcpflags_any>0</tcpflags_any>
+            <categories/>
+            <sched/>
+            <tos/>
+            <shaper1/>
+            <shaper2/>
+            <description>Default allow LAN to any rule</description>
+          </rule>
+        </rules>
         <snatrules/>
         <npt/>
         <onetoone/>
@@ -1213,7 +1437,7 @@ binaries.prisma.sh</content>
         <MinProtocol_DTLS/>
       </general>
     </trust>
-    <unboundplus version="1.0.15" persisted_at="1791990448.67" description="Unbound configuration">
+    <unboundplus version="1.0.15" persisted_at="1793395524.04" description="Unbound configuration">
       <general>
         <enabled>1</enabled>
         <port>53</port>
@@ -1371,10 +1595,10 @@ binaries.prisma.sh</content>
           <mxprio/>
           <mx/>
           <ttl/>
-          <server>192.168.21.1</server>
+          <server>192.168.21.2</server>
           <txtdata/>
           <addptr>1</addptr>
-          <description/>
+          <description>uploadthing auf dem Dell (seit 2026-10-30)</description>
         </host>
       </hosts>
       <aliases/>
@@ -1430,7 +1654,14 @@ binaries.prisma.sh</content>
   <wireless>
     <clone/>
   </wireless>
-  <ca/>
+  <ca uuid="d8e0b4d9-ce7d-4395-a1d8-247d7b5e22c0">
+    <refid>6ae4f7c5dbfb2</refid>
+    <descr>uploadthing internal CA</descr>
+    <crt>LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURNekNDQWh1Z0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFOTVFzd0NRWURWUVFHRXdKT1REQWUKRncweU5qRXdNekF5TURBeU1UTmFGdzB6TmpFd01qY3lNREF5TVROYU1BMHhDekFKQmdOVkJBWVRBazVNTUlJQgpJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBdjc4QlE0MGxoN1hEMWRpMTZXWWxOdUVvCnZNQW14enpZeWo1T3BQOEJNQitDSW5wTmUyZmVDcXQ3TmI4K0djdWpIQ3VuRzFiWHArK1pmWExGRitCWHlBaloKdkY4SkgxakxKb0dxOUw2NUtJdjFpTGI0cGQ2VThaZlc0YW5sdEE3WUR6am5YYjFJbHNXSGtSSzhrNjZ2d2tJOApWcEhYODRXTUl0MFl1WkFSZ3d6UXI3UTdXN0xjZEZrMWx4L0FrQy9VMFFuSEZTb2xOdG9XRWtiMUdwaUVlMlZEClJEc0Z1UjRCUmtRdDZySk1ZSG8wK1ZpQVBveXhoSU91M1I4Q3RRbGpqbndxS0xCa2FNcFh4MUNtaHpGT2RYOVEKdldETmNrb0JGeDd1R0hmUDFvenN6azM3U3oxamVoU0pUaGtZTEZEVWxZUFpxMnVlcDhWRkUvL2tZODVwR3dJRApBUUFCbzRHZE1JR2FNRGNHQ1dDR1NBR0crRUlCRFFRcUZpaFBVRTV6Wlc1elpTQkhaVzVsY21GMFpXUWdRMlZ5CmRHbG1hV05oZEdVZ1FYVjBhRzl5YVhSNU1CMEdBMVVkRGdRV0JCVFJvYjhHYXdTbU03UEVZOVhzUnFWRzVqRHQKbmpBZkJnTlZIU01FR0RBV2dCVFJvYjhHYXdTbU03UEVZOVhzUnFWRzVqRHRuakFQQmdOVkhSTUJBZjhFQlRBRApBUUgvTUE0R0ExVWREd0VCL3dRRUF3SUJoakFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBb0hUdGJjUWxScXl0Ci9XSzdrMDE4bGg4eUFFNURYZFdrRlQ3dGFQRzBnaVNlckhtQlovUEtCb2dNcXJUYTFUeXJrQ0g2UnFadlRmQlAKZk9DalNLaVJZY09NbzIxSVY5cWthZ2szeEtoOVNXSnorWkdBcEVCWk9Sb1VFU2c0eVJSZHVWTklPQVZwdmlLUAp2RlBTK0hFdFlQcE1KUElRdFFIQ2pDSFUvejFjQ1Z3T0pUOHFOQWorZ05oYU1yYzg0VmJXOURNUGJyRERXZ0RSClVKc3pwWi9BcExIQ21XRDlEcGYwalZBUDBtSS9IeWlOVFUwcXFyNUJ5cXNmbkZOQkZaTExCR3FsdUpnbDhURDUKUEJ2Nkd0eE0yYUgvM2NRSUdqaEYzQWpRa2xwV1BZelYzb21GcHNXWjlSZEhoQWo5Z3l1U0YwQ2FYK2dZMVJTdgp0WGdQOHpPZWxBPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=</crt>
+    <prv>Private key not revealed.</prv>
+    <serial>2</serial>
+    <caref/>
+  </ca>
   <dhcpd/>
   <dhcpdv6/>
   <cert uuid="afbeca64-5714-46ea-994d-317522a7f45b">
@@ -1449,32 +1680,18 @@ binaries.prisma.sh</content>
     <csr/>
     <prv>Private key not revealed.</prv>
   </cert>
+  <cert uuid="2cacd9dd-f69d-4401-af8a-9f4903707870">
+    <refid>6ae4f83ecabe4</refid>
+    <descr>sense.internal (uploadthing API)</descr>
+    <caref>6ae4f7c5dbfb2</caref>
+    <crt>LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQ2ekNDQXRPZ0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREFOTVFzd0NRWURWUVFHRXdKT1REQWUKRncweU5qRXdNekF5TURBME1UUmFGdzB6TmpFd01qY3lNREEwTVRSYU1HZ3hDekFKQmdOVkJBWVRBa0ZVTVEwdwpDd1lEVlFRSURBUlhhV1Z1TVEwd0N3WURWUVFIREFSWGFXVnVNUlF3RWdZRFZRUUtEQXQxY0d4dllXUjBhR2x1Clp6RU1NQW9HQTFVRUN3d0RiM0J6TVJjd0ZRWURWUVFEREE1elpXNXpaUzVwYm5SbGNtNWhiRENDQVNJd0RRWUoKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBSzFrNnZyZ2tOWTY5ckFIUXVKa2NLMHIvcU5Nb2t0RQplNXgrTVdKRTJvZ2VnUmIrSTdPb2NYc0wrTXNrZDVVOTRXMGM5dzUrMXRhYUZOd1VZN1hOQjJtaUFWVmN4K3VSCnR1UFNjUWtuVGNIREsyZmkvY3JZS3lIMFc5dFVwMUE0cnRHKzNxbmtlMUhPcnZFdk5nWVJNMFd0ZmtocmdreHoKS3Zod3djb3RnMk1UL05TNWVicEUzb2cwc3NFZnpSNzBPa2Q5cXFyU2RQRzBLZlVWTWRPa21UazJZUDlZdnNpWgpjcWhiL0s1YzdPdlByZDIvVng1VzEyTTZvcGJyc2ljdUY0L2cyekl4QjZodTlqS3M4dkZYZk41R2hOdnc4N3ErCnFLM2VVY1dZelBEZFo4eGFxNUR2R1hzS0pZdnY1N0FSNC91WloyRGNpckNXbmdpM0RLbXZTaHNDQXdFQUFhT0IKK2pDQjl6QUpCZ05WSFJNRUFqQUFNQkVHQ1dDR1NBR0crRUlCQVFRRUF3SUdRREEwQmdsZ2hrZ0JodmhDQVEwRQpKeFlsVDFCT2MyVnVjMlVnUjJWdVpYSmhkR1ZrSUZObGNuWmxjaUJEWlhKMGFXWnBZMkYwWlRBZEJnTlZIUTRFCkZnUVVlaWhLQjgxTHVDWHhqMjR6ZTlwMEwzek5JdkF3TlFZRFZSMGpCQzR3TElBVTBhRy9CbXNFcGpPenhHUFYKN0VhbFJ1WXc3WjZoRWFRUE1BMHhDekFKQmdOVkJBWVRBazVNZ2dFQU1CMEdBMVVkSlFRV01CUUdDQ3NHQVFVRgpCd01CQmdnckJnRUZCUWdDQWpBTEJnTlZIUThFQkFNQ0JhQXdId1lEVlIwUkJCZ3dGb0lPYzJWdWMyVXVhVzUwClpYSnVZV3lIQk1Db0ZRRXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQmFTWDY5dDA1bmpVYkxzLzdiRWNFNk0KWGgySHMwOHFJTjgyeC83eGhwV0JJcFBQcjZLNytTQ0IrQ1pjSDc4ZFNHMjN3TjA1V29td3ZuM2lmb3Rtbms2NwpiclVhYUhLcnZFSy9QV2ZTaEE3eXhUcUQwOFJEYyttK2x3VW5ZTlZPVk91ZSt5S29lMzlqSURibXBEbm0rK2Z0Clp0NTYzQnViYU5SVUZoblNrWklteERzMmpyV1R3WlUxaUtOY2lZM2ZnMjdRcDhwMUcrOE52RXd1RTdXUEw3NjUKY2dlWlVVazllT0NFU3VEbEdoMnFydUY3N281bzJKOVA2REt5OUVtZEpCYkJ4Q2JXT2RkWDA5QXkxd3lBc3pMdgpBc1BvRG5LNFlLZHh2NXJrbDBtN3MyM2VRcDZ6RXJsMEFraW5NVTlIUjdmSVAyRXJacHpNdjlGVFpCaXM5S1k9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K</crt>
+    <csr/>
+    <prv>Private key not revealed.</prv>
+  </cert>
   <nat>
     <outbound>
       <mode>automatic</mode>
     </outbound>
-    <rule uuid="cf776562-1412-47ec-af06-5c0a0cfebd0c">
-      <sequence>1</sequence>
-      <interface>lan</interface>
-      <ipprotocol>inet</ipprotocol>
-      <protocol>tcp</protocol>
-      <target>127.0.0.1</target>
-      <local-port>8000</local-port>
-      <descr>uploadthing HTTPS 443 to 8000</descr>
-      <pass>rule</pass>
-      <source>
-        <network>any</network>
-      </source>
-      <destination>
-        <network>192.168.21.1</network>
-        <port>443</port>
-      </destination>
-      <created>
-        <username>root@ssh (opencode)</username>
-        <time>1792148408</time>
-        <description>manual config.xml edit via ssh</description>
-      </created>
-    </rule>
   </nat>
   <syslog>
     <nologdefaultblock>1</nologdefaultblock>
