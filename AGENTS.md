@@ -47,8 +47,11 @@ Before starting work, read these files in order:
 1. `docs/ai/HANDOFF.md`
 2. `docs/ai/CONVENTIONS.md`
 3. `docs/ai/DECISIONS.md`
-4. `docs/ai/PITFALLS.md`
-5. `docs/ai/STATE.md`
-6. `docs/ai/DOMAIN.md` when the task involves business logic
+4. `docs/ai/ARCHITECTURE.md`
+5. `docs/ai/PITFALLS.md`
+6. `docs/ai/STATE.md`
+7. `docs/ai/OPERATIONS.md` when the task touches deployment, network, DNS or certificates
+8. `docs/ai/DOMAIN.md` when the task involves business logic
+9. `docs/ai/HISTORY.md` only as reference (superseded entries)
 
 If `docs/ai/HANDOFF.md` contains open tasks, finish them before new work unless the user says otherwise.

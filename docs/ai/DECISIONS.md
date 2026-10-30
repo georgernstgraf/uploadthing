@@ -209,20 +209,11 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
 - uploadthing is itself the TLS endpoint via `Deno.serve` (`cert`/`key` options); no reverse proxy is put in front.
 - TLS is opt-in: `TLS_CERT_PATH` and `TLS_KEY_PATH` must be set together (fail-fast, German error) — unset means plain HTTP, unchanged behavior.
 - The certificate source is the Let's Encrypt harvest on the school host `kik` (internal repo KI-Kustodiat-intern issue #3; uploadthing issue #136 is linked as its sub-issue). Certificates are copied manually via `scp`; after each copy the service restarts, since Deno reads cert/key at startup.
-- Final topology on `sense` (2026-10-16): Deno listens on **loopback 8000
-  only** (`LISTEN_HOST=127.0.0.1`); the OPNsense GUI moved from 443 to
-  **8443** with the real Let's Encrypt certificate imported into the
-  OPNsense cert store; a DNAT port forward on LAN translates
-  `192.168.21.1:443` → `127.0.0.1:8000` (pf rdr with auto-generated
-  associated pass rule, **no SNAT**, so client IPs are preserved). Result:
-  `https://tst.spengergasse.at` works without a port, TLS stays
-  end-to-end in `Deno.serve`, and port 8000 is unreachable from the
-  network. Privileged-port workarounds (`mac_portacl`, lowering
-  `net.inet.ip.portrange.reservedhigh`) were discarded — the loopback
-  binding plus DNAT makes them unnecessary. First upgrade-proof: the
-  OPNsense upgrade to 26.7.3_11 (2026-10-20, with reboot) left the DNAT
-  rule, GUI port 8443 + imported certificate, and the boot-started
-  loopback listener untouched.
+- Seit #143 terminiert die App selbst auf **443** auf dem Dell
+  (`AmbientCapabilities=CAP_NET_BIND_SERVICE`), mit den von der Sense
+  kopierten Let's-Encrypt-Dateien unter
+  `~/certs/tst.spengergasse.at/`. Die frühere Sense-Topologie
+  (Loopback 8000, GUI 8443, DNAT 443→8000) ist in `HISTORY.md` archiviert.
 
 ## Deno-First Execution
 
@@ -313,9 +304,11 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
   für die 2026 entfernten redundanten Einzelspalten-Indizes). Existiert der
   Zustand bereits, verbucht der Runner die Migration, ohne sie auszuführen;
   fehlt der Datenbank etwas (älterer Stand), gleicht derselbe Lauf sie an.
-  Dev und Produktion landen so auf demselben Schema — auch die Sense-DB, die
-  vor dem Umstieg noch bei der Prisma-Migration `20260307191214` stand (ohne
-  `examstate`, ohne die vier Composite-Indizes).
+  Dev und Produktion landen so auf demselben Schema. (Die Annahme, die
+  Sense-DB stehe noch bei der Prisma-Migration `20260307191214`, war falsch:
+  geprüft wurde die veraltete `/home/georg/uploadthing.db`; die echte DB in
+  `/home/georg/uploadthing/uploadthing.db` war vollständig — siehe
+  `HISTORY.md`.)
 - **Journalformat von drizzle-kit.** `__drizzle_migrations` wird mit `hash`
   (SHA-256 über den Dateiinhalt), `created_at` (Journal-`when` in
   Millisekunden) und Drizzles `id SERIAL PRIMARY KEY` geschrieben. Damit
@@ -397,12 +390,6 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
 - `parseRequiredIpList()` enforces that IP whitelists (`ADMIN_IPS`, `ACTIVEIPS_ALLOWED_IPS`) are explicitly configured.
 - The following variables were changed from optional/fallback to required: `ABGABEN_DIR`, `UNTERLAGEN_DIR`, `LISTEN_PORT`, `COOKIE_SECRET`, `ADMIN_IPS`, `ACTIVEIPS_ALLOWED_IPS`, `SERVICE_DN`, `SERVICE_PW`, `SERVICE_URL`, `SEARCH_BASE`.
 
-## IP Whitelist for POST /activeips
-
-- The `/activeips` endpoint is now protected by an IP whitelist via `ACTIVEIPS_ALLOWED_IPS`.
-- Only requests from whitelisted source IPs can report active IPs.
-- The whitelist is independent from `ADMIN_IPS` since the WLAN device and admin machines may be on different IPs.
-
 ## Internal Scroll Container for Fixed Navbar
 
 - The main content area (`#app-main`) uses an internal scroll container instead of body scrolling.
@@ -441,3 +428,77 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
 ## 2026-06-09: IP detail modal 2-column layout
 
 - **Choice**: Modal restructured: left column stacks Abgaben → Registrierungen → Cookies (each max 35vh), right column holds IP-Präsenz with `flex-grow-1` and `max-height: 80vh`. Content-driven sizing, no forced `min-height`.
+
+## 2026-10-30: Produktionshost ist der Dell, nicht mehr die Sense (#143)
+
+- **Choice**: Die App läuft als systemd-Dienst auf dem Dell
+  (`~/uploadthing-app`, `systemd/uploadthing.service` im Repo),
+  gebunden auf `192.168.21.2:443` über
+  `AmbientCapabilities=CAP_NET_BIND_SERVICE`, `Restart=always`,
+  `EnvironmentFile` auf die Produktions-`.env` im Deployment-Verzeichnis.
+  Die Sense bleibt Firewall/DNS/DHCP.
+- **Reason**: Die App soll nicht mehr auf dem Firewall-Gerät wohnen
+  (Ressourcen, Fehlerverhalten, Deployment über `rc.d` + `startloop.sh`
+  mit PIDfile-Problemen). Eigene 443 statt Loopback+DNAT macht den
+  Datenpfad gerade und erlaubt der Sense, ihre GUI wieder auf 443 zu
+  betreiben.
+- **Considered**: Auf der Sense bleiben und nur die Steuerung auf die API
+  umstellen (verworfen: der Prüfungsserver gehört nicht auf die Firewall);
+  Deno-Service als User-Unit (verworfen: Port 443 braucht
+  `CAP_NET_BIND_SERVICE`, das ist im System-Scope einfacher).
+- **Tradeoff**: Der Dell ist gleichzeitig Arbeitsgerät — ein Absturz oder
+  Zuklappen trifft App und Sense-VM. Suspend ist deshalb per
+  `logind.conf.d/uploadthing.conf` systemweit abgeschaltet
+  (`systemd-inhibit` scheitert an polkit 127).
+
+## 2026-10-30: Getrenntes Deployment-Verzeichnis mit eigener `.env` (#143)
+
+- **Choice**: `~/uploadthing-app` ist ein eigener Klon; die
+  Produktions-`.env` liegt dort (Modus 600) und teilt sich nichts mit dem
+  Entwicklungs-Repo.
+- **Reason**: Das Dev-`.env` zeigt auf lokale Verzeichnisse und enthält
+  Testwerte; es darf die Produktion nicht überschreiben.
+- **Considered**: Deployment aus dem Arbeits-Repo per Symlink (verworfen:
+  `.env`-Kollision, ungewollte Mitnahme von Testartefakten).
+
+## 2026-10-30: Interne CA für die Firewall-API (#142, #149)
+
+- **Choice**: Die Sense hat eine interne CA „uploadthing internal CA" und
+  ein Server-Zertifikat `CN=sense.internal` mit
+  `SAN DNS:sense.internal, IP:192.168.21.1`; die CA liegt als
+  `~/certs/sense-ca.pem` auf dem Dell, Deno bekommt sie über `DENO_CERT`.
+  `OPNSENSE_API_URL=https://sense.internal`.
+- **Reason**: Die App muss TLS vollständig prüfen können. Die
+  Let's-Encrypt-Kette deckt nur `tst.spengergasse.at` ab — und dieser Name
+  zeigt seit dem Umzug auf die App, nicht mehr auf die Firewall.
+- **Considered**: `--unsafely-ignore-certificate-errors=<host>`
+  (verworfen: schaltet die Prüfung prozessweit aus); Hosts-Eintrag auf
+  einen LE-Namen (verworfen: kein passender Name vorhanden, LE-Ausstellung
+  für `sense.internal` unmöglich).
+- **Tradeoff**: Die CA muss auf jeden Client, der die API nutzen will;
+  sie läuft 2036 ab und ist an die Sense gebunden (Wiederherstellung der
+  `config.xml` bringt sie zurück).
+
+## 2026-10-30: Sense-GUI zurück auf 443, DNAT entfernt (#143, #149)
+
+- **Choice**: Die OPNsense-GUI lauscht wieder auf **443**; die DNAT-Regel
+  `uploadthing HTTPS 443 to 8000` und der GUI-Port 8443 sind gelöscht.
+- **Reason**: Beides existierte nur, weil die App die 443 auf der Sense
+  belegte. Mit dem Umzug ist die Einschränkung sinnlos, und 8443 ist eine
+  Port-Ausnahme, die man sich merken muss.
+- **Tradeoff**: Wird später wieder eine Portweiterleitung gebraucht, muss
+  sie neu angelegt werden — sie steht mit allen Regeln im CSV-Export
+  (`appliance/legacy-rules-2026-10-30.csv`).
+
+## 2026-10-30: DNS-Hostnamen liegen in Unbound, nicht in dnsmasq
+
+- **Choice**: `tst.spengergasse.at` (→ `192.168.21.2`), `tik.internal` und
+  die Geräte-Einträge werden als **Unbound Host Overrides** gepflegt
+  (`/api/unbound/settings/searchHostOverride`); die gleichnamigen
+  dnsmasq-Einträge sind wirkungslos.
+- **Reason**: Auf der Sense beantwortet Unbound Port 53 (`sockstat` zeigt
+  `unbound`, nicht `dnsmasq`). Ein dnsmasq-Eintrag ändert nichts an der
+  Auflösung — genau dieser Irrweg hat beim Umzug Zeit gekostet.
+- **Tradeoff**: Wer im GUI den DHCP-/dnsmasq-Bereich bearbeitet, ändert
+  nichts an der Namensauflösung; nach jeder Änderung `dig @192.168.21.1`
+  prüfen.
