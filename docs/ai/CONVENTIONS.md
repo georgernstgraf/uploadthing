@@ -37,6 +37,7 @@
 - For icon-and-label buttons in templates, prefer a small reusable flex wrapper with text-relative icon sizing (`em`) over fixed pixel `width`/`height` attributes on the image.
 - Give meaningful one-off structural UI elements in Handlebars templates a clear unique `id`, and update any HTMX targets, CSS selectors, JS selectors, `aria-controls`, or anchor references when those IDs change.
 - Admin route naming is now split by responsibility: use `/admin/students` for the student/IP forensics page and `/admin/application` for runtime admin settings such as themes, file types, downloads, and cleanup.
+- `/admin/application` ist ein Gruppendashboard: thematische Gruppen (`#admin-group-exam`, `-unterlagen`, `-zugang`) als `col-12 col-lg-6 col-xxl-4` mit `.admin-group` (Flex-Spalte mit `gap`), Karten darin als eigenständige `section.card` mit `id="admin-card-<thema>"`. Neue Admin-Funktionen kommen in die passende Gruppe, nicht als weitere Vollbreiten-Karte ans Seitenende; `h-100` auf den Karten würde die gestreckten Riesenboxen zurückbringen.
 
 ## Fail-Strict Configuration
 

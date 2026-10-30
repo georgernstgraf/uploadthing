@@ -1,6 +1,6 @@
 # Project State
 
-Current status as of 2026-10-30.
+Current status as of 2026-10-31.
 
 ## Current Focus
 
@@ -23,8 +23,8 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **IP-/MAC-Präsenz** per Tik-REST im App-Prozess (`service/tik.ts`);
   MikroTik-Konto `uploadthing`, strikt auf `192.168.21.2/32`, nur
   `monitoring-rest`.
-- **Tests**: 352 Deno-Tests (~5 s) plus acht Playwright-Smoke-Tests in
-  `deno task e2e` (~11 s, Chromium, eigene Wegwerf-DB auf Port 8099).
+- **Tests**: 352 Deno-Tests (~5 s) plus neun Playwright-Smoke-Tests in
+  `deno task e2e` (~12 s, Chromium, eigene Wegwerf-DB auf Port 8099).
 
 ## Erledigt am 2026-10-30 (Abschlusssession)
 
@@ -47,6 +47,24 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **#151:** gefunden von der E2E-Suite und gleich behoben —
   `hx-disabled-elt="this"` war an Formular-Submits wirkungslos; jetzt
   `hx-disabled-elt="find button[type='submit']"` am Formular.
+
+## Erledigt am 2026-10-31 (Admin-Dashboard, #157)
+
+- **`/admin/application` ist jetzt ein Gruppendashboard:** drei thematische
+  Gruppen (Prüfung, Unterlagen, Zugang & System) als
+  `col-12 col-lg-6 col-xxl-4` — drei Spalten ab `xxl`, zwei ab `lg`, eine
+  mobil. Der äußere Riesen-Card, sechs leere Flex-Wrapper, die
+  `col-xl-8`-Zentrierung der Formulare und sämtliche `*-lg`-Controls sind
+  weg; Unterlagen- und MAC-Liste sind `list-group` statt breiter Tabellen.
+  Die Erfolgsmeldung steht über dem Raster (`#admin-success-message`),
+  nicht mehr ungesehen am Seitenende. Details in `DECISIONS.md`.
+- **Zeitfilter auf `/admin/students` ist eine Zeile** (Start, Switch,
+  Ende, Suchen) statt eines ~300 px hohen Blocks. Ids, Feldnamen und die
+  Alpine-Komponente sind unverändert, `hx-include` funktioniert weiter.
+- **Abnahme:** E2E-Test misst die Geometrie (1600 px: drei Gruppen in
+  einer Zeile; 1000 px: zwei plus Umbruch); Endpoint-Test prüft
+  Gruppen-/Karten-Ids und die Position der Erfolgsmeldung. 352
+  Deno-Tests, 9 E2E-Tests, `check`/`lint` grün.
 
 ## Erledigt am 2026-10-31 (Hero als Heimweg, #155)
 

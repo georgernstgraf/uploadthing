@@ -1,5 +1,45 @@
 # DECISIONS
 
+## 2026-10-31: Admin-Seite als Gruppendashboard in zwei bis drei Spalten (#157)
+
+- **Problem:** `/admin/application` war eine Einspalten-Seite mit einem
+  äußeren Card (`col-xxl-11`), der sieben weitere Cards umschloss —
+  jede Sektion volle Breite, `card-body p-4`, die Formulare darin
+  zusätzlich auf `col-xl-8` (≈ 800 px) zentriert. Vier bis fünf
+  Bildschirmlängen Scrollen bei viel leerem Raum; die Erfolgsmeldung
+  stand ganz unten.
+- **Drei thematische Gruppen statt einer Liste.** *Prüfung*
+  (Examen-Steuerung + Firewall-Regel, Abgaben-Verzeichnis),
+  *Unterlagen* (Unterlagen, erlaubte Dateitypen), *Zugang & System*
+  (MAC-Freigabe, Theme, Datenbank bereinigen). Das Examen-Panel verliert
+  seine zusätzliche Umrahmung: es bringt seine beiden Cards selbst mit,
+  eine Card-in-Card-Hülle war nur Rand.
+- **Raster statt Umbau der Logik:** `row g-3 align-items-start` mit
+  `col-12 col-lg-6 col-xxl-4` — drei Spalten ab `xxl`, zwei ab `lg`,
+  eine mobil. `align-items-start` ist Absicht: `h-100` würde kurze
+  Karten auf die Höhe der längsten strecken und genau die riesigen
+  Boxen wieder herstellen, die der Anlass waren.
+- **Kein Tab-Layout.** htmx tauscht bei jeder Admin-Aktion
+  `#app-content` vollständig aus; ein Tab-Zustand wäre nach dem ersten
+  Absenden weg. Eine Seite, drei Spalten, eine Scrollfläche.
+- **Dichte statt Schriftgröße:** `p-3`, keine `*-lg`-Controls, die
+  `col-xl-8`-Zentrierung der Formulare entfällt (in einer ~430-px-Spalte
+  verschenkt sie nur Platz). Die Unterlagen- und MAC-Listen sind jetzt
+  `list-group` statt Tabellen — eine vierspaltige Tabelle in einer
+  schmalen Spalte wäre ein horizontaler Scrollbereich.
+- **Erfolgsmeldung nach oben** (`#admin-success-message`): nach dem Swap
+  scrollt die Seite nach oben (siehe #155); unten war die Meldung
+  ungesehen. Der Endpoint-Test prüft die Position im HTML, nicht nur das
+  Vorkommen.
+- **Zeitfilter auf `/admin/students` ist eine Zeile**: `input-group-sm`
+  aus Zeit + Datum (Start), Switch, Zeit + Datum (Ende), Suchen. Ids,
+  Feldnamen, die Alpine-Komponente und der `localStorage`-Schlüssel
+  bleiben — `admin-report.hbs` hängt per `hx-include` an
+  `#admin-time-filter form`, und das Polling darf nicht brechen.
+- **Abnahme ist Geometrie, nicht Augenschein:** der neue E2E-Test misst
+  die Gruppenkästen — bei 1600 px gleiches `y` und steigendes `x`, bei
+  1000 px zwei nebeneinander und die dritte umgebrochen.
+
 ## 2026-10-31: Der Shutdown beendet den Prozess selbst (#156)
 
 - **Problem:** Der SIGTERM-Handler stoppte das Polling, schloss SQLite

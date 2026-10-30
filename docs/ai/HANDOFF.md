@@ -1,4 +1,4 @@
-Last updated: 2026-10-31 (Hero als Heimweg, #155 — alle Tests grün).
+Last updated: 2026-10-31 (Admin-Dashboard #157 — alle Tests grün).
 
 ## Sofort weiter mit
 
@@ -31,6 +31,18 @@ Umbauten — in dieser Reihenfolge:
   `OPERATIONS.md` notiert.
 
 ## Was in dieser Session passiert ist
+
+- **#157:** `/admin/application` ist ein Gruppendashboard: drei thematische
+  Gruppen (Prüfung / Unterlagen / Zugang & System) als
+  `col-12 col-lg-6 col-xxl-4`, also drei Spalten ab `xxl`, zwei ab `lg`.
+  Rausgeflogen sind der äußere Riesen-Card, die `col-xl-8`-Zentrierung der
+  Formulare, alle `*-lg`-Controls, sechs leere Flex-Wrapper um einzelne
+  Überschriften und die Tabellen (jetzt `list-group`). Die Erfolgsmeldung
+  steht über dem Raster. Der Zeitfilter auf `/admin/students` ist eine
+  Zeile statt eines ~300-px-Blocks; Ids, Feldnamen und Alpine-Logik sind
+  unverändert. Abnahme: E2E-Test misst die Spaltengeometrie (1600 px drei,
+  1000 px zwei), Endpoint-Test prüft Gruppen-/Karten-Ids und die Position
+  der Erfolgsmeldung. 352 Deno-Tests, 9 E2E-Tests, `check`/`lint` grün.
 
 - **#156:** Der Signalhandler beendet den Prozess jetzt selbst
   (`lib/shutdown.ts`): Polling stoppen → HTTP auslaufen → SQLite
