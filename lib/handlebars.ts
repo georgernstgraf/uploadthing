@@ -95,6 +95,13 @@ type AdminTemplateData = {
 type AdminFileTypesTemplateData = {
     permitted_filetypes: string;
     current_filetypes: string[];
+    /** Dateien in `UNTERLAGEN_DIR` (#134), so wie Schüler sie sehen. */
+    unterlagen: string[];
+    /** Erlaubte Endungen aus `UNTERLAGEN_PERMITTED_FILETYPES`. */
+    unterlagen_filetypes: string[];
+    /** `accept`-Attribut für das Upload-Feld, z. B. `.md`. */
+    unterlagen_accept: string;
+    max_upload_mb: number;
     /** Freigegebene MACs aus der Datenbank (#147). */
     allowed_macs: { mac: string; comment: string; created_at: string }[];
     /** Zusätzliche Freigaben aus `ADMIN_MACS` (nur lesbar). */

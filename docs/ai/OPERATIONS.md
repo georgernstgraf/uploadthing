@@ -111,14 +111,31 @@ only in the operator's head; it is now recorded here (see #132).
 
 ## Unterlagen (Exam Task Materials)
 
-- Exam task materials (Angaben/Unterlagen) are **copied manually via
-  SSH** into the `UNTERLAGEN_DIR` configured on `sense`.
-- The **lifecycle is fully manual**: materials are placed before an
-  exam and removed by hand afterwards. There is no app feature and no
-  automatic cleanup.
-- Since #131, student access to `GET /unterlagen/*` is gated to the
-  exam window; the manual lifecycle above is orthogonal to that.
-- An admin upload feature to replace the SSH step is planned (#134).
+- Prüfungsunterlagen (Angaben) liegen **flach** in `UNTERLAGEN_DIR` und
+  werden seit #134 direkt in der Weboberfläche gepflegt:
+  `/admin/application` → „Unterlagen (Angaben)“. Hochladen, Ersetzen
+  (nur mit Häkchen „Vorhandene Datei ersetzen“), Einzellöschen und
+  „Alle Unterlagen löschen“ — kein SSH-Kopieren mehr.
+- Es gibt **keine Unterordner, keine Versionierung und kein Archiv**:
+  Unterlagen werden über Examenstermine hinweg wiederverwendet, ein
+  Datumsbaum würde nur den Fehler „falscher Ordner“ erzeugen. Ersetzt
+  oder gelöscht wird bewusst, nicht historisiert.
+- Der Upload ist **unabhängig vom Examenfenster** (Vorbereitung davor).
+  Das Gating aus #131 gilt weiterhin nur für Schülerzugriffe:
+  `GET /unterlagen/*` und `POST /upload`.
+- Dateitypen: eigene Variable `UNTERLAGEN_PERMITTED_FILETYPES` (Default
+  `md`), **nicht** `PERMITTED_FILETYPES` (das gilt für Abgaben). Der
+  Inhalt wird wie bei Abgaben geprüft (`file-type`/`detectMimeType`);
+  `MAX_UPLOAD_MB` gilt auch hier.
+- Dateinamen laufen ausschließlich über `safeFileComponent`; ein
+  vorhandener Symlink oder Unterordner in `UNTERLAGEN_DIR` wird nicht
+  überschrieben.
+- Die Schülerseite (`#angaben-list`) liest das Verzeichnis bei jedem
+  Rendern neu. Nach Upload/Löschen im Admin-Panel stimmt sie ohne
+  zusätzlichen Reload-Mechanismus beim nächsten Aufruf.
+- Admins sehen in der Liste genau die Dateien, die Schüler sehen:
+  Namen mit führendem `.` oder `_` werden beim Upload abgelehnt, weil
+  sie auf der Schülerseite ausgeblendet wären.
 
 ## TLS Operation On sense (from #137)
 

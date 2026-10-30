@@ -8,6 +8,7 @@ import config, {
     parsePermittedFileTypes,
     parseTikConfig,
     parseTlsConfig,
+    parseUnterlagenFileTypes,
 } from "./config.ts";
 
 Deno.test("config - buildHeroUrl prefers PUBLIC_URL", () => {
@@ -175,6 +176,28 @@ Deno.test("config - parsePermittedFileTypes normalizes input", () => {
         "md",
         "pdf",
     ]);
+});
+
+Deno.test("config - UNTERLAGEN_PERMITTED_FILETYPES hat den Default md", () => {
+    assertEquals(parseUnterlagenFileTypes(undefined), ["md"]);
+    assertEquals(parseUnterlagenFileTypes(""), ["md"]);
+    assertEquals(parseUnterlagenFileTypes("   "), ["md"]);
+});
+
+Deno.test("config - UNTERLAGEN_PERMITTED_FILETYPES normalisiert und entdoppelt", () => {
+    assertEquals(parseUnterlagenFileTypes(".MD, pdf , md"), ["md", "pdf"]);
+});
+
+Deno.test("config - leere UNTERLAGEN_PERMITTED_FILETYPES bricht den Start ab", () => {
+    assertThrows(
+        () => parseUnterlagenFileTypes(" , , "),
+        Error,
+        "UNTERLAGEN_PERMITTED_FILETYPES enthält keinen gültigen Dateityp",
+    );
+});
+
+Deno.test("config - UNTERLAGEN_PERMITTED_FILETYPES ist gesetzt", () => {
+    assertEquals(config.UNTERLAGEN_PERMITTED_FILETYPES.length > 0, true);
 });
 
 Deno.test("config - ADMIN_MACS is parsed and normalized", () => {

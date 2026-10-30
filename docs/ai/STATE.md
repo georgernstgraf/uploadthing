@@ -39,7 +39,7 @@ verschwunden.
 4. #145 Tik-Polling in der App
 5. #146 Schülerseite (eine Seite, zwei Spalten, Namenssuche)
 6. ~~#133 Drizzle (Schema + Migrationen)~~ — erledigt 2026-10-30
-7. #134 Admin-Upload Unterlagen
+7. ~~#134 Admin-Upload Unterlagen~~ — erledigt 2026-10-30
 8. ~~#147 MAC-Admin-Freigabe~~ — erledigt 2026-10-30
 9. #148 Backups & Secrets (gpg/pass)
 10. #149 Netz-, DNS- und Ops-Hygiene
@@ -70,6 +70,12 @@ verschwunden.
       Verwaltung unter `/admin/application`, `ADMINS` entfernt.
       Die Klasse bleibt die Rolle — ein Schüler von freigegebener MAC wird
       nicht Admin; 296 Tests grün.
+
+- [x] #134 Admin-Upload für Unterlagen: `service/unterlagen.ts`,
+      `/admin/unterlagen` (hochladen/ersetzen), `…/delete`, `…/delete-all`,
+      eigene Env `UNTERLAGEN_PERMITTED_FILETYPES` (Default `md`), flache
+      Ablage ohne Versionierung, unabhängig vom Examenfenster; 328 Tests
+      grün.
 
 - [x] Planungssession 2026-10-30: Ist-Zustand auf `sense`, `tik` und im
       Schul-LDAP erhoben; Epic #141 plus zwölf Sub-Issues angelegt, jedes mit

@@ -16,6 +16,9 @@ import { errorHandler } from "./middleware/error.ts";
 
 // ensure ABGABEN_DIR exists
 await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
+// ... und das Verzeichnis für die Unterlagen (#134): der Admin-Upload
+// schreibt dorthin, ohne selbst Verzeichnisse anzulegen.
+await Deno.mkdir(config.UNTERLAGEN_DIR, { recursive: true });
 
 const app = new Hono<{ Bindings: Bindings; Variables: HonoContextVars }>();
 app.onError(errorHandler);

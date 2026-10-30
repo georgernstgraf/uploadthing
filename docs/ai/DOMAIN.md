@@ -11,7 +11,7 @@ This application supports supervised exam workflows where students identify them
 - `forensic_registrations`: archived past registration mappings for audit history.
 - `ipfact`: sightings of active IP addresses and their MAC address during an exam window (polled from the MikroTik; the MAC column is the basis for later MAC-based admin approval).
 - `abgaben`: submitted files and their metadata.
-- `unterlagen`: teacher-provided materials served to authenticated users from the filesystem.
+- `unterlagen`: teacher-provided materials served to authenticated users from the filesystem; maintained by admins through the web UI (`/admin/application`), flat in `UNTERLAGEN_DIR`, no subfolders and no versioning (#134).
 
 ## Exam Flow
 

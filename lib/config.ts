@@ -58,6 +58,32 @@ export function parsePermittedFileTypes(raw: string): string[] {
     )];
 }
 
+/**
+ * Erlaubte Dateitypen für Prüfungsunterlagen (#134).
+ *
+ * `UNTERLAGEN_PERMITTED_FILETYPES` ist bewusst getrennt von
+ * `PERMITTED_FILETYPES` (das gilt für Abgaben und ist zur Laufzeit über
+ * die Admin-Oberfläche änderbar). Fehlt die Variable, ist `md` erlaubt —
+ * die Unterlagen sind Angaben in Markdown.
+ *
+ * Eine gesetzte, aber leere Liste (z. B. `,,`) ist ein Startfehler: sonst
+ * wäre der Admin-Upload stillschweigend für jede Datei gesperrt.
+ */
+export function parseUnterlagenFileTypes(raw: string | undefined): string[] {
+    const value = raw?.trim() ?? "";
+    if (!value) {
+        return ["md"];
+    }
+
+    const types = parsePermittedFileTypes(value);
+    if (types.length === 0) {
+        throw new Error(
+            'UNTERLAGEN_PERMITTED_FILETYPES enthält keinen gültigen Dateityp (erwartet z. B. "md" oder "md, pdf").',
+        );
+    }
+    return types;
+}
+
 export type OpnsenseConfig = {
     apiUrl: string;
     apiKey: string;
@@ -221,6 +247,9 @@ const config = {
     MAX_UPLOAD_MB: Number(Deno.env.get("MAX_UPLOAD_MB") || "50"),
     PERMITTED_FILETYPES: parsePermittedFileTypes(
         Deno.env.get("PERMITTED_FILETYPES") || "zip",
+    ),
+    UNTERLAGEN_PERMITTED_FILETYPES: parseUnterlagenFileTypes(
+        Deno.env.get("UNTERLAGEN_PERMITTED_FILETYPES"),
     ),
     SERVICE_DN: requireEnv("SERVICE_DN"),
     SERVICE_PW: requireEnv("SERVICE_PW"),

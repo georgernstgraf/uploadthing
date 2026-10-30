@@ -120,3 +120,37 @@ export const AdminCleanupDatabaseSchema = zfd.formData({
 export const UploadSchema = zfd.formData({
     file: zfd.file(),
 });
+
+/**
+ * Upload einer Unterlage (#134). `replace_existing` ist die ausdrückliche
+ * Bestätigung, dass eine gleichnamige Datei überschrieben werden darf —
+ * ohne sie lehnt der Service das Ersetzen ab.
+ */
+export const AdminUnterlagenUploadSchema = zfd.formData({
+    // Ohne eigene Meldung stünde „Input not instance of File“ in der UI.
+    file: zfd.file(
+        z.instanceof(File, { message: "Bitte eine Datei auswählen." }),
+    ),
+    replace_existing: zfd.text(z.string().optional()),
+});
+
+export const AdminUnterlagenDeleteSchema = zfd.formData({
+    filename: zfd.text(
+        z.string({
+            required_error: "Bitte eine Unterlage auswählen.",
+        })
+            .trim()
+            .min(1, "Bitte eine Unterlage auswählen."),
+    ),
+});
+
+/** „Alles löschen“ braucht wie die Datenbankbereinigung ein Bestätigungsfeld. */
+export const AdminUnterlagenDeleteAllSchema = zfd.formData({
+    confirm_delete_all: zfd.text(
+        z.literal("unterlagen-loeschen", {
+            errorMap: () => ({
+                message: "Ungültige Anfrage für das Löschen der Unterlagen.",
+            }),
+        }),
+    ),
+});

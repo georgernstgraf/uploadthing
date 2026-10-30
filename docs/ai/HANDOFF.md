@@ -1,4 +1,24 @@
-Last updated: 2026-10-30 (#146 umgesetzt — eine Schülerseite).
+Last updated: 2026-10-30 (#134 umgesetzt — Admin-Upload für Unterlagen).
+
+## #134 — Admin-Upload Unterlagen (erledigt)
+
+- `/admin/application` hat den Bereich „Unterlagen (Angaben)“: hochladen,
+  ersetzen (nur mit Häkchen „Vorhandene Datei ersetzen“, zusätzlich
+  Bestätigungsdialog), einzeln löschen, „Alle Unterlagen löschen“
+  (mit Bestätigungsfeld `confirm_delete_all`). Nur Admins
+  (`requireAdmin`), Schüler bekommen 403.
+- Ablage bleibt flach in `UNTERLAGEN_DIR`: keine Unterordner, keine
+  Versionierung, kein Archiv. Löschen entfernt nur Dateien; Unterordner
+  und Symlinks bleiben unberührt.
+- Neue Env `UNTERLAGEN_PERMITTED_FILETYPES` (Default `md`, Komma-Liste,
+  Punkte optional). Getrennt von `PERMITTED_FILETYPES` (Abgaben),
+  `MAX_UPLOAD_MB` wird wiederverwendet, Inhalt wird wie bei Abgaben
+  gesnifft. Eine gesetzte, leere Liste ist ein Startfehler.
+- Der Upload ist **nicht** am Examenfenster gated; #131 gilt weiter nur
+  für `GET /unterlagen/*` und `POST /upload`.
+- `main.ts` legt `UNTERLAGEN_DIR` beim Start an (wie `ABGABEN_DIR`).
+- Kein Reload-Mechanismus für `#angaben-list` nötig: die Schülerseite
+  liest das Verzeichnis bei jedem Rendern neu.
 
 ## #146 — Eine Schülerseite (erledigt)
 

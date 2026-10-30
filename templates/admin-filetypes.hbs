@@ -84,7 +84,102 @@
             <div class="card-body p-4">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
                     <div>
-                        <h3 class="h5 mb-1">Erlaubte Dateitypen</h3>
+                        <h3 class="h5 mb-1">Unterlagen (Angaben)</h3>
+                        <div class="text-body-secondary">
+                            Die Dateien liegen flach in <code>UNTERLAGEN_DIR</code> und erscheinen
+                            sofort auf der Startseite. Erlaubt:
+                            {{#each unterlagen_filetypes}}{{#if @index}}, {{/if}}.{{this}}{{/each}},
+                            maximal {{max_upload_mb}} MB.
+                        </div>
+                    </div>
+                </div>
+
+                <form hx-post="/admin/unterlagen"
+                      hx-target="#app-content"
+                      hx-swap="innerHTML"
+                      hx-encoding="multipart/form-data"
+                      class="mx-auto w-100 col-xl-8">
+                    <label class="form-label fw-bold" for="unterlagen_file">Datei</label>
+                    <input id="unterlagen_file"
+                           name="file"
+                           type="file"
+                           class="form-control form-control-lg"
+                           accept="{{unterlagen_accept}}"
+                           required>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               id="unterlagen_replace"
+                               name="replace_existing"
+                               value="on">
+                        <label class="form-check-label" for="unterlagen_replace">
+                            Vorhandene Datei gleichen Namens ersetzen (wird überschrieben)
+                        </label>
+                    </div>
+                    <div class="form-text mb-3">
+                        Ohne dieses Häkchen wird eine gleichnamige Unterlage nicht angetastet.
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit"
+                                class="btn btn-info btn-lg"
+                                hx-confirm="Unterlage jetzt hochladen? Eine gleichnamige Datei wird nur mit gesetztem Häkchen ersetzt.">
+                            Unterlage hochladen
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-4">
+                    <div class="section-heading text-uppercase mb-2">Vorhandene Unterlagen</div>
+                    {{#if unterlagen}}
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Datei</th>
+                                        <th scope="col" class="text-end">Aktion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#each unterlagen}}
+                                        <tr>
+                                            <td class="font-monospace text-break">{{this}}</td>
+                                            <td class="text-end">
+                                                <form hx-post="/admin/unterlagen/delete"
+                                                      hx-target="#app-content"
+                                                      hx-swap="innerHTML"
+                                                      hx-confirm="Unterlage {{this}} wirklich löschen?">
+                                                    <input type="hidden" name="filename" value="{{this}}">
+                                                    <button type="submit"
+                                                            class="btn btn-outline-warning btn-sm">Löschen</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {{/each}}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="d-grid mt-3">
+                            <button hx-post="/admin/unterlagen/delete-all"
+                                    hx-vals='{"confirm_delete_all": "unterlagen-loeschen"}'
+                                    hx-target="#app-content"
+                                    hx-swap="innerHTML"
+                                    hx-confirm="Sind Sie sicher, dass Sie ALLE Unterlagen löschen möchten? Das ist nicht rückgängig zu machen."
+                                    class="btn btn-warning btn-lg fw-bold">
+                                Alle Unterlagen löschen
+                            </button>
+                        </div>
+                    {{else}}
+                        <div class="text-body-secondary">Es liegen keine Unterlagen bereit.</div>
+                    {{/if}}
+                </div>
+            </div>
+        </section>
+
+        <section class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
+                    <div>
+                        <h3 class="h5 mb-1">Erlaubte Dateitypen für Abgaben</h3>
                     </div>
                 </div>
 

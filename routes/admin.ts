@@ -13,6 +13,9 @@ import {
     AdminMacSchema,
     AdminQuerySchema,
     AdminThemeSchema,
+    AdminUnterlagenDeleteAllSchema,
+    AdminUnterlagenDeleteSchema,
+    AdminUnterlagenUploadSchema,
 } from "../lib/schemas.ts";
 
 const adminRouter = new Hono<{ Variables: HonoContextVars }>();
@@ -43,6 +46,12 @@ async function renderApplicationPage(
     const content = hbs.adminFileTypesTemplate({
         permitted_filetypes: config.PERMITTED_FILETYPES.join(", "),
         current_filetypes: config.PERMITTED_FILETYPES,
+        unterlagen: await service.unterlagen.list(),
+        unterlagen_filetypes: config.UNTERLAGEN_PERMITTED_FILETYPES,
+        unterlagen_accept: config.UNTERLAGEN_PERMITTED_FILETYPES
+            .map((extension) => `.${extension}`)
+            .join(","),
+        max_upload_mb: config.MAX_UPLOAD_MB,
         allowed_macs: service.adminmac.list().map((entry) => ({
             mac: entry.mac,
             comment: entry.comment,
@@ -242,6 +251,75 @@ adminRouter.post("/application", async (c) => {
     return renderApplicationPage(
         c,
         `Erlaubte Dateitypen aktualisiert: ${fileTypes.map((type) => "." + type).join(", ")}`,
+    );
+});
+
+adminRouter.post("/unterlagen", async (c) => {
+    let formData: FormData;
+    try {
+        formData = await c.req.formData();
+    } catch (error) {
+        console.error(
+            `[UNTERLAGEN] Formular konnte nicht gelesen werden: ${(error as Error).message}`,
+        );
+        return c.text(
+            "Das Formular konnte nicht gelesen werden. Bitte die Seite neu laden und erneut versuchen.",
+            400,
+        );
+    }
+
+    const validation = AdminUnterlagenUploadSchema.safeParse(formData);
+    if (!validation.success) {
+        return c.text(
+            validation.error.issues[0]?.message || "Keine Datei ausgewählt.",
+            400,
+        );
+    }
+
+    // Fehler (Typ, Inhalt, Größe, fehlende Bestätigung) wirft der Service
+    // als AppError; der globale Handler antwortet mit der deutschen
+    // Meldung und einem non-2xx-Status, den htmx als Toast zeigt.
+    const filename = await service.unterlagen.upload(
+        validation.data.file,
+        // Das Häkchen ist die Bestätigung; ohne es wird nicht ersetzt.
+        Boolean(validation.data.replace_existing),
+    );
+    return await renderApplicationPage(c, `Unterlage gespeichert: ${filename}`);
+});
+
+adminRouter.post("/unterlagen/delete", async (c) => {
+    const formData = await c.req.formData();
+    const validation = AdminUnterlagenDeleteSchema.safeParse(formData);
+    if (!validation.success) {
+        return c.text(
+            validation.error.issues[0]?.message || "Bitte eine Unterlage auswählen.",
+            400,
+        );
+    }
+
+    const filename = await service.unterlagen.remove(validation.data.filename);
+    return await renderApplicationPage(c, `Unterlage gelöscht: ${filename}`);
+});
+
+adminRouter.post("/unterlagen/delete-all", async (c) => {
+    const formData = await c.req.formData();
+    const validation = AdminUnterlagenDeleteAllSchema.safeParse(formData);
+    if (!validation.success) {
+        return c.text(
+            validation.error.issues[0]?.message ||
+                "Ungültige Anfrage für das Löschen der Unterlagen.",
+            400,
+        );
+    }
+
+    // „Alles löschen“ räumt das flache Verzeichnis; es gibt kein Archiv
+    // und keine Versionierung, aus der etwas zurückgeholt werden könnte.
+    const removed = await service.unterlagen.removeAll();
+    return await renderApplicationPage(
+        c,
+        removed === 1
+            ? "Eine Unterlage wurde gelöscht."
+            : `Alle Unterlagen wurden gelöscht (${removed} Dateien).`,
     );
 });
 

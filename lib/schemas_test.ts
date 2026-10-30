@@ -4,6 +4,9 @@ import {
     AdminFileTypesSchema,
     AdminQuerySchema,
     AdminRegistrationWindowSchema,
+    AdminUnterlagenDeleteAllSchema,
+    AdminUnterlagenDeleteSchema,
+    AdminUnterlagenUploadSchema,
     LdapSearchSchema,
     RegisterSchema,
     UploadSchema,
@@ -145,4 +148,56 @@ Deno.test("UploadSchema - rejects FormData without file", () => {
 
     const result = UploadSchema.safeParse(formData);
     assertEquals(result.success, false);
+});
+
+Deno.test("AdminUnterlagenUploadSchema - akzeptiert Datei mit und ohne Ersetzen-Bestätigung", () => {
+    for (const replace of [false, true]) {
+        const formData = new FormData();
+        formData.append(
+            "file",
+            new File(["# Angabe"], "angabe.md", { type: "text/markdown" }),
+        );
+        if (replace) {
+            formData.append("replace_existing", "on");
+        }
+
+        const result = AdminUnterlagenUploadSchema.safeParse(formData);
+        assertEquals(result.success, true);
+    }
+});
+
+Deno.test("AdminUnterlagenUploadSchema - fehlende Datei hat eine deutsche Meldung", () => {
+    const result = AdminUnterlagenUploadSchema.safeParse(new FormData());
+    assertEquals(result.success, false);
+    if (!result.success) {
+        assertEquals(result.error.issues[0].message, "Bitte eine Datei auswählen.");
+    }
+});
+
+Deno.test("AdminUnterlagenDeleteSchema - verlangt einen Dateinamen", () => {
+    const result = AdminUnterlagenDeleteSchema.safeParse(new FormData());
+    assertEquals(result.success, false);
+    if (!result.success) {
+        assertEquals(
+            result.error.issues[0].message,
+            "Bitte eine Unterlage auswählen.",
+        );
+    }
+});
+
+Deno.test("AdminUnterlagenDeleteAllSchema - nur mit Bestätigungswert", () => {
+    const ok = new FormData();
+    ok.set("confirm_delete_all", "unterlagen-loeschen");
+    assertEquals(AdminUnterlagenDeleteAllSchema.safeParse(ok).success, true);
+
+    const wrong = new FormData();
+    wrong.set("confirm_delete_all", "nein");
+    const result = AdminUnterlagenDeleteAllSchema.safeParse(wrong);
+    assertEquals(result.success, false);
+    if (!result.success) {
+        assertEquals(
+            result.error.issues[0].message,
+            "Ungültige Anfrage für das Löschen der Unterlagen.",
+        );
+    }
 });

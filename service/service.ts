@@ -8,6 +8,7 @@ import * as admin from "./admin.ts";
 import * as exam from "./exam.ts";
 import * as tik from "./tik.ts";
 import * as adminmac from "./adminmac.ts";
+import * as unterlagen from "./unterlagen.ts";
 
 export {
     ldap,
@@ -20,4 +21,5 @@ export {
     exam,
     tik,
     adminmac,
+    unterlagen,
 };

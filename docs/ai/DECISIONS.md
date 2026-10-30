@@ -273,8 +273,24 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
 - Allowed upload file types are initialized from env but can be changed by admins while the process is running.
 - Upload validation reads the current in-memory config value rather than treating the env-derived startup value as immutable.
 
-## 2026-10-30: Drizzle ersetzt Prisma als Schema- und Migrationsautorität (#133)
+## 2026-10-30: Unterlagen-Lebenszyklus im Admin-Bereich (#134)
 
+- **Choice**: Unterlagen werden über die Web-Oberfläche gepflegt (hochladen,
+  ersetzen, einzeln löschen, alles löschen). Der SSH-Handgriff entfällt.
+  Ersetzen verlangt eine ausdrückliche Bestätigung (Häkchen im Formular plus
+  `hx-confirm`), „alles löschen“ ein Bestätigungsfeld im POST.
+- **Choice**: Ablage bleibt **flach** in `UNTERLAGEN_DIR` — keine
+  Unterordner pro Termin, keine Versionierung, kein Archiv. Unterlagen
+  werden über Termine hinweg wiederverwendet; ein Datumsbaum erzeugt nur
+  den Fehler „falscher Ordner“, der erst im Examen auffällt.
+- **Choice**: Eigene Dateityp-Liste `UNTERLAGEN_PERMITTED_FILETYPES`
+  (Default `md`), unabhängig von `PERMITTED_FILETYPES` (Abgaben) und
+  nicht zur Laufzeit über die UI änderbar. `MAX_UPLOAD_MB` und das
+  Content-Sniffing der Abgaben gelten mit.
+- **Choice**: Kein Exam-Gating für den Admin-Upload; das Gating aus #131
+  bleibt auf `GET /unterlagen/*` und `POST /upload` beschränkt.
+
+## 2026-10-30: Drizzle ersetzt Prisma als Schema- und Migrationsautorität (#133)
 Ersetzt den früheren Abschnitt „Hybrid Persistence Strategy". Prisma ist aus
 dem Produktivpfad verschwunden: keine Prisma-Tasks, keine
 Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.

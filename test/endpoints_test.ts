@@ -1,4 +1,4 @@
-import { assertEquals, assertExists, assert } from "@std/assert";
+import { assertEquals, assertExists, assert, assertRejects } from "@std/assert";
 import { createHash } from "node:crypto";
 import endpoints from "./endpoints.json" with { type: "json" };
 import config from "../lib/config.ts";
@@ -1016,6 +1016,308 @@ Deno.test("Schüler von freigegebener MAC wird nicht Admin (#147)", async () => 
     }
 });
 
+// --- Admin-Upload für Unterlagen (#134) -----------------------------------
+//
+// Die Tests arbeiten im echten `UNTERLAGEN_DIR` des Entwicklungsservers.
+// Der Inhalt wird vorher gesichert und im `finally` wiederhergestellt,
+// damit ein Testlauf keine vorhandenen Angaben vernichtet.
+
+type UnterlagenSnapshot = { name: string; bytes: Uint8Array }[];
+
+async function snapshotUnterlagen(): Promise<UnterlagenSnapshot> {
+    const snapshot: UnterlagenSnapshot = [];
+    for await (const entry of Deno.readDir(config.UNTERLAGEN_DIR)) {
+        if (!entry.isFile) continue;
+        snapshot.push({
+            name: entry.name,
+            bytes: await Deno.readFile(`${config.UNTERLAGEN_DIR}/${entry.name}`),
+        });
+    }
+    return snapshot;
+}
+
+async function restoreUnterlagen(snapshot: UnterlagenSnapshot): Promise<void> {
+    for await (const entry of Deno.readDir(config.UNTERLAGEN_DIR)) {
+        if (entry.isFile) {
+            await Deno.remove(`${config.UNTERLAGEN_DIR}/${entry.name}`);
+        }
+    }
+    for (const file of snapshot) {
+        await Deno.writeFile(`${config.UNTERLAGEN_DIR}/${file.name}`, file.bytes);
+    }
+}
+
+async function uploadUnterlage(
+    cookie: string,
+    filename: string,
+    content: string,
+    options: { type?: string; replace?: boolean } = {},
+): Promise<Response> {
+    const form = new FormData();
+    form.append(
+        "file",
+        new File([content], filename, { type: options.type ?? "text/markdown" }),
+    );
+    if (options.replace) {
+        form.append("replace_existing", "on");
+    }
+    return await fetch(`${BASE_URL}/admin/unterlagen`, {
+        method: "POST",
+        headers: { "Cookie": cookie },
+        body: form,
+    });
+}
+
+Deno.test("Admin-Upload Unterlagen: funktioniert außerhalb des Examensfensters (#134)", async () => {
+    const snapshot = await snapshotUnterlagen();
+    const cookie = await registerAndGetCookie("grafg@spengergasse.at");
+
+    // Kein laufendes Examen: das Gating aus #131 gilt nur für Schüler.
+    clearExamState();
+
+    try {
+        const res = await uploadUnterlage(cookie, "angabe.md", "# Angabe 1\n");
+        const html = await res.text();
+        assertEquals(res.status, 200);
+        assertEquals(html.includes("Unterlage gespeichert: angabe.md"), true);
+        assertEquals(html.includes("Unterlagen (Angaben)"), true);
+        assertEquals(html.includes('hx-encoding="multipart/form-data"'), true);
+        assertEquals(html.includes("Vorhandene Unterlagen"), true);
+        assertEquals(html.includes("angabe.md"), true);
+
+        assertEquals(
+            await Deno.readTextFile(`${config.UNTERLAGEN_DIR}/angabe.md`),
+            "# Angabe 1\n",
+        );
+
+        // Die Schülerseite liest das Verzeichnis bei jedem Rendern neu.
+        const homeHtml = await (await fetch(`${BASE_URL}/`)).text();
+        assertEquals(homeHtml.includes('id="angaben-list"'), true);
+        assertEquals(homeHtml.includes("angabe.md"), true);
+
+        // Der Schüler-Download bleibt außerhalb des Examens gesperrt.
+        const gated = await fetch(`${BASE_URL}/unterlagen/angabe.md`, {
+            headers: { "Cookie": cookie },
+        });
+        await gated.text();
+        assertEquals(gated.status, 403);
+    } finally {
+        clearExamState();
+        await restoreUnterlagen(snapshot);
+    }
+});
+
+Deno.test("Admin-Unterlagen: Schüler dürfen weder hochladen noch löschen (#134)", async () => {
+    const snapshot = await snapshotUnterlagen();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `unterlagen-student-${suffix}@example.com`;
+
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Unterlagen Student",
+        klasse: "5AHITM",
+    });
+    await Deno.writeTextFile(`${config.UNTERLAGEN_DIR}/bestehend.md`, "# Alt\n");
+
+    try {
+        const cookie = await registerAndGetCookie(studentEmail);
+
+        const uploadRes = await uploadUnterlage(cookie, "fremd.md", "# Fremd\n");
+        await uploadRes.text();
+        assertEquals(uploadRes.status, 403);
+
+        const deleteRes = await fetch(`${BASE_URL}/admin/unterlagen/delete`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie,
+            },
+            body: "filename=bestehend.md",
+        });
+        await deleteRes.text();
+        assertEquals(deleteRes.status, 403);
+
+        const deleteAllRes = await fetch(
+            `${BASE_URL}/admin/unterlagen/delete-all`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cookie": cookie,
+                },
+                body: "confirm_delete_all=unterlagen-loeschen",
+            },
+        );
+        await deleteAllRes.text();
+        assertEquals(deleteAllRes.status, 403);
+
+        // Nichts wurde angelegt oder gelöscht.
+        assertEquals(
+            await Deno.readTextFile(`${config.UNTERLAGEN_DIR}/bestehend.md`),
+            "# Alt\n",
+        );
+        await assertRejects(() =>
+            Deno.stat(`${config.UNTERLAGEN_DIR}/fremd.md`)
+        );
+    } finally {
+        await clearForensicsByUserEmail(studentEmail);
+        await restoreUnterlagen(snapshot);
+    }
+});
+
+Deno.test("Admin-Unterlagen: Dateityp, Inhalt, Pfadanteile und Ersetzen (#134)", async () => {
+    const snapshot = await snapshotUnterlagen();
+    const cookie = await registerAndGetCookie("grafg@spengergasse.at");
+
+    try {
+        // Endung nicht in UNTERLAGEN_PERMITTED_FILETYPES.
+        const txtRes = await uploadUnterlage(cookie, "angabe.txt", "# Angabe\n", {
+            type: "text/plain",
+        });
+        const txtMessage = await txtRes.text();
+        assertEquals(txtRes.status, 415);
+        assertEquals(txtMessage, "Für Unterlagen sind nur .md Dateien erlaubt.");
+
+        // Endung passt, Inhalt nicht (Content-Sniffing wie bei Abgaben).
+        const sniffForm = new FormData();
+        sniffForm.append(
+            "file",
+            new File([uploadZipBytes], "angabe.md", { type: "text/markdown" }),
+        );
+        const sniffRes = await fetch(`${BASE_URL}/admin/unterlagen`, {
+            method: "POST",
+            headers: { "Cookie": cookie },
+            body: sniffForm,
+        });
+        const sniffMessage = await sniffRes.text();
+        assertEquals(sniffRes.status, 415);
+        assertEquals(
+            sniffMessage.includes("Der Dateiinhalt passt nicht zu .md."),
+            true,
+        );
+
+        // Pfadanteile im Dateinamen verlassen das Verzeichnis nicht.
+        const traversalRes = await uploadUnterlage(
+            cookie,
+            "../entwischt.md",
+            "# boese\n",
+        );
+        const traversalMessage = await traversalRes.text();
+        assertEquals(traversalRes.status, 400);
+        assertEquals(traversalMessage.includes("ist nicht zulässig"), true);
+        await assertRejects(() =>
+            Deno.stat(`${config.UNTERLAGEN_DIR}/../entwischt.md`)
+        );
+
+        // Ersetzen ohne Bestätigung ändert nichts.
+        await Deno.writeTextFile(
+            `${config.UNTERLAGEN_DIR}/angabe.md`,
+            "# Alt\n",
+        );
+        const noConfirmRes = await uploadUnterlage(
+            cookie,
+            "angabe.md",
+            "# Neu\n",
+        );
+        const noConfirmMessage = await noConfirmRes.text();
+        assertEquals(noConfirmRes.status, 409);
+        assertEquals(noConfirmMessage.includes("existiert bereits"), true);
+        assertEquals(
+            await Deno.readTextFile(`${config.UNTERLAGEN_DIR}/angabe.md`),
+            "# Alt\n",
+        );
+
+        // Mit Bestätigung wird ersetzt.
+        const confirmRes = await uploadUnterlage(
+            cookie,
+            "angabe.md",
+            "# Neu\n",
+            { replace: true },
+        );
+        await confirmRes.text();
+        assertEquals(confirmRes.status, 200);
+        assertEquals(
+            await Deno.readTextFile(`${config.UNTERLAGEN_DIR}/angabe.md`),
+            "# Neu\n",
+        );
+
+        // Einzellöschen.
+        const deleteRes = await fetch(`${BASE_URL}/admin/unterlagen/delete`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie,
+            },
+            body: `filename=${encodeURIComponent("angabe.md")}`,
+        });
+        const deleteMessage = await deleteRes.text();
+        assertEquals(deleteRes.status, 200);
+        assertEquals(deleteMessage.includes("Unterlage gelöscht: angabe.md"), true);
+        await assertRejects(() =>
+            Deno.stat(`${config.UNTERLAGEN_DIR}/angabe.md`)
+        );
+    } finally {
+        await restoreUnterlagen(snapshot);
+    }
+});
+
+Deno.test("Admin-Unterlagen: alles löschen braucht eine Bestätigung (#134)", async () => {
+    const snapshot = await snapshotUnterlagen();
+    const cookie = await registerAndGetCookie("grafg@spengergasse.at");
+
+    try {
+        await Deno.writeTextFile(`${config.UNTERLAGEN_DIR}/angabe-a.md`, "# A\n");
+        await Deno.writeTextFile(`${config.UNTERLAGEN_DIR}/angabe-b.md`, "# B\n");
+
+        const refusedRes = await fetch(
+            `${BASE_URL}/admin/unterlagen/delete-all`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cookie": cookie,
+                },
+                body: "confirm_delete_all=nein",
+            },
+        );
+        const refusedMessage = await refusedRes.text();
+        assertEquals(refusedRes.status, 400);
+        assertEquals(
+            refusedMessage,
+            "Ungültige Anfrage für das Löschen der Unterlagen.",
+        );
+        assertEquals(
+            await Deno.readTextFile(`${config.UNTERLAGEN_DIR}/angabe-a.md`),
+            "# A\n",
+        );
+
+        const res = await fetch(`${BASE_URL}/admin/unterlagen/delete-all`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie,
+            },
+            body: "confirm_delete_all=unterlagen-loeschen",
+        });
+        const html = await res.text();
+        assertEquals(res.status, 200);
+        assertEquals(
+            html.includes("Alle Unterlagen wurden gelöscht (2 Dateien)."),
+            true,
+        );
+
+        for await (const entry of Deno.readDir(config.UNTERLAGEN_DIR)) {
+            assertEquals(entry.isFile, false, `Nicht gelöscht: ${entry.name}`);
+        }
+
+        // Die Schülerseite zeigt den deutschen Leerzustand.
+        const homeHtml = await (await fetch(`${BASE_URL}/`)).text();
+        assertEquals(homeHtml.includes("Es liegen noch keine Angaben bereit."), true);
+    } finally {
+        await restoreUnterlagen(snapshot);
+    }
+});
+
 async function registerAndGetCookie(email: string): Promise<string> {
     const registerRes = await fetch(`${BASE_URL}/register`, {
         method: "POST",
@@ -1075,6 +1377,9 @@ Deno.test("requireAdmin: alle /admin-Routen liefern ohne Admin 403", async () =>
         ["/admin/theme", "POST"],
         ["/admin/adminmac", "POST"],
         ["/admin/adminmac/delete", "POST"],
+        ["/admin/unterlagen", "POST"],
+        ["/admin/unterlagen/delete", "POST"],
+        ["/admin/unterlagen/delete-all", "POST"],
         ["/admin/download-abgaben", "GET"],
         ["/admin/wipe-abgaben", "POST"],
         ["/admin/cleanup-database", "POST"],

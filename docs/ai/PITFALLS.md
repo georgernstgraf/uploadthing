@@ -81,6 +81,17 @@
 - Do not add raw path joins or trust user-provided filenames.
 - Upload behavior is constrained by `MAX_UPLOAD_MB`, `PERMITTED_FILETYPES`, and filesystem directories from env.
 - `PERMITTED_FILETYPES` starts from env but can be changed at runtime by admins, so do not assume it is immutable after process start.
+- Unterlagen (`/admin/unterlagen`, #134) have their **own** list
+  `UNTERLAGEN_PERMITTED_FILETYPES` (default `md`). Never validate
+  Unterlagen against `PERMITTED_FILETYPES` — that one describes student
+  submissions and is runtime-editable in the admin UI.
+- Unterlagen are replaced, not versioned: `getVersionedPath` belongs to
+  `ABGABEN_DIR` only. The Unterlagen directory stays flat, and
+  `service/unterlagen.remove()` only accepts names that exist as plain
+  files in the directory listing (no `..`, no separators, no symlink
+  targets).
+- A file in `UNTERLAGEN_DIR` that is not a regular file (symlink,
+  directory) must never be opened for writing; `upload()` refuses it.
 
 ## Test Suite Sharp Edges
 
