@@ -29,21 +29,30 @@ class Toast {
         dialog.setAttribute("aria-modal", "true");
         dialog.setAttribute("aria-live", "assertive");
 
-        dialog.innerHTML = `
-            <div class="toast-dialog__content">
-                <div class="toast-dialog__icon">
-                    ${this.getIcon()}
-                </div>
-                <div class="toast-dialog__message" id="toast-dialog-message">
-                    ${this.message}
-                </div>
-                <button type="button" class="toast-dialog__close btn btn--${this.type}" id="toast-dialog-close">
-                    OK
-                </button>
-            </div>
-        `;
+        // Aufbau ausschließlich über DOM-APIs (#152): die Meldung kommt
+        // vom Server und enthält schülerkontrollierte Dateinamen — sie
+        // darf nie als HTML interpretiert werden.
+        const content = document.createElement("div");
+        content.className = "toast-dialog__content";
 
-        const closeBtn = dialog.querySelector(".toast-dialog__close");
+        const icon = document.createElement("div");
+        icon.className = "toast-dialog__icon";
+        icon.appendChild(this.getIcon());
+
+        const message = document.createElement("div");
+        message.className = "toast-dialog__message";
+        message.id = "toast-dialog-message";
+        message.textContent = this.message;
+
+        const closeBtn = document.createElement("button");
+        closeBtn.type = "button";
+        closeBtn.className = `toast-dialog__close btn btn--${this.type}`;
+        closeBtn.id = "toast-dialog-close";
+        closeBtn.textContent = "OK";
+
+        content.append(icon, message, closeBtn);
+        dialog.appendChild(content);
+
         closeBtn.addEventListener("click", () => this.hide());
 
         // Close on backdrop click
@@ -69,22 +78,33 @@ class Toast {
         return dialog;
     }
 
+    /** Icon als SVG-Element — nie als HTML-String. */
     getIcon() {
-        const icons = {
-            success: `<svg width="32" height="32" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z" fill="currentColor"/>
-            </svg>`,
-            danger: `<svg width="32" height="32" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z" fill="currentColor"/>
-            </svg>`,
-            warning: `<svg width="32" height="32" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 0H20L10 18L0 0ZM10.5 15H9.5V14H10.5V15ZM10.5 12H9.5V8H10.5V12Z" fill="currentColor"/>
-            </svg>`,
-            info: `<svg width="32" height="32" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V9H11V15ZM11 7H9V5H11V7Z" fill="currentColor"/>
-            </svg>`,
+        const paths = {
+            success:
+                "M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z",
+            danger:
+                "M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z",
+            warning:
+                "M0 0H20L10 18L0 0ZM10.5 15H9.5V14H10.5V15ZM10.5 12H9.5V8H10.5V12Z",
+            info:
+                "M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V9H11V15ZM11 7H9V5H11V7Z",
         };
-        return icons[this.type] || icons.info;
+        const d = paths[this.type] || paths.info;
+
+        const svgNs = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNs, "svg");
+        svg.setAttribute("width", "32");
+        svg.setAttribute("height", "32");
+        svg.setAttribute("viewBox", "0 0 20 20");
+        svg.setAttribute("fill", "none");
+
+        const path = document.createElementNS(svgNs, "path");
+        path.setAttribute("d", d);
+        path.setAttribute("fill", "currentColor");
+        svg.appendChild(path);
+
+        return svg;
     }
 
     show() {

@@ -64,6 +64,10 @@ export async function buildPanel(
         success: options.success,
         toast_message: options.toast_message,
         toast_type: options.toast_type,
+        // Eine abgelehnte Anmeldung (etwa der gesperrte Namenswechsel im
+        // Examen) muss auch den bereits angemeldeten Nutzer erreichen
+        // (#152) — er sieht das Abgabe-Panel, nicht die Anmeldung.
+        login_error: options.login_error,
     });
 }
 

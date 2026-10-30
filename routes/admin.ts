@@ -27,10 +27,15 @@ const start_ms_earlier = 3.6 * 1.5e6;
 const one_day_ms = 24 * 3.6e6;
 const time_cutoff_ms = config.TODAY_HOURS_CUTOFF * 3.6e6;
 
+/**
+ * Rendert die Admin-Seite im Erfolgsfall. Fehler laufen **nicht** über
+ * diese Funktion, sondern als `c.text(<Meldung>, 4xx)`: der globale
+ * Toast-Handler (`templates/index.hbs`) zeigt `responseText` an, und ein
+ * komplettes Panel wäre dort ein HTML-Baum statt einer Meldung (#152).
+ */
 async function renderApplicationPage(
     c: Context<{ Variables: HonoContextVars }>,
     success_message?: string,
-    error_message?: string,
     cleanup_result_html?: string,
 ) {
     const remote_user = c.get("remoteuser");
@@ -70,12 +75,11 @@ async function renderApplicationPage(
         available_themes: service.admin.listAvailableThemes(),
         current_theme_key: service.admin.getCurrentThemeKey(),
         success_message,
-        error_message,
         cleanup_result_html,
     });
 
     if (c.req.header("HX-Request") === "true") {
-        return c.html(content, error_message ? 400 : 200);
+        return c.html(content);
     }
 
     return c.html(hbs.indexTemplate({
@@ -86,7 +90,7 @@ async function renderApplicationPage(
         hero_url: config.hero_url,
         theme_asset_version: config.THEME_ASSET_VERSION,
         content,
-    }), error_message ? 400 : 200);
+    }));
 }
 
 adminRouter.get("/students", async (c) => {
@@ -235,16 +239,15 @@ adminRouter.post("/application", async (c) => {
     const formData = await c.req.formData();
     const validation = AdminFileTypesSchema.safeParse(formData);
     if (!validation.success) {
-        return renderApplicationPage(
-            c,
-            undefined,
+        return c.text(
             validation.error.issues[0]?.message || "Ungültige Dateitypen",
+            400,
         );
     }
 
     const fileTypes = parsePermittedFileTypes(validation.data.permitted_filetypes);
     if (fileTypes.length === 0) {
-        return renderApplicationPage(c, undefined, "Mindestens ein Dateityp ist erforderlich");
+        return c.text("Mindestens ein Dateityp ist erforderlich", 400);
     }
 
     config.PERMITTED_FILETYPES = fileTypes;
@@ -327,10 +330,9 @@ adminRouter.post("/adminmac", async (c) => {
     const formData = await c.req.formData();
     const validation = AdminMacSchema.safeParse(formData);
     if (!validation.success) {
-        return renderApplicationPage(
-            c,
-            undefined,
+        return c.text(
             validation.error.issues[0]?.message || "Ungültige MAC-Adresse",
+            400,
         );
     }
 
@@ -346,7 +348,7 @@ adminRouter.post("/adminmac", async (c) => {
     } catch (error) {
         // Ungültige Schreibweise oder bereits vorhandene Freigabe: die
         // Meldung nennt den Grund, damit der Fehler sichtbar bleibt.
-        return renderApplicationPage(c, undefined, (error as Error).message);
+        return c.text((error as Error).message, 400);
     }
 });
 
@@ -354,18 +356,16 @@ adminRouter.post("/adminmac/delete", async (c) => {
     const formData = await c.req.formData();
     const validation = AdminMacDeleteSchema.safeParse(formData);
     if (!validation.success) {
-        return renderApplicationPage(
-            c,
-            undefined,
+        return c.text(
             validation.error.issues[0]?.message || "Ungültige MAC-Adresse",
+            400,
         );
     }
 
     if (!service.adminmac.remove(validation.data.mac)) {
-        return renderApplicationPage(
-            c,
-            undefined,
+        return c.text(
             `Die MAC-Adresse ${validation.data.mac} war nicht freigegeben.`,
+            400,
         );
     }
 
@@ -381,10 +381,9 @@ adminRouter.post("/theme", async (c) => {
     const formData = await c.req.formData();
     const validation = AdminThemeSchema.safeParse(formData);
     if (!validation.success) {
-        return renderApplicationPage(
-            c,
-            undefined,
+        return c.text(
             validation.error.issues[0]?.message || "Ungültiges Theme",
+            400,
         );
     }
 
@@ -392,10 +391,12 @@ adminRouter.post("/theme", async (c) => {
         const theme = service.admin.applyTheme(validation.data.theme);
         return renderApplicationPage(c, `Theme aktiviert: ${theme.label}`);
     } catch (error) {
-        return renderApplicationPage(
-            c,
-            undefined,
+        console.error(
+            `[ADMIN] Theme konnte nicht aktiviert werden: ${(error as Error).message}`,
+        );
+        return c.text(
             `Theme konnte nicht aktiviert werden: ${(error as Error).message}`,
+            500,
         );
     }
 });
@@ -441,16 +442,16 @@ adminRouter.post("/cleanup-database", async (c) => {
     const formData = await c.req.formData();
     const validation = AdminCleanupDatabaseSchema.safeParse(formData);
     if (!validation.success) {
-        return renderApplicationPage(c, undefined, "Ungültige Anfrage für die Datenbankbereinigung");
+        return c.text("Ungültige Anfrage für die Datenbankbereinigung", 400);
     }
 
     try {
         const result = service.admin.cleanupDatabaseOlderThanOneYear();
-        const html = `<div class="alert alert-success fs-lg mt-2 mx-auto" style="max-width: 720px;">Datenbank bereinigt. Entfernt: ${result.deleted_cookiepresents} Cookies, ${result.deleted_registrations} Registrierungen, ${result.deleted_ipfacts} IP-Logs, ${result.deleted_submissions} Abgaben (gesamt ${result.total_deleted}).</div>`;
-        return renderApplicationPage(c, undefined, undefined, html);
+        const html = `<div id="cleanup-result" class="alert alert-success fs-lg mt-2 mx-auto" style="max-width: 720px;">Datenbank bereinigt. Entfernt: ${result.deleted_cookiepresents} Cookies, ${result.deleted_registrations} Registrierungen, ${result.deleted_ipfacts} IP-Logs, ${result.deleted_submissions} Abgaben (gesamt ${result.total_deleted}).</div>`;
+        return renderApplicationPage(c, undefined, html);
     } catch (error) {
         console.error("Error cleaning up database:", error);
-        return renderApplicationPage(c, undefined, "Fehler bei der Datenbankbereinigung");
+        return c.text("Fehler bei der Datenbankbereinigung", 500);
     }
 });
 

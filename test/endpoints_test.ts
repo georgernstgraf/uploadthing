@@ -208,6 +208,17 @@ Deno.test("Schüler sieht Angaben und Abgabe ohne Navigation (#146)", async () =
     }
 });
 
+Deno.test("static/toast.js baut den Dialog ohne innerHTML (#152)", async () => {
+    const res = await fetch(`${BASE_URL}/static/toast.js`);
+    assertEquals(res.status, 200);
+    const source = await res.text();
+
+    // Servermeldungen und schülerkontrollierte Dateinamen dürfen nie als
+    // HTML interpretiert werden — Aufbau ausschließlich über DOM-APIs.
+    assertEquals(source.includes("innerHTML"), false);
+    assertEquals(source.includes("textContent"), true);
+});
+
 Deno.test("GET /upload leitet auf die Startseite (#146)", async () => {
     const res = await fetch(`${BASE_URL}/upload`, { redirect: "manual" });
     assertEquals([301, 302, 303, 307, 308].includes(res.status), true);
@@ -296,6 +307,57 @@ Deno.test("Anmeldesperre: keine Neuanmeldung als Schüler im Examen, Lehrperson 
         }
         clearExamState();
         await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
+Deno.test("Anmeldesperre erreicht auch angemeldete Schüler (#152)", async () => {
+    clearExamState();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `relogin-lock-${suffix}@example.com`;
+    const otherEmail = `relogin-lock-other-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Relogin Lock Student",
+        klasse: "5AHITM",
+    });
+    await upsertFixtureUser({
+        email: otherEmail,
+        name: "Relogin Other Student",
+        klasse: "5AHITM",
+    });
+
+    try {
+        // Angemeldet vor dem Examen — die Sitzung bleibt bestehen.
+        const cookie = await registerAndGetCookie(studentEmail);
+        seedExamState("running");
+
+        // Namenswechsel im Examen: abgelehnt, aber der Schüler sieht das
+        // Abgabe-Panel (nicht die Anmeldung) und dort die Sperrmeldung.
+        const blocked = await fetch(`${BASE_URL}/register`, {
+            method: "POST",
+            headers: {
+                "Cookie": cookie,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `email=${encodeURIComponent(otherEmail)}`,
+        });
+        const blockedHtml = await blocked.text();
+
+        assertEquals(blocked.status, 200);
+        assertEquals(
+            blockedHtml.includes("Während der Prüfung ist keine Neuanmeldung möglich."),
+            true,
+        );
+        assertEquals(blockedHtml.includes('id="login-error"'), true);
+        // Die rechte Spalte bleibt das Abgabe-Panel, nicht die Anmeldung.
+        assertEquals(blockedHtml.includes('id="abgabe-panel"'), true);
+        assertEquals(blockedHtml.includes('id="login-form"'), false);
+        // Kein Wechsel: die bestehende Sitzung bleibt, keine neue wird gesetzt.
+        assertEquals(blocked.headers.get("set-cookie"), null);
+    } finally {
+        clearExamState();
+        await clearForensicsByUserEmail(studentEmail);
+        await clearForensicsByUserEmail(otherEmail);
     }
 });
 
@@ -911,7 +973,7 @@ Deno.test("Admin: MAC-Freigabe anlegen, ablehnen, entfernen (#147)", async () =>
         assertEquals(addHtml.includes(comment), true);
         assertEquals(addHtml.includes("Admin-Freigabe per MAC"), true);
 
-        // Doppelte Freigabe: Fehler sichtbar, non-2xx für den Toast.
+        // Doppelte Freigabe: Fehler als reiner Text für den Toast (#152).
         const duplicateRes = await postMac(
             "/admin/adminmac",
             `mac=${encodeURIComponent(mac)}&comment=${encodeURIComponent(comment)}`,
@@ -922,6 +984,8 @@ Deno.test("Admin: MAC-Freigabe anlegen, ablehnen, entfernen (#147)", async () =>
             duplicateHtml.includes(`Die MAC-Adresse ${mac} ist bereits freigegeben.`),
             true,
         );
+        assertEquals(duplicateHtml.includes("<html"), false);
+        assertEquals(duplicateHtml.includes("<div"), false);
 
         // Ungültige Schreibweise wird abgelehnt, nicht gespeichert.
         const invalidRes = await postMac(
@@ -931,6 +995,14 @@ Deno.test("Admin: MAC-Freigabe anlegen, ablehnen, entfernen (#147)", async () =>
         const invalidHtml = await invalidRes.text();
         assertEquals(invalidRes.status, 400);
         assertEquals(invalidHtml.includes("Ungültige MAC-Adresse"), true);
+        // Der globale Toast-Handler zeigt `responseText` — HTML wäre ein
+        // komplettes Panel im Dialog (#152).
+        assertEquals(
+            invalidRes.headers.get("content-type"),
+            "text/plain; charset=UTF-8",
+        );
+        assertEquals(invalidHtml.includes("<html"), false);
+        assertEquals(invalidHtml.includes("<div"), false);
 
         // Leerer Kommentar ist nicht erlaubt.
         const noCommentRes = await postMac(

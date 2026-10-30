@@ -98,6 +98,7 @@
                       hx-target="#app-content"
                       hx-swap="innerHTML"
                       hx-encoding="multipart/form-data"
+                      hx-confirm="Unterlage jetzt hochladen? Eine gleichnamige Datei wird nur mit gesetztem Häkchen ersetzt."
                       class="mx-auto w-100 col-xl-8">
                     <label class="form-label fw-bold" for="unterlagen_file">Datei</label>
                     <input id="unterlagen_file"
@@ -121,8 +122,7 @@
                     </div>
                     <div class="d-grid">
                         <button type="submit"
-                                class="btn btn-info btn-lg"
-                                hx-confirm="Unterlage jetzt hochladen? Eine gleichnamige Datei wird nur mit gesetztem Häkchen ersetzt.">
+                                class="btn btn-info btn-lg">
                             Unterlage hochladen
                         </button>
                     </div>
@@ -261,7 +261,7 @@
                 <div class="mt-4">
                     <div class="section-heading text-uppercase mb-2">Freigegebene Geräte</div>
                     {{#if allowed_macs}}
-                        <div class="table-responsive">
+                        <div class="table-responsive" id="adminmac-allowed-list">
                             <table class="table align-middle">
                                 <thead>
                                     <tr>
@@ -323,9 +323,11 @@
                     </div>
                 </div>
 
-                <form hx-post="/admin/cleanup-database"
+                <form id="cleanup-database-form"
+                      hx-post="/admin/cleanup-database"
                       hx-target="#app-content"
                       hx-swap="innerHTML"
+                      hx-confirm="Möchten Sie wirklich alle Datenbankeinträge löschen, die älter als ein Monat sind?"
                       class="mx-auto w-100 col-xl-8">
                     <input type="hidden"
                            name="confirm_cleanup"
@@ -335,7 +337,6 @@
                     </div>
                     <div class="d-grid">
                         <button type="submit"
-                                hx-confirm="Möchten Sie wirklich alle Datenbankeinträge löschen, die älter als ein Monat sind?"
                                 class="btn btn-secondary btn-lg">Datenbank bereinigen</button>
                     </div>
                 </form>
@@ -351,9 +352,6 @@
 
     {{#if success_message}}
         <div class="alert alert-success mx-auto mt-3 mb-0 w-100 col-xxl-10">{{success_message}}</div>
-    {{/if}}
-    {{#if error_message}}
-        <div class="alert alert-danger mx-auto mt-3 mb-0 w-100 col-xxl-10">{{error_message}}</div>
     {{/if}}
     </div>
 </section>

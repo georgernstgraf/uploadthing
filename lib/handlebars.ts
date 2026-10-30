@@ -26,6 +26,8 @@ type AbgabeTemplateData = {
     exam_remaining_label?: string;
     toast_message?: string;
     toast_type?: string;
+    /** Abgelehnte Anmeldung, sichtbar auch für bereits Angemeldete (#152). */
+    login_error?: string;
     success?: {
         filename: string;
         filesize: string;
@@ -110,7 +112,6 @@ type AdminFileTypesTemplateData = {
     available_themes: { key: string; label: string }[];
     current_theme_key: string | null;
     success_message?: string;
-    error_message?: string;
     cleanup_result_html?: string;
 };
 

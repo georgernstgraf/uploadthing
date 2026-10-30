@@ -9,7 +9,7 @@
  */
 
 import { parseSqliteDatabaseUrl } from "../../lib/dbpath.ts";
-import { STUDENT, TEACHER, UNTERLAGEN_FILE } from "./fixtures.ts";
+import { ADMIN_MAC, STUDENT, TEACHER, UNTERLAGEN_FILE } from "./fixtures.ts";
 
 const VACUUM_DB = new URL("../../vacuum.db", import.meta.url);
 
@@ -45,10 +45,16 @@ db.exec("DELETE FROM abgaben");
 db.exec("DELETE FROM registrations");
 db.exec("DELETE FROM cookiepresents");
 db.exec("DELETE FROM ipfact");
+db.exec("DELETE FROM adminmac");
 
 for (const user of [STUDENT, TEACHER]) {
     await usersRepo.upsert(user);
 }
+
+// Eine freigegebene MAC, damit der Bestätigungsdialog „MAC entfernen“
+// (#152) im Browser eine echte Zeile zum Anklicken hat.
+db.prepare("INSERT INTO adminmac (mac, comment, created_at) VALUES (?, ?, ?)")
+    .run(ADMIN_MAC.mac, ADMIN_MAC.comment, new Date().toISOString());
 
 // Eine echte Unterlage, damit der 403-Test auf eine existierende Datei
 // zeigt (der Riegel greift vor dem Dateizugriff, nicht wegen 404).

@@ -34,6 +34,15 @@ export const TEACHER: FixtureUser = {
 /** Name der Unterlage, die `seed.ts` in `UNTERLAGEN_DIR` ablegt. */
 export const UNTERLAGEN_FILE = "angabe.md";
 
+/**
+ * Freigegebene MAC der Fixture-Datenbank (#152): Ziel der E2E-Tests für
+ * die Bestätigungsdialoge von „MAC entfernen“ und der Datenbankbereinigung.
+ */
+export const ADMIN_MAC = {
+    mac: "02:00:00:00:00:01",
+    comment: "E2E Fixture-Gerät",
+} as const;
+
 function requireEnv(name: string): string {
     const value = Deno.env.get(name);
     if (!value) {

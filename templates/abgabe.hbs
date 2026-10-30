@@ -3,6 +3,11 @@
         <h2 class="card-title mb-0">Deine Abgabe</h2>
     </div>
     <div class="card-body pt-3">
+        {{#if login_error}}
+            <div id="login-error"
+                 class="alert alert-danger"
+                 role="alert">{{login_error}}</div>
+        {{/if}}
         {{#if toast_message}}
             <div id="abgabe-toast"
                  data-message="{{toast_message}}"

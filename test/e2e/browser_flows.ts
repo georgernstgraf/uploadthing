@@ -17,9 +17,10 @@
 
 import { assert, assertEquals } from "@std/assert";
 import { chromium } from "playwright-core";
-import type { Browser, Locator } from "playwright-core";
+import type { Browser, Locator, Page } from "playwright-core";
 import { Buffer } from "node:buffer";
 import {
+    ADMIN_MAC,
     baseUrl,
     cookieName,
     sessionCookieValue,
@@ -434,6 +435,135 @@ Deno.test({
                 await page.unroute("**/api/exam/extra");
             } finally {
                 await stopExam();
+                await context.close();
+            }
+        });
+    },
+});
+
+/**
+ * Sammelt die `window.confirm`-Rückfragen einer Seite (#152). Playwright
+ * braucht den Listener **vor** dem Klick: solange ein Dialog offen ist,
+ * kommt der Klick nicht zurück.
+ */
+function trackDialogs(
+    page: Page,
+    initialAction: "accept" | "dismiss",
+) {
+    const state = {
+        action: initialAction,
+        messages: [] as string[],
+    };
+
+    page.on("dialog", async (dialog) => {
+        state.messages.push(dialog.message());
+        if (state.action === "accept") {
+            await dialog.accept();
+        } else {
+            await dialog.dismiss();
+        }
+    });
+
+    return state;
+}
+
+/** Wartet, bis die n-te Rückfrage wirklich angekommen ist. */
+async function waitForDialogCount(messages: string[], count: number): Promise<void> {
+    for (let attempt = 0; attempt < 100; attempt++) {
+        if (messages.length >= count) {
+            return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error(
+        `Rückfrage Nr. ${count} erschien nicht (bisher ${messages.length}).`,
+    );
+}
+
+Deno.test({
+    name: "E2E: Rückfrage vor dem Entfernen einer MAC-Freigabe (#152)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, TEACHER.email);
+            try {
+                await page.goto("/admin/application");
+                await page.waitForSelector("#adminmac-allowed-list");
+
+                const dialogs = trackDialogs(page, "dismiss");
+                const removeButton = page.locator("#adminmac-allowed-list")
+                    .getByRole("button", { name: "Entfernen" });
+
+                // Erster Klick: die Rückfrage erscheint und wird abgelehnt —
+                // die Freigabe bleibt unangetastet.
+                await removeButton.click();
+                await waitForDialogCount(dialogs.messages, 1);
+                assert(
+                    dialogs.messages[0].includes(
+                        `MAC-Adresse ${ADMIN_MAC.mac} wirklich entfernen?`,
+                    ),
+                    `Rückfrage erwartet, war: "${dialogs.messages[0]}"`,
+                );
+
+                const afterCancel = (await page.textContent("#adminmac-allowed-list")) ?? "";
+                assert(
+                    afterCancel.includes(ADMIN_MAC.mac),
+                    "Nach dem Abbrechen darf die MAC-Freigabe nicht entfernt sein",
+                );
+
+                // Zweiter Klick: bestätigen — jetzt wird wirklich entfernt.
+                dialogs.action = "accept";
+                await removeButton.click();
+                await waitForDialogCount(dialogs.messages, 2);
+
+                // Leere Liste: das Panel wurde ausgetauscht, der Eintrag ist weg.
+                await page.waitForSelector("#adminmac-allowed-list", {
+                    state: "detached",
+                });
+                const text = await page.evaluate(() => document.body.innerText);
+                assert(
+                    text.includes("Keine MAC-Adresse freigegeben."),
+                    `Leerzustand erwartet, war: "${text}"`,
+                );
+                // Die Erfolgsmeldung nennt die entfernte Freigabe.
+                assert(
+                    text.includes(`MAC-Freigabe entfernt: ${ADMIN_MAC.mac}`),
+                    `Erfolgsmeldung erwartet, war: "${text}"`,
+                );
+            } finally {
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Rückfrage vor der Datenbankbereinigung (#152)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, TEACHER.email);
+            try {
+                await page.goto("/admin/application");
+                await page.waitForSelector("#cleanup-database-form");
+
+                const dialogs = trackDialogs(page, "accept");
+                await page.locator("#cleanup-database-form").getByRole("button").click();
+                await waitForDialogCount(dialogs.messages, 1);
+                assert(
+                    dialogs.messages[0].includes("älter als ein Monat"),
+                    `Rückfrage erwartet, war: "${dialogs.messages[0]}"`,
+                );
+
+                await page.waitForSelector("#cleanup-result");
+                const result = (await page.textContent("#cleanup-result")) ?? "";
+                assert(
+                    result.includes("Datenbank bereinigt."),
+                    `Ergebnis der Bereinigung erwartet, war: "${result}"`,
+                );
+            } finally {
                 await context.close();
             }
         });
