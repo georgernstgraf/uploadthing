@@ -108,7 +108,6 @@ Deno.test("GET /unterlagen - Unterlagen directory", async () => {
 
 Deno.test("Admin navigation and live file type updates", async () => {
     const originalTypes = [...config.PERMITTED_FILETYPES];
-    const originalInternetState = config.INTERNET_ACTIVE;
     const originalThemeKey = service.admin.getCurrentThemeKey();
     const testEmail = "grafg@spengergasse.at";
 
@@ -136,17 +135,6 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(homeHtml.includes('href="/admin/application"'), true);
     assertEquals(homeHtml.includes(">Dateitypen<"), false);
 
-    // Ensure known exam mode state before checking admin page
-    const examModeReset = await fetch(`${BASE_URL}/api/exammode`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Cookie": cookie,
-        },
-        body: "internet_active=on",
-    });
-    await examModeReset.text();
-
     const settingsRes = await fetch(`${BASE_URL}/admin/application`, {
         headers: { "Cookie": cookie },
     });
@@ -154,7 +142,9 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(settingsRes.status, 200);
     assertEquals(settingsHtml.includes("Erlaubte Dateitypen"), true);
     assertEquals(settingsHtml.includes("Dokumentationsserver-Firewall-Regel"), true);
-    assertEquals(settingsHtml.includes("Internet aktiv"), true);
+    // Ohne OPNsense-Credentials ist die Firewall-Steuerung deaktiviert.
+    assertEquals(settingsHtml.includes("Nicht konfiguriert"), true);
+    assertEquals(settingsHtml.includes("exam-firewall-modal-data"), true);
     assertEquals(settingsHtml.includes("Abgaben &amp; Datenbank herunterladen (TAR.GZ)"), true);
     assertEquals(settingsHtml.includes("Abgaben-Verzeichnis leeren"), true);
     assertEquals(settingsHtml.includes("Theme anwenden"), true);
@@ -185,19 +175,11 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(adminHtml.includes("Abgaben &amp; Datenbank herunterladen (TAR.GZ)"), false);
     assertEquals(adminHtml.includes("Abgaben-Verzeichnis leeren"), false);
 
-    const disableInternetRes = await fetch(`${BASE_URL}/api/exammode`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Cookie": cookie,
-        },
-        body: "",
-    });
-    const disableInternetHtml = await disableInternetRes.text();
-    assertEquals(disableInternetRes.status, 200);
-    assertEquals(disableInternetHtml.includes("Internet blockiert"), true);
-
-    const enableInternetRes = await fetch(`${BASE_URL}/api/exammode`, {
+    // Die Firewall-Steuerung läuft ausschließlich über die OPNsense-API.
+    // Ohne Credentials bleibt sie deaktiviert: POST muss mit einer deutschen
+    // Meldung und non-2xx antworten, GET liefert das Panel im Zustand
+    // „nicht konfiguriert".
+    const toggleRes = await fetch(`${BASE_URL}/api/exammode`, {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -205,9 +187,37 @@ Deno.test("Admin navigation and live file type updates", async () => {
         },
         body: "internet_active=on",
     });
-    const enableInternetHtml = await enableInternetRes.text();
-    assertEquals(enableInternetRes.status, 200);
-    assertEquals(enableInternetHtml.includes("Internet aktiv"), true);
+    const toggleHtml = await toggleRes.text();
+    assertEquals(toggleRes.status, 400);
+    assertEquals(
+        toggleHtml,
+        "Die Exam-Sperre ist nicht konfiguriert (OPNSENSE_API_KEY und OPNSENSE_API_SECRET fehlen).",
+    );
+
+    // Der „Erneut sperren"-Knopf im Modal postet ohne Feld (leerer Body);
+    // das muss die Validierung passieren und an der Konfiguration scheitern.
+    const lockRes = await fetch(`${BASE_URL}/api/exammode`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": cookie,
+        },
+        body: "",
+    });
+    const lockHtml = await lockRes.text();
+    assertEquals(lockRes.status, 400);
+    assertEquals(
+        lockHtml,
+        "Die Exam-Sperre ist nicht konfiguriert (OPNSENSE_API_KEY und OPNSENSE_API_SECRET fehlen).",
+    );
+
+    const examModeRes = await fetch(`${BASE_URL}/api/exammode`, {
+        headers: { "Cookie": cookie },
+    });
+    const examModeHtml = await examModeRes.text();
+    assertEquals(examModeRes.status, 200);
+    assertEquals(examModeHtml.includes("Nicht konfiguriert"), true);
+    assertEquals(examModeHtml.includes('data-show="false"'), true);
 
     const updateRes = await fetch(`${BASE_URL}/admin/application`, {
         method: "POST",
@@ -245,7 +255,6 @@ Deno.test("Admin navigation and live file type updates", async () => {
         service.admin.applyTheme(originalThemeKey);
     }
 
-    config.INTERNET_ACTIVE = originalInternetState;
     clearExamState();
 });
 

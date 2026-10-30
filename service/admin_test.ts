@@ -1,15 +1,23 @@
 import { assert, assertEquals, assertExists } from "@std/assert";
 import config from "../lib/config.ts";
+import * as hbs from "../lib/handlebars.ts";
 import {
     applyTheme,
+    buildExamFirewallPanel,
     cleanupDatabaseOlderThanOneYear,
+    describeFirewallState,
     getCurrentThemeKey,
-    getExamModeCommandArg,
     getExamModeStatus,
     listAvailableThemes,
     runExamModeOnStartup,
     setInternetActive,
 } from "./admin.ts";
+import {
+    fakeFirewall,
+    TEST_OPNSENSE_CONFIG,
+    TEST_RULE_UUID_LEGACY,
+    withOpnsenseConfig,
+} from "../test/helpers/opnsense_fixture.ts";
 import { db } from "../repo/db.ts";
 import * as usersRepo from "../repo/users.ts";
 import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
@@ -19,161 +27,220 @@ import * as abgabenRepo from "../repo/abgaben.ts";
 import * as examRepo from "../repo/exam.ts";
 import { clearExamState } from "../test/helpers/forensics_fixture.ts";
 
-Deno.test("getExamModeCommandArg maps internet state to script arg", () => {
-    assertEquals(getExamModeCommandArg(true), "stop");
-    assertEquals(getExamModeCommandArg(false), "start");
-});
+Deno.test("setInternetActive sperrt über die API, wenn das Internet freigegeben werden soll", async () => {
+    const { runner, calls } = fakeFirewall({ enabled: false });
 
-Deno.test("setInternetActive updates runtime state on success", async () => {
-    const originalCommand = config.EXAMMODE_COMMAND;
-    const originalInternetState = config.INTERNET_ACTIVE;
-
-    try {
-        config.EXAMMODE_COMMAND = "exammode";
-        config.INTERNET_ACTIVE = false;
-
-        const result = await setInternetActive(true, (command, args) => {
-            assertEquals(command, "exammode");
-            assertEquals(args, ["stop"]);
-            return Promise.resolve({
-                code: 0,
-                stdout: "internet enabled",
-                stderr: "",
-            });
-        });
-
-        assertEquals(result.ok, true);
-        assertEquals(result.internet_active, true);
-        assertEquals(config.INTERNET_ACTIVE, true);
-        assertEquals(result.stdout, "internet enabled");
-    } finally {
-        config.EXAMMODE_COMMAND = originalCommand;
-        config.INTERNET_ACTIVE = originalInternetState;
-    }
-});
-
-Deno.test("setInternetActive keeps previous state on failure", async () => {
-    const originalCommand = config.EXAMMODE_COMMAND;
-    const originalInternetState = config.INTERNET_ACTIVE;
-
-    try {
-        config.EXAMMODE_COMMAND = "exammode";
-        config.INTERNET_ACTIVE = true;
-
-        const result = await setInternetActive(false, () => {
-            return Promise.resolve({
-                code: 0,
-                stdout: "internet disabled",
-                stderr: "",
-            });
-        });
+    await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+        const result = await setInternetActive(false, runner);
 
         assertEquals(result.ok, true);
         assertEquals(result.internet_active, false);
-        assertEquals(config.INTERNET_ACTIVE, false);
-        assertEquals(result.stdout, "internet disabled");
-    } finally {
-        config.EXAMMODE_COMMAND = originalCommand;
-        config.INTERNET_ACTIVE = originalInternetState;
-    }
+        assertEquals(result.stdout, "Sperre aktiviert");
+    });
+
+    assertEquals(
+        calls.map((call) => `${call.method} ${call.url.replace("https://firewall.test:8443", "")}`),
+        [
+            "POST /api/firewall/filter/searchRule",
+            `POST /api/firewall/filter/toggleRule/${TEST_RULE_UUID_LEGACY}`,
+            "POST /api/firewall/filter/apply",
+            "POST /api/firewall/filter/searchRule",
+        ],
+    );
+    assertEquals(calls[0].authorization, `Basic ${btoa("test-key:test-secret")}`);
 });
 
-Deno.test("getExamModeStatus returns internet_active from stdout", async () => {
-    const originalCommand = config.EXAMMODE_COMMAND;
-    const originalInternetState = config.INTERNET_ACTIVE;
+Deno.test("setInternetActive gibt die Sperre frei, ohne doppelt zu schalten", async () => {
+    const { runner, calls } = fakeFirewall({ enabled: false });
 
-    try {
-        config.EXAMMODE_COMMAND = "exammode";
+    await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+        const result = await setInternetActive(true, runner);
 
-        const resultOn = await getExamModeStatus((command, args) => {
-            assertEquals(command, "exammode");
-            assertEquals(args, ["status"]);
-            return Promise.resolve({ code: 0, stdout: "on", stderr: "" });
-        });
-        assertEquals(resultOn.ok, true);
-        assertEquals(resultOn.internet_active, false);
+        assertEquals(result.ok, true);
+        assertEquals(result.internet_active, true);
+        assertEquals(result.stdout, "Sperre ist bereits inaktiv");
+    });
 
-        const resultOff = await getExamModeStatus(() => {
-            return Promise.resolve({ code: 0, stdout: "off", stderr: "" });
-        });
-        assertEquals(resultOff.ok, true);
-        assertEquals(resultOff.internet_active, true);
-
-        const resultFail = await getExamModeStatus(() => {
-            return Promise.resolve({ code: 1, stdout: "", stderr: "error" });
-        });
-        assertEquals(resultFail.ok, false);
-    } finally {
-        config.EXAMMODE_COMMAND = originalCommand;
-        config.INTERNET_ACTIVE = originalInternetState;
-    }
+    assertEquals(calls.some((call) => call.url.includes("toggleRule")), false);
+    assertEquals(calls.some((call) => call.url.endsWith("/apply")), false);
 });
 
-Deno.test("runExamModeOnStartup schaltet beim Start das Internet frei", async () => {
-    const originalCommand = Deno.env.get("EXAMMODE_COMMAND");
-    const originalInternetState = config.INTERNET_ACTIVE;
+Deno.test("setInternetActive meldet API-Fehler ohne den gewünschten Zustand zu behaupten", async () => {
+    const { runner } = fakeFirewall({ enabled: false, applyStatus: 500 });
+
+    await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+        const result = await setInternetActive(false, runner);
+
+        assertEquals(result.ok, false);
+        assertEquals(result.code, 500);
+        assertEquals(result.internet_active, false);
+        assertEquals(
+            result.stderr.startsWith(
+                "Regel wurde umgeschaltet, konnte aber nicht angewendet werden",
+            ),
+            true,
+        );
+    });
+});
+
+Deno.test("getExamModeStatus liest den echten Zustand von der Firewall", async () => {
+    await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+        const freigegeben = fakeFirewall({ enabled: false });
+        const frei = await getExamModeStatus(freigegeben.runner);
+        assertEquals(frei.ok, true);
+        assertEquals(frei.configured, true);
+        assertEquals(frei.internet_active, true);
+
+        const gesperrt = fakeFirewall({ enabled: true });
+        const state = await getExamModeStatus(gesperrt.runner);
+        assertEquals(state.ok, true);
+        assertEquals(state.internet_active, false);
+    });
+});
+
+Deno.test("getExamModeStatus meldet Unbekanntes als null", async () => {
+    await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+        const { runner } = fakeFirewall({ enabled: false, searchStatus: 503 });
+        const result = await getExamModeStatus(runner);
+        assertEquals(result.ok, false);
+        assertEquals(result.configured, true);
+        assertEquals(result.internet_active, null);
+    });
+});
+
+Deno.test("getExamModeStatus ist ohne Konfiguration nicht konfiguriert", async () => {
+    await withOpnsenseConfig(null, async () => {
+        const result = await getExamModeStatus();
+        assertEquals(result.configured, false);
+        assertEquals(result.ok, false);
+        assertEquals(result.internet_active, null);
+    });
+});
+
+Deno.test("describeFirewallState bildet alle vier Anzeigezustände ab", () => {
+    const base = { code: 0, stdout: "", stderr: "" };
+    assertEquals(
+        describeFirewallState({ ...base, ok: true, configured: true, internet_active: true }),
+        "frei",
+    );
+    assertEquals(
+        describeFirewallState({ ...base, ok: true, configured: true, internet_active: false }),
+        "gesperrt",
+    );
+    assertEquals(
+        describeFirewallState({ ...base, ok: false, configured: true, internet_active: null }),
+        "unbekannt",
+    );
+    assertEquals(
+        describeFirewallState({ ...base, ok: false, configured: false, internet_active: null }),
+        "nicht-konfiguriert",
+    );
+});
+
+Deno.test("buildExamFirewallPanel zeigt das Modal nur bei echtem Fehlerzustand", () => {
+    const frei = buildExamFirewallPanel({
+        code: 200,
+        stdout: "",
+        stderr: "",
+        ok: true,
+        configured: true,
+        internet_active: true,
+    });
+    assertEquals(frei.firewall_state, "frei");
+    assertEquals(frei.firewall_error, undefined);
+    assertEquals(frei.firewall_modal, false);
+
+    const unbekannt = buildExamFirewallPanel({
+        code: 401,
+        stdout: "",
+        stderr: "Regelzustand lesen fehlgeschlagen (HTTP 401)",
+        ok: false,
+        configured: true,
+        internet_active: null,
+    });
+    assertEquals(unbekannt.firewall_state, "unbekannt");
+    assertEquals(unbekannt.firewall_modal, true);
+    assertEquals(unbekannt.firewall_error, "Regelzustand lesen fehlgeschlagen (HTTP 401)");
+
+    const nichtKonfiguriert = buildExamFirewallPanel({
+        code: 0,
+        stdout: "",
+        stderr: "OPNsense-API ist nicht konfiguriert.",
+        ok: false,
+        configured: false,
+        internet_active: null,
+    });
+    assertEquals(nichtKonfiguriert.firewall_state, "nicht-konfiguriert");
+    assertEquals(nichtKonfiguriert.firewall_modal, false);
+
+    const aktionsFehler = buildExamFirewallPanel({
+        code: 200,
+        stdout: "",
+        stderr: "",
+        ok: true,
+        configured: true,
+        internet_active: true,
+    }, "Sperre umschalten fehlgeschlagen (HTTP 403)");
+    assertEquals(aktionsFehler.firewall_state, "frei");
+    assertEquals(aktionsFehler.firewall_error, "Sperre umschalten fehlgeschlagen (HTTP 403)");
+    assertEquals(aktionsFehler.firewall_modal, true);
+});
+
+Deno.test("runExamModeOnStartup löst die Sperre beim Start", async () => {
+    const firewall = fakeFirewall({ enabled: true });
+    const { runner } = firewall;
     clearExamState();
 
     try {
-        Deno.env.set("EXAMMODE_COMMAND", "exammode");
-        config.INTERNET_ACTIVE = false;
+        await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+            await runExamModeOnStartup(runner);
 
-        const capturedArgs: string[] = [];
-        await runExamModeOnStartup((_command, args) => {
-            capturedArgs.push(...args);
-            return Promise.resolve({
-                code: 0,
-                stdout: "internet enabled",
-                stderr: "",
-            });
+            const state = await getExamModeStatus(runner);
+            assertEquals(state.internet_active, true);
+            assertEquals(firewall.isEnabled(), false);
         });
-
-        assertEquals(capturedArgs, ["stop"]);
-        assertEquals(config.INTERNET_ACTIVE, true);
     } finally {
-        if (originalCommand !== undefined) {
-            Deno.env.set("EXAMMODE_COMMAND", originalCommand);
-        } else {
-            Deno.env.delete("EXAMMODE_COMMAND");
-        }
-        config.INTERNET_ACTIVE = originalInternetState;
         clearExamState();
     }
 });
 
-Deno.test("runExamModeOnStartup ohne EXAMMODE_COMMAND überspringt den Runner", async () => {
-    const originalCommand = Deno.env.get("EXAMMODE_COMMAND");
-    const originalInternetState = config.INTERNET_ACTIVE;
+Deno.test("runExamModeOnStartup ohne API-Konfiguration ruft die Firewall nicht auf", async () => {
     clearExamState();
 
     try {
-        Deno.env.delete("EXAMMODE_COMMAND");
-        config.INTERNET_ACTIVE = false;
+        await withOpnsenseConfig(null, async () => {
+            let runnerCalled = false;
+            await runExamModeOnStartup(() => {
+                runnerCalled = true;
+                return Promise.resolve(new Response("{}"));
+            });
+            assertEquals(runnerCalled, false);
+        });
+    } finally {
+        clearExamState();
+    }
+});
 
-        let runnerCalled = false;
-        await runExamModeOnStartup(() => {
-            runnerCalled = true;
-            return Promise.resolve({ code: 0, stdout: "", stderr: "" });
+Deno.test("runExamModeOnStartup beendet den Prozess bei Firewall-Fehler nicht", async () => {
+    clearExamState();
+
+    try {
+        await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+            const { runner } = fakeFirewall({ enabled: true, searchStatus: 503 });
+            // Würde der Start weiterhin `Deno.exit(1)` rufen, wäre dieser Test rot.
+            await runExamModeOnStartup(runner);
         });
 
-        assertEquals(runnerCalled, false);
-        assertEquals(config.INTERNET_ACTIVE, false);
+        assertEquals(true, true);
     } finally {
-        if (originalCommand !== undefined) {
-            Deno.env.set("EXAMMODE_COMMAND", originalCommand);
-        }
-        config.INTERNET_ACTIVE = originalInternetState;
         clearExamState();
     }
 });
 
 Deno.test("runExamModeOnStartup setzt einen hängengebliebenen Exam-Zustand auf stopped", async () => {
-    const originalCommand = Deno.env.get("EXAMMODE_COMMAND");
     clearExamState();
 
     try {
-        Deno.env.delete("EXAMMODE_COMMAND");
-
         for (const status of ["running", "paused"] as const) {
             examRepo.upsert({
                 status,
@@ -184,8 +251,10 @@ Deno.test("runExamModeOnStartup setzt einen hängengebliebenen Exam-Zustand auf 
                 updated_at: new Date("2026-10-12T08:05:00.000Z"),
             });
 
-            await runExamModeOnStartup(() => {
-                throw new Error("Runner darf ohne EXAMMODE_COMMAND nicht laufen.");
+            await withOpnsenseConfig(null, async () => {
+                await runExamModeOnStartup(() => {
+                    throw new Error("Ohne Konfiguration darf kein Aufruf erfolgen.");
+                });
             });
 
             const state = examRepo.get();
@@ -195,26 +264,16 @@ Deno.test("runExamModeOnStartup setzt einen hängengebliebenen Exam-Zustand auf 
             clearExamState();
         }
     } finally {
-        if (originalCommand !== undefined) {
-            Deno.env.set("EXAMMODE_COMMAND", originalCommand);
-        }
         clearExamState();
     }
 });
 
 Deno.test("runExamModeOnStartup lässt fehlende oder beendete Exam-Zustände unverändert", async () => {
-    const originalCommand = Deno.env.get("EXAMMODE_COMMAND");
     clearExamState();
 
     try {
-        Deno.env.delete("EXAMMODE_COMMAND");
-
-        const noopRunner = () => {
-            throw new Error("Runner darf ohne EXAMMODE_COMMAND nicht laufen.");
-        };
-
         // Ohne Zeile: bleibt ohne Zeile (idle).
-        await runExamModeOnStartup(noopRunner);
+        await withOpnsenseConfig(null, () => runExamModeOnStartup());
         assertEquals(examRepo.get(), null);
 
         // Gestoppter Zustand bleibt gestoppt.
@@ -226,15 +285,80 @@ Deno.test("runExamModeOnStartup lässt fehlende oder beendete Exam-Zustände unv
             extra_seconds: 0,
             updated_at: new Date("2026-10-12T09:00:00.000Z"),
         });
-        await runExamModeOnStartup(noopRunner);
+        await withOpnsenseConfig(null, () => runExamModeOnStartup());
         assertEquals(examRepo.get()?.status, "stopped");
     } finally {
-        if (originalCommand !== undefined) {
-            Deno.env.set("EXAMMODE_COMMAND", originalCommand);
-        }
         clearExamState();
     }
 });
+
+Deno.test("Exam-Panel zeigt Warnband und Modal im Fehlerzustand", () => {
+    const warnung = hbs.adminExamModeTemplate({
+        exam_status: "running",
+        exam_remaining_label: "01:00:00",
+        exam_open: true,
+        exam_running: true,
+        firewall_state: "frei",
+        firewall_modal: false,
+    });
+    assertEquals(warnung.includes("Examen läuft · Internet frei"), true);
+    assertEquals(warnung.includes('id="exam-firewall-warning"'), true);
+
+    const unbekannt = hbs.adminExamModeTemplate({
+        exam_status: "running",
+        exam_remaining_label: "01:00:00",
+        exam_open: true,
+        exam_running: true,
+        firewall_state: "unbekannt",
+        firewall_error: "Sperre konnte nicht geschaltet werden: HTTP 403",
+        firewall_modal: true,
+    });
+    assertEquals(unbekannt.includes("Zustand unbekannt"), true);
+    assertEquals(unbekannt.includes('data-show="true"'), true);
+    assertEquals(unbekannt.includes("HTTP 403"), true);
+    assertEquals(unbekannt.includes("disabled"), true);
+    assertEquals(unbekannt.includes("Examen läuft · Internet frei"), false);
+
+    const nichtKonfiguriert = hbs.adminExamModeTemplate({
+        exam_status: "idle",
+        exam_remaining_label: "00:00:00",
+        exam_open: false,
+        exam_running: false,
+        firewall_state: "nicht-konfiguriert",
+        firewall_modal: false,
+    });
+    assertEquals(nichtKonfiguriert.includes("Nicht konfiguriert"), true);
+    assertEquals(nichtKonfiguriert.includes('data-show="true"'), false);
+});
+
+Deno.test("Exam-Panel bestätigt das Freigeben während eines Examens", () => {
+    const gesperrt = hbs.adminExamModeTemplate({
+        exam_status: "running",
+        exam_remaining_label: "01:00:00",
+        exam_open: true,
+        exam_running: true,
+        firewall_state: "gesperrt",
+        firewall_modal: false,
+    });
+    assertEquals(
+        gesperrt.includes("hx-confirm=\"Examen läuft — Internet wirklich freigeben?\""),
+        true,
+    );
+
+    const frei = hbs.adminExamModeTemplate({
+        exam_status: "running",
+        exam_remaining_label: "01:00:00",
+        exam_open: true,
+        exam_running: true,
+        firewall_state: "frei",
+        firewall_modal: false,
+    });
+    assertEquals(
+        frei.includes("Internet wirklich freigeben"),
+        false,
+    );
+});
+
 
 Deno.test("cleanupDatabaseOlderThanOneYear deletes only old time-based records", async () => {
     const suffix = crypto.randomUUID().slice(0, 8);
@@ -336,27 +460,5 @@ Deno.test("applyTheme copies theme assets and updates current theme", async () =
         config.THEME_ASSET_VERSION = originalAssetVersion;
         await Deno.remove(themesDir, { recursive: true });
         await Deno.remove(staticDir, { recursive: true });
-    }
-});
-
-Deno.test("setInternetActive keeps previous state on failure", async () => {
-    const originalCommand = config.EXAMMODE_COMMAND;
-    const originalInternetState = config.INTERNET_ACTIVE;
-
-    try {
-        config.EXAMMODE_COMMAND = "exammode";
-        config.INTERNET_ACTIVE = true;
-
-        const result = await setInternetActive(false, () => {
-            return Promise.resolve({ code: 7, stdout: "", stderr: "ssh failed" });
-        });
-
-        assertEquals(result.ok, false);
-        assertEquals(result.internet_active, true);
-        assertEquals(config.INTERNET_ACTIVE, true);
-        assertEquals(result.stderr, "ssh failed");
-    } finally {
-        config.EXAMMODE_COMMAND = originalCommand;
-        config.INTERNET_ACTIVE = originalInternetState;
     }
 });

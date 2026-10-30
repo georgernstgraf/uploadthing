@@ -1,8 +1,9 @@
 import * as repo from "../repo/repo.ts";
 import type { ExamStatus, RepoExamStateRecord } from "../repo/exam.ts";
 import { durationString } from "../lib/timefunc.ts";
-import { setInternetActive } from "./admin.ts";
-import type { ExamModeResult, ExamModeRunner } from "./admin.ts";
+import { isExamModeConfigured, setInternetActive } from "./admin.ts";
+import type { ExamModeResult } from "./admin.ts";
+import type { ExamModeRunner } from "./opnsense.ts";
 
 /**
  * Zeitarithmetik (einfachste konsistente Variante mit den vorhandenen
@@ -44,10 +45,20 @@ export function getState(): RepoExamStateRecord | null {
     return repo.exam.get();
 }
 
-export function start(
+/**
+ * Startet ein Examen und schaltet die Exam-Sperre implizit scharf.
+ *
+ * Reihenfolge ist bindend: zuerst die Firewall sperren, dann den
+ * Exam-Zustand schreiben. Der Zustand wird **immer** geschrieben, auch
+ * wenn die Sperre scheitert — sonst zeigt der Admin-Schalter einen
+ * Zustand, den die Firewall nicht hat, und der Fehler bliebe unsichtbar.
+ * Das Firewall-Ergebnis geht deshalb an die Route zurück.
+ */
+export async function start(
     durationSeconds: number,
     now: () => Date = () => new Date(),
-): void {
+    runner?: ExamModeRunner,
+): Promise<ExamModeResult> {
     if (!Number.isInteger(durationSeconds) || durationSeconds <= 0) {
         throw new Error("Die Prüfungsdauer muss eine ganze Zahl größer als 0 sein.");
     }
@@ -58,6 +69,8 @@ export function start(
     }
 
     const startedAt = now();
+    const result = await setInternetActive(false, runner);
+
     repo.exam.upsert({
         status: "running",
         duration_seconds: durationSeconds,
@@ -66,6 +79,14 @@ export function start(
         extra_seconds: 0,
         updated_at: startedAt,
     });
+
+    if (!result.ok && isExamModeConfigured()) {
+        console.error(
+            `Exam-Sperre beim Start nicht bestätigt (HTTP ${result.code}): ${result.stderr}`,
+        );
+    }
+
+    return result;
 }
 
 export function pause(now: () => Date = () => new Date()): void {
@@ -95,11 +116,11 @@ export function resume(now: () => Date = () => new Date()): void {
 }
 
 /**
- * Stoppt das Examen vorzeitig und schaltet das Internet wieder frei
- * (Exam Mode Off).
+ * Stoppt das Examen vorzeitig und löst die Exam-Sperre
+ * (Internet wieder frei).
  *
  * Liefert das Firewall-Ergebnis zurück, damit die Route einen
- * fehlgeschlagenen `exammode`-Aufruf (`ok: false`) an der Admin-UI
+ * fehlgeschlagenen API-Aufruf (`ok: false`) an der Admin-UI
  * melden kann, ohne den bereits vollzogenen Zustandswechsel
  * rückgängig zu machen.
  */
@@ -250,10 +271,9 @@ async function finishExam(
     // Zustandswechsel bleibt unabhängig vom Firewall-Ergebnis
     // bestehen; ein Fehler wird geloggt und dem Aufrufer gemeldet.
     const result = await setInternetActive(true, runner);
-    if (!result.ok) {
-        const details = [result.stderr, result.stdout].filter(Boolean).join(" | ");
+    if (!result.ok && isExamModeConfigured()) {
         console.error(
-            `exammode fehlgeschlagen (Exit ${result.code})${details ? `: ${details}` : ""}`,
+            `Exam-Sperre konnte nicht gelöst werden (HTTP ${result.code}): ${result.stderr}`,
         );
     }
 

@@ -1,5 +1,45 @@
 # DECISIONS
 
+## 2026-10-30: OPNsense-API-Client für die Exam-Sperre (#142)
+
+Konkretisiert die Entscheidung aus dem Epic #141 nach den ersten echten
+Aufrufen gegen die Sense (26.7).
+
+- **Lesen über `searchRule`, nicht über `getRule/{uuid}`.**
+  `GET /api/firewall/filter/getRule/{uuid}` antwortet auf der Sense mit
+  `[]` — unabhängig davon, ob die UUID existiert. Zustand und UUID kommen
+  deshalb aus `POST /api/firewall/filter/searchRule` (eine Antwort,
+  Regeln inkl. deaktivierter).
+- **Toggle statt Setzen.** `POST /api/firewall/filter/toggleRule/{uuid}`
+  ist ein Toggle. Der Client liest zuerst, schaltet nur bei Abweichung,
+  ruft `apply` und liest den Zustand erneut zur Bestätigung. Ein bereits
+  passender Zustand ist ein Erfolg ohne Schreibzugriff.
+- **UUID-Normalisierung.** `searchRule` liefert 32 Hex-Zeichen,
+  moderne Regeln führen zusätzlich `@attributes.uuid` im gestrichelten
+  Format. Verglichen wird normalisiert; für `toggleRule` wird die von der
+  API gelieferte UUID verwendet. Die UUID selbst steht in
+  `OPNSENSE_EXAMMODE_RULE_UUID`, nicht im Code.
+- **`OPNSENSE_API_URL` ist Pflicht, sobald Credentials gesetzt sind.**
+  Die API-Adresse ist Betriebswissen (IP vs. Hostname) und gehört
+  ebenfalls in die `.env`; Key und Secret bleiben beide-oder-keins.
+- **TLS bleibt geprüft.** Deno 2.9 kennt keine Option mehr, die
+  Zertifikatsprüfung pro Request abzuschalten (`Deno.createHttpClient`
+  ignoriert `unsafelyDisableCertificateVerification` stillschweigend).
+  Weil die Sense auf der API-Adresse ihr GUI-Zertifikat für
+  `tst.spengergasse.at` präsentiert, gilt: entweder eine `OPNSENSE_API_URL`
+  verwenden, die das Zertifikat abdeckt, oder den Prozess host-beschränkt
+  mit `--unsafely-ignore-certificate-errors=<api-host>` starten. Keine
+  stille Abschaltung im Code.
+- **Fehler werden im Panel gezeigt, nicht als Toast.** Scheitert eine
+  Aktion (`/api/exammode`, `/api/exam/start`, `/api/exam/stop`), rendert
+  die Route das Panel mit dem echten Firewall-Zustand und dem API-Fehler
+  (HTTP 200). Nur „nicht konfiguriert" bleibt ein 400-Text. Das Modal ist
+  nicht wegklickbar und hat als einzigen Knopf „Erneut sperren".
+- **Startup ist fehlertolerant.** `runExamModeOnStartup()` loggt einen
+  API-Fehler und startet weiter; kein `Deno.exit(1)` mehr. Der alte
+  Subprozess-Pfad (`Deno.Command`, `defaultExamModeRunner`,
+  `EXAMMODE_COMMAND`, `INTERNET_ACTIVE`) ist entfernt.
+
 ## 2026-10-30: Exam-Infrastruktur — API-only, App verlässt die Sense
 
 Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"

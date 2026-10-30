@@ -48,6 +48,63 @@ export function parseSqliteDatabaseUrl(databaseUrl: string): string {
     return resolve(prismaDir, databasePath);
 }
 
+export type OpnsenseConfig = {
+    apiUrl: string;
+    apiKey: string;
+    apiSecret: string;
+    ruleUuid: string;
+};
+
+/**
+ * Zugang zur OPNsense-API für die Exam-Sperre.
+ *
+ * `OPNSENSE_API_KEY` und `OPNSENSE_API_SECRET` sind beide oder keins:
+ * fehlen beide, ist die Firewall-Steuerung deaktiviert (lokale
+ * Entwicklung) und das Admin-Panel zeigt „nicht konfiguriert". Ist nur
+ * eine der beiden Variablen gesetzt, ist das ein Startfehler — ein
+ * halb konfigurierter Client würde sonst stillschweigend nichts tun.
+ *
+ * Sind die Credentials gesetzt, gehören API-URL und Regel-UUID zwingend
+ * dazu: beides ist Betriebswissen und steht nicht im Code.
+ */
+export function parseOpnsenseConfig(
+    options: {
+        apiKey?: string;
+        apiSecret?: string;
+        apiUrl?: string;
+        ruleUuid?: string;
+    },
+): OpnsenseConfig | null {
+    const apiKey = options.apiKey?.trim() ?? "";
+    const apiSecret = options.apiSecret?.trim() ?? "";
+
+    if (!apiKey && !apiSecret) {
+        return null;
+    }
+
+    if (!apiKey || !apiSecret) {
+        throw new Error(
+            "OPNSENSE_API_KEY und OPNSENSE_API_SECRET müssen gemeinsam gesetzt sein.",
+        );
+    }
+
+    const apiUrl = options.apiUrl?.trim().replace(/\/+$/, "") ?? "";
+    if (!apiUrl) {
+        throw new Error(
+            "OPNSENSE_API_URL muss gesetzt sein, wenn OPNSENSE_API_KEY und OPNSENSE_API_SECRET gesetzt sind (z. B. https://192.168.21.1:8443).",
+        );
+    }
+
+    const ruleUuid = options.ruleUuid?.trim() ?? "";
+    if (!ruleUuid) {
+        throw new Error(
+            "OPNSENSE_EXAMMODE_RULE_UUID muss gesetzt sein, wenn OPNSENSE_API_KEY und OPNSENSE_API_SECRET gesetzt sind.",
+        );
+    }
+
+    return { apiUrl, apiKey, apiSecret, ruleUuid };
+}
+
 export function parseTlsConfig(
     certPath: string | undefined,
     keyPath: string | undefined,
@@ -94,6 +151,12 @@ const config = {
         Deno.env.get("TLS_CERT_PATH"),
         Deno.env.get("TLS_KEY_PATH"),
     ),
+    OPNSENSE: parseOpnsenseConfig({
+        apiKey: Deno.env.get("OPNSENSE_API_KEY"),
+        apiSecret: Deno.env.get("OPNSENSE_API_SECRET"),
+        apiUrl: Deno.env.get("OPNSENSE_API_URL"),
+        ruleUuid: Deno.env.get("OPNSENSE_EXAMMODE_RULE_UUID"),
+    }),
     page_title: `${Deno.env.get("LISTEN_HOST") || "localhost"}:${
         Deno.env.get("LISTEN_PORT")
     }`,
@@ -106,8 +169,6 @@ const config = {
     PERMITTED_FILETYPES: parsePermittedFileTypes(
         Deno.env.get("PERMITTED_FILETYPES") || "zip",
     ),
-    INTERNET_ACTIVE: (Deno.env.get("INTERNET_ACTIVE") || "true") === "true",
-    EXAMMODE_COMMAND: Deno.env.get("EXAMMODE_COMMAND") || "exammode",
     SERVICE_DN: requireEnv("SERVICE_DN"),
     SERVICE_PW: requireEnv("SERVICE_PW"),
     SERVICE_URL: requireEnv("SERVICE_URL"),

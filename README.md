@@ -26,14 +26,36 @@ The application fails to start if any required variable is missing.
 | `SERVICE_URL` | LDAP server URL, e.g. `ldaps://ldap.example.com` |
 | `SEARCH_BASE` | LDAP search base DN |
 
+### Exam lock (OPNsense API)
+
+The exam lock is switched exclusively over the OPNsense API
+(`POST /api/firewall/filter/toggleRule/{uuid}` + `apply`, read via
+`POST /api/firewall/filter/searchRule`). There is no system command and
+no write to `/conf/config.xml`.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPNSENSE_API_URL` | — | Base URL of the firewall API, e.g. `https://192.168.21.1:8443`; required as soon as key and secret are set |
+| `OPNSENSE_API_KEY` | — | API key (HTTP Basic user); set together with `OPNSENSE_API_SECRET` or not at all |
+| `OPNSENSE_API_SECRET` | — | API secret (HTTP Basic password); set together with `OPNSENSE_API_KEY` or not at all |
+| `OPNSENSE_EXAMMODE_RULE_UUID` | — | UUID of the blocking rule (`descr=doku`, `type=reject`); required as soon as key and secret are set |
+
+Without key and secret the lock is disabled (local development) and the
+admin panel shows “Nicht konfiguriert”. Setting only one of the two aborts
+startup with a German error message.
+
+TLS: the appliance presents its GUI certificate on the API address. Deno
+always verifies the hostname, and verification can only be disabled
+process-wide and host-scoped. Either make `OPNSENSE_API_URL` use a name the
+certificate covers, or start the process with
+`--unsafely-ignore-certificate-errors=<api-host>`.
+
 ### Optional
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PERMITTED_FILETYPES` | `zip` | Comma-separated allowed upload extensions |
 | `MAX_UPLOAD_MB` | `50` | Maximum upload file size in MB |
-| `INTERNET_ACTIVE` | `true` | Initial internet state (overridden by exam mode toggle) |
-| `EXAMMODE_COMMAND` | `exammode` | System command to toggle internet access |
 | `COOKIE_NAME` | `ut_session` | Session cookie name |
 | `DENO_ENV` | `development` | Runtime environment |
 | `LOGDIR` | `/var/log/exampy` | Log directory |

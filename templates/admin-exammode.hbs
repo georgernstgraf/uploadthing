@@ -27,6 +27,17 @@
 </form>
 {{/inline}}
 <div id="exam-admin-panel" class="mx-auto w-100 col-xl-8 vstack gap-3">
+    {{#if exam_running}}
+        {{#if (eq firewall_state "frei")}}
+            <div id="exam-firewall-warning"
+                 class="alert alert-danger text-center mb-0"
+                 role="alert">
+                <span class="fs-5 fw-bold">Examen läuft · Internet frei</span>
+                <div class="small">Die Sperrregel ist nicht aktiv. Der Internetzugang im Prüfungsnetz ist offen, solange das Examen läuft.</div>
+            </div>
+        {{/if}}
+    {{/if}}
+
     <div class="card shadow-sm">
         <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
             <h3 class="card-title fw-bold fs-5 mb-1">Examen-Steuerung</h3>
@@ -125,8 +136,9 @@
           hx-trigger="change"
           hx-target="#exam-admin-panel"
           hx-swap="outerHTML"
+          {{#if exam_running}}{{#if (eq firewall_state "gesperrt")}}hx-confirm="Examen läuft — Internet wirklich freigeben?"{{/if}}{{/if}}
           class="w-100">
-        <div class="card shadow-sm {{#if internet_active}}border-success-subtle bg-success-subtle{{else}}border-danger-subtle bg-danger-subtle{{/if}}">
+        <div class="card shadow-sm {{#if (eq firewall_state "frei")}}border-success-subtle bg-success-subtle{{else if (eq firewall_state "gesperrt")}}border-danger-subtle bg-danger-subtle{{else if (eq firewall_state "unbekannt")}}border-warning-subtle bg-warning-subtle{{else}}border-secondary-subtle{{/if}}">
             <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
                 <h3 class="card-title fw-bold fs-5 mb-1">Dokumentationsserver-Firewall-Regel</h3>
                 <p class="card-text small mb-0">Schaltet den Internetzugang für die Prüfungsumgebung während des Betriebs um.</p>
@@ -137,18 +149,28 @@
                            name="internet_active"
                            type="checkbox"
                            role="switch"
-                           class="form-check-input mt-0 {{#if internet_active}}bg-success border-success{{else}}bg-danger border-danger{{/if}}"
+                           class="form-check-input mt-0 {{#if (eq firewall_state "frei")}}bg-success border-success{{else if (eq firewall_state "gesperrt")}}bg-danger border-danger{{/if}}"
                            style="width: 3.5rem; height: 1.75rem;"
-                           {{#if internet_active}}checked{{/if}}>
+                           {{#if (eq firewall_state "frei")}}checked{{/if}}
+                           {{#if (or (eq firewall_state "unbekannt") (eq firewall_state "nicht-konfiguriert"))}}disabled{{/if}}>
                 </div>
-                <div class="badge rounded-pill px-3 py-2 fs-6 {{#if internet_active}}text-bg-success{{else}}text-bg-danger{{/if}}">
-                    {{#if internet_active}}Internet aktiv{{else}}Internet blockiert{{/if}}
+                <div id="exam-firewall-badge"
+                     class="badge rounded-pill px-3 py-2 fs-6 {{#if (eq firewall_state "frei")}}text-bg-success{{else if (eq firewall_state "gesperrt")}}text-bg-danger{{else if (eq firewall_state "unbekannt")}}text-bg-warning{{else}}text-bg-secondary{{/if}}">
+                    {{#if (eq firewall_state "frei")}}Internet frei{{else if (eq firewall_state "gesperrt")}}Internet gesperrt{{else if (eq firewall_state "unbekannt")}}Zustand unbekannt{{else}}Nicht konfiguriert{{/if}}
                 </div>
                 <p class="small mb-0">
-                    {{#if internet_active}}Die Firewall-Regel ist deaktiviert. Voller Internetzugang ist freigegeben.{{else}}Die Firewall-Regel ist aktiviert. Internetzugang ist gesperrt.{{/if}}
+                    {{#if (eq firewall_state "frei")}}Die Firewall-Regel ist deaktiviert. Voller Internetzugang ist freigegeben.{{else if (eq firewall_state "gesperrt")}}Die Firewall-Regel ist aktiviert. Internetzugang ist gesperrt.{{else if (eq firewall_state "unbekannt")}}Der Zustand der Firewall-Regel konnte nicht gelesen werden. Der Schalter bleibt gesperrt, bis der Fehler behoben ist.{{else}}Für diese Umgebung sind keine OPNsense-API-Zugangsdaten gesetzt. Die Firewall lässt sich hier nicht schalten.{{/if}}
                 </p>
+                {{#if firewall_error}}{{#unless (eq firewall_state "nicht-konfiguriert")}}
+                    <p id="exam-firewall-error" class="small text-danger mb-0">{{firewall_error}}</p>
+                {{/unless}}{{/if}}
                 <div class="htmx-indicator small">Firewall-Regel wird aktualisiert ...</div>
             </div>
         </div>
     </form>
+
+    <div id="exam-firewall-modal-data"
+         hidden
+         data-show="{{#if firewall_modal}}true{{else}}false{{/if}}"
+         data-message="{{firewall_error}}"></div>
 </div>

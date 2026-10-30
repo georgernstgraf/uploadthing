@@ -1,17 +1,26 @@
-Last updated: 2026-10-30 (Planungssession — Epic #141 angelegt).
+Last updated: 2026-10-30 (#142 umgesetzt — OPNsense-API-Client).
 
 ## Sofort weiter mit
 
-**Epic #141** (Exam-Infrastruktur 2026/27) enthält die Ausführungsreihenfolge.
-Nächster Schritt: **#142 — OPNsense-API-Client** (Voraussetzung für #143).
+**#143 — Umzug der App auf den Dell (systemd).** Voraussetzung ist erfüllt:
+die Exam-Sperre läuft über die OPNsense-API, `EXAMMODE_COMMAND`,
+`INTERNET_ACTIVE`, `exammode.sh` und der Subprozess-Pfad sind aus der App
+verschwunden.
 
-- API-Key: `~/sense.internal_root_apikey.txt` (`key=`, `secret=`), User `root`,
-  Datei gehört auf `chmod 600`. Werte nur in die Produktions-`.env`, nie ins Repo.
-- Regel-UUID `e3e720e6-27fb-4565-b8cf-3a73cf682b54` (`descr=doku`, `type=reject`,
-  Ziel „alles außer Alias DOKU").
-- Verifiziert: `POST /api/firewall/filter/toggleRule/{uuid}` + `apply`,
-  `GET /api/firewall/filter/getRule/{uuid}`, Basic-Auth gegen
-  `https://192.168.21.1:8443`.
+- Regel-UUID `e3e720e6-27fb-4565-b8cf-3a73cf682b54` (`descr=doku`,
+  `type=reject`) steht in `OPNSENSE_EXAMMODE_RULE_UUID`. **Achtung:** Diese
+  Regel existiert auf der laufenden Sense derzeit nicht — `searchRule`
+  listet 26 Regeln, keine mit `descr=doku`. Vor der Prüfungs-Abnahme
+  anlegen und die echte UUID in die Produktions-`.env` übernehmen.
+- Verifiziert (nur lesend, 2026-10-30): `POST /api/firewall/filter/searchRule`
+  liefert den Regelzustand, Basic-Auth gegen `https://192.168.21.1:8443`
+  funktioniert. **`GET getRule/{uuid}` antwortet mit `[]`** und ist als
+  Lesequelle unbrauchbar.
+- TLS: Das GUI-Zertifikat ist `CN=tst.spengergasse.at` ohne SAN für die IP.
+  App-Start braucht `--unsafely-ignore-certificate-errors=192.168.21.1`
+  oder einen Hostnamen, den das Zertifikat abdeckt (#149).
+- API-Key: `~/sense.internal_root_apikey.txt` (`key=`, `secret=`, jetzt
+  Modus 600). Werte nur in die Produktions-`.env`, nie ins Repo.
 
 ## Offene Punkte außerhalb der Tickets
 

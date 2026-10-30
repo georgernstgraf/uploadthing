@@ -4,6 +4,7 @@ import config, {
     buildHeroUrl,
     isDevelopment,
     isProduction,
+    parseOpnsenseConfig,
     parsePermittedFileTypes,
     parseSqliteDatabaseUrl,
     parseTlsConfig,
@@ -49,13 +50,113 @@ Deno.test("config - PERMITTED_FILETYPES is an array", () => {
     assertEquals(Array.isArray(config.PERMITTED_FILETYPES), true);
 });
 
-Deno.test("config - INTERNET_ACTIVE is a boolean", () => {
-    assertEquals(typeof config.INTERNET_ACTIVE, "boolean");
+Deno.test("config - parseOpnsenseConfig returns null without credentials", () => {
+    assertEquals(parseOpnsenseConfig({}), null);
+    assertEquals(
+        parseOpnsenseConfig({ ruleUuid: "e3e720e6-27fb-4565-b8cf-3a73cf682b54" }),
+        null,
+    );
 });
 
-Deno.test("config - EXAMMODE_COMMAND is set", () => {
-    assertEquals(typeof config.EXAMMODE_COMMAND, "string");
-    assertEquals(config.EXAMMODE_COMMAND.length > 0, true);
+Deno.test("config - parseOpnsenseConfig accepts complete credentials", () => {
+    assertEquals(
+        parseOpnsenseConfig({
+            apiKey: "key",
+            apiSecret: "secret",
+            apiUrl: "https://192.168.21.1:8443/",
+            ruleUuid: "e3e720e6-27fb-4565-b8cf-3a73cf682b54",
+        }),
+        {
+            apiUrl: "https://192.168.21.1:8443",
+            apiKey: "key",
+            apiSecret: "secret",
+            ruleUuid: "e3e720e6-27fb-4565-b8cf-3a73cf682b54",
+        },
+    );
+});
+
+Deno.test("config - parseOpnsenseConfig rejects key without secret", () => {
+    const error = (() => {
+        try {
+            parseOpnsenseConfig({
+                apiKey: "key",
+                apiUrl: "https://192.168.21.1:8443",
+                ruleUuid: "uuid",
+            });
+        } catch (caught) {
+            return caught;
+        }
+        return null;
+    })();
+
+    assertExists(error);
+    assertEquals(
+        error instanceof Error ? error.message : String(error),
+        "OPNSENSE_API_KEY und OPNSENSE_API_SECRET müssen gemeinsam gesetzt sein.",
+    );
+});
+
+Deno.test("config - parseOpnsenseConfig rejects secret without key", () => {
+    const error = (() => {
+        try {
+            parseOpnsenseConfig({
+                apiSecret: "secret",
+                apiUrl: "https://192.168.21.1:8443",
+                ruleUuid: "uuid",
+            });
+        } catch (caught) {
+            return caught;
+        }
+        return null;
+    })();
+
+    assertExists(error);
+    assertEquals(
+        error instanceof Error ? error.message : String(error),
+        "OPNSENSE_API_KEY und OPNSENSE_API_SECRET müssen gemeinsam gesetzt sein.",
+    );
+});
+
+Deno.test("config - parseOpnsenseConfig requires API URL", () => {
+    const error = (() => {
+        try {
+            parseOpnsenseConfig({ apiKey: "key", apiSecret: "secret", ruleUuid: "uuid" });
+        } catch (caught) {
+            return caught;
+        }
+        return null;
+    })();
+
+    assertExists(error);
+    assertEquals(
+        error instanceof Error ? error.message : String(error),
+        "OPNSENSE_API_URL muss gesetzt sein, wenn OPNSENSE_API_KEY und OPNSENSE_API_SECRET gesetzt sind (z. B. https://192.168.21.1:8443).",
+    );
+});
+
+Deno.test("config - parseOpnsenseConfig requires rule UUID", () => {
+    const error = (() => {
+        try {
+            parseOpnsenseConfig({
+                apiKey: "key",
+                apiSecret: "secret",
+                apiUrl: "https://192.168.21.1:8443",
+            });
+        } catch (caught) {
+            return caught;
+        }
+        return null;
+    })();
+
+    assertExists(error);
+    assertEquals(
+        error instanceof Error ? error.message : String(error),
+        "OPNSENSE_EXAMMODE_RULE_UUID muss gesetzt sein, wenn OPNSENSE_API_KEY und OPNSENSE_API_SECRET gesetzt sind.",
+    );
+});
+
+Deno.test("config - OPNSENSE is null without credentials", () => {
+    assertEquals(config.OPNSENSE, null);
 });
 
 Deno.test("config - parsePermittedFileTypes normalizes input", () => {

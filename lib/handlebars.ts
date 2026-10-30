@@ -5,6 +5,7 @@ import type {
     ServiceIPDetail,
     ServiceIpAdmin,
 } from "../service/ipadmin.ts";
+import type { FirewallState } from "../service/admin.ts";
 
 // --- 2. Template Data Type Definitions ---
 
@@ -83,10 +84,15 @@ type AdminFileTypesTemplateData = {
 };
 
 type AdminExamModeTemplateData = {
-    internet_active: boolean;
     exam_status: "idle" | "running" | "paused" | "stopped";
     exam_remaining_label: string;
     exam_open: boolean;
+    /** true bei running und paused — steuert Warnband und Bestätigungsdialog. */
+    exam_running: boolean;
+    firewall_state: FirewallState;
+    firewall_error?: string;
+    /** true = nicht wegklickbares Modal mit dem API-Fehler zeigen. */
+    firewall_modal: boolean;
     success_message?: string;
 };
 

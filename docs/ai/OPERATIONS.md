@@ -30,21 +30,39 @@ only in the operator's head; it is now recorded here (see #132).
   Prisma queries (`repo/*.ts`); Prisma only remains in the loop for
   schema and migrations.
 
-## Exam Mode Command
+## Exam-Sperre über die OPNsense-API
 
-- `EXAMMODE_COMMAND` names a system command in `PATH` on the box that
-  toggles the firewall's internet blocking (`start` semantics are
-  internal to that script; the app calls it with `enable`/`disable`
-  style invocations via `service/admin.ts`).
-- Since #131 the startup semantics are: application start always means
-  exam mode off / internet free, and a stuck exam state is reset to
-  `stopped`.
-- In the dev environment `.env` sets `EXAMMODE_COMMAND=true` (a stub
-  that just exits 0), so local tests verify wiring only, not a real
-  firewall change.
-- The real script lives in this repo: `appliance/bin/exammode.sh`
-  (unified start/stop/status since #121). It is deployed to the box
-  (`/root/bin/exammode`) via the `appliance/` install path below.
+- Die Sperre läuft **ausschließlich** über die Firewall-API
+  (`POST /api/firewall/filter/toggleRule/{uuid}` + `apply`,
+  gelesen über `POST /api/firewall/filter/searchRule`). Kein `sudo`,
+  kein `exammode.sh`, kein Schreiben in `/conf/config.xml`.
+- Konfiguration in `.env`: `OPNSENSE_API_URL`, `OPNSENSE_API_KEY`,
+  `OPNSENSE_API_SECRET`, `OPNSENSE_EXAMMODE_RULE_UUID` — Key und
+  Secret sind beide oder keins; ohne sie ist die Steuerung deaktiviert
+  (lokale Entwicklung, Panel zeigt „nicht konfiguriert").
+- Der API-Key liegt auf dem Entwicklungsrechner in
+  `~/sense.internal_root_apikey.txt` (`key=`, `secret=`, Modus 600).
+  Er gehört nur in die Produktions-`.env`, nie ins Repo.
+- **TLS:** Die Sense präsentiert auf der API-Adresse ihr GUI-Zertifikat
+  (Let's Encrypt für `tst.spengergasse.at`, kein SAN für
+  `192.168.21.1`). Deno prüft den Hostnamen immer; die Prüfung lässt
+  sich nur prozessweit und host-beschränkt abschalten. Start daher mit
+  `--unsafely-ignore-certificate-errors=<api-host>` oder — sauberer —
+  `OPNSENSE_API_URL` auf einen Namen zeigen lassen, den das Zertifikat
+  abdeckt (Hosts-Eintrag, Thema von #149).
+- **Zustand:** Das Panel liest den Regelzustand bei jedem Rendern. Kein
+  Polling, keine Heilung von Drift — Abweichungen werden sichtbar
+  gemacht („Examen läuft · Internet frei", Modal mit API-Fehler).
+- **Start:** App-Start bedeutet Exam Mode Off / Internet frei: ein
+  hängengebliebener Exam-Zustand wird auf `stopped` gesetzt und die
+  Sperrregel gelöst. Schlägt der API-Aufruf fehl, startet die App
+  trotzdem (kein `Deno.exit`), der Fehler landet im Log und im Panel.
+- **Sperren/Schalten:** `toggleRule` ist ein Toggle. Der Client liest
+  zuerst, schaltet nur bei Abweichung, ruft `apply` und liest danach
+  erneut zur Bestätigung. Regel-UUIDs werden mit und ohne Bindestriche
+  verglichen (config.xml nutzt 32 Hex-Zeichen).
+- Die alte `appliance/bin/exammode.sh` bleibt als Host-Werkzeug im Repo,
+  wird von der App aber nicht mehr aufgerufen.
 
 ## Package Repos On OPNsense
 
@@ -261,8 +279,9 @@ Driven by the `Makefile` on the development machine:
 
 - Exact Deno install/version procedure on `sense` is not yet recorded;
   to be filled in from operator knowledge or a future session on the
-  host. (The `exammode` script location is now recorded above:
-  `appliance/bin/exammode.sh` → `/root/bin/exammode`.)
+  host. (The `exammode` script location — `appliance/bin/exammode.sh` →
+  `/root/bin/exammode` — is still recorded above, but the app no longer
+  calls it: the exam lock runs over the OPNsense API.)
 - Same gap applies to the TLS deployment from #137: how the app
   service on `sense` is supervised/restarted (the repo's
   `startloop.sh` respawn loop with a `STOPPED` marker file is a

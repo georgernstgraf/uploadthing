@@ -33,14 +33,21 @@ async function renderApplicationPage(
     }
 
     const exam = await service.exam.getStatusView();
+    const firewall = service.admin.buildExamFirewallPanel(
+        await service.admin.getExamModeStatus(),
+    );
+
     const content = hbs.adminFileTypesTemplate({
         permitted_filetypes: config.PERMITTED_FILETYPES.join(", "),
         current_filetypes: config.PERMITTED_FILETYPES,
         exam_panel_html: hbs.adminExamModeTemplate({
-            internet_active: config.INTERNET_ACTIVE,
             exam_status: exam.status,
             exam_remaining_label: exam.remaining_label,
             exam_open: exam.open,
+            exam_running: exam.status === "running" || exam.status === "paused",
+            firewall_state: firewall.firewall_state,
+            firewall_error: firewall.firewall_error,
+            firewall_modal: firewall.firewall_modal,
         }),
         available_themes: service.admin.listAvailableThemes(),
         current_theme_key: service.admin.getCurrentThemeKey(),

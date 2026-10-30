@@ -1,8 +1,11 @@
 import { assertEquals, assertRejects, assertThrows } from "@std/assert";
-import config from "../lib/config.ts";
 import * as exam from "./exam.ts";
 import { clearExamState } from "../test/helpers/forensics_fixture.ts";
-import type { ExamModeRunner } from "./admin.ts";
+import {
+    fakeFirewall,
+    TEST_OPNSENSE_CONFIG,
+    withOpnsenseConfig,
+} from "../test/helpers/opnsense_fixture.ts";
 
 function fakeClock(startIso: string) {
     let currentMs = new Date(startIso).getTime();
@@ -14,18 +17,17 @@ function fakeClock(startIso: string) {
     };
 }
 
-function internetFreeRunner(capturedArgs: string[]): ExamModeRunner {
-    return (_command: string, args: string[]) => {
-        capturedArgs.push(...args);
-        return Promise.resolve({ code: 0, stdout: "internet enabled", stderr: "" });
-    };
+function toggleCalls(calls: { url: string }[]): string[] {
+    return calls
+        .filter((call) => call.url.includes("toggleRule") || call.url.endsWith("/apply"))
+        .map((call) => call.url.replace("https://firewall.test:8443", ""));
 }
 
 Deno.test("start setzt ein laufendes Examen mit voller Restzeit", async () => {
     clearExamState();
     try {
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(3600, clock.now);
+        await exam.start(3600, clock.now);
 
         const state = exam.getState();
         assertEquals(state?.status, "running");
@@ -39,13 +41,59 @@ Deno.test("start setzt ein laufendes Examen mit voller Restzeit", async () => {
     }
 });
 
-Deno.test("start während laufendem Examen wirft Fehler", () => {
+Deno.test("start sperrt die Firewall implizit", async () => {
+    clearExamState();
+    try {
+        const firewall = fakeFirewall({ enabled: false });
+        const clock = fakeClock("2026-10-12T08:00:00.000Z");
+
+        await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+            const result = await exam.start(3600, clock.now, firewall.runner);
+
+            assertEquals(result.ok, true);
+            assertEquals(result.internet_active, false);
+        });
+
+        assertEquals(firewall.isEnabled(), true);
+        assertEquals(toggleCalls(firewall.calls).length, 2);
+        assertEquals(exam.getState()?.status, "running");
+    } finally {
+        clearExamState();
+    }
+});
+
+Deno.test("start schreibt examstate auch, wenn die Sperre scheitert", async () => {
+    clearExamState();
+    try {
+        const firewall = fakeFirewall({ enabled: false, applyStatus: 500 });
+        const clock = fakeClock("2026-10-12T08:00:00.000Z");
+
+        await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+            const result = await exam.start(3600, clock.now, firewall.runner);
+
+            assertEquals(result.ok, false);
+            assertEquals(
+                result.stderr.startsWith(
+                    "Regel wurde umgeschaltet, konnte aber nicht angewendet werden",
+                ),
+                true,
+            );
+        });
+
+        assertEquals(exam.getState()?.status, "running");
+        assertEquals(await exam.getRemainingSeconds(clock.now), 3600);
+    } finally {
+        clearExamState();
+    }
+});
+
+Deno.test("start während laufendem Examen wirft Fehler", async () => {
     clearExamState();
     try {
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(3600, clock.now);
+        await exam.start(3600, clock.now);
 
-        assertThrows(
+        await assertRejects(
             () => exam.start(1800, clock.now),
             Error,
             "Es läuft bereits ein Examen.",
@@ -55,15 +103,15 @@ Deno.test("start während laufendem Examen wirft Fehler", () => {
     }
 });
 
-Deno.test("start während pausiertem Examen wirft Fehler", () => {
+Deno.test("start während pausiertem Examen wirft Fehler", async () => {
     clearExamState();
     try {
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(3600, clock.now);
+        await exam.start(3600, clock.now);
         clock.advance(30);
         exam.pause(clock.now);
 
-        assertThrows(
+        await assertRejects(
             () => exam.start(1800, clock.now),
             Error,
             "Es läuft bereits ein Examen.",
@@ -73,11 +121,11 @@ Deno.test("start während pausiertem Examen wirft Fehler", () => {
     }
 });
 
-Deno.test("start mit ungültiger Dauer wirft Fehler", () => {
+Deno.test("start mit ungültiger Dauer wirft Fehler", async () => {
     clearExamState();
     try {
         for (const invalid of [0, -10, 1.5]) {
-            assertThrows(
+            await assertRejects(
                 () => exam.start(invalid),
                 Error,
                 "Die Prüfungsdauer muss eine ganze Zahl größer als 0 sein.",
@@ -93,7 +141,7 @@ Deno.test("pause friert die Restzeit ein", async () => {
     clearExamState();
     try {
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(100, clock.now);
+        await exam.start(100, clock.now);
         clock.advance(30);
         exam.pause(clock.now);
         clock.advance(50);
@@ -123,7 +171,7 @@ Deno.test("resume setzt den Countdown ab der eingefrorenen Restzeit fort", async
     clearExamState();
     try {
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(100, clock.now);
+        await exam.start(100, clock.now);
         clock.advance(30);
         exam.pause(clock.now);
         clock.advance(50);
@@ -137,7 +185,7 @@ Deno.test("resume setzt den Countdown ab der eingefrorenen Restzeit fort", async
     }
 });
 
-Deno.test("resume außerhalb eines pausierten Examens wirft Fehler", () => {
+Deno.test("resume außerhalb eines pausierten Examens wirft Fehler", async () => {
     clearExamState();
     try {
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
@@ -147,7 +195,7 @@ Deno.test("resume außerhalb eines pausierten Examens wirft Fehler", () => {
             "Das Examen ist nicht pausiert.",
         );
 
-        exam.start(100, clock.now);
+        await exam.start(100, clock.now);
         assertThrows(
             () => exam.resume(clock.now),
             Error,
@@ -158,59 +206,49 @@ Deno.test("resume außerhalb eines pausierten Examens wirft Fehler", () => {
     }
 });
 
-Deno.test("stop beendet das Examen und schaltet das Internet frei", async () => {
+Deno.test("stop beendet das Examen und gibt das Internet frei", async () => {
     clearExamState();
-    const originalCommand = config.EXAMMODE_COMMAND;
-    const originalInternetState = config.INTERNET_ACTIVE;
     try {
-        config.EXAMMODE_COMMAND = "exammode";
-        config.INTERNET_ACTIVE = false;
-
+        const firewall = fakeFirewall({ enabled: true });
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(100, clock.now);
+        await exam.start(100, clock.now, firewall.runner);
         clock.advance(30);
 
-        const capturedArgs: string[] = [];
-        await exam.stop(internetFreeRunner(capturedArgs));
+        await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+            const result = await exam.stop(firewall.runner);
+            assertEquals(result.ok, true);
+            assertEquals(result.internet_active, true);
+        });
 
-        assertEquals(capturedArgs, ["stop"]);
+        assertEquals(firewall.isEnabled(), false);
         assertEquals(exam.getState()?.status, "stopped");
-        assertEquals(config.INTERNET_ACTIVE, true);
         assertEquals(await exam.getRemainingSeconds(clock.now), 0);
     } finally {
-        config.EXAMMODE_COMMAND = originalCommand;
-        config.INTERNET_ACTIVE = originalInternetState;
         clearExamState();
     }
 });
 
 Deno.test("stop außerhalb eines laufenden oder pausierten Examens wirft Fehler", async () => {
     clearExamState();
-    const originalCommand = config.EXAMMODE_COMMAND;
-    const originalInternetState = config.INTERNET_ACTIVE;
     try {
-        config.EXAMMODE_COMMAND = "exammode";
-        config.INTERNET_ACTIVE = false;
+        const firewall = fakeFirewall({ enabled: false });
 
-        const capturedArgs: string[] = [];
-        assertRejects(
-            () => exam.stop(internetFreeRunner(capturedArgs)),
+        await assertRejects(
+            () => exam.stop(firewall.runner),
             Error,
             "Es läuft kein Examen, das gestoppt werden kann.",
         );
-        assertEquals(capturedArgs, []);
+        assertEquals(firewall.calls.length, 0);
 
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(100, clock.now);
-        await exam.stop(internetFreeRunner(capturedArgs));
-        assertRejects(
-            () => exam.stop(internetFreeRunner(capturedArgs)),
+        await exam.start(100, clock.now);
+        await exam.stop(firewall.runner);
+        await assertRejects(
+            () => exam.stop(firewall.runner),
             Error,
             "Es läuft kein Examen, das gestoppt werden kann.",
         );
     } finally {
-        config.EXAMMODE_COMMAND = originalCommand;
-        config.INTERNET_ACTIVE = originalInternetState;
         clearExamState();
     }
 });
@@ -219,7 +257,7 @@ Deno.test("addExtra verlängert ein laufendes Examen", async () => {
     clearExamState();
     try {
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(100, clock.now);
+        await exam.start(100, clock.now);
         clock.advance(30);
         exam.addExtra(60, clock.now);
 
@@ -234,7 +272,7 @@ Deno.test("addExtra verlängert ein pausiertes Examen, ohne die Pause zu verschi
     clearExamState();
     try {
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(100, clock.now);
+        await exam.start(100, clock.now);
         clock.advance(30);
         exam.pause(clock.now);
         clock.advance(50);
@@ -250,7 +288,7 @@ Deno.test("addExtra verlängert ein pausiertes Examen, ohne die Pause zu verschi
     }
 });
 
-Deno.test("addExtra ohne laufendes Examen oder mit ungültiger Zeit wirft Fehler", () => {
+Deno.test("addExtra ohne laufendes Examen oder mit ungültiger Zeit wirft Fehler", async () => {
     clearExamState();
     try {
         assertThrows(
@@ -260,7 +298,7 @@ Deno.test("addExtra ohne laufendes Examen oder mit ungültiger Zeit wirft Fehler
         );
 
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(100, clock.now);
+        await exam.start(100, clock.now);
         for (const invalid of [0, -30, 2.5]) {
             assertThrows(
                 () => exam.addExtra(invalid, clock.now),
@@ -273,56 +311,45 @@ Deno.test("addExtra ohne laufendes Examen oder mit ungültiger Zeit wirft Fehler
     }
 });
 
-Deno.test("natürlicher Ablauf stoppt das Examen und schaltet das Internet frei", async () => {
+Deno.test("natürlicher Ablauf stoppt das Examen und gibt das Internet frei", async () => {
     clearExamState();
-    const originalCommand = config.EXAMMODE_COMMAND;
-    const originalInternetState = config.INTERNET_ACTIVE;
     try {
-        config.EXAMMODE_COMMAND = "exammode";
-        config.INTERNET_ACTIVE = false;
-
+        const firewall = fakeFirewall({ enabled: false });
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(60, clock.now);
-        clock.advance(61);
 
-        const capturedArgs: string[] = [];
-        assertEquals(
-            await exam.getRemainingSeconds(clock.now, internetFreeRunner(capturedArgs)),
-            0,
-        );
-        assertEquals(capturedArgs, ["stop"]);
-        assertEquals(exam.getState()?.status, "stopped");
-        assertEquals(config.INTERNET_ACTIVE, true);
+        await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+            await exam.start(60, clock.now, firewall.runner);
+            assertEquals(firewall.isEnabled(), true);
+
+            clock.advance(61);
+            assertEquals(
+                await exam.getRemainingSeconds(clock.now, firewall.runner),
+                0,
+            );
+            assertEquals(firewall.isEnabled(), false);
+            assertEquals(exam.getState()?.status, "stopped");
+        });
     } finally {
-        config.EXAMMODE_COMMAND = originalCommand;
-        config.INTERNET_ACTIVE = originalInternetState;
         clearExamState();
     }
 });
 
 Deno.test("Restzeit läuft sekundengenau ab", async () => {
     clearExamState();
-    const originalCommand = config.EXAMMODE_COMMAND;
-    const originalInternetState = config.INTERNET_ACTIVE;
     try {
-        config.EXAMMODE_COMMAND = "exammode";
-        config.INTERNET_ACTIVE = false;
-
+        const firewall = fakeFirewall({ enabled: true });
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(60, clock.now);
+        await exam.start(60, clock.now, firewall.runner);
         clock.advance(59);
         assertEquals(await exam.getRemainingSeconds(clock.now), 1);
 
         clock.advance(1);
-        const capturedArgs: string[] = [];
         assertEquals(
-            await exam.getRemainingSeconds(clock.now, internetFreeRunner(capturedArgs)),
+            await exam.getRemainingSeconds(clock.now, firewall.runner),
             0,
         );
         assertEquals(exam.getState()?.status, "stopped");
     } finally {
-        config.EXAMMODE_COMMAND = originalCommand;
-        config.INTERNET_ACTIVE = originalInternetState;
         clearExamState();
     }
 });
@@ -331,7 +358,7 @@ Deno.test("Pausen zählen mehrfach korrekt zusammen", async () => {
     clearExamState();
     try {
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(120, clock.now);
+        await exam.start(120, clock.now);
         clock.advance(30);
         exam.pause(clock.now);
         clock.advance(20);
@@ -350,47 +377,35 @@ Deno.test("Pausen zählen mehrfach korrekt zusammen", async () => {
 
 Deno.test("start nach gestopptem Examen beginnt ein neues Examen", async () => {
     clearExamState();
-    const originalCommand = config.EXAMMODE_COMMAND;
-    const originalInternetState = config.INTERNET_ACTIVE;
     try {
-        config.EXAMMODE_COMMAND = "exammode";
-        config.INTERNET_ACTIVE = false;
-
+        const firewall = fakeFirewall({ enabled: true });
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(60, clock.now);
-        await exam.stop(internetFreeRunner([]));
+        await exam.start(60, clock.now, firewall.runner);
+        await exam.stop(firewall.runner);
 
         const secondClock = fakeClock("2026-10-12T09:00:00.000Z");
-        exam.start(45, secondClock.now);
+        await exam.start(45, secondClock.now, firewall.runner);
         assertEquals(exam.getState()?.status, "running");
         assertEquals(exam.getState()?.duration_seconds, 45);
         assertEquals(exam.getState()?.extra_seconds, 0);
         assertEquals(exam.getState()?.paused_seconds, 0);
         assertEquals(await exam.getRemainingSeconds(secondClock.now), 45);
     } finally {
-        config.EXAMMODE_COMMAND = originalCommand;
-        config.INTERNET_ACTIVE = originalInternetState;
         clearExamState();
     }
 });
 
 Deno.test("getRemainingSeconds liefert null ohne Examen und 0 nach Stopp", async () => {
     clearExamState();
-    const originalCommand = config.EXAMMODE_COMMAND;
-    const originalInternetState = config.INTERNET_ACTIVE;
     try {
-        config.EXAMMODE_COMMAND = "exammode";
-        config.INTERNET_ACTIVE = false;
-
         assertEquals(await exam.getRemainingSeconds(), null);
 
+        const firewall = fakeFirewall({ enabled: true });
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
-        exam.start(60, clock.now);
-        await exam.stop(internetFreeRunner([]));
+        await exam.start(60, clock.now, firewall.runner);
+        await exam.stop(firewall.runner);
         assertEquals(await exam.getRemainingSeconds(clock.now), 0);
     } finally {
-        config.EXAMMODE_COMMAND = originalCommand;
-        config.INTERNET_ACTIVE = originalInternetState;
         clearExamState();
     }
 });

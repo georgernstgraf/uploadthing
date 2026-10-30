@@ -1,7 +1,6 @@
 import { Context, Hono } from "hono";
 import * as hbs from "../lib/handlebars.ts";
 import * as service from "../service/service.ts";
-import config from "../lib/config.ts";
 import { HonoContextVars } from "../lib/types.ts";
 import { getSession } from "../middleware/session.ts";
 import { requireAdmin } from "../middleware/admin.ts";
@@ -21,46 +20,39 @@ const apiRouter = new Hono<{ Variables: HonoContextVars }>();
 /**
  * Rendert das Admin-Exam-Panel (Examen-Steuerung + Firewall-Regel)
  * als HTMX-Antwort: Bei erfolgreichen Aktionen wird der Ziel-Container
- * mit dem aktuellen Panel ersetzt; Fehler der Panel-Aktionen bleiben
- * plain-text mit non-2xx und landen im globalen Toast-Handler.
+ * mit dem aktuellen Panel ersetzt.
  *
- * Der Internetstatus wird vom Aufrufer übergeben — kein zusätzlicher
- * `exammode status`-Lauf, der `config.INTERNET_ACTIVE` überschreiben
- * würde. Die Exam-Aktionen nutzen den aktuellen Konfigurationsstand,
- * die exammode-Endpunkte das Ergebnis ihres Firewall-Aufrufs.
+ * Der Firewall-Zustand wird bei jedem Rendern frisch von der
+ * OPNsense-API gelesen (kein Polling, keine geratene Kopie im
+ * Speicher). Ist er nicht abrufbar, rendert das Panel den Zustand
+ * „unbekannt" samt Modal; ein Fehler aus der auslösenden Aktion wird
+ * zusätzlich als `firewall_error` mitgegeben, damit das Modal den
+ * tatsächlichen API-Fehler nennt.
  */
 async function renderExamPanel(
     c: Context<{ Variables: HonoContextVars }>,
-    internet_active: boolean,
-    success_message?: string,
+    options: { success_message?: string; firewall_error?: string } = {},
 ) {
     const exam = await service.exam.getStatusView();
+    const firewall = service.admin.buildExamFirewallPanel(
+        await service.admin.getExamModeStatus(),
+        options.firewall_error,
+    );
+
     return c.html(hbs.adminExamModeTemplate({
-        internet_active,
         exam_status: exam.status,
         exam_remaining_label: exam.remaining_label,
         exam_open: exam.open,
-        success_message,
+        exam_running: exam.status === "running" || exam.status === "paused",
+        firewall_state: firewall.firewall_state,
+        firewall_error: firewall.firewall_error,
+        firewall_modal: firewall.firewall_modal,
+        success_message: options.success_message,
     }));
 }
 
 apiRouter.get("/exammode", requireAdmin, async (c) => {
-    try {
-        const result = await service.admin.getExamModeStatus();
-        if (!result.ok) {
-            const details = [result.stderr, result.stdout].filter(Boolean).join(" | ");
-            console.error("exammode status failed:", result);
-            return c.text(
-                `exammode status fehlgeschlagen (Exit ${result.code})${details ? `: ${details}` : ""}`,
-                500,
-            );
-        }
-
-        return await renderExamPanel(c, result.internet_active);
-    } catch (error) {
-        console.error("exammode status could not be executed:", error);
-        return c.text(`exammode status konnte nicht ausgeführt werden: ${(error as Error).message}`, 500);
-    }
+    return await renderExamPanel(c);
 });
 
 apiRouter.post("/exammode", requireAdmin, async (c) => {
@@ -73,32 +65,40 @@ apiRouter.post("/exammode", requireAdmin, async (c) => {
         );
     }
 
-    const internet_active = validation.data.internet_active === "on";
-
-    try {
-        const result = await service.admin.setInternetActive(internet_active);
-        if (!result.ok) {
-            const details = [result.stderr, result.stdout].filter(Boolean).join(" | ");
-            console.error("exammode failed:", result);
-            return c.text(
-                `exammode fehlgeschlagen (Exit ${result.code})${details ? `: ${details}` : ""}`,
-                500,
-            );
-        }
-
-        return await renderExamPanel(c, result.internet_active);
-    } catch (error) {
-        console.error("exammode could not be executed:", error);
-        return c.text(`exammode konnte nicht ausgeführt werden: ${(error as Error).message}`, 500);
+    if (!service.admin.isExamModeConfigured()) {
+        return c.text(
+            "Die Exam-Sperre ist nicht konfiguriert (OPNSENSE_API_KEY und OPNSENSE_API_SECRET fehlen).",
+            400,
+        );
     }
+
+    const internet_active = validation.data.internet_active === "on";
+    const result = await service.admin.setInternetActive(internet_active);
+
+    if (!result.ok) {
+        console.error("Exam-Sperre konnte nicht geschaltet werden:", result.stderr);
+    }
+
+    return await renderExamPanel(c, {
+        success_message: result.ok
+            ? (internet_active
+                ? "Internetzugang ist freigegeben."
+                : "Internetzugang ist gesperrt.")
+            : undefined,
+        firewall_error: result.ok ? undefined : result.stderr,
+    });
 });
 
 /**
  * Startet ein Examen mit vorgegebener Dauer (Formularfeld `minutes`,
- * Ganzzahl in Minuten, 1–600). Ungültige Übergänge der State-Machine
- * (z. B. Start während eines laufenden Examens) werden mit 409
- * und deutscher Fehlermeldung gemeldet. Bei Erfolg wird das
- * aktualisierte Admin-Exam-Panel als HTMX-Antwort zurückgegeben.
+ * Ganzzahl in Minuten, 1–600) und schaltet die Exam-Sperre implizit
+ * scharf. Ungültige Übergänge der State-Machine (z. B. Start während
+ * eines laufenden Examens) werden mit 409 und deutscher Fehlermeldung
+ * gemeldet.
+ *
+ * Das Examen startet auch dann, wenn die Sperre scheitert; das Panel
+ * zeigt dann „Examen läuft · Internet frei" samt Modal mit dem
+ * API-Fehler. Deshalb ist die Antwort in beiden Fällen das Panel.
  */
 apiRouter.post("/exam/start", requireAdmin, async (c) => {
     const formData = await c.req.formData();
@@ -111,12 +111,15 @@ apiRouter.post("/exam/start", requireAdmin, async (c) => {
     }
 
     try {
-        service.exam.start(validation.data.minutes * 60);
-        return await renderExamPanel(
-            c,
-            config.INTERNET_ACTIVE,
-            `Examen gestartet. Dauer: ${validation.data.minutes} Minuten.`,
-        );
+        const result = await service.exam.start(validation.data.minutes * 60);
+        // Das Examen läuft in jedem Fall — der Start ist bestätigt. Ein
+        // gescheitertes Sperren landet als API-Fehler im Warnband und im
+        // Modal, nicht als verschluckter Erfolg.
+        return await renderExamPanel(c, {
+            success_message:
+                `Examen gestartet. Dauer: ${validation.data.minutes} Minuten.`,
+            firewall_error: result.ok ? undefined : result.stderr,
+        });
     } catch (error) {
         return c.text((error as Error).message, 409);
     }
@@ -125,7 +128,7 @@ apiRouter.post("/exam/start", requireAdmin, async (c) => {
 apiRouter.post("/exam/pause", requireAdmin, async (c) => {
     try {
         service.exam.pause();
-        return await renderExamPanel(c, config.INTERNET_ACTIVE, "Examen pausiert.");
+        return await renderExamPanel(c, { success_message: "Examen pausiert." });
     } catch (error) {
         return c.text((error as Error).message, 409);
     }
@@ -134,35 +137,27 @@ apiRouter.post("/exam/pause", requireAdmin, async (c) => {
 apiRouter.post("/exam/resume", requireAdmin, async (c) => {
     try {
         service.exam.resume();
-        return await renderExamPanel(c, config.INTERNET_ACTIVE, "Examen fortgesetzt.");
+        return await renderExamPanel(c, { success_message: "Examen fortgesetzt." });
     } catch (error) {
         return c.text((error as Error).message, 409);
     }
 });
 
 /**
- * Stoppt das Examen vorzeitig und schaltet das Internet frei
- * (Exam Mode Off). Schlägt der Firewall-Befehl fehl, bleibt der
- * Exam-Zustand auf stopped, die Antwort meldet den Fehler aber als
- * 500-Text, damit der globale HTMX-Toast ihn anzeigt.
+ * Stoppt das Examen vorzeitig und löst die Exam-Sperre (Internet
+ * wieder frei). Schlägt der API-Aufruf fehl, bleibt der Exam-Zustand
+ * auf stopped; das Panel zeigt den echten Firewall-Zustand und das
+ * Modal nennt den Fehler.
  */
 apiRouter.post("/exam/stop", requireAdmin, async (c) => {
     try {
         const result = await service.exam.stop();
-        if (!result.ok) {
-            const details = [result.stderr, result.stdout].filter(Boolean).join(" | ");
-            console.error("exammode failed:", result);
-            return c.text(
-                `exammode fehlgeschlagen (Exit ${result.code})${details ? `: ${details}` : ""}`,
-                500,
-            );
-        }
-
-        return await renderExamPanel(
-            c,
-            config.INTERNET_ACTIVE,
-            "Examen beendet. Internet ist wieder freigeschaltet.",
-        );
+        return await renderExamPanel(c, {
+            success_message: result.ok
+                ? "Examen beendet. Internet ist wieder freigeschaltet."
+                : "Examen beendet.",
+            firewall_error: result.ok ? undefined : result.stderr,
+        });
     } catch (error) {
         return c.text((error as Error).message, 409);
     }
@@ -184,11 +179,10 @@ apiRouter.post("/exam/extra", requireAdmin, async (c) => {
 
     try {
         service.exam.addExtra(validation.data.minutes * 60);
-        return await renderExamPanel(
-            c,
-            config.INTERNET_ACTIVE,
-            `Zusatzzeit von ${validation.data.minutes} Minuten hinzugefügt.`,
-        );
+        return await renderExamPanel(c, {
+            success_message:
+                `Zusatzzeit von ${validation.data.minutes} Minuten hinzugefügt.`,
+        });
     } catch (error) {
         return c.text((error as Error).message, 409);
     }

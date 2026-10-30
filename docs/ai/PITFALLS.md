@@ -1,16 +1,18 @@
 # PITFALLS
 
-## Broken Test Environment In Dev Checkout
+## Test Environment In Dev Checkout
 
-- As of 2026-10-16, `deno task test` fails in the dell dev checkout for
-  **pre-existing env reasons**, not code reasons: `.env` lacks
-  `ABGABEN_DIR`/`UNTERLAGEN_DIR` (those live in `.env.local`, which
-  `scripts/test-with-server.sh` does not source), so the dev server and
-  11 test modules die at startup with `requireEnv()` errors while 60/71
-  tests pass. [ACTIVE until env files or test script are fixed]
-- When this failure appears, check whether it is the known env gap
-  before hunting for a code cause; the app itself cannot even start
-  with the current `.env`/`.env.local`.
+- `scripts/test-with-server.sh` sourced lange nur `.env`, während die
+  Pflichtvariablen `ABGABEN_DIR`/`UNTERLAGEN_DIR`/`COOKIE_SECRET` nur in
+  `.env.local` standen: `deno task test` starb beim Start mit
+  `requireEnv()`-Fehlern (11 Module, 60/71 Tests). Seit 2026-10-30 ist die
+  `.env` des dell-Checkouts vollständig, und `examstate` ist migriert —
+  `deno task test` ist dort grün (252 Tests).
+- `.env.local` wird von Deno nicht geladen; wer neue Pflichtvariablen
+  einführt, muss sie in `.env` (und `.env.example`) nachziehen.
+- Läuft `deno task test` mit `no such table: examstate`, fehlt die
+  Migration im lokalen `DATABASE_URL`-Ziel: `deno task pmD` ausführen
+  (nicht die Tabelle von Hand anlegen).
 
 ## Fail-Strict Configuration
 
@@ -67,11 +69,37 @@
 
 - Prisma is hard-pinned to version 6 (`deno.json`/`deno.lock`) because the engines run as Linux binaries under FreeBSD's Linuxulator on the OPNsense production host; do not bump the version until the Drizzle migration (#133) removes Prisma. See `docs/ai/OPERATIONS.md`.
 - LDAP access can be slow or unavailable; the code includes reconnect logic and retry timing.
-- Do not start LDAP connections at module import time; eager startup causes unrelated tests to leak timers, reads, and TLS handshakes.- `POST /api/exammode` depends on a system `exammode` command in `PATH`; non-zero exits should surface as toast-visible HTMX errors and must not silently flip the UI state.
-- Successful `exammode` runs currently return a short stdout message (`internet enabled` or `internet disabled`) and exit `0`.
-- The firewall toggle does not auto-discover the machine's real internet state; it starts from env/config and only changes after successful admin-triggered `exammode` runs.
-- The current dev machine ships a stub `exammode` in `PATH` that only echoes the success text, so local endpoint tests verify UI/backend wiring rather than a real firewall change.
-- Since #131, startup releases the internet (exam mode off) instead of blocking it; without `EXAMMODE_COMMAND` only the examstate reset runs, the firewall call is skipped. Startup examstate reset is not tied to the env var.
+- Do not start LDAP connections at module import time; eager startup causes unrelated tests to leak timers, reads, and TLS handshakes.
+
+## Firewall-API (Exam-Sperre)
+
+- Die Sperre läuft ausschließlich über die OPNsense-API. Kein `exammode.sh`,
+  kein `sudo`, kein Schreiben in `/conf/config.xml`.
+- `GET /api/firewall/filter/getRule/{uuid}` ist auf der Sense (26.7) **nicht**
+  die Lesequelle: der Aufruf antwortet mit `[]`, egal ob die UUID existiert.
+  Zustand und UUID kommen aus `POST /api/firewall/filter/searchRule`; dort
+  stehen `uuid` (32 Hex) und bei modernen Regeln zusätzlich
+  `@attributes.uuid` (gestrichelt). Immer normalisiert vergleichen.
+- `toggleRule` ist ein **Toggle**, kein Setzen. Erst lesen, nur bei
+  Abweichung schalten, `apply` rufen und den Zustand anschließend erneut
+  lesen — sonst läuft ein Toggle auf eine falsche UUID still ins Leere.
+- `POST /api/exammode` antwortet bei API-Fehlern mit dem neu gerenderten
+  Panel (HTTP 200), nicht mit einem Fehlertext: Der Fehler gehört in das
+  nicht wegklickbare Modal, der Schalter muss den echten Zustand zeigen.
+  Nur „nicht konfiguriert" bleibt ein 400-Text.
+- TLS: `Deno.fetch` prüft den Hostnamen immer; `Deno.createHttpClient` kennt
+  in Deno 2.9 keine Option zum Abschalten mehr (wird still ignoriert). Wenn
+  das Zertifikat den API-Host nicht abdeckt, bleibt nur
+  `--unsafely-ignore-certificate-errors=<host>` beim Prozessstart oder ein
+  Hostname, den das Zertifikat abdeckt.
+- Startfehler der Firewall beenden den Prozess **nicht** mehr. Wer
+  `Deno.exit(1)` zurückbringt, macht die App auf jedem Host ohne
+  API-Zugang unstartbar.
+- Die Werte aus `~/sense.internal_root_apikey.txt` gehören nur in die
+  Produktions-`.env` — nie ins Repo, nie in eine Testfixture, nie ins Log.
+- Tests injizieren `fetch` (`test/helpers/opnsense_fixture.ts`); kein Test
+  darf die echte Sense schalten.
+- Since #131, startup releases the internet (exam mode off) instead of blocking it; without API credentials only the examstate reset runs. Startup examstate reset is not tied to the configuration.
 - The examstate singleton persists across test runs; use `clearExamState()` (and `seedExamState()` for running/paused scenarios) from `test/helpers/forensics_fixture.ts` or tests will see leftovers from earlier runs.
 - The student countdown receives `ends_at_ms` server-rendered and ticks client-side via Alpine; after a resume it stays behind the server until page reload (no polling by design).
 - Browser-visible flows may also depend on local directories such as `ABGABEN_DIR` and `UNTERLAGEN_DIR` existing and being readable.
@@ -146,15 +174,15 @@
 
 - The `missed_count` calculation in `service/ipadmin.ts` previously counted ongoing absence after the last scan, even if the student had already submitted their work and left. A student who leaves after submitting should not be penalized; scans after their most recent submission are excluded from `missed_count`.
 
-## App-Start beendet den Prozess bei Firewall-Fehler
+## App-Start beendet den Prozess bei Firewall-Fehler (behoben in #142)
 
-- `runExamModeOnStartup()` ruft beim Start `setInternetActive(true)` und macht
-  `Deno.exit(1)`, wenn das Kommando scheitert. Solange `EXAMMODE_COMMAND` auf
-  `/usr/local/sbin/exammode.sh` zeigt, startet die App **nur auf der Sense** —
-  auf jedem anderen Host bricht sie beim Boot ab.
-- Das ist der Grund, warum der App-Umzug (#143) zwingend nach dem
-  API-Client (#142) kommt. Wer die Reihenfolge umdreht, bekommt eine App, die
-  nicht hochkommt.
+- `runExamModeOnStartup()` rief früher `setInternetActive(true)` und machte
+  `Deno.exit(1)`, wenn das Kommando scheiterte. Solange `EXAMMODE_COMMAND` auf
+  `/usr/local/sbin/exammode.sh` zeigte, startete die App **nur auf der Sense** —
+  auf jedem anderen Host brach sie beim Boot ab.
+- Seit #142 gilt das Gegenteil: ein fehlgeschlagener API-Aufruf wird geloggt,
+  die App startet weiter, und das Panel zeigt den echten Firewall-Zustand.
+  Diese Gutmütigkeit nicht zurückdrehen.
 
 ## MikroTik-Scanner scheiterte still
 

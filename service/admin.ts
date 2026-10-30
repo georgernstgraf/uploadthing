@@ -1,34 +1,43 @@
 import { fromFileUrl, join } from "@std/path";
 import * as repo from "../repo/repo.ts";
 import config from "../lib/config.ts";
+import {
+    getRuleEnabled,
+    isConfigured,
+    setRuleEnabled,
+} from "./opnsense.ts";
+import type { ExamModeRunner } from "./opnsense.ts";
 
+export type { ExamModeRunner } from "./opnsense.ts";
+
+/**
+ * Ergebnis eines Schaltversuchs der Exam-Sperre.
+ *
+ * `internet_active` ist der Zustand, der hergestellt werden sollte —
+ * nicht die Bestätigung, dass er hergestellt wurde. Den echten Zustand
+ * liefert ausschließlich `getExamModeStatus()`, das die Firewall liest.
+ */
 export type ExamModeResult = {
     code: number;
     stdout: string;
     stderr: string;
-    command_arg: "start" | "stop";
     internet_active: boolean;
     ok: boolean;
 };
 
+/**
+ * Von der Firewall gelesener Zustand. `internet_active: null` heißt
+ * „unbekannt" (Status nicht abrufbar), `configured: false` heißt „die
+ * Firewall-Steuerung ist nicht konfiguriert" (lokale Entwicklung).
+ */
 export type ExamModeStatusResult = {
     code: number;
     stdout: string;
     stderr: string;
-    internet_active: boolean;
+    configured: boolean;
+    internet_active: boolean | null;
     ok: boolean;
 };
-
-export type ExamModeRunnerResult = {
-    code: number;
-    stdout: string;
-    stderr: string;
-};
-
-export type ExamModeRunner = (
-    command: string,
-    args: string[],
-) => Promise<ExamModeRunnerResult>;
 
 export type ThemeOption = {
     key: string;
@@ -173,62 +182,99 @@ export function applyTheme(themeKey: string, options: ThemePathsOptions = {}): T
     return theme;
 }
 
-export function getExamModeCommandArg(internet_active: boolean): "start" | "stop" {
-    return internet_active ? "stop" : "start";
-}
-
-async function defaultExamModeRunner(
-    command: string,
-    args: string[],
-): Promise<ExamModeRunnerResult> {
-    const output = await new Deno.Command(command, {
-        args,
-        stdout: "piped",
-        stderr: "piped",
-    }).output();
-
-    return {
-        code: output.code,
-        stdout: new TextDecoder().decode(output.stdout).trim(),
-        stderr: new TextDecoder().decode(output.stderr).trim(),
-    };
-}
-
+/**
+ * Schaltet die Exam-Sperre über die OPNsense-API.
+ *
+ * `internet_active: true` löst die Sperre (Regel aus), `false` schaltet
+ * sie scharf (Regel an). Die Rückgabe meldet nur, ob das Schalten
+ * geklappt hat; der sichtbare Zustand kommt aus `getExamModeStatus()`.
+ */
 export async function setInternetActive(
     internet_active: boolean,
-    runner: ExamModeRunner = defaultExamModeRunner,
+    runner?: ExamModeRunner,
 ): Promise<ExamModeResult> {
-    const command_arg = getExamModeCommandArg(internet_active);
-    const result = await runner(config.EXAMMODE_COMMAND, [command_arg]);
-    const ok = result.code === 0;
-
-    if (ok) {
-        config.INTERNET_ACTIVE = internet_active;
-    }
+    const result = await setRuleEnabled(!internet_active, runner);
 
     return {
-        ...result,
-        command_arg,
-        internet_active: config.INTERNET_ACTIVE,
-        ok,
+        code: result.code,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        internet_active,
+        ok: result.ok,
     };
 }
 
+/**
+ * Liest den echten Zustand der Sperrregel von der Firewall. Wird bei
+ * jedem Rendern des Admin-Panels aufgerufen — bewusst ohne Polling.
+ */
 export async function getExamModeStatus(
-    runner: ExamModeRunner = defaultExamModeRunner,
+    runner?: ExamModeRunner,
 ): Promise<ExamModeStatusResult> {
-    const result = await runner(config.EXAMMODE_COMMAND, ["status"]);
-    const ok = result.code === 0;
-
-    if (ok) {
-        config.INTERNET_ACTIVE = result.stdout === "off";
-    }
+    const state = await getRuleEnabled(runner);
 
     return {
-        ...result,
-        internet_active: config.INTERNET_ACTIVE,
-        ok,
+        code: state.code,
+        stdout: state.stdout,
+        stderr: state.stderr,
+        configured: state.configured,
+        internet_active: state.rule_enabled === null ? null : !state.rule_enabled,
+        ok: state.ok,
     };
+}
+
+/**
+ * Anzeigezustand der Firewall-Karte im Admin-Panel.
+ *
+ * - `frei`: Regel aus, Internet freigegeben
+ * - `gesperrt`: Regel aktiv, Internet gesperrt
+ * - `unbekannt`: Status nicht abrufbar (Schalter deaktiviert, Modal)
+ * - `nicht-konfiguriert`: keine API-Credentials (lokale Entwicklung)
+ */
+export type FirewallState = "frei" | "gesperrt" | "unbekannt" | "nicht-konfiguriert";
+
+export function describeFirewallState(status: ExamModeStatusResult): FirewallState {
+    if (!status.configured) {
+        return "nicht-konfiguriert";
+    }
+    if (status.internet_active === null) {
+        return "unbekannt";
+    }
+    return status.internet_active ? "frei" : "gesperrt";
+}
+
+/**
+ * Daten für die Firewall-Karte im Admin-Panel.
+ *
+ * `actionError` ist der Fehler der auslösenden Aktion (z. B. „Examen
+ * starten konnte die Sperre nicht schalten"); er hat Vorrang vor einem
+ * Lesefehler, weil er die Ursache nennt. Ein Zustand „unbekannt" zeigt
+ * das Modal immer, ein nicht konfigurierter Client nie.
+ */
+export type ExamFirewallPanel = {
+    firewall_state: FirewallState;
+    firewall_error?: string;
+    firewall_modal: boolean;
+};
+
+export function buildExamFirewallPanel(
+    status: ExamModeStatusResult,
+    actionError?: string,
+): ExamFirewallPanel {
+    const firewall_state = describeFirewallState(status);
+    const readError = status.ok ? undefined : status.stderr;
+    const firewall_error = actionError ?? readError;
+    const alerts = firewall_state !== "nicht-konfiguriert" && Boolean(firewall_error);
+
+    return {
+        firewall_state,
+        firewall_error,
+        firewall_modal: alerts || firewall_state === "unbekannt",
+    };
+}
+
+export function isExamModeConfigured(): boolean {
+    return isConfigured();
 }
 
 /**
@@ -237,32 +283,36 @@ export async function getExamModeStatus(
  * - Ein beim vorherigen Prozesslauf hängengebliebener Exam-Zustand
  *   (`running`/`paused`) wird auf `stopped` gesetzt, damit kein
  *   Countdown über den Neustart weiterläuft.
- * - Sofern `EXAMMODE_COMMAND` konfiguriert ist, wird die Firewall mit
- *   dem `stop`-Kommando (Internet frei) geschaltet; ohne Env-Var wird
- *   der Firewall-Aufruf übersprungen.
+ * - Ist die OPNsense-API konfiguriert, wird die Sperrregel gelöst.
+ * - Ein Fehler der Firewall-API beendet den Prozess **nicht**: die
+ *   Sperre ist nicht von jeder Maschine aus schaltbar (keine
+ *   Credentials, Firewall offline) und die App muss trotzdem starten.
+ *   Der Fehler wird geloggt; das Panel zeigt anschließend den echten
+ *   Zustand der Regel.
  */
 export async function runExamModeOnStartup(
-    runner: ExamModeRunner = defaultExamModeRunner,
+    runner?: ExamModeRunner,
 ): Promise<void> {
     resetExamStateOnStartup();
 
-    if (!Deno.env.get("EXAMMODE_COMMAND")) {
-        console.log("EXAMMODE_COMMAND not configured, skipping startup internet release");
+    if (!isConfigured()) {
+        console.log(
+            "OPNsense-API nicht konfiguriert, Internet-Freigabe beim Start übersprungen",
+        );
         return;
     }
 
-    console.log("Ensuring internet is free on startup (exam mode off) ...");
+    console.log("Löse Exam-Sperre beim Start (Internet frei) ...");
     const result = await setInternetActive(true, runner);
 
     if (!result.ok) {
-        const details = [result.stderr, result.stdout].filter(Boolean).join(" | ");
         console.error(
-            `exammode startup release failed (exit ${result.code})${details ? `: ${details}` : ""}`,
+            `Exam-Sperre konnte beim Start nicht gelöst werden (HTTP ${result.code}): ${result.stderr}`,
         );
-        Deno.exit(1);
+        return;
     }
 
-    console.log("exammode startup reset successful (internet free)");
+    console.log("Exam-Sperre beim Start gelöst (Internet frei)");
 }
 
 /**

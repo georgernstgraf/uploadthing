@@ -84,7 +84,37 @@
             if (evt.detail.target && evt.detail.target.id === 'ip-detail-modal-content') {
                 bootstrap.Modal.getOrCreateInstance(document.getElementById('ip-detail-modal')).show();
             }
+            if (evt.detail.target && evt.detail.target.id === 'exam-admin-panel') {
+                syncExamFirewallModal();
+            }
         });
+
+        // Das Firewall-Modal liegt außerhalb des austauschbaren Panels und
+        // wird nicht wegklickbar gezeigt, solange die Sperre nicht bestätigt
+        // ist (Status unbekannt oder API-Fehler). Der Trigger kommt aus dem
+        // Panel selbst (data-show/data-message), damit ein Panel-Swap das
+        // Modal nicht als verwaistes Backdrop zurücklässt.
+        function syncExamFirewallModal() {
+            const modalElement = document.getElementById('exam-firewall-modal');
+            const data = document.getElementById('exam-firewall-modal-data');
+            if (!modalElement || !data) {
+                return;
+            }
+
+            const detail = document.getElementById('exam-firewall-modal-detail');
+            if (detail) {
+                detail.textContent = data.dataset.message || '';
+            }
+
+            const instance = bootstrap.Modal.getOrCreateInstance(modalElement);
+            if (data.dataset.show === 'true') {
+                instance.show();
+            } else if (modalElement.classList.contains('show')) {
+                instance.hide();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', syncExamFirewallModal);
     </script>
     <script src="/static/alpine.js"
             defer></script>
@@ -227,6 +257,36 @@
         })();
     </script>
     {{> main}}
+
+    <div class="modal fade"
+         id="exam-firewall-modal"
+         tabindex="-1"
+         aria-labelledby="exam-firewall-modal-title"
+         aria-hidden="true"
+         data-bs-backdrop="static"
+         data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger-subtle">
+                    <h5 class="modal-title" id="exam-firewall-modal-title">Exam-Sperre nicht bestätigt</h5>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Der Zustand der Firewall-Regel konnte nicht gelesen oder nicht geschaltet werden. Solange das nicht geklärt ist, ist der Internetzugang im Prüfungsnetz <strong>nicht</strong> verlässlich gesperrt.</p>
+                    <p class="mb-0 small text-body-secondary" id="exam-firewall-modal-detail"></p>
+                </div>
+                <div class="modal-footer">
+                    <form hx-post="/api/exammode"
+                          hx-target="#exam-admin-panel"
+                          hx-swap="outerHTML"
+                          class="w-100">
+                        <button type="submit"
+                                class="btn btn-danger w-100"
+                                hx-disabled-elt="this">Erneut sperren</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

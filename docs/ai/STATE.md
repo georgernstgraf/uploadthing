@@ -13,7 +13,23 @@ App-Prozess, und die App verlässt die Sense vollständig — Dell = Hypervisor 
 App, Sense = Firewall/DNS/DHCP. Runtime bleibt Deno, htmx bleibt 2.0.10 bis
 Februar 2027.
 
-Nächster Schritt: **#142** (OPNsense-API-Client), danach **#143** (Umzug).
+Nächster Schritt: **#143** — die App verlässt die Sense. #142
+(OPNsense-API-Client) ist umgesetzt: die Sperre läuft über die Firewall-API,
+`exammode.sh`/`EXAMMODE_COMMAND`/`INTERNET_ACTIVE` sind aus dem Code
+verschwunden.
+
+## Offene Punkte aus #142
+
+- Die im Ticket genannte Regel-UUID
+  `e3e720e6-27fb-4565-b8cf-3a73cf682b54` (`descr=doku`) ist auf der
+  laufenden Sense **nicht** in der Regelliste (`searchRule` findet sie
+  nicht; 26 Regeln, keine mit `descr=doku`). Vor der Abnahme im
+  Prüfungsnetz muss die Regel angelegt und die UUID in die
+  Produktions-`.env` übernommen werden.
+- TLS: Das GUI-Zertifikat deckt nur `tst.spengergasse.at`, nicht
+  `192.168.21.1`. Der App-Start braucht deshalb entweder einen passenden
+  Hostnamen (Hosts-Eintrag, Thema #149) oder
+  `--unsafely-ignore-certificate-errors=192.168.21.1`.
 
 ## Reihenfolge (Epic #141)
 
@@ -32,6 +48,13 @@ Nächster Schritt: **#142** (OPNsense-API-Client), danach **#143** (Umzug).
 
 ## Completed (this cycle)
 
+- [x] #142 OPNsense-API-Client: Exam-Sperre ausschließlich über die
+      Firewall-API (`service/opnsense.ts`, `searchRule`/`toggleRule`/`apply`),
+      Zustand wird bei jedem Panel-Rendern gelesen, Fehler- und
+      Unbekannt-Zustand inkl. nicht wegklickbarem Modal, Start sperrt
+      implizit. `EXAMMODE_COMMAND`, `INTERNET_ACTIVE` und der
+      Subprozess-Pfad sind entfernt; 252 Tests grün.
+
 - [x] Planungssession 2026-10-30: Ist-Zustand auf `sense`, `tik` und im
       Schul-LDAP erhoben; Epic #141 plus zwölf Sub-Issues angelegt, jedes mit
       Abschnitt „Entscheidungen".
@@ -48,7 +71,7 @@ Nächster Schritt: **#142** (OPNsense-API-Client), danach **#143** (Umzug).
 
 ## Pending
 
-- [ ] Der Epic-Plan oben. Kein Punkt davon ist begonnen.
+- [ ] Der Epic-Plan oben; #142 ist abgeschlossen.
 - [ ] Deno-Hygiene auf `sense`: laufende 2.9.6 (`~/.deno/bin/deno`)
       konsolidieren, kaputtes `~/deno` (liblcms2 fehlt) und altes `~/tmp/deno`
       (2.2.15 LTS) entfernen; optional Patch-Bump auf 2.9.7.
