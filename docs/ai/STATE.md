@@ -18,18 +18,18 @@ Nächster Schritt: **#143** — die App verlässt die Sense. #142
 `exammode.sh`/`EXAMMODE_COMMAND`/`INTERNET_ACTIVE` sind aus dem Code
 verschwunden.
 
-## Offene Punkte aus #142
+## Erledigt aus #142 (2026-10-30)
 
-- Die im Ticket genannte Regel-UUID
-  `e3e720e6-27fb-4565-b8cf-3a73cf682b54` (`descr=doku`) ist auf der
-  laufenden Sense **nicht** in der Regelliste (`searchRule` findet sie
-  nicht; 26 Regeln, keine mit `descr=doku`). Vor der Abnahme im
-  Prüfungsnetz muss die Regel angelegt und die UUID in die
-  Produktions-`.env` übernommen werden.
-- TLS: Das GUI-Zertifikat deckt nur `tst.spengergasse.at`, nicht
-  `192.168.21.1`. Der App-Start braucht deshalb entweder einen passenden
-  Hostnamen (Hosts-Eintrag, Thema #149) oder
-  `--unsafely-ignore-certificate-errors=192.168.21.1`.
+- Regel `doku` neu angelegt: UUID `69c0079a-7b83-4cc2-95b5-78183f4b222b`
+  (`reject`, LAN → alles außer Alias `DOKU`, erste LAN-Regel,
+  deaktiviert). Die Legacy-`<filter>`-Regel `e3e720e6-…` hatte der
+  26.7-Migrationsschritt nicht übernommen.
+- TLS: GUI-Zertifikat `CN=sense.internal` mit SAN `sense.internal` +
+  `192.168.21.1`, signiert von der internen CA „uploadthing internal CA"
+  (CA auf dem Dell: `~/certs/sense-ca.pem`, Deno braucht `DENO_CERT`).
+  `OPNSENSE_API_URL=https://sense.internal:8443`, verifiziert.
+- `getRule/{uuid}` ist auf 26.7 unbrauchbar (`[]`); gelesen wird über
+  `searchRule`.
 
 ## Reihenfolge (Epic #141)
 

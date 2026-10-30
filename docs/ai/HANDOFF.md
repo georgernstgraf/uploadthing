@@ -7,18 +7,22 @@ die Exam-Sperre läuft über die OPNsense-API, `EXAMMODE_COMMAND`,
 `INTERNET_ACTIVE`, `exammode.sh` und der Subprozess-Pfad sind aus der App
 verschwunden.
 
-- Regel-UUID `e3e720e6-27fb-4565-b8cf-3a73cf682b54` (`descr=doku`,
-  `type=reject`) steht in `OPNSENSE_EXAMMODE_RULE_UUID`. **Achtung:** Diese
-  Regel existiert auf der laufenden Sense derzeit nicht — `searchRule`
-  listet 26 Regeln, keine mit `descr=doku`. Vor der Prüfungs-Abnahme
-  anlegen und die echte UUID in die Produktions-`.env` übernehmen.
-- Verifiziert (nur lesend, 2026-10-30): `POST /api/firewall/filter/searchRule`
-  liefert den Regelzustand, Basic-Auth gegen `https://192.168.21.1:8443`
-  funktioniert. **`GET getRule/{uuid}` antwortet mit `[]`** und ist als
-  Lesequelle unbrauchbar.
-- TLS: Das GUI-Zertifikat ist `CN=tst.spengergasse.at` ohne SAN für die IP.
-  App-Start braucht `--unsafely-ignore-certificate-errors=192.168.21.1`
-  oder einen Hostnamen, den das Zertifikat abdeckt (#149).
+- **Regel `doku` neu angelegt (2026-10-30):** UUID
+  `69c0079a-7b83-4cc2-95b5-78183f4b222b` (`descr=doku`, `action=reject`,
+  LAN → alles außer Alias `DOKU`, erste Regel der LAN-Gruppe). Der
+  26.7-Migrationsschritt hatte die Legacy-`<filter>`-Regel
+  `e3e720e6-…` nicht übernommen. Anlegen, Position, `toggleRule` in beide
+  Richtungen und `apply` sind verifiziert; die Regel ist **deaktiviert**
+  (Internet frei). Den Handy-Test im Prüfungs-WLAN macht Georg.
+- **TLS gelöst:** Web-GUI-Zertifikat jetzt `CN=sense.internal`
+  (`SAN DNS:sense.internal, IP:192.168.21.1`), signiert von der internen
+  CA „uploadthing internal CA". CA liegt als `~/certs/sense-ca.pem` auf
+  dem Dell; Deno braucht `DENO_CERT` darauf. `OPNSENSE_API_URL` ist
+  `https://sense.internal:8443` — verifizierter `fetch` gegen die echte
+  Sense getestet.
+- **`GET getRule/{uuid}` antwortet auf 26.7 immer `[]`** (auch für
+  existierende Regeln) und ist als Lesequelle unbrauchbar; gelesen wird
+  über `POST /api/firewall/filter/searchRule`.
 - API-Key: `~/sense.internal_root_apikey.txt` (`key=`, `secret=`, jetzt
   Modus 600). Werte nur in die Produktions-`.env`, nie ins Repo.
 

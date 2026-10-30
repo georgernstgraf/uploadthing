@@ -48,13 +48,25 @@ only in the operator's head; it is now recorded here (see #132).
 - Der API-Key liegt auf dem Entwicklungsrechner in
   `~/sense.internal_root_apikey.txt` (`key=`, `secret=`, Modus 600).
   Er gehört nur in die Produktions-`.env`, nie ins Repo.
-- **TLS:** Die Sense präsentiert auf der API-Adresse ihr GUI-Zertifikat
-  (Let's Encrypt für `tst.spengergasse.at`, kein SAN für
-  `192.168.21.1`). Deno prüft den Hostnamen immer; die Prüfung lässt
-  sich nur prozessweit und host-beschränkt abschalten. Start daher mit
-  `--unsafely-ignore-certificate-errors=<api-host>` oder — sauberer —
-  `OPNSENSE_API_URL` auf einen Namen zeigen lassen, den das Zertifikat
-  abdeckt (Hosts-Eintrag, Thema von #149).
+- **TLS:** Das Web-GUI-Zertifikat der Sense ist seit 2026-10-30
+  `CN=sense.internal` mit `SAN: DNS:sense.internal, IP:192.168.21.1`,
+  signiert von der internen CA „uploadthing internal CA"
+  (Trust-Store der Sense, 10 Jahre). Die CA liegt als
+  `~/certs/sense-ca.pem` auf dem Dell und wird dem Prozess über
+  `DENO_CERT=/home/georg/certs/sense-ca.pem` bekannt gemacht — Deno
+  prüft TLS vollständig, es gibt **keine** Abschaltung der Prüfung.
+  `OPNSENSE_API_URL=https://sense.internal:8443`; die IP-Adresse ist
+  kein SAN, und `tst.spengergasse.at` zeigt ab #143 auf die App.
+- **`getRule/{uuid}` ist auf 26.7 unbrauchbar** (antwortet `[]`, auch
+  für existierende Regeln). Gelesen wird ausschließlich über
+  `POST /api/firewall/filter/searchRule`; `toggleRule` liefert
+  `{result: "Enabled"|"Disabled", changed: bool}`.
+- **Regel `doku`:** UUID `69c0079a-7b83-4cc2-95b5-78183f4b222b`
+  (`descr=doku`, `action=reject`, LAN → alles außer Alias `DOKU`,
+  erste Regel der LAN-Gruppe, nach Anti-Lockout und DHCP). Sie wurde am
+  2026-10-30 neu angelegt, weil der 26.7-Regelset-Migrationsschritt die
+  Legacy-`<filter>`-Regel nicht übernommen hatte; der alte
+  `<filter>`-Block mit `e3e720e6-…` ist toter Ballast und fällt in #144.
 - **Zustand:** Das Panel liest den Regelzustand bei jedem Rendern. Kein
   Polling, keine Heilung von Drift — Abweichungen werden sichtbar
   gemacht („Examen läuft · Internet frei", Modal mit API-Fehler).
