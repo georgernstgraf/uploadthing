@@ -1,4 +1,4 @@
-Last updated: 2026-10-30 (Epic #141 abgeschlossen — alle Sub-Issues zu).
+Last updated: 2026-10-31 (Hero als Heimweg, #155 — alle Tests grün).
 
 ## Sofort weiter mit
 
@@ -32,6 +32,13 @@ Umbauten — in dieser Reihenfolge:
 
 ## Was in dieser Session passiert ist
 
+- **#155:** Der Hero im Kopf ist ein Link auf `/`. `/whoami` war für
+  Schüler eine Sackgasse — keine Navigation (`nav.hbs` rendert nur für
+  Admins), Anmeldesperre im Examen, also nur noch Browser-URL-Editieren.
+  Boost-Swaps scrollen wieder nach oben (`window.scrollTo`; das alte
+  `#app-main.scrollTo` war seit #154 tot). Abnahme: Endpoint-Tests auf
+  `/` und `/whoami`, E2E-Upload-Flow um Badge → `/whoami` → Hero
+  erweitert. 347 Deno-Tests, 8 E2E-Tests, `check`/`lint` grün.
 - Epic #141 (Exam-Infrastruktur 2026/27) abgeschlossen: #133, #134,
   #142–#149, #135 sowie die im Code-Review gefundenen #151–#154 sind zu.
   #150 (htmx-4-Migration) wurde aus dem Epic gelöst und bleibt für
