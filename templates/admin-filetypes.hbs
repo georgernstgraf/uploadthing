@@ -1,357 +1,339 @@
-<section id="admin-application-card" class="card shadow-sm border-0 mx-auto w-100 col-xxl-11">
-    <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
-        <h2 class="card-title fs-4 mb-2">Admin</h2>
-    </div>
-    <div class="card-body py-3 px-3">
+<section id="admin-application-page" class="w-100">
+    <h2 class="text-center fs-4 mb-2">Admin</h2>
 
-    <div class="vstack gap-3 mx-auto w-100 col-xxl-10">
-        <section class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
-                    <div>
-                        <h3 class="h5 mb-1">Theme</h3>
-                    </div>
-                </div>
+    {{#if success_message}}
+        <div id="admin-success-message"
+             class="alert alert-success mx-auto mb-2">{{success_message}}</div>
+    {{/if}}
 
-                <form action="/admin/theme"
-                      method="post"
-                      class="mx-auto w-100 col-xl-8">
-                    <label class="form-label fw-bold" for="theme">Auswahl</label>
-                    <div class="row g-2 align-items-end">
-                        <div class="col-md-8">
-                            <select id="theme"
-                                    name="theme"
-                                    class="form-select form-select-lg"
-                                    required>
-                                {{#unless current_theme_key}}
-                                    <option value="" selected disabled>Bitte Theme auswählen</option>
-                                {{/unless}}
-                                {{#each available_themes}}
-                                    <option value="{{this.key}}" {{#if (eq this.key ../current_theme_key)}}selected{{/if}}>{{this.label}}</option>
-                                {{/each}}
-                            </select>
+    <div id="admin-groups"
+         class="row g-3 align-items-start">
+        <!-- Gruppe 1: Prüfung -->
+        <section id="admin-group-exam"
+                 class="col-12 col-lg-6 col-xxl-4">
+            <div class="admin-group">
+                <h3 class="admin-group-title">Prüfung</h3>
+
+                {{{exam_panel_html}}}
+
+                <section id="admin-card-abgaben"
+                         class="card border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <h4 class="h6 text-uppercase text-body-secondary mb-2">Abgaben-Verzeichnis</h4>
+                        <div class="d-grid gap-2">
+                            <a href="/admin/download-abgaben"
+                               class="btn btn-primary fw-semibold"
+                               download>
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     width="1em"
+                                     height="1em"
+                                     fill="currentColor"
+                                     class="bi bi-archive me-2"
+                                     viewBox="0 0 16 16">
+                                    <path d="M0 2a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v7.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 2 12.5V5a1 1 0 0 1-1-1zm2 3v7.5A1.5 1.5 0 0 0 4.5 14h9a1.5 1.5 0 0 0 1.5-1.5V5zm13-3H1v2h14zM5 7.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5"/>
+                                </svg>
+                                Abgaben &amp; Datenbank herunterladen (TAR.GZ)
+                            </a>
+                            <button hx-post="/admin/wipe-abgaben"
+                                    hx-confirm="Sind Sie sicher, dass Sie ALLE Abgaben unwiderruflich löschen möchten?"
+                                    hx-target="#wipe-feedback"
+                                    class="btn btn-warning fw-semibold">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     width="1em"
+                                     height="1em"
+                                     fill="currentColor"
+                                     class="bi bi-trash3 me-2"
+                                     viewBox="0 0 16 16">
+                                    <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
+                                </svg>
+                                Abgaben-Verzeichnis leeren
+                            </button>
                         </div>
-                        <div class="col-md-4 d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Theme anwenden</button>
-                        </div>
+                        <div id="wipe-feedback"
+                             class="mt-2"></div>
                     </div>
-                </form>
+                </section>
             </div>
         </section>
 
-        <section class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
-                    <div>
-                        <h3 class="h5 mb-1">Examen und Firewall-Regel</h3>
-                    </div>
-                </div>
-                <div>
-                    {{{exam_panel_html}}}
-                </div>
-            </div>
-        </section>
+        <!-- Gruppe 2: Unterlagen -->
+        <section id="admin-group-unterlagen"
+                 class="col-12 col-lg-6 col-xxl-4">
+            <div class="admin-group">
+                <h3 class="admin-group-title">Unterlagen</h3>
 
-        <section class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
-                    <div>
-                        <h3 class="h5 mb-1">Abgaben-Verzeichnis</h3>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <a href="/admin/download-abgaben" class="btn btn-primary btn-lg fw-bold px-4 py-2 shadow-sm" download>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-archive me-2" viewBox="0 0 16 16">
-                            <path d="M0 2a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v7.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 2 12.5V5a1 1 0 0 1-1-1zm2 3v7.5A1.5 1.5 0 0 0 4.5 14h9a1.5 1.5 0 0 0 1.5-1.5V5zm13-3H1v2h14zM5 7.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5"/>
-                        </svg>
-                        Abgaben &amp; Datenbank herunterladen (TAR.GZ)
-                    </a>
-                    <button hx-post="/admin/wipe-abgaben"
-                            hx-confirm="Sind Sie sicher, dass Sie ALLE Abgaben unwiderruflich löschen möchten?"
-                            hx-target="#wipe-feedback"
-                            class="btn btn-warning btn-lg fw-bold px-4 py-2 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-trash3 me-2" viewBox="0 0 16 16">
-                            <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
-                        </svg>
-                        Abgaben-Verzeichnis leeren
-                    </button>
-                </div>
-                <div id="wipe-feedback" class="mt-3"></div>
-            </div>
-        </section>
-
-        <section class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
-                    <div>
-                        <h3 class="h5 mb-1">Unterlagen (Angaben)</h3>
-                        <div class="text-body-secondary">
+                <section id="admin-card-unterlagen"
+                         class="card border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <h4 class="h6 text-uppercase text-body-secondary mb-1">Unterlagen (Angaben)</h4>
+                        <p class="small text-body-secondary mb-2">
                             Die Dateien liegen flach in <code>UNTERLAGEN_DIR</code> und erscheinen
                             sofort auf der Startseite. Erlaubt:
                             {{#each unterlagen_filetypes}}{{#if @index}}, {{/if}}.{{this}}{{/each}},
                             maximal {{max_upload_mb}} MB.
-                        </div>
-                    </div>
-                </div>
+                        </p>
 
-                <form hx-post="/admin/unterlagen"
-                      hx-target="#app-content"
-                      hx-swap="innerHTML"
-                      hx-encoding="multipart/form-data"
-                      hx-confirm="Unterlage jetzt hochladen? Eine gleichnamige Datei wird nur mit gesetztem Häkchen ersetzt."
-                      class="mx-auto w-100 col-xl-8">
-                    <label class="form-label fw-bold" for="unterlagen_file">Datei</label>
-                    <input id="unterlagen_file"
-                           name="file"
-                           type="file"
-                           class="form-control form-control-lg"
-                           accept="{{unterlagen_accept}}"
-                           required>
-                    <div class="form-check mt-3">
-                        <input class="form-check-input"
-                               type="checkbox"
-                               id="unterlagen_replace"
-                               name="replace_existing"
-                               value="on">
-                        <label class="form-check-label" for="unterlagen_replace">
-                            Vorhandene Datei gleichen Namens ersetzen (wird überschrieben)
-                        </label>
-                    </div>
-                    <div class="form-text mb-3">
-                        Ohne dieses Häkchen wird eine gleichnamige Unterlage nicht angetastet.
-                    </div>
-                    <div class="d-grid">
-                        <button type="submit"
-                                class="btn btn-info btn-lg">
-                            Unterlage hochladen
-                        </button>
-                    </div>
-                </form>
+                        <form hx-post="/admin/unterlagen"
+                              hx-target="#app-content"
+                              hx-swap="innerHTML"
+                              hx-encoding="multipart/form-data"
+                              hx-confirm="Unterlage jetzt hochladen? Eine gleichnamige Datei wird nur mit gesetztem Häkchen ersetzt.">
+                            <label class="form-label fw-bold"
+                                   for="unterlagen_file">Datei</label>
+                            <input id="unterlagen_file"
+                                   name="file"
+                                   type="file"
+                                   class="form-control"
+                                   accept="{{unterlagen_accept}}"
+                                   required>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="unterlagen_replace"
+                                       name="replace_existing"
+                                       value="on">
+                                <label class="form-check-label small"
+                                       for="unterlagen_replace">
+                                    Vorhandene Datei gleichen Namens ersetzen (wird überschrieben)
+                                </label>
+                            </div>
+                            <div class="form-text mb-2">
+                                Ohne dieses Häkchen wird eine gleichnamige Unterlage nicht angetastet.
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit"
+                                        class="btn btn-info fw-semibold">
+                                    Unterlage hochladen
+                                </button>
+                            </div>
+                        </form>
 
-                <div class="mt-4">
-                    <div class="section-heading text-uppercase mb-2">Vorhandene Unterlagen</div>
-                    {{#if unterlagen}}
-                        <div class="table-responsive">
-                            <table class="table align-middle">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Datei</th>
-                                        <th scope="col" class="text-end">Aktion</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {{#each unterlagen}}
-                                        <tr>
-                                            <td class="font-monospace text-break">{{this}}</td>
-                                            <td class="text-end">
-                                                <form hx-post="/admin/unterlagen/delete"
-                                                      hx-target="#app-content"
-                                                      hx-swap="innerHTML"
-                                                      hx-confirm="Unterlage {{this}} wirklich löschen?">
-                                                    <input type="hidden" name="filename" value="{{this}}">
-                                                    <button type="submit"
-                                                            class="btn btn-outline-warning btn-sm">Löschen</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    {{/each}}
-                                </tbody>
-                            </table>
+                        <h4 class="h6 text-uppercase text-body-secondary mt-3 mb-2">Vorhandene Unterlagen</h4>
+                        {{#if unterlagen}}
+                            <div id="unterlagen-list"
+                                 class="list-group list-group-flush">
+                                {{#each unterlagen}}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center gap-2 px-0 py-2">
+                                        <span class="font-monospace small text-break">{{this}}</span>
+                                        <form hx-post="/admin/unterlagen/delete"
+                                              hx-target="#app-content"
+                                              hx-swap="innerHTML"
+                                              hx-confirm="Unterlage {{this}} wirklich löschen?">
+                                            <input type="hidden"
+                                                   name="filename"
+                                                   value="{{this}}">
+                                            <button type="submit"
+                                                    class="btn btn-outline-warning btn-sm flex-shrink-0">Löschen</button>
+                                        </form>
+                                    </div>
+                                {{/each}}
+                            </div>
+                            <div class="d-grid mt-2">
+                                <button hx-post="/admin/unterlagen/delete-all"
+                                        hx-vals='{"confirm_delete_all": "unterlagen-loeschen"}'
+                                        hx-target="#app-content"
+                                        hx-swap="innerHTML"
+                                        hx-confirm="Sind Sie sicher, dass Sie ALLE Unterlagen löschen möchten? Das ist nicht rückgängig zu machen."
+                                        class="btn btn-outline-warning fw-semibold">
+                                    Alle Unterlagen löschen
+                                </button>
+                            </div>
+                        {{else}}
+                            <div class="text-body-secondary small">Es liegen keine Unterlagen bereit.</div>
+                        {{/if}}
+                    </div>
+                </section>
+
+                <section id="admin-card-filetypes"
+                         class="card border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <h4 class="h6 text-uppercase text-body-secondary mb-2">Erlaubte Dateitypen für Abgaben</h4>
+
+                        <form hx-post="/admin/application"
+                              hx-target="#app-content"
+                              hx-swap="innerHTML">
+                            <label class="form-label fw-bold"
+                                   for="permitted_filetypes">Dateiendungen (kommagetrennt)</label>
+                            <input id="permitted_filetypes"
+                                   name="permitted_filetypes"
+                                   type="text"
+                                   class="form-control font-monospace"
+                                   value="{{permitted_filetypes}}"
+                                   placeholder="zip, md, pdf"
+                                   autocomplete="off"
+                                   required>
+                            <div class="form-text mb-2">Punkte sind optional. Beispiel: zip, md, pdf</div>
+                            <div class="d-grid">
+                                <button type="submit"
+                                        class="btn btn-info fw-semibold">Dateitypen speichern</button>
+                            </div>
+                        </form>
+
+                        <div class="mt-3">
+                            <div class="h6 text-uppercase text-body-secondary mb-1">Aktiv</div>
+                            <div class="fs-6 fw-bold font-monospace">
+                                {{#each current_filetypes}}
+                                    {{#if @index}}, {{/if}}.{{this}}
+                                {{/each}}
+                            </div>
                         </div>
-                        <div class="d-grid mt-3">
-                            <button hx-post="/admin/unterlagen/delete-all"
-                                    hx-vals='{"confirm_delete_all": "unterlagen-loeschen"}'
-                                    hx-target="#app-content"
-                                    hx-swap="innerHTML"
-                                    hx-confirm="Sind Sie sicher, dass Sie ALLE Unterlagen löschen möchten? Das ist nicht rückgängig zu machen."
-                                    class="btn btn-warning btn-lg fw-bold">
-                                Alle Unterlagen löschen
-                            </button>
-                        </div>
-                    {{else}}
-                        <div class="text-body-secondary">Es liegen keine Unterlagen bereit.</div>
-                    {{/if}}
-                </div>
+                    </div>
+                </section>
             </div>
         </section>
 
-        <section class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
-                    <div>
-                        <h3 class="h5 mb-1">Erlaubte Dateitypen für Abgaben</h3>
-                    </div>
-                </div>
+        <!-- Gruppe 3: Zugang und System -->
+        <section id="admin-group-zugang"
+                 class="col-12 col-lg-6 col-xxl-4">
+            <div class="admin-group">
+                <h3 class="admin-group-title">Zugang &amp; System</h3>
 
-                <form hx-post="/admin/application"
-                      hx-target="#app-content"
-                      hx-swap="innerHTML"
-                      class="mx-auto w-100 col-xl-8">
-                    <label class="form-label fw-bold" for="permitted_filetypes">Dateiendungen (kommagetrennt)</label>
-                    <input id="permitted_filetypes"
-                           name="permitted_filetypes"
-                           type="text"
-                           class="form-control form-control-lg text-center"
-                           value="{{permitted_filetypes}}"
-                           placeholder="zip, md, pdf"
-                           autocomplete="off"
-                           required>
-                    <div class="form-text text-center mb-3">Punkte sind optional. Beispiel: zip, md, pdf</div>
-                    <div class="d-grid">
-                        <button type="submit"
-                                class="btn btn-info btn-lg">Dateitypen speichern</button>
-                    </div>
-                </form>
-
-                <div class="mt-4 text-center">
-                    <div class="section-heading text-uppercase mb-1">Aktiv</div>
-                    <div class="fs-5 fw-bold">
-                        {{#each current_filetypes}}
-                            {{#if @index}}, {{/if}}.{{this}}
-                        {{/each}}
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
-                    <div>
-                        <h3 class="h5 mb-1">Admin-Freigabe per MAC</h3>
-                        <div class="text-body-secondary">
+                <section id="admin-card-adminmac"
+                         class="card border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <h4 class="h6 text-uppercase text-body-secondary mb-1">Admin-Freigabe per MAC</h4>
+                        <p class="small text-body-secondary mb-2">
                             Lehrpersonen dürfen sich auch von einer IP anmelden, die nicht in
                             <code>ADMIN_IPS</code> steht, wenn ihr Gerät hier freigegeben ist.
                             Die LDAP-Klasse <code>LehrendeR</code> bleibt Voraussetzung — eine
                             freigegebene MAC-Adresse allein macht niemanden zum Admin.
-                        </div>
-                    </div>
-                </div>
+                        </p>
 
-                <form hx-post="/admin/adminmac"
-                      hx-target="#app-content"
-                      hx-swap="innerHTML"
-                      class="mx-auto w-100 col-xl-8">
-                    <label class="form-label fw-bold" for="adminmac_mac">MAC-Adresse</label>
-                    <input id="adminmac_mac"
-                           name="mac"
-                           type="text"
-                           class="form-control form-control-lg text-center font-monospace"
-                           placeholder="aa:bb:cc:dd:ee:ff"
-                           autocomplete="off"
-                           required>
-                    <div class="form-text text-center mb-3">
-                        Doppelpunkte, Bindestriche oder Punkte sind optional; gespeichert wird kleingeschrieben mit Doppelpunkten.
-                    </div>
-                    <label class="form-label fw-bold" for="adminmac_comment">Kommentar</label>
-                    <input id="adminmac_comment"
-                           name="comment"
-                           type="text"
-                           class="form-control form-control-lg"
-                           placeholder="grg-usblan"
-                           autocomplete="off"
-                           required>
-                    <div class="form-text mb-3">Welches Gerät ist gemeint? Der Kommentar erscheint in der Liste.</div>
-                    <div class="d-grid">
-                        <button type="submit"
-                                class="btn btn-info btn-lg">MAC-Adresse freigeben</button>
-                    </div>
-                </form>
+                        <form hx-post="/admin/adminmac"
+                              hx-target="#app-content"
+                              hx-swap="innerHTML">
+                            <label class="form-label fw-bold"
+                                   for="adminmac_mac">MAC-Adresse</label>
+                            <input id="adminmac_mac"
+                                   name="mac"
+                                   type="text"
+                                   class="form-control text-center font-monospace"
+                                   placeholder="aa:bb:cc:dd:ee:ff"
+                                   autocomplete="off"
+                                   required>
+                            <div class="form-text mb-2">
+                                Doppelpunkte, Bindestriche oder Punkte sind optional; gespeichert wird kleingeschrieben mit Doppelpunkten.
+                            </div>
+                            <label class="form-label fw-bold"
+                                   for="adminmac_comment">Kommentar</label>
+                            <input id="adminmac_comment"
+                                   name="comment"
+                                   type="text"
+                                   class="form-control"
+                                   placeholder="grg-usblan"
+                                   autocomplete="off"
+                                   required>
+                            <div class="form-text mb-2">Welches Gerät ist gemeint? Der Kommentar erscheint in der Liste.</div>
+                            <div class="d-grid">
+                                <button type="submit"
+                                        class="btn btn-info fw-semibold">MAC-Adresse freigeben</button>
+                            </div>
+                        </form>
 
-                <div class="mt-4">
-                    <div class="section-heading text-uppercase mb-2">Freigegebene Geräte</div>
-                    {{#if allowed_macs}}
-                        <div class="table-responsive" id="adminmac-allowed-list">
-                            <table class="table align-middle">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">MAC-Adresse</th>
-                                        <th scope="col">Kommentar</th>
-                                        <th scope="col">Angelegt</th>
-                                        <th scope="col" class="text-end">Aktion</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {{#each allowed_macs}}
-                                        <tr>
-                                            <td class="font-monospace">{{this.mac}}</td>
-                                            <td>{{this.comment}}</td>
-                                            <td>{{this.created_at}}</td>
-                                            <td class="text-end">
-                                                <form hx-post="/admin/adminmac/delete"
-                                                      hx-target="#app-content"
-                                                      hx-swap="innerHTML"
-                                                      hx-confirm="MAC-Adresse {{this.mac}} wirklich entfernen?">
-                                                    <input type="hidden" name="mac" value="{{this.mac}}">
-                                                    <button type="submit"
-                                                            class="btn btn-outline-warning btn-sm">Entfernen</button>
-                                                </form>
-                                            </td>
-                                        </tr>
+                        <h4 class="h6 text-uppercase text-body-secondary mt-3 mb-2">Freigegebene Geräte</h4>
+                        {{#if allowed_macs}}
+                            <div id="adminmac-allowed-list"
+                                 class="list-group list-group-flush">
+                                {{#each allowed_macs}}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center gap-2 px-0 py-2">
+                                        <div class="overflow-hidden">
+                                            <div class="font-monospace small text-truncate">{{this.mac}}</div>
+                                            <div class="small text-body-secondary text-truncate">{{this.comment}}</div>
+                                            <div class="form-text">{{this.created_at}}</div>
+                                        </div>
+                                        <form hx-post="/admin/adminmac/delete"
+                                              hx-target="#app-content"
+                                              hx-swap="innerHTML"
+                                              hx-confirm="MAC-Adresse {{this.mac}} wirklich entfernen?">
+                                            <input type="hidden"
+                                                   name="mac"
+                                                   value="{{this.mac}}">
+                                            <button type="submit"
+                                                    class="btn btn-outline-warning btn-sm flex-shrink-0">Entfernen</button>
+                                        </form>
+                                    </div>
+                                {{/each}}
+                            </div>
+                        {{else}}
+                            <div class="text-body-secondary small">Keine MAC-Adresse freigegeben.</div>
+                        {{/if}}
+
+                        <div class="mt-3">
+                            <div class="h6 text-uppercase text-body-secondary mb-1">Aus der Konfiguration (<code>ADMIN_MACS</code>)</div>
+                            {{#if env_admin_macs}}
+                                <div class="d-flex flex-wrap gap-1">
+                                    {{#each env_admin_macs}}
+                                        <span class="badge text-bg-secondary font-monospace">{{this}}</span>
                                     {{/each}}
-                                </tbody>
-                            </table>
+                                </div>
+                                <div class="form-text">
+                                    Übergangslösung: Diese Einträge stehen in der <code>.env</code> und lassen sich hier nicht entfernen.
+                                </div>
+                            {{else}}
+                                <div class="text-body-secondary small">Keine Freigabe über <code>ADMIN_MACS</code>.</div>
+                            {{/if}}
                         </div>
-                    {{else}}
-                        <div class="text-body-secondary">Keine MAC-Adresse freigegeben.</div>
-                    {{/if}}
-                </div>
+                    </div>
+                </section>
 
-                <div class="mt-3 text-center">
-                    <div class="section-heading text-uppercase mb-1">Aus der Konfiguration (<code>ADMIN_MACS</code>)</div>
-                    {{#if env_admin_macs}}
-                        <div class="d-flex flex-wrap justify-content-center gap-2">
-                            {{#each env_admin_macs}}
-                                <span class="badge text-bg-secondary font-monospace">{{this}}</span>
-                            {{/each}}
-                        </div>
-                        <div class="form-text">
-                            Übergangslösung: Diese Einträge stehen in der <code>.env</code> und lassen sich hier nicht entfernen.
-                        </div>
-                    {{else}}
-                        <div class="text-body-secondary">Keine Freigabe über <code>ADMIN_MACS</code>.</div>
-                    {{/if}}
-                </div>
+                <section id="admin-card-theme"
+                         class="card border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <h4 class="h6 text-uppercase text-body-secondary mb-2">Theme</h4>
+
+                        <form action="/admin/theme"
+                              method="post">
+                            <label class="form-label fw-bold"
+                                   for="theme">Auswahl</label>
+                            <div class="input-group">
+                                <select id="theme"
+                                        name="theme"
+                                        class="form-select"
+                                        required>
+                                    {{#unless current_theme_key}}
+                                        <option value=""
+                                                selected
+                                                disabled>Bitte Theme auswählen</option>
+                                    {{/unless}}
+                                    {{#each available_themes}}
+                                        <option value="{{this.key}}" {{#if (eq this.key ../current_theme_key)}}selected{{/if}}>{{this.label}}</option>
+                                    {{/each}}
+                                </select>
+                                <button type="submit"
+                                        class="btn btn-primary fw-semibold">Anwenden</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <section id="admin-card-cleanup"
+                         class="card border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <h4 class="h6 text-uppercase text-body-secondary mb-1">Datenbank bereinigen</h4>
+                        <p class="small text-body-secondary mb-2">
+                            Löscht alte Einträge aus Cookies, Registrierungen, IP-Logs und Abgaben, wenn sie älter als ein Monat sind.
+                        </p>
+
+                        <form id="cleanup-database-form"
+                              hx-post="/admin/cleanup-database"
+                              hx-target="#app-content"
+                              hx-swap="innerHTML"
+                              hx-confirm="Möchten Sie wirklich alle Datenbankeinträge löschen, die älter als ein Monat sind?">
+                            <input type="hidden"
+                                   name="confirm_cleanup"
+                                   value="cleanup-db">
+                            <div class="d-grid">
+                                <button type="submit"
+                                        class="btn btn-secondary fw-semibold">Datenbank bereinigen</button>
+                            </div>
+                        </form>
+
+                        {{#if cleanup_result_html}}
+                            <div class="mt-2">{{{cleanup_result_html}}}</div>
+                        {{/if}}
+                    </div>
+                </section>
             </div>
         </section>
-
-        <section class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
-                    <div>
-                        <h3 class="h5 mb-1">Datenbank bereinigen</h3>
-                    </div>
-                </div>
-
-                <form id="cleanup-database-form"
-                      hx-post="/admin/cleanup-database"
-                      hx-target="#app-content"
-                      hx-swap="innerHTML"
-                      hx-confirm="Möchten Sie wirklich alle Datenbankeinträge löschen, die älter als ein Monat sind?"
-                      class="mx-auto w-100 col-xl-8">
-                    <input type="hidden"
-                           name="confirm_cleanup"
-                           value="cleanup-db">
-                    <div class="text-center text-body-secondary mb-3">
-                        Löscht alte Einträge aus Cookies, Registrierungen, IP-Logs und Abgaben, wenn sie älter als ein Monat sind.
-                    </div>
-                    <div class="d-grid">
-                        <button type="submit"
-                                class="btn btn-secondary btn-lg">Datenbank bereinigen</button>
-                    </div>
-                </form>
-
-                {{#if cleanup_result_html}}
-                    <div class="mt-3">
-                        {{{cleanup_result_html}}}
-                    </div>
-                {{/if}}
-            </div>
-        </section>
-    </div>
-
-    {{#if success_message}}
-        <div class="alert alert-success mx-auto mt-3 mb-0 w-100 col-xxl-10">{{success_message}}</div>
-    {{/if}}
     </div>
 </section>

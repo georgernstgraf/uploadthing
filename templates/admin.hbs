@@ -1,80 +1,70 @@
 <div x-data="endTimeToggle()"
      x-init="init()">
     <section id="admin-time-filter"
-             class="card shadow-sm border-0 mb-2 mx-auto w-100 col-xxl-10">
-        <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
-            <h2 class="card-title mb-0 fs-4">Zeitauswahl</h2>
-        </div>
-        <div class="card-body py-3">
+             class="card shadow-sm border-0 mb-2 w-100">
+        <h2 class="visually-hidden">Zeitauswahl</h2>
+        <div class="card-body py-2 px-3">
             <form hx-get="/admin/students"
                   hx-target="#app-content"
                   hx-push-url="true"
-                  class="container text-center"
+                  class="row g-2 align-items-end"
                   @submit="handleSubmit">
                 <datalist id="spg_times_list">
                     {{#each spg_times}}
                         <option value="{{this}}"></option>
                     {{/each}}
                 </datalist>
-                <div class="row mt-1 g-2 align-items-center">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold text-uppercase small"> Startzeit <input type="text"
-                                    name="starttime"
-                                    class="form-control form-control-sm text-center"
-                                    id="admin-start-time"
-                                    list="spg_times_list"
-                                    value="{{starttime}}">
-                        </label>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold text-uppercase small"> Startdatum <input type="date"
-                                   name="startdate"
-                                   class="form-control form-control-sm text-center"
-                                   value="{{startdate}}">
-                        </label>
-                    </div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col text-center">
-                        <div
-                             class="form-check form-switch d-inline-flex align-items-center gap-2 p-2 fs-5 bg-body-tertiary border border-2 rounded-4">
-                            <input class="form-check-input m-0"
-                                    type="checkbox"
-                                    id="admin-endtime-toggle"
-                                    x-model="showEndTime"
-                                    @change="savePreference()">
-                            <label class="form-check-label fw-bold m-0"
-                                   for="admin-endtime-toggle">Endzeit festlegen</label>
-                        </div>
+                <div class="col-12 col-sm-auto">
+                    <label class="form-label small fw-bold text-uppercase mb-1"
+                           for="admin-start-time">Start</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text"
+                               name="starttime"
+                               class="form-control text-center"
+                               id="admin-start-time"
+                               list="spg_times_list"
+                               value="{{starttime}}"
+                               autocomplete="off">
+                        <input type="date"
+                               name="startdate"
+                               class="form-control"
+                               value="{{startdate}}">
                     </div>
                 </div>
-                <div class="row mt-2 g-2 align-items-center"
+                <div class="col-12 col-sm-auto">
+                    <div class="form-check form-switch d-flex align-items-center gap-2 mb-0 py-1">
+                        <input class="form-check-input m-0"
+                               type="checkbox"
+                               id="admin-endtime-toggle"
+                               x-model="showEndTime"
+                               @change="savePreference()">
+                        <label class="form-check-label small fw-bold text-uppercase text-nowrap"
+                               for="admin-endtime-toggle">Endzeit festlegen</label>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-auto"
                      x-show="showEndTime"
                      x-transition
                      x-cloak>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold text-uppercase small"> Endzeit <input type="text"
-                                    name="endtime"
-                                    class="form-control form-control-sm text-center"
-                                    id="admin-end-time"
-                                    list="spg_times_list"
-                                    value="{{endtime}}">
-                        </label>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold text-uppercase small"> Enddatum <input type="date"
-                                   name="enddate"
-                                   class="form-control form-control-sm text-center"
-                                   value="{{enddate}}">
-                        </label>
+                    <label class="form-label small fw-bold text-uppercase mb-1"
+                           for="admin-end-time">Ende</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text"
+                               name="endtime"
+                               class="form-control text-center"
+                               id="admin-end-time"
+                               list="spg_times_list"
+                               value="{{endtime}}"
+                               autocomplete="off">
+                        <input type="date"
+                               name="enddate"
+                               class="form-control"
+                               value="{{enddate}}">
                     </div>
                 </div>
-                <div class="row mt-2">
-                    <div class="col">
-                        <input type="submit"
-                               class="btn btn-info btn-lg w-100 py-1"
-                               value="Suchen">
-                    </div>
+                <div class="col-12 col-sm-auto ms-sm-auto">
+                    <button type="submit"
+                            class="btn btn-info w-100 fw-semibold">Suchen</button>
                 </div>
             </form>
         </div>

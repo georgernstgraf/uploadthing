@@ -1,7 +1,7 @@
 /**
  * Playwright-Smoke-Suite für die examkritischen Browser-Flows (#135).
  *
- * Sechs Tests, ausschließlich nutzersichtbares Verhalten — keine
+ * Neun Tests, ausschließlich nutzersichtbares Verhalten — keine
  * htmx-Event-Interna. Damit ist die Suite auch die Abnahme für die
  * htmx-4-Migration (#150). Selektoren: nur stabile `id`s aus den
  * Templates, keine Text- oder CSS-Selektoren.
@@ -574,6 +574,66 @@ Deno.test({
                 assert(
                     result.includes("Datenbank bereinigt."),
                     `Ergebnis der Bereinigung erwartet, war: "${result}"`,
+                );
+            } finally {
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Admin-Seite steht ab xxl dreispaltig, ab lg zweispaltig (#157)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, TEACHER.email);
+            const groups = [
+                "#admin-group-exam",
+                "#admin-group-unterlagen",
+                "#admin-group-zugang",
+            ];
+
+            /** Position der drei Gruppen; `null` heißt "nicht sichtbar". */
+            async function columnPositions() {
+                const xs: number[] = [];
+                const ys: number[] = [];
+                for (const selector of groups) {
+                    const box = await page.locator(selector).boundingBox();
+                    assert(box !== null, `Gruppe ${selector} ist nicht sichtbar`);
+                    xs.push(box.x);
+                    ys.push(box.y);
+                }
+                return { xs, ys };
+            }
+
+            try {
+                // Drei Spalten ab xxl (1400 px): eine Zeile, steigendes x.
+                await page.setViewportSize({ width: 1600, height: 900 });
+                await page.goto("/admin/application");
+                await page.waitForSelector("#admin-group-exam");
+
+                const wide = await columnPositions();
+                assert(
+                    Math.max(...wide.ys) - Math.min(...wide.ys) <= 2,
+                    `Bei 1600 px müssen alle drei Gruppen in einer Zeile stehen, y war ${wide.ys.join(", ")}`,
+                );
+                assert(
+                    wide.xs[0] < wide.xs[1] && wide.xs[1] < wide.xs[2],
+                    `Bei 1600 px müssen die Gruppen nebeneinander stehen, x war ${wide.xs.join(", ")}`,
+                );
+
+                // Zwei Spalten ab lg (992 px): die dritte Gruppe bricht um.
+                await page.setViewportSize({ width: 1000, height: 900 });
+                const narrow = await columnPositions();
+                assert(
+                    Math.abs(narrow.ys[0] - narrow.ys[1]) <= 2,
+                    `Bei 1000 px müssen zwei Gruppen nebeneinander stehen, y war ${narrow.ys.join(", ")}`,
+                );
+                assert(
+                    narrow.ys[2] > narrow.ys[0],
+                    `Bei 1000 px muss die dritte Gruppe umbrechen, y war ${narrow.ys.join(", ")}`,
                 );
             } finally {
                 await context.close();

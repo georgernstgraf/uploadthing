@@ -26,7 +26,7 @@
     <div class="form-text text-center mt-2">Ganzzahl zwischen 1 und 600 Minuten.</div>
 </form>
 {{/inline}}
-<div id="exam-admin-panel" class="mx-auto w-100 col-xl-8 vstack gap-3">
+<div id="exam-admin-panel" class="vstack gap-2">
     {{#if exam_running}}
         {{#if (eq firewall_state "frei")}}
             <div id="exam-firewall-warning"
@@ -39,8 +39,8 @@
     {{/if}}
 
     <div class="card shadow-sm">
-        <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
-            <h3 class="card-title fw-bold fs-5 mb-1">Examen-Steuerung</h3>
+        <div class="card-header bg-transparent border-0 text-center pt-3 pb-0">
+            <h4 class="card-title fw-bold fs-5 mb-1">Examen-Steuerung</h4>
             <p class="card-text small mb-0">Prüfungsdauer, Zusatzzeit und Pausensteuerung für den laufenden Durchgang.</p>
         </div>
         <div class="card-body d-flex flex-column align-items-center text-center gap-3 pt-3">
@@ -65,14 +65,14 @@
                 <div class="d-flex justify-content-center gap-2 flex-wrap">
                     <button id="exam-pause-button"
                             type="button"
-                            class="btn btn-warning btn-lg"
+                            class="btn btn-warning fw-semibold"
                             hx-post="/api/exam/pause"
                             hx-target="#exam-admin-panel"
                             hx-swap="outerHTML"
                             hx-disabled-elt="this">Pause</button>
                     <button id="exam-stop-button"
                             type="button"
-                            class="btn btn-danger btn-lg"
+                            class="btn btn-danger fw-semibold"
                             hx-post="/api/exam/stop"
                             hx-target="#exam-admin-panel"
                             hx-swap="outerHTML"
@@ -84,14 +84,14 @@
                 <div class="d-flex justify-content-center gap-2 flex-wrap">
                     <button id="exam-resume-button"
                             type="button"
-                            class="btn btn-success btn-lg"
+                            class="btn btn-success fw-semibold"
                             hx-post="/api/exam/resume"
                             hx-target="#exam-admin-panel"
                             hx-swap="outerHTML"
                             hx-disabled-elt="this">Fortsetzen</button>
                     <button id="exam-stop-button"
                             type="button"
-                            class="btn btn-danger btn-lg"
+                            class="btn btn-danger fw-semibold"
                             hx-post="/api/exam/stop"
                             hx-target="#exam-admin-panel"
                             hx-swap="outerHTML"
@@ -112,7 +112,7 @@
                             <input id="exam-duration-minutes"
                                    name="minutes"
                                    type="number"
-                                   class="form-control form-control-lg text-center"
+                                   class="form-control text-center"
                                    min="1"
                                    max="600"
                                    step="1"
@@ -121,7 +121,7 @@
                         </div>
                         <div class="col-md-4 d-grid">
                             <button type="submit"
-                                    class="btn btn-primary btn-lg">Examen starten</button>
+                                    class="btn btn-primary fw-semibold">Examen starten</button>
                         </div>
                     </div>
                     <div class="form-text text-center mt-2">Ganzzahl zwischen 1 und 600 Minuten. Nach dem Start sind Uploads und Unterlagen freigegeben.</div>
@@ -139,8 +139,8 @@
           {{#if exam_running}}{{#if (eq firewall_state "gesperrt")}}hx-confirm="Examen läuft — Internet wirklich freigeben?"{{/if}}{{/if}}
           class="w-100">
         <div class="card shadow-sm {{#if (eq firewall_state "frei")}}border-success-subtle bg-success-subtle{{else if (eq firewall_state "gesperrt")}}border-danger-subtle bg-danger-subtle{{else if (eq firewall_state "unbekannt")}}border-warning-subtle bg-warning-subtle{{else}}border-secondary-subtle{{/if}}">
-            <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
-                <h3 class="card-title fw-bold fs-5 mb-1">Dokumentationsserver-Firewall-Regel</h3>
+            <div class="card-header bg-transparent border-0 text-center pt-3 pb-0">
+                <h4 class="card-title fw-bold fs-5 mb-1">Dokumentationsserver-Firewall-Regel</h4>
                 <p class="card-text small mb-0">Schaltet den Internetzugang für die Prüfungsumgebung während des Betriebs um.</p>
             </div>
             <div class="card-body d-flex flex-column align-items-center text-center gap-3 pt-3">
@@ -149,8 +149,7 @@
                            name="internet_active"
                            type="checkbox"
                            role="switch"
-                           class="form-check-input mt-0 {{#if (eq firewall_state "frei")}}bg-success border-success{{else if (eq firewall_state "gesperrt")}}bg-danger border-danger{{/if}}"
-                           style="width: 3.5rem; height: 1.75rem;"
+                           class="form-check-input exam-firewall-switch mt-0 {{#if (eq firewall_state "frei")}}bg-success border-success{{else if (eq firewall_state "gesperrt")}}bg-danger border-danger{{/if}}"
                            {{#if (eq firewall_state "frei")}}checked{{/if}}
                            {{#if (or (eq firewall_state "unbekannt") (eq firewall_state "nicht-konfiguriert"))}}disabled{{/if}}>
                 </div>

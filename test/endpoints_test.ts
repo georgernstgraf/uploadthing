@@ -440,7 +440,32 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(settingsHtml.includes("exam-firewall-modal-data"), true);
     assertEquals(settingsHtml.includes("Abgaben &amp; Datenbank herunterladen (TAR.GZ)"), true);
     assertEquals(settingsHtml.includes("Abgaben-Verzeichnis leeren"), true);
-    assertEquals(settingsHtml.includes("Theme anwenden"), true);
+    // Admin-Dashboard (#157): drei thematische Gruppen, je Gruppe eigene Karten.
+    for (const group of ["exam", "unterlagen", "zugang"]) {
+        assertEquals(
+            settingsHtml.includes(`id="admin-group-${group}"`),
+            true,
+            `Gruppe ${group} fehlt`,
+        );
+    }
+    for (
+        const card of [
+            "abgaben",
+            "unterlagen",
+            "filetypes",
+            "adminmac",
+            "theme",
+            "cleanup",
+        ]
+    ) {
+        assertEquals(
+            settingsHtml.includes(`id="admin-card-${card}"`),
+            true,
+            `Karte ${card} fehlt`,
+        );
+    }
+    assertEquals(settingsHtml.includes('id="exam-admin-panel"'), true);
+    assertEquals(settingsHtml.includes(">Anwenden<"), true);
     assertEquals(settingsHtml.includes(">Alien<"), true);
     assertEquals(settingsHtml.includes(">Crocus<"), true);
 
@@ -467,6 +492,16 @@ Deno.test("Admin navigation and live file type updates", async () => {
     assertEquals(adminRes.status, 200);
     assertEquals(adminHtml.includes("Abgaben &amp; Datenbank herunterladen (TAR.GZ)"), false);
     assertEquals(adminHtml.includes("Abgaben-Verzeichnis leeren"), false);
+    // Der Zeitfilter ist eine Zeile (#157); die Feldnamen sind der
+    // Vertrag mit `hx-include` in admin-report.hbs.
+    assertEquals(adminHtml.includes('id="admin-time-filter"'), true);
+    for (const field of ["startdate", "starttime", "enddate", "endtime"]) {
+        assertEquals(
+            adminHtml.includes(`name="${field}"`),
+            true,
+            `Zeitfilter-Feld ${field} fehlt`,
+        );
+    }
     // Tik-Polling-Panel (#145): im Testlauf ohne TIK_* klar als nicht
     // konfiguriert erkennbar, nicht als leeres WLAN.
     assertEquals(adminHtml.includes("MikroTik nicht konfiguriert"), true);
@@ -526,6 +561,13 @@ Deno.test("Admin navigation and live file type updates", async () => {
     const updateHtml = await updateRes.text();
     assertEquals(updateRes.status, 200);
     assertEquals(updateHtml.includes(".pdf"), true);
+    // Die Erfolgsmeldung steht über dem Raster (#157): nach dem Swap
+    // scrollt die Seite nach oben, unten wäre sie ungesehen.
+    assert(
+        updateHtml.indexOf("Erlaubte Dateitypen aktualisiert") <
+            updateHtml.indexOf('id="admin-groups"'),
+        "Die Erfolgsmeldung muss über dem Admin-Raster stehen",
+    );
 
     // Abgabe-Seite nur mit laufendem Examen vollständig prüfbar (#146:
     // Formular liegt auf der Startseite).

@@ -80,6 +80,32 @@ body > header {
     max-width: 100%;
 }
 
+/*
+ * Admin-Dashboard (#157): die Verwaltungsseite ist in thematische
+ * Gruppen aufgeteilt, die ab `lg` in zwei und ab `xxl` in drei Spalten
+ * nebeneinander stehen. Die Gruppen selbst stapeln ihre Karten.
+ */
+.admin-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.admin-group-title {
+    margin-bottom: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+
+/* Breiter Schalter im Examen-Panel; die Größe stand früher inline. */
+.exam-firewall-switch {
+    width: 3.5rem;
+    height: 1.75rem;
+}
+
 /* Der Hintergrund liegt fest hinter dem scrollenden Inhalt. */
 body::before {
     content: "";
