@@ -253,7 +253,9 @@ only in the operator's head; it is now recorded here (see #132).
   `Deno.exit(0)`. Der Watchdog (10 s) und `TimeoutStopSec=20` im
   Unit-File sind nur Rückfallebenen — im Journal darf **kein** „State
   'stop-sigterm' timed out" mehr auftauchen. Ein zweites Signal beendet
-  sofort.
+  sofort. Gemessen am 2026-10-31 auf dem Dell: 0,04 s. Warnung: der
+  *alte* Prozess hat noch den alten Handler — beim ersten Restart nach
+  einem Deploy dieser Änderung dauert der Stopp weiterhin 20 s.
 - Public DNS für `tst.spengergasse.at` zeigt weiter auf `kik` (nötig für
   ACME HTTP-01); im Prüfungsnetz löst **Unbound** auf der Sense den Namen
   auf `192.168.21.2` auf (siehe Abschnitt „DNS und Hostnamen").
