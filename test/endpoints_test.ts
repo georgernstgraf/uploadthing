@@ -169,6 +169,28 @@ Deno.test("Startseite: Angaben, Doku und Anmeldung auf einer Seite (#146)", asyn
     // Anonyme sehen keine Navigation, nur die Anmeldung.
     assertEquals(html.includes('id="main-nav"'), false);
     assertEquals(html.includes("Abmelden"), false);
+
+    // Der Hero ist der globale Heimweg — auch ohne Navigation.
+    assert(
+        /<a id="hero-link"[^>]*href="\/"/.test(html),
+        "Der Hero muss ein Link auf / sein",
+    );
+});
+
+Deno.test("Aus /whoami führt der Hero zurück zur Startseite (#146)", async () => {
+    const res = await fetch(`${BASE_URL}/whoami`);
+    assertEquals(res.status, 200);
+    const html = await res.text();
+
+    // Die Seite selbst ist die Anmeldung ...
+    assertEquals(html.includes('id="login-form"'), true);
+    // ... und der Hero im Kopf ist der Weg zurück auf die Startseite.
+    // Schüler haben keine Navigation, während des Examens ist das die
+    // einzige Möglichkeit, wieder zum Abgabe-Panel zu kommen.
+    assert(
+        /<a id="hero-link"[^>]*href="\/"/.test(html),
+        "Der Hero muss auf /whoami ein Link auf / sein",
+    );
 });
 
 Deno.test("Schüler sieht Angaben und Abgabe ohne Navigation (#146)", async () => {
@@ -206,6 +228,11 @@ Deno.test("Schüler sieht Angaben und Abgabe ohne Navigation (#146)", async () =
         assertEquals(html.includes("Abgabe hochladen"), true);
         // Angaben bleiben auch nach der Anmeldung sichtbar.
         assertEquals(html.includes('id="angaben-list"'), true);
+        // Ohne Navigation ist der Hero der einzige Heimweg.
+        assert(
+            /<a id="hero-link"[^>]*href="\/"/.test(html),
+            "Der Hero muss auch im Examen ein Link auf / sein",
+        );
     } finally {
         clearExamState();
         await clearForensicsByUserEmail(studentEmail);

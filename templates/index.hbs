@@ -71,11 +71,10 @@
 
         document.addEventListener('htmx:afterSwap', function(evt) {
             if (evt.detail.target && evt.detail.target.id === 'app-content') {
-                // Scroll the internal scroll container instead of window
-                const appMain = document.getElementById('app-main');
-                if (appMain) {
-                    appMain.scrollTo({ top: 0, behavior: 'auto' });
-                }
+                // Das Dokument scrollt als Ganzes (#154): #app-main ist kein
+                // eigener Scrollcontainer mehr. Ohne das landet man nach
+                // einem Boost-Klick (z. B. auf den Hero) mitten auf der Seite.
+                window.scrollTo({ top: 0, behavior: 'auto' });
                 // Initialize Alpine.js on new content
                 if (window.Alpine && evt.detail.target) {
                     Alpine.initTree(evt.detail.target);
@@ -146,7 +145,14 @@
                         tabindex="-1"
                         class="btn btn-sm btn-outline-secondary rounded-3 px-3 invisible pe-none"
                         disabled> Dunkel </button>
-                <h1 class="mb-0 text-center text-body flex-grow-1 fs-2">{{hero_url}}</h1>
+                <h1 class="mb-0 text-center text-body flex-grow-1 fs-2">
+                    <a id="hero-link"
+                       href="/"
+                       hx-boost="true"
+                       hx-target="#app-content"
+                       class="text-reset text-decoration-none d-block"
+                       aria-label="Zur Startseite — Angabe und Abgabe">{{hero_url}}</a>
+                </h1>
                 <button id="theme-toggle"
                         type="button"
                         aria-label="Hell-Dunkel-Modus wechseln"

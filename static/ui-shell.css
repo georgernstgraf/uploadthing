@@ -30,6 +30,16 @@ body > header {
     z-index: 1030;
 }
 
+/*
+ * Der Hero ist der globale Heimweg — auch für Schüler, die keine
+ * Navigation haben. Er bleibt Text, wird aber als Link erkennbar.
+ */
+#hero-link:hover,
+#hero-link:focus-visible {
+    text-decoration: underline !important;
+    text-underline-offset: 0.15em;
+}
+
 #user-badge-panel {
     width: 100%;
 }

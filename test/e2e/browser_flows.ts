@@ -206,6 +206,18 @@ Deno.test({
                 await page.goto("/");
                 await page.waitForSelector("#abgabe-form");
 
+                // Sackgassen-Probe: /whoami ist ohne Navigation erreichbar.
+                // Der Hero im Kopf muss zurück auf die Startseite führen,
+                // sonst kommt ein Schüler im Examen nicht mehr zum
+                // Abgabe-Panel.
+                await page.click("#user-badge-panel a");
+                await page.waitForSelector("#login-form");
+                assertEquals(page.url(), `${BASE_URL}/whoami`);
+
+                await page.click("#hero-link");
+                await page.waitForSelector("#abgabe-form");
+                assertEquals(page.url(), `${BASE_URL}/`);
+
                 await page.setInputFiles("#abgabe-file-input", {
                     name: UPLOAD_FILENAME,
                     mimeType: "application/zip",

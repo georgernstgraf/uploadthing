@@ -23,8 +23,8 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **IP-/MAC-Präsenz** per Tik-REST im App-Prozess (`service/tik.ts`);
   MikroTik-Konto `uploadthing`, strikt auf `192.168.21.2/32`, nur
   `monitoring-rest`.
-- **Tests**: 336 Deno-Tests (~5 s) plus sechs Playwright-Smoke-Tests in
-  `deno task e2e` (~9 s, Chromium, eigene Wegwerf-DB auf Port 8099).
+- **Tests**: 347 Deno-Tests (~5 s) plus acht Playwright-Smoke-Tests in
+  `deno task e2e` (~11 s, Chromium, eigene Wegwerf-DB auf Port 8099).
 
 ## Erledigt am 2026-10-30 (Abschlusssession)
 
@@ -47,6 +47,17 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **#151:** gefunden von der E2E-Suite und gleich behoben —
   `hx-disabled-elt="this"` war an Formular-Submits wirkungslos; jetzt
   `hx-disabled-elt="find button[type='submit']"` am Formular.
+
+## Erledigt am 2026-10-31 (Hero als Heimweg, #155)
+
+- **`/whoami` war eine Sackgasse.** Schüler haben keine Navigation, und
+  im Examen ist die Neuanmeldung gesperrt — wer über die Namenskarte
+  dorthin kam, musste die Browser-URL editieren. Der Hero im Kopf ist
+  jetzt ein Link auf `/` (`#hero-link`, `hx-boost` → `#app-content`,
+  echtes `href` als Fallback). Details in `DECISIONS.md`.
+- Boost-Navigation scrollt wieder nach oben: der afterSwap-Handler ruft
+  `window.scrollTo({ top: 0 })` statt des seit #154 toten
+  `#app-main.scrollTo(...)`.
 
 ## Erledigt am 2026-10-31 (Code-Review-Funde)
 

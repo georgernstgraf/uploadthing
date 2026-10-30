@@ -1,5 +1,30 @@
 # DECISIONS
 
+## 2026-10-31: Der Hero ist der Heimweg — auch ohne Navigation (#155)
+
+- **Problem:** `/whoami` (Namenskarte „Angemeldet als … · Ändern") ist
+  auch für Schüler erreichbar, die keine Navigation haben (`nav.hbs`
+  rendert nur für `is_admin`). Während des Examens ist die Anmeldung
+  gesperrt, ein Klick auf den eigenen Namen wird abgelehnt — der Schüler
+  kam nur mehr durch Editieren der Browser-URL zum Abgabe-Panel zurück.
+- **Der Hero im Kopf ist jetzt ein Link auf `/`** (`#hero-link`,
+  `hx-boost` mit Ziel `#app-content`, echtes `href="/"` als Fallback ohne
+  JavaScript). Er gilt für alle Rollen; für Admins ist es der zweite Weg
+  neben der Navigation, für Schüler der einzige.
+- **Kein zweiter Heimweg in `/whoami`.** Bewusst *nur* der Hero: eine
+  zusätzliche Schaltfläche im Panel wäre eine weitere Stelle, die man
+  pflegen muss, und der Kopf ist auf jeder Seite sichtbar. Das Suchfeld
+  bleibt im Examen stehen, damit Lehrpersonen sich weiterhin anmelden
+  können.
+- **Boost-Navigation scrollt nach oben.** Seit #154 scrollt das Dokument
+  als Ganzes; `#app-main` ist kein Scrollcontainer mehr. Der
+  afterSwap-Handler ruft deshalb `window.scrollTo({ top: 0 })` statt
+  `#app-main.scrollTo(...)` — sonst landet man nach einem Klick auf den
+  sticky Kopf mitten auf der Seite.
+- **Abnahme:** Endpoint-Test (Hero-Link auf `/` und `/whoami`) plus
+  Erweiterung des E2E-Upload-Flows: Badge → `/whoami` → Hero →
+  `#abgabe-form` wieder sichtbar, URL `/`.
+
 ## 2026-10-30: Eine Schülerseite — Anmeldung und Abgabe auf `/` (#146)
 
 - **Eine Seite, kein Navigationsbutton.** `/` zeigt links die Angaben
@@ -38,7 +63,7 @@
   wird. Nur der klassische (Nicht-HTMX-)POST bekommt die Erfolgsdaten
   als Alert im Panel — es gibt keine eigene Erfolgsseite mehr.
 - **Stabile IDs für die Playwright-Suite:** `#abgabe-form`,
-  `#angaben-list`, `#login-form`, `#exam-countdown`.
+  `#angaben-list`, `#login-form`, `#exam-countdown`, `#hero-link`.
 
 ## 2026-10-30: Admin-Freigabe per MAC neben der LDAP-Klasse (#147)
 
