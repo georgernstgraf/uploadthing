@@ -17,7 +17,7 @@
 
 import { assert, assertEquals } from "@std/assert";
 import { chromium } from "playwright-core";
-import type { Browser } from "playwright-core";
+import type { Browser, Locator } from "playwright-core";
 import { Buffer } from "node:buffer";
 import {
     baseUrl,
@@ -96,6 +96,21 @@ async function withBrowser(fn: (browser: Browser) => Promise<void>): Promise<voi
     } finally {
         await browser.close();
     }
+}
+
+/**
+ * Wartet, bis ein Element deaktiviert ist. HTMX setzt `disabled` erst
+ * kurz nach dem Absenden — für Nutzer ist das der sichtbare Zustand
+ * "Button nicht mehr klickbar", kein HTMX-Internum.
+ */
+async function waitForDisabled(locator: Locator): Promise<boolean> {
+    for (let attempt = 0; attempt < 40; attempt++) {
+        if (await locator.isDisabled()) {
+            return true;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return false;
 }
 
 /** Öffnet eine Seite mit der Sitzung des Fixture-Benutzers. */
@@ -195,7 +210,19 @@ Deno.test({
                     mimeType: "application/zip",
                     buffer: Buffer.from(ZIP_BYTES),
                 });
+
+                // `hx-post` hängt am <form>, deaktiviert wird der
+                // Submit-Button — der Doppelklick-Schutz der Abgabe (#151).
+                await page.route("**/upload", async (route) => {
+                    await new Promise((resolve) => setTimeout(resolve, 800));
+                    await route.continue();
+                });
+
                 await page.click("#abgabe-submit");
+                assert(
+                    await waitForDisabled(page.locator("#abgabe-submit")),
+                    "Während des Uploads muss der Abgabe-Button deaktiviert sein",
+                );
 
                 await page.waitForSelector("#toast-dialog");
                 const message = (await page.textContent("#toast-dialog-message")) ?? "";
@@ -222,6 +249,7 @@ Deno.test({
                 assertEquals(page.url(), `${BASE_URL}/`);
 
                 await page.click("#toast-dialog-close");
+                await page.unroute("**/upload");
             } finally {
                 await context.close();
             }
@@ -362,24 +390,48 @@ Deno.test({
 
                 await page.click("#exam-pause-button");
 
-                let disabled = false;
-                for (let attempt = 0; attempt < 20 && !disabled; attempt++) {
-                    disabled = await page.evaluate(() =>
-                        (document.getElementById("exam-pause-button") as HTMLButtonElement | null)
-                            ?.disabled ?? false
-                    );
-                    if (!disabled) {
-                        await page.waitForTimeout(50);
-                    }
-                }
+                // Fall 1: `hx-post` hängt am Button selbst.
                 assert(
-                    disabled,
+                    await waitForDisabled(page.locator("#exam-pause-button")),
                     "hx-disabled-elt muss den Button während der Anfrage deaktivieren",
                 );
 
                 // Nach dem Swap zeigt das Panel den pausierten Zustand.
                 await page.waitForSelector("#exam-resume-button");
                 await page.unroute("**/api/exam/pause");
+
+                // Fall 2: `hx-post` hängt am Formular (#exam-extra-form,
+                // Zusatzzeit). Dort deaktiviert `this` nur das Formular;
+                // geschützt werden muss der Submit-Button.
+                const extraSubmit = page.locator("#exam-extra-form")
+                    .getByRole("button");
+
+                await page.route("**/api/exam/extra", async (route) => {
+                    await new Promise((resolve) => setTimeout(resolve, 1500));
+                    await route.continue();
+                });
+
+                await page.evaluate(() => {
+                    const panel = document.getElementById("exam-admin-panel");
+                    if (panel) {
+                        panel.dataset.e2eMarker = "vorher";
+                    }
+                });
+                await extraSubmit.click();
+
+                assert(
+                    await waitForDisabled(extraSubmit),
+                    "hx-disabled-elt am Formular muss dessen Submit-Button deaktivieren",
+                );
+
+                // Die Anfrage läuft weiter: das Panel wird ersetzt, die
+                // Markierung verschwindet, der Button ist wieder bedienbar.
+                await page.waitForFunction(() =>
+                    !document.getElementById("exam-admin-panel")?.dataset
+                        .e2eMarker
+                );
+                assertEquals(await page.locator("#exam-extra-form").isVisible(), true);
+                await page.unroute("**/api/exam/extra");
             } finally {
                 await stopExam();
                 await context.close();

@@ -293,10 +293,10 @@
                     <form hx-post="/api/exammode"
                           hx-target="#exam-admin-panel"
                           hx-swap="outerHTML"
+                          hx-disabled-elt="find button[type='submit']"
                           class="w-100">
                         <button type="submit"
-                                class="btn btn-danger w-100"
-                                hx-disabled-elt="this">Erneut sperren</button>
+                                class="btn btn-danger w-100">Erneut sperren</button>
                     </form>
                 </div>
             </div>
