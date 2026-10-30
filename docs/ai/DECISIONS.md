@@ -157,7 +157,7 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
 - **Firewall-Steuerung ausschließlich über die OPNsense-API**
   (`POST /api/firewall/filter/toggleRule/{uuid}` + `apply`,
   `GET …/getRule/{uuid}`), Credentials als `OPNSENSE_API_KEY`/`_SECRET` in
-  `.env`. Kein `sudo`, kein `exammode.sh`, kein Schreiben in
+  `.env`. Kein `sudo`, kein Host-Skript, kein Schreiben in
   `/conf/config.xml`. Die Regel-UUID steht in der Konfiguration, nicht im Code.
 - **IP-Präsenz kommt per REST aus dem MikroTik** in den App-Prozess
   (`registration-table`, 60 s). `POST /activeips` und die Scanner-Skripte
@@ -175,9 +175,10 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
   nennt den API-Fehler.
 - **App-Start bleibt fail-safe:** `examstate` → `stopped`, Internet frei.
   Bewusst akzeptiert: ein Absturz während des Examens öffnet das Netz.
-- **`appliance/rollout/` wird nicht gebaut.** Nach dem Cleanup bleiben
-  `usbpersist.conf`, `redact-opnsense.sed`, Doku und verschlüsselte
-  Config-Backups (gpg/pass, nie Klartext im public Repo).
+- **`appliance/rollout/` wird nicht gebaut.** Nach dem Cleanup (#144)
+  bleiben `usb_persist.conf`, `redact-opnsense.sed`, das MikroTik-Material,
+  der redigierte Snapshot, die Legacy-Regel-CSV und Doku; verschlüsselte
+  Config-Backups (gpg/pass, nie Klartext im public Repo) kommen dazu.
 - **Tik-Zugang:** eigener User mit `read` + `rest-api`, auf die App-IP
   beschränkt. Passwörter nie im Repo — auch nicht in der History.
 - **Runtime bleibt Deno, htmx bleibt 2.0.10** bis Februar 2027; die
@@ -194,7 +195,7 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
   --squash`), deliberately not full-history — the old history stays
   queryable in the archived repo.
 - Examsense documentation was consolidated, not duplicated: operational
-  guidance lives in `docs/ai/OPERATIONS.md` ("Appliance Setup"), script
+  guidance lives in `docs/ai/OPERATIONS.md` ("Appliance-Artefakte"), script
   conventions in `docs/ai/CONVENTIONS.md` ("Appliance Scripts");
   `appliance/README.md` and `appliance/AGENTS.md` are thin pointers.
 - The examsense Makefile target lives on as `config-snapshot` in the

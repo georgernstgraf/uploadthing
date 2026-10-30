@@ -76,7 +76,7 @@ only in the operator's head; it is now recorded here (see #132).
 - Die Sperre läuft **ausschließlich** über die Firewall-API
   (`POST /api/firewall/filter/toggleRule/{uuid}` + `apply`,
   gelesen über `POST /api/firewall/filter/searchRule`). Kein `sudo`,
-  kein `exammode.sh`, kein Schreiben in `/conf/config.xml`.
+  kein Host-Skript, kein Schreiben in `/conf/config.xml`.
 - Konfiguration in `.env`: `OPNSENSE_API_URL`, `OPNSENSE_API_KEY`,
   `OPNSENSE_API_SECRET`, `OPNSENSE_EXAMMODE_RULE_UUID` — Key und
   Secret sind beide oder keins; ohne sie ist die Steuerung deaktiviert
@@ -143,8 +143,8 @@ only in the operator's head; it is now recorded here (see #132).
   zuerst, schaltet nur bei Abweichung, ruft `apply` und liest danach
   erneut zur Bestätigung. Regel-UUIDs werden mit und ohne Bindestriche
   verglichen (config.xml nutzt 32 Hex-Zeichen).
-- Die alte `appliance/bin/exammode.sh` bleibt als Host-Werkzeug im Repo,
-  wird von der App aber nicht mehr aufgerufen.
+- Die frühere Umschaltung per Host-Skript ist mit #144 entfallen; es gibt
+  kein Shell-Werkzeug mehr für die Sperre.
 
 ## Package Repos On OPNsense
 
@@ -238,127 +238,49 @@ only in the operator's head; it is now recorded here (see #132).
   ACME HTTP-01); im Prüfungsnetz löst **Unbound** auf der Sense den Namen
   auf `192.168.21.2` auf (siehe Abschnitt „DNS und Hostnamen").
 
-## Appliance Setup (historisch — wird in #144 entfernt)
+## Appliance-Artefakte (Restbestand seit #144)
 
-> **Stand 2026-10-30:** Auf der Sense läuft nichts Eigenes mehr. Die
-> folgenden Abschnitte beschreiben die **alte** Appliance-Installation
-> und werden mit #144 gelöscht. Sie bleiben bis dahin als Nachschlagewerk
-> für das Aufräumen stehen.
+> Auf der Sense läuft seit #143 nichts Eigenes mehr; #144 hat die
+> Appliance-Skripte, den rc.d-Service, die configd-Snippets und den
+> Nmap-Cron entfernt. Was im Repo bleibt, ist Nachschlage- und
+> Belegmaterial — kein lauffähiger Code. Die frühere
+> Appliance-Installation steht als Superseded-Eintrag in `HISTORY.md`.
 
-The `appliance/` directory holds the OPNsense/FreeBSD appliance-side
-half of the system (imported from the sister repo `examsense`, now
-archived). Layout:
+- `appliance/bin/redact-opnsense.sed` redigiert `/conf/config.xml`;
+  `make config-snapshot` (auf der Sense ausführen) schreibt das Ergebnis
+  nach `appliance/current/config.redacted.xml`. Alles außer dieser einen
+  Datei unter `appliance/current/` ist gitignored und kann Secrets
+  enthalten — neue Snapshots vor dem Commit prüfen.
+- `appliance/files/usr_local_etc_devd_usb_persist.conf` →
+  `/usr/local/etc/devd/usb_persist.conf`. Die MAC-Zuordnung der USB-NICs
+  steht in der Datei und muss zur Hardware passen.
+- `appliance/Mikrotik/` — RouterOS-Export (PSK redigiert) und
+  Kommandonotizen. `show-sensitive`-Exporte und Backup-Passwörter bleiben
+  draußen; das Export trägt Gerätekennungen (Serial, `admin-mac`).
+- `appliance/legacy-rules-2026-10-30.csv` — Beleg für die sechs
+  Legacy-Filterregeln (siehe „Legacy-Block ist weg" oben).
 
-- `appliance/bin/` — scripts for `/root/bin` or a similar PATH location
-  (`exammode.sh`, `scan-pfctl.py`, `scan-nmap.py`, `scan-tik.py`,
-  `list.awk`, `redact-opnsense.sed`).
-- `appliance/files/` — mirrors target appliance paths under
-  `/usr/local/...`; filenames are the system path with `/` replaced by
-  `_` (e.g. `usr_local_etc_rc.d_uploadthing` →
-  `/usr/local/etc/rc.d/uploadthing`).
-- `appliance/Mikrotik/` — router config artifacts and command notes.
-  **Sensitive:** `show-sensitive` exports and backup commands may
-  contain live wireless keys or backup passwords — never commit them.
+### Sense-Grundkonfiguration (weiterhin gültig)
 
-### Install into /root on the appliance
-
-- Clone or unpack this repository as `root` into `/root/examdns`
-  (or deploy the `appliance/` subtree) and make the scripts available
-  on PATH, e.g. `ln -s /root/examdns/bin /root/bin`.
-
-### OPNsense base DNS settings
-
-- System → Settings → General: leave `DNS Servers` empty (or configure
-  explicitly); enable `Allow DNS server list to be overridden by
-  DHCP/PPP on WAN`; enable `Do not use the local DNS service as a
-  nameserver for this system`.
-- Services → Unbound DNS → Query Forwarding: enable `Use System
-  Nameservers`.
-- Services → Unbound DNS → Advanced: enable `Log Queries`, `Log
-  Replies`, `Tag Queries and Replies`.
-
-### Redirect DNS traffic to Unbound
-
-- Firewall → NAT → Port Forward: redirect all DNS traffic targeting
-  `not this firewall:53` to `127.0.0.1:53`.
-
-### Block known DoH endpoints
-
-- Firewall → Aliases: `Type` = `URL Table (IPs)`, source
-  `https://raw.githubusercontent.com/crypt0rr/public-doh-servers/main/ipv4.list`.
-- Firewall → Rules → LAN: reject port `443` traffic to the DoH alias.
-
-### Scan helper / configd integration
-
-- Since #145 the app polls the MikroTik REST API itself (every 60 s, from
-  the app process). `POST /activeips` no longer exists, so the old
-  `nmap_cron.sh`/`scan-*.py` path must not be re-created: it posted to a
-  removed endpoint and had been failing every minute since 2026-10-23.
-- The appliance files (`appliance/files/…_nmap_cron.sh`, the configd
-  `actions.d` snippet, `appliance/bin/scan-*.py`) remain only until the
-  separate cleanup ticket deletes them; nothing wires them into the app.
-
-### Uploadthing rc.d service
-
-- Service file: `appliance/files/usr_local_etc_rc.d_uploadthing`.
-- Create `33.2/32` as a Proxy ARP address.
-- Add a firewall NAT port-forward from `33.2:80` to `localhost:8000`.
-- Start with `service uploadthing start` after deployment.
-
-### Additional appliance notes
-
-- Host overrides in use: `router`, `sense`, `tplink`.
-- Admin access (System → Admin → Settings): enable SSH + root login
-  per appliance policy; passwordless sudo and serial console only when
-  needed for recovery.
-- USB NIC persistence: install
-  `appliance/files/usr_local_sbin_usb_nic_rename.sh` as
-  `/usr/local/sbin/usb_nic_rename.sh` (adjust placeholder MACs first)
-  and `appliance/files/usr_local_etc_devd_usb_persist.conf` as
-  `/usr/local/etc/devd/usb_persist.conf`.
-- Shell aliases on the box:
+- System → Settings → General: `DNS Servers` leer lassen (oder explizit
+  setzen), Override durch DHCP/PPP auf WAN erlauben, „Do not use the local
+  DNS service as a nameserver for this system" aktivieren. Services →
+  Unbound DNS: Query Forwarding „Use System Nameservers"; Advanced:
+  `Log Queries`, `Log Replies`, `Tag Queries and Replies`.
+- Firewall → NAT → Port Forward: DNS-Verkehr an „not this firewall:53"
+  auf `127.0.0.1:53` umleiten.
+- DoH-Sperre: Alias `Type` = `URL Table (IPs)` auf
+  `https://raw.githubusercontent.com/crypt0rr/public-doh-servers/main/ipv4.list`,
+  LAN-Regel reject 443 auf dieses Alias.
+- Host-Overrides in Gebrauch: `router`, `sense`, `tplink`.
+- Shell-Aliase auf der Box:
   `alias ub='unbound-control -c /var/unbound/unbound.conf'`,
-  `alias ut='tail -F /var/log/resolver/latest.log'`.
-- System tunables: `net.inet.tcp.blackhole=0`,
-  `net.inet.udp.blackhole=0`, `hw.usb.no_suspend=1`.
-- Redacted config snapshots: `make config-snapshot` on the appliance
-  writes `appliance/files/conf_config.xml` via
-  `appliance/bin/redact-opnsense.sed`; snapshots in the repo are
-  redacted (verify before committing new ones).
-
-## Appliance State 2026-10-21 (Stand vor dem Umzug, historisch)
-
-Full live state gathered into `appliance/current/` (gitignored except
-`config.redacted.xml`); `appliance/current/MANIFEST` records sha256 +
-mtime of every deployed custom script. Facts:
-
-- Deployed script home is still the old examsense checkout:
-  `/root/examsense/` (own `.git`, clean at `9583565` "config saves",
-  2026-06-03, remote = archived GitHub repo). `/root/bin` is a symlink
-  to `/root/examsense/bin`.
-- Drift deployed vs. repo: `devd/usbpersist.conf` matches
-  `em[0-9]+` live (repo says `ue[0-9]+`); repo's
-  `actions_exampy.conf` ("pfctl_ss") was never deployed — the live,
-  **untracked** file is `actions_scan.conf`, identical to live
-  `actions_exampy.conf` (section `[scan]` → `nmap_cron.sh`; cron job
-  "scan scan" runs the NMAP LAN scan **every minute**).
-- `enable/disable_doku_rule.sh` no longer exist on the appliance
-  (obsolete, repo copies deletable).
-- Deno on `sense`: the app runs from `~/.deno/bin/deno` **2.9.6
-  stable** (via `startloop.sh` + `.deno/env` PATH). Two stray copies:
-  `~/tmp/deno` (2.2.15 LTS, works) and `~/deno` (**broken** since the
-  2026-10-20 upgrade: `liblcms2.so.2 not found` — linux_base-rl9 has
-  no lcms2). Consolidation pending, see STATE.md.
-- `service uploadthing status` reports "not running" although the app
-  listens on 127.0.0.1:8000 — rc pidfile/status quirk, fix candidate.
-- Version inventory: OPNsense 26.7.3_11, FreeBSD
-  15.1-RELEASE-p3, Python 3.13.15, Nmap 7.991, all packages
-  up-to-date (`pkg version -vl "<"` empty). Only relevant Deno patch
-  bump available: 2.9.6 → 2.9.7.
-- **Deno deprecation** (2026-10-09, Cloudflare acquisition): fixes
-  pledged ~1 year, development shutdown 2027. Strategic consequence:
-  prioritize #133 (Drizzle — engine-free) and plan a runtime exit
-  (Node/Bun) medium-term.
+  `alias ut='tail -F /var/log/resolver/latest.log'`. Tunables:
+  `net.inet.tcp.blackhole=0`, `net.inet.udp.blackhole=0`,
+  `hw.usb.no_suspend=1`.
+- Admin-Zugang (System → Admin → Settings): SSH + Root-Login nach
+  Appliance-Policy; passwortloses sudo und serielle Konsole nur zur
+  Wiederherstellung.
 
 ## Database Sync Cycle — entfallen (2026-10-30)
 
@@ -370,10 +292,13 @@ entfernen, solange niemand sie benutzt.
 
 ## Open Points
 
-- **#144 (offen):** Auf der Sense liegen noch `/home/georg/uploadthing`
-  (alter App-Ordner), `/usr/local/etc/rc.d/uploadthing`, die Root-Skripte,
-  der Cronjob `scan scan` und das archivierte `examsense`-Repo. Der Dienst
-  ist gestoppt (`uploadthing_enable=NO`), gelöscht ist nichts.
+- **#144 (Repo-Teil erledigt):** `appliance/` ist auf Redaktionsskript,
+  `usb_persist.conf`, MikroTik-Material, redigierten Snapshot und die
+  Legacy-CSV geschrumpft. Auf der Sense selbst sind `/home/georg/uploadthing`,
+  `/usr/local/etc/rc.d/uploadthing`, die Root-Skripte, der Cronjob
+  `scan scan` und das archivierte `examsense`-Repo **noch** vorhanden —
+  der Dienst ist gestoppt (`uploadthing_enable=NO`), gelöscht ist dort
+  nichts.
 - **#149 (offen):** Die App nutzt noch den Root-API-Key der Sense; ein
   eigener Benutzer mit minimalen Rechten (Firewall + Dnsmasq/Unbound)
   fehlt. `/root` ist noch 755. #136 ist noch nicht geschlossen.

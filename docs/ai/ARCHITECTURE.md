@@ -25,6 +25,7 @@ Prisma-Engines, keine Runtime-Abhängigkeit auf Prisma).
 | Migrationen | `drizzle/schema.ts`, `drizzle/*.sql`, `lib/migrate.ts` | Schema + Start-Migration |
 | Config | `lib/config.ts` | fail-strict Env-Parsing (deutsche Fehler) |
 | Deployment | `systemd/uploadthing.service` (User-Unit), `~/.config/uploadthing/uploadthing.env`, `~/uploadthing-data/` | Dienst, Produktions-Env, Daten |
+| Appliance | `appliance/` | nur noch Artefakte, kein Laufzeitcode: `config.xml`-Redaktion (`bin/redact-opnsense.sed`), devd-USB-Regel (`files/`), MikroTik-Material, redigierter Snapshot (`current/config.redacted.xml`), Legacy-Regel-CSV |
 
 ## Knowledge Files (`docs/ai/`)
 

@@ -4,8 +4,8 @@
 
 - This repository covers **both halves of the exam system**: the Deno
   web app (`lib/`, `routes/`, `service/`, `repo/`, `templates/`, …) and
-  the OPNsense/FreeBSD appliance-side scripts under `appliance/`
-  (imported from the archived `examsense` repo).
+  the OPNsense/router reference artifacts under `appliance/` (imported
+  from the archived `examsense` repo; no runtime code there since #144).
 - Appliance scripts follow their own conventions — see
   `docs/ai/CONVENTIONS.md`, section "Appliance Scripts".
 

@@ -343,3 +343,15 @@
   laufenden Abruf ab und wartet ihn ab), dann das SQLite-Handle
   geschlossen. Sonst schreibt ein spätes Poll-Ergebnis in eine bereits
   geschlossene Datenbank.
+
+## Gitignorierte Live-Snapshots tragen Klartext-Secrets
+
+- `appliance/current/` ist bis auf `config.redacted.xml` gitignored und
+  sammelt rohe Kopien von der Appliance. In
+  `appliance/current/root/examsense/bin/scan-tik.py` lag das Tik-Passwort
+  im Klartext, ebenso in `appliance/current/config.xml` (unredigiert).
+- Lehre: `git grep` findet diese Dateien **nicht** — wer Secrets sucht,
+  muss zusätzlich `git status --ignored` bzw. ein `grep -r` über das
+  Arbeitsverzeichnis laufen lassen. Snapshot-Verzeichnisse nie als
+  „harmlos, weil ungetrackt" abtun, und Belegdateien nur redigiert
+  übernehmen.

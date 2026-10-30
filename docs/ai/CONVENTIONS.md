@@ -73,40 +73,28 @@
 - For localhost-dependent forensic tests, use the shared helpers in `test/helpers/forensics_fixture.ts` to reset and seed deterministic DB state instead of relying on ambient rows already present in `uploadthing.db`.
 - Keep `127.0.0.1` as the canonical local test IP for forensic endpoint scenarios unless the project intentionally changes that policy.
 
-## Appliance Scripts (appliance/) — wird in #144 entfernt
+## Appliance Scripts (appliance/)
 
-> **Stand 2026-10-30:** Auf der Sense läuft die App nicht mehr; dieser
-> Abschnitt gilt nur noch für die Dateien, die bis #144 dort aufgeräumt
-> werden. Neuer Code gehört **nicht** mehr hierher.
+> **Stand 2026-10-30:** Auf der Sense läuft nichts Eigenes mehr (#143), und
+> die Appliance-Skripte sind mit #144 entfernt. Es bleibt nur noch
+> Nachschlage- und Belegmaterial: `bin/redact-opnsense.sed`,
+> `files/usr_local_etc_devd_usb_persist.conf`, `Mikrotik/`,
+> `current/config.redacted.xml` und `legacy-rules-2026-10-30.csv`.
+> Neuer Code gehört **nicht** mehr hierher.
 
-The `appliance/` directory (imported from the former examsense repo)
-follows its own conventions, driven by the FreeBSD/OPNsense target
-environment — not the Deno ones above:
-
-- Primary languages: POSIX shell, Python 3, awk, INI-like configs.
-- `appliance/bin/` holds scripts for the appliance PATH
-  (`/root/bin`); `appliance/files/` mirrors `/usr/local/...` target
-  paths 1:1 (slashes replaced by underscores). Do not rename files
-  there without a deployment migration note.
-- Shell: `#!/bin/sh`, POSIX constructs and `[ ]` tests, no bashisms;
-  quote variables and paths; use explicit binary paths when side
-  effects matter (`/sbin/ifconfig`, `/usr/sbin/daemon`); log via
-  `logger` or a log file in cron contexts. `set -euo pipefail` only
-  after auditing all call sites.
-- Python: target `/usr/local/bin/python3` (FreeBSD), stdlib only,
-  4-space indent, alphabetized imports, `subprocess` with `check=True`,
-  small single-purpose functions, no import-time side effects.
-- Awk: keep the `#!/usr/bin/env -S awk -f` shebang for standalone
-  scripts; minimal and stream-friendly.
-- Safety: fail fast on unrecoverable errors (`exit 1`), validate
-  inputs (interface names, subnet prefixes), be conservative with
-  network-impacting operations (`pfctl`, `ifconfig`, firewall rules),
-  and prefer dry runs where possible.
+- `appliance/files/` mirrors `/usr/local/...` target paths 1:1 (slashes
+  replaced by underscores). Do not rename files there without a
+  deployment migration note.
+- `bin/redact-opnsense.sed` is a POSIX `sed` script; keep it
+  line-oriented and dependency-free so it runs with the appliance's base
+  `sed`. Any new redaction rule must be verified against a snapshot
+  before the snapshot lands in the repo.
 - Never commit secrets, real MACs, or credentials; treat
-  `appliance/Mikrotik/` exports as sensitive material.
+  `appliance/Mikrotik/` exports as sensitive material (pre-shared keys,
+  backup passwords, serial numbers). Only redacted exports are allowed.
 - ASCII only unless the file already contains non-ASCII characters.
-- There is no test suite for appliance scripts; sanity-check changes
-  ad hoc and document behavior changes in `appliance/README.md` or
+- There is no test suite for these artifacts; sanity-check changes ad hoc
+  and document behavior changes in `appliance/README.md` or
   `docs/ai/OPERATIONS.md`.
 
 ## Documentation Maintenance

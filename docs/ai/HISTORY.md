@@ -69,3 +69,29 @@ Entries here are no longer active truth. Never delete from this file.
   `/home/georg/uploadthing/uploadthing.db` (relativ zu `prisma/`) und
   hatte alle Tabellen, `examstate` und alle Composite-Indizes. Beim Umzug
   wurden nur `ipfact.mac` und `adminmac` ergänzt.
+
+## 2026-10-30 (SUPERSEDED 2026-10-30, origin: OPERATIONS.md, reason: #144 — Appliance- und Repo-Cleanup): Appliance Setup und Appliance State 2026-10-21
+
+- The `appliance/` tree was installed as a checkout under `/root/examdns`
+  with `ln -s /root/examdns/bin /root/bin` (later the old `examsense`
+  checkout `/root/examsense`), plus `files/` copies into `/usr/local/…`,
+  an rc.d service, configd `actions.d` snippets and a per-minute NMAP scan
+  cron job (`scan scan`).
+- Live state 2026-10-21: `/root/examsense` at `9583565` (2026-06-03) with
+  local changes; the live `actions_scan.conf` was untracked and identical
+  to `actions_exampy.conf`; the repo's `actions_exampy.conf` had never
+  been deployed; `enable/disable_doku_rule.sh` no longer existed on the
+  box; the devd rule was deployed with `em[0-9]+` while the repo said
+  `ue[0-9]+`; `service uploadthing status` reported "not running"
+  although the app listened on `127.0.0.1:8000` (rc pidfile quirk).
+- Deno on `sense`: 2.9.6 stable from `~/.deno/bin/deno` via `startloop.sh`
+  + `.deno/env`, plus two stray copies (`~/tmp/deno` 2.2.15 LTS, and
+  `~/deno`, broken since the 2026-10-20 upgrade: `liblcms2.so.2 not
+  found`). Version inventory: OPNsense 26.7.3_11, FreeBSD
+  15.1-RELEASE-p3, Python 3.13.15, Nmap 7.991.
+- **Origin**: OPERATIONS.md, sections „Appliance Setup" und „Appliance
+  State 2026-10-21"
+- **Reason**: Die App läuft seit #143 auf dem Dell; #144 hat die Skripte,
+  Symlinks, configd-Snippets, den Cronjob und das `examsense`-Checkout auf
+  der Sense sowie `appliance/bin/` und fast alle `appliance/files/` aus
+  dem Repo entfernt. Im Repo bleibt nur Nachschlage- und Belegmaterial.

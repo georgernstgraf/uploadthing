@@ -105,18 +105,18 @@ deno task db:migrate                            # apply pending migrations manua
 appliance; a database that knows a newer migration than the running code
 makes the app refuse to start instead of running half-migrated.
 
-## Appliance Scripts (`appliance/`) — wird abgebaut
+## Appliance-Artefakte (`appliance/`)
 
-The `appliance/` directory contains the OPNsense/FreeBSD appliance-side
-half of the exam system (exam mode toggle, scan helpers, rc.d service,
-redacted config snapshots, MikroTik artifacts). It was imported from the
-former `examsense` repository.
+The `appliance/` directory holds only reference material: the
+`config.xml` redaction filter, the devd USB NIC rule, the redacted config
+snapshot, the legacy firewall rule export and the MikroTik notes. It was
+imported from the former `examsense` repository.
 
 **Seit 2026-10-30 läuft die App auf dem Dell**; die Sense macht nur noch
 Firewall/DNS/DHCP. Exam-Sperre (OPNsense-API) und IP-/MAC-Erfassung
-(MikroTik-REST) sind im App-Prozess. Die Skripte hier werden mit #144
-gelöscht — neuer Code gehört nicht mehr in dieses Verzeichnis. Siehe
-`appliance/README.md` und `docs/ai/OPERATIONS.md` („Appliance Setup").
+(MikroTik-REST) laufen im App-Prozess, die Appliance-Skripte sind mit
+#144 entfernt. Neuer Code gehört nicht mehr in dieses Verzeichnis. Siehe
+`appliance/README.md` und `docs/ai/OPERATIONS.md` („Appliance-Artefakte").
 
 ## Project Knowledge
 
