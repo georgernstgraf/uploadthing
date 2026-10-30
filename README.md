@@ -118,6 +118,13 @@ Firewall/DNS/DHCP. Exam-Sperre (OPNsense-API) und IP-/MAC-Erfassung
 #144 entfernt. Neuer Code gehört nicht mehr in dieses Verzeichnis. Siehe
 `appliance/README.md` und `docs/ai/OPERATIONS.md` („Appliance-Artefakte").
 
+Die Firewall-Konfiguration wird dort **nur verschlüsselt** versioniert:
+`appliance/backups/config-YYYY-MM-DD.xml.gpg` plus `MANIFEST`, erzeugt mit
+`scripts/backup-config.sh`. Ohne den privaten GPG-Schlüssel (Key-ID
+`EC23CFDFDDA530BD`, **nicht** im Repo) ist ein Backup nicht lesbar;
+Klartext-`config.xml` liegt nie im Repository. Ablauf und Restore stehen in
+`docs/ai/OPERATIONS.md` („Konfigurations-Backup").
+
 ## Project Knowledge
 
 Primary project guidance lives in `docs/ai/`:

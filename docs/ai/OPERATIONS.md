@@ -257,6 +257,9 @@ only in the operator's head; it is now recorded here (see #132).
 - `appliance/Mikrotik/` — RouterOS-Export (PSK redigiert) und
   Kommandonotizen. `show-sensitive`-Exporte und Backup-Passwörter bleiben
   draußen; das Export trägt Gerätekennungen (Serial, `admin-mac`).
+- `appliance/backups/` — gpg-verschlüsselte Vollbackups der
+  `config.xml` plus `MANIFEST`; Erzeugen, Prüfen und Wiederherstellen
+  stehen im Abschnitt „Konfigurations-Backup".
 - `appliance/legacy-rules-2026-10-30.csv` — Beleg für die sechs
   Legacy-Filterregeln (siehe „Legacy-Block ist weg" oben).
 
@@ -282,6 +285,148 @@ only in the operator's head; it is now recorded here (see #132).
   Appliance-Policy; passwortloses sudo und serielle Konsole nur zur
   Wiederherstellung.
 
+## Konfigurations-Backup (OPNsense, gpg-verschlüsselt, #148)
+
+`config.xml` enthält LDAP-Bind-Passwort, API-Keys, Zertifikate und
+WireGuard-Schlüssel; das Repo ist public. Deshalb liegt der Klartext
+**nie** im Repo, sondern nur ein GPG-Chiffrat plus Manifest:
+
+- `appliance/backups/config-YYYY-MM-DD.xml.gpg` — mit
+  `gpg --encrypt` gegen den Public-Key
+  `19BAB05B F4D9 B55D 4907 1A9D EC23 CFDF DDA5 30BD` (Georg Graf,
+  Key-ID `EC23CFDFDDA530BD`). `.gitignore` lässt in diesem Verzeichnis
+  ausschließlich `*.gpg` und `MANIFEST` durch.
+- `appliance/backups/MANIFEST` — TAB-getrennt: Datum,
+  OPNsense-Version, sha256 des **Chiffrats**, Empfänger-Key-ID, Datei.
+- Der **private Schlüssel liegt nicht im Repo**, sondern nur im Keyring
+  des Entwicklungsrechners (Passphrase über `pass`). Verschlüsseln
+  braucht keine Passphrase, Entschlüsseln schon.
+
+Der redigierte Snapshot (`make config-snapshot` →
+`appliance/current/config.redacted.xml`) bleibt zusätzlich bestehen und
+ist für lesbare Diffs zuständig; das Backup ist der vollständige,
+wiederherstellbare Stand.
+
+### Backup erzeugen
+
+```sh
+scripts/backup-config.sh            # Tagesbackup, bricht ab wenn es eines gibt
+scripts/backup-config.sh --force    # vorhandenes Tagesbackup ersetzen
+```
+
+Das Skript (POSIX `sh`, fail-strict) prüft die Voraussetzungen (gpg,
+ssh, ssh-Ziel per `OPNSENSE_REMOTE`, Public-Key im Keyring), liest
+`/conf/config.xml` mit `ssh sense 'sudo -n cat /conf/config.xml'` in ein
+temporäres Verzeichnis (`umask 077`, wird beim Verlassen gelöscht),
+weist leere Ausgabe und fehlendes `<opnsense>`-Element ab,
+verschlüsselt, legt das Chiffrat atomar ab (`*.part` + `mv`, danach
+sha256-Nachkontrolle) und ergänzt das Manifest. Ein vorhandenes Chiffrat
+für denselben Tag wird nur mit `--force` ersetzt; der Manifest-Eintrag
+wird dann ersetzt, nicht dupliziert.
+
+Nach jeder inhaltlichen Änderung an der Sense (Filterregeln, Aliase,
+DHCP, Unbound, Zertifikate, WireGuard) ein Backup ziehen und committen —
+und vor jedem geplanten Firmware-Upgrade. Kein Cron: die Entscheidung aus
+#148 ist bewusst „manuell vor/nach Änderungen".
+
+### Backup prüfen
+
+```sh
+gpg --list-packets --verbose appliance/backups/*.gpg
+# gpg: using subkey B84DC90813C71134 instead of primary key EC23CFDFDDA530BD
+gpg --list-only --decrypt --status-fd 1 appliance/backups/*.gpg
+# [GNUPG:] ENC_TO B84DC90813C71134 18 0
+sha256sum appliance/backups/*.gpg        # muss zur MANIFEST-Zeile passen
+```
+
+Der Empfänger im Chiffrat ist immer der **Encryption-Subkey**
+`B84DC90813C71134`; die primäre Key-ID `EC23CFDFDDA530BD` (die im
+Manifest steht und als `--recipient` verwendet wird) nennt
+`--list-packets` nur mit `--verbose` und nur auf einem Rechner, der den
+Secret-Key hat. `--list-only --decrypt` gibt ohne Passphrase keinen
+Klartext aus, mit `--status-fd 1` aber den Empfänger.
+
+Kein Klartext in der History (Abnahmekriterium aus #148):
+
+```sh
+git log --all --diff-filter=A --name-only | grep -v '\.gpg$' | grep config.xml
+```
+
+### Wiederherstellen
+
+Nicht auf der produktiven Sense üben — die Probe läuft auf einer
+Wegwerf-VM (siehe unten).
+
+1. **Beleg prüfen:** Chiffrat aus dem Repo nehmen und sha256 gegen die
+   `MANIFEST`-Zeile vergleichen (Abschnitt „Backup prüfen").
+2. **Entschlüsseln** auf dem Rechner mit dem Secret-Key:
+   `gpg --output config.xml --decrypt appliance/backups/config-YYYY-MM-DD.xml.gpg`
+   (Passphrase aus `pass`). Das Ergebnis ist Klartext mit allen Secrets:
+   nach dem Restore löschen (`shred -u config.xml`), niemals committen,
+   nicht nach `appliance/` kopieren.
+3. **Zielsystem angleichen** (siehe „Was nach dem Restore gilt"):
+   OPNsense-Version und Plugin-Set müssen zum Backup passen.
+4. **Restore:** GUI → System → Configuration → Backups → „Restore
+   configuration", Datei hochladen, „Reboot after restore" setzen. Auf
+   der Konsole (seriell/VirtualBox-Konsole, **nicht** SSH) geht es auch
+   direkt, ohne GUI-Validierung:
+   `cp config.xml /conf/config.xml && reboot`. Der Weg über die GUI ist
+   der unterstützte; die Konsole ist der Rückfall, wenn die Netzwerk-
+   Konfiguration des Backups nicht zur Hardware passt.
+5. **Prüfen:** Interfaces zugewiesen, LAN-Adresse, DHCP, Unbound,
+   Filterregeln/Aliase, WireGuard-Peers, Zertifikate, API-Zugriff.
+
+**Was nach dem Restore gilt:**
+
+- **Reboot ist der sichere Weg.** OPNsense liest `/conf/config.xml` beim
+  Boot und baut daraus alle Subsysteme auf. Ohne Reboot greifen nur
+  einzelne Dienste, die man von Hand anstößt — `configctl filter reload`,
+  `configctl unbound restart`, `configctl dhcpd restart`,
+  `configctl webgui restart` — und die GUI bietet den Reboot nach dem
+  Restore ohnehin an. Ein Restore ersetzt jede zwischenzeitliche
+  Änderung, auch die, die man vergessen hat zu sichern.
+- **Sitzungen brechen ab:** SSH-Verbindung und GUI-Session sterben mit dem
+  WebGUI-Restart; das GUI-Zertifikat kann sich ändern (Ausnahme neu
+  bestätigen). Bei kaputter Netzwerk-Konfiguration hilft nur die
+  Konsole.
+- **API-Keys sind Teil des Backups.** Der Key/Secret des App-Benutzers
+  steckt in `config.xml`; nach einem Restore muss
+  `OPNSENSE_API_KEY`/`OPNSENSE_API_SECRET` in der `.env` auf dem Dell
+  dazu passen, sonst schlägt die Exam-Sperre fehl (fail-loud, siehe
+  „Exam-Sperre über die OPNsense-API"). Stammt das Backup aus der Zeit
+  vor dem Key, neuen Key anlegen, `.env` nachziehen, Dienst neu starten.
+- **Plugin-Versionen:** `config.xml` enthält die Plugin-*Konfiguration*,
+  nicht die Pakete. Fehlt ein Plugin, bleiben seine Menüpunkte und
+  configd-Aktionen wirkungslos; ein zusätzlich installiertes Plugin
+  behält seine Defaults. Vor dem Restore `pkg info -q | grep '^os-'`
+  gegen den Stand im Backup vergleichen und fehlende Plugins über
+  System → Firmware → Plugins **vorher** installieren. Ein Restore über
+  Major-Versionen hinweg ist nicht supported — die Box steht auf
+  `26.7.3_11`; erst Firmware-Upgrade, dann Restore.
+- **NIC-Zuordnung:** Weicht die Hardware ab, im Konsolenmenü (Option 1,
+  „Assign interfaces") neu zuweisen, sonst sind LAN/WAN vertauscht.
+- **App und Datenbank sind nicht Teil des Backups.** Das Backup enthält
+  ausschließlich die Firewall-Konfiguration; DB-Backups liegen beim
+  App-Betrieb auf dem Dell.
+
+### Restore-Probe — offen (Checkliste)
+
+Wird mit dem Nutzer auf einer Wegwerf-VM durchgeführt, nicht auf der
+Sense. Ergebnis hier eintragen.
+
+- [ ] Chiffrat aus dem Repo entschlüsseln, sha256 gegen `MANIFEST`
+- [ ] OPNsense-VM in VirtualBox mit derselben Version (`26.7.3_11`)
+      aufsetzen, ohne Anschluss an das Prüfungsnetz
+- [ ] Plugin-Set der VM gegen den Stand im Backup angleichen
+- [ ] Restore über die GUI mit „Reboot after restore"
+- [ ] Nach dem Boot: Interface-Zuordnung, LAN-Adresse (`192.168.21.1`),
+      DHCP, Unbound (Host-Overrides `router`/`sense`/`tplink`),
+      Filterregeln und Aliase vollständig, WireGuard-Peers,
+      Zertifikate gültig
+- [ ] API-Zugriff mit Key/Secret aus der `.env` testen
+      (`GET /api/firewall/filter/getRule/…`), Exam-Sperre schalten
+- [ ] Abweichungen notieren (Datum, Version, was fehlte)
+
 ## Database Sync Cycle — entfallen (2026-10-30)
 
 Der frühere `Makefile`-Zyklus (`make pull` / `make push` / `make logsync`
@@ -302,8 +447,10 @@ entfernen, solange niemand sie benutzt.
 - **#149 (offen):** Die App nutzt noch den Root-API-Key der Sense; ein
   eigener Benutzer mit minimalen Rechten (Firewall + Dnsmasq/Unbound)
   fehlt. `/root` ist noch 755. #136 ist noch nicht geschlossen.
-- **#148 (offen):** keine automatisierten Backups; das gpg-Backup der
-  `config.xml` und eine Restore-Probe fehlen.
+- **#148 (Repo-Teil erledigt):** verschlüsselte Konfigurationsbackups
+  liegen in `appliance/backups/` (`scripts/backup-config.sh`, siehe
+  „Konfigurations-Backup"). Offen ist die **Restore-Probe** auf einer
+  Wegwerf-VM; Cron-Automatisierung ist bewusst nicht gebaut.
 - Die TLS-/Zertifikatskette ist oben beschrieben; eine **einmalige
   gedankliche Probe** der Erneuerung (Ernte auf `kik` → `scp` → Restart)
   steht noch aus.

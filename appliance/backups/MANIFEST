@@ -1,0 +1,4 @@
+# MANIFEST — verschlüsselte OPNsense-Konfigurationsbackups, Ticket #148.
+# Spalten (TAB-getrennt): datum, opnsense-version, sha256-des-chiffrats, empfänger-key-id, datei
+# Der private GPG-Schlüssel und jeder Klartext (config.xml) liegen nie im Repo.
+2026-10-30	26.7.3_11	9f5b9a2f8f0af67aa89194f5b06f0d7346f261a6952f20210c3815bca0bbd66b	EC23CFDFDDA530BD	appliance/backups/config-2026-10-30.xml.gpg

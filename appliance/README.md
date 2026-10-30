@@ -22,6 +22,24 @@ API, IP/MAC presence is polled from the MikroTik by the app process.
 - `Mikrotik/` — RouterOS export and command notes. Sensitive: the
   pre-shared key is redacted, and no `show-sensitive` export or backup
   password may ever be committed.
+- `backups/` — gpg-encrypted full copies of `/conf/config.xml` plus a
+  `MANIFEST` (date, OPNsense version, ciphertext sha256, recipient key
+  id). Only `*.gpg` and `MANIFEST` are whitelisted here; plaintext
+  `config.xml` never belongs in this directory. Create them with
+  `scripts/backup-config.sh`; the private key is **not** in the repo.
+
+## Encrypted config backups
+
+```sh
+scripts/backup-config.sh           # one backup per day, refuses to overwrite
+scripts/backup-config.sh --force   # replace today's ciphertext + manifest line
+gpg --list-packets --verbose appliance/backups/config-YYYY-MM-DD.xml.gpg
+```
+
+Files are named `config-YYYY-MM-DD.xml.gpg` and encrypted for
+`EC23CFDFDDA530BD` (Georg Graf). Check, restore, plugin/version caveats
+and the still-open restore rehearsal are documented in
+`../../docs/ai/OPERATIONS.md` (section "Konfigurations-Backup").
 
 ## Redacted config snapshot
 

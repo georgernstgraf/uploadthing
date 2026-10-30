@@ -28,5 +28,11 @@ f.css
 /appliance/tmp/
 /appliance/test-exam.py
 /appliance/bin/scan.py
+
+# appliance/backups/ — nur das GPG-Chiffrat und das Manifest werden getrackt.
+# Klartext (config.xml, auch eine redigierte Kopie) gehört nie hierher (#148).
+/appliance/backups/*
+!/appliance/backups/*.gpg
+!/appliance/backups/MANIFEST
 .env.local
 SCRATCH.md
