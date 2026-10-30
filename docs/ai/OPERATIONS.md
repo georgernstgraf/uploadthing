@@ -158,6 +158,14 @@ only in the operator's head; it is now recorded here (see #132).
   from the network), plus `TLS_CERT_PATH` =
   `/home/georg/certs/tst.spengergasse.at/fullchain.pem` and the matching
   `TLS_KEY_PATH`.
+- **`PUBLIC_URL`** is the address the app presents itself under
+  (`https://tst.spengergasse.at/`). Since #149 it also produces the
+  browser tab title: `page_title` is the **hostname** of `PUBLIC_URL`
+  (`tst.spengergasse.at`), while `LISTEN_HOST` only decides the bind
+  address. Without `PUBLIC_URL` the tab falls back to
+  `<LISTEN_HOST>:<LISTEN_PORT>` (local development); an unparseable value
+  aborts startup with a German message. Both values come from
+  `buildHeroUrl()` / `buildPageTitle()` in `lib/config.ts`.
 - Clean URL `https://tst.spengergasse.at` without port — implemented
   2026-10-16: the OPNsense GUI moved to **8443** (the real LE certificate
   was imported into the OPNsense cert store, descr

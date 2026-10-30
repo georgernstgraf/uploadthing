@@ -213,6 +213,39 @@ export function buildHeroUrl(
     return `http://${listenHost || "localhost"}:${listenPort}/`;
 }
 
+/**
+ * Titelzeile im Browser-Tab (#149).
+ *
+ * Mit PUBLIC_URL steht dort der Hostname, unter dem die App erreichbar
+ * ist ("tst.spengergasse.at") — nicht die Bind-Adresse. Port und Pfad
+ * gehören nicht in den Tab-Titel. Ohne PUBLIC_URL gilt das bisherige
+ * Verhalten "<LISTEN_HOST>:<LISTEN_PORT>".
+ *
+ * Eine gesetzte, aber unparsebare PUBLIC_URL bricht den Start mit einer
+ * deutschen Meldung ab: sonst stünde wieder die Bind-Adresse im Titel
+ * und der Konfigurationsfehler bliebe unbemerkt.
+ */
+export function buildPageTitle(
+    publicUrl: string | undefined,
+    listenHost: string | undefined,
+    listenPort: number,
+): string {
+    const trimmed = publicUrl?.trim();
+    if (!trimmed) {
+        return `${listenHost || "localhost"}:${listenPort}`;
+    }
+
+    let parsed: URL;
+    try {
+        parsed = new URL(trimmed);
+    } catch {
+        throw new Error(
+            `PUBLIC_URL ist keine gültige URL: "${trimmed}" (erwartet z. B. https://tst.spengergasse.at/).`,
+        );
+    }
+    return parsed.hostname;
+}
+
 const databaseUrl = Deno.env.get("DATABASE_URL") || "";
 
 const config = {
@@ -236,9 +269,11 @@ const config = {
         user: Deno.env.get("TIK_USER"),
         password: Deno.env.get("TIK_PASSWORD"),
     }),
-    page_title: `${Deno.env.get("LISTEN_HOST") || "localhost"}:${
-        Deno.env.get("LISTEN_PORT")
-    }`,
+    page_title: buildPageTitle(
+        Deno.env.get("PUBLIC_URL"),
+        Deno.env.get("LISTEN_HOST"),
+        Number(Deno.env.get("LISTEN_PORT")),
+    ),
     hero_url: buildHeroUrl(
         Deno.env.get("PUBLIC_URL"),
         Deno.env.get("LISTEN_HOST"),

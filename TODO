@@ -1,7 +1,6 @@
 # todo
 
 - timer auf students page
-- 127.0.0.1 im titel (kommt aus .env)
 - registrierte Schüler SOFORT nach Namenswahl anzeigen, dzt. ist ein extra request notwendig ..
 - "fehlte x mal" greift nicht.
 - feature: "n Abgaben"

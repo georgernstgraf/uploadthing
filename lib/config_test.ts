@@ -1,6 +1,7 @@
 import { assertEquals, assertExists, assertThrows } from "@std/assert";
 import config, {
     buildHeroUrl,
+    buildPageTitle,
     isDevelopment,
     isProduction,
     parseAdminMacList,
@@ -44,6 +45,38 @@ Deno.test("config - buildHeroUrl ignores blank PUBLIC_URL", () => {
     assertEquals(
         buildHeroUrl("   ", "router", 8000),
         "http://router:8000/",
+    );
+});
+
+Deno.test("config - buildPageTitle nutzt den Hostnamen aus PUBLIC_URL", () => {
+    assertEquals(
+        buildPageTitle("https://tst.spengergasse.at/", "127.0.0.1", 8000),
+        "tst.spengergasse.at",
+    );
+});
+
+Deno.test("config - buildPageTitle lässt Port und Pfad aus PUBLIC_URL weg", () => {
+    assertEquals(
+        buildPageTitle("https://tst.spengergasse.at:8443/app/", "127.0.0.1", 8000),
+        "tst.spengergasse.at",
+    );
+    assertEquals(
+        buildPageTitle("  http://router:8000  ", undefined, 8000),
+        "router",
+    );
+});
+
+Deno.test("config - buildPageTitle fällt ohne PUBLIC_URL auf die Bind-Adresse zurück", () => {
+    assertEquals(buildPageTitle(undefined, "127.0.0.1", 8000), "127.0.0.1:8000");
+    assertEquals(buildPageTitle("   ", "127.0.0.1", 8000), "127.0.0.1:8000");
+    assertEquals(buildPageTitle(undefined, undefined, 8000), "localhost:8000");
+});
+
+Deno.test("config - buildPageTitle lehnt eine unparsebare PUBLIC_URL ab", () => {
+    assertThrows(
+        () => buildPageTitle("tst.spengergasse.at", "127.0.0.1", 8000),
+        Error,
+        "PUBLIC_URL ist keine gültige URL",
     );
 });
 

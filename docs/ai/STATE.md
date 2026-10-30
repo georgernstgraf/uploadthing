@@ -31,6 +31,18 @@ verschwunden.
 - `getRule/{uuid}` ist auf 26.7 unbrauchbar (`[]`); gelesen wird über
   `searchRule`.
 
+## Erledigt aus #149 (Code-Teil, 2026-10-30)
+
+- `page_title` kommt aus `PUBLIC_URL`: der Tab zeigt den Hostnamen
+  (`tst.spengergasse.at`), nicht mehr `LISTEN_HOST:LISTEN_PORT`. Ohne
+  `PUBLIC_URL` gilt der alte Fallback `<LISTEN_HOST>:<LISTEN_PORT>`; eine
+  gesetzte, unparsebare URL bricht den Start mit deutscher Meldung ab
+  (`buildPageTitle()` in `lib/config.ts`, Tests in `lib/config_test.ts`).
+- Der TODO „127.0.0.1 im titel" ist gestrichen.
+- Die Ops-Punkte aus #149 (dnsmasq `tst` → `192.168.21.2`, `dell`-Eintrag,
+  `ADMIN_IPS` in der Produktions-`.env`, eigener API-User, `chmod`,
+  Zertifikats-Checkliste) laufen separat auf den Hosts.
+
 ## Reihenfolge (Epic #141)
 
 1. #142 OPNsense-API-Client + Exam-Mode-Toggle
