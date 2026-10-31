@@ -7,10 +7,10 @@ import { requireAdmin } from "../middleware/admin.ts";
 import {
     AdminExamExtraSchema,
     AdminExamModeSchema,
+    AdminExamRegistrationSchema,
     AdminExamStartSchema,
-    AdminRegistrationWindowSchema,
 } from "../lib/schemas.ts";
-import { buildRegistrationWindowPanel } from "./render.ts";
+import { buildExamPanelData } from "./render.ts";
 
 /**
  * API-Router — wird in `main.ts` ausschließlich unter `/api` gemountet.
@@ -33,22 +33,9 @@ async function renderExamPanel(
     c: Context<{ Variables: HonoContextVars }>,
     options: { success_message?: string; firewall_error?: string } = {},
 ) {
-    const exam = await service.exam.getStatusView();
-    const firewall = service.admin.buildExamFirewallPanel(
-        await service.admin.getExamModeStatus(),
-        options.firewall_error,
+    return c.html(
+        hbs.adminExamModeTemplate(await buildExamPanelData(options)),
     );
-
-    return c.html(hbs.adminExamModeTemplate({
-        exam_status: exam.status,
-        exam_remaining_label: exam.remaining_label,
-        exam_open: exam.open,
-        exam_running: exam.status === "running" || exam.status === "paused",
-        firewall_state: firewall.firewall_state,
-        firewall_error: firewall.firewall_error,
-        firewall_modal: firewall.firewall_modal,
-        success_message: options.success_message,
-    }));
 }
 
 apiRouter.get("/exammode", requireAdmin, async (c) => {
@@ -189,31 +176,32 @@ apiRouter.post("/exam/extra", requireAdmin, async (c) => {
 });
 
 /**
- * Notausgang für Neuanmeldungen während eines Examens (#146).
+ * Anmelde-Freigabe während eines Examens (#161).
  *
  * Während des Examens ist keine Neuanmeldung als Schüler möglich, damit
- * niemand den Namen wechselt. Dieser Endpunkt öffnet (oder schließt) das
- * Anmeldefenster für fünf Minuten; die Freigabe lebt nur im
- * Serverprozess und verfällt von selbst.
+ * niemand den Namen wechselt. Dieser Schalter hebt die Sperre auf, bis er
+ * wieder ausgeschaltet wird. Die Freigabe lebt nur im Serverprozess und
+ * endet spätestens mit dem Examen.
  */
-apiRouter.post("/exam/registration-window", requireAdmin, async (c) => {
+apiRouter.post("/exam/registration", requireAdmin, async (c) => {
     const formData = await c.req.formData();
-    const validation = AdminRegistrationWindowSchema.safeParse(formData);
+    const validation = AdminExamRegistrationSchema.safeParse(formData);
     if (!validation.success) {
         return c.text(
             validation.error.issues[0]?.message ||
-                "Ungültige Aktion für das Anmeldefenster.",
+                "Ungültige Anmelde-Freigabe.",
             400,
         );
     }
 
-    if (validation.data.action === "open") {
-        service.exam.openRegistrationWindow();
-    } else {
-        service.exam.closeRegistrationWindow();
-    }
+    const open = validation.data.registration_open === "on";
+    service.exam.setStudentRegistrationAllowed(open);
 
-    return c.html(await buildRegistrationWindowPanel());
+    return await renderExamPanel(c, {
+        success_message: open
+            ? "Neuanmeldung ist freigegeben. Der rote Balken bleibt stehen, bis du den Schalter wieder ausschaltest."
+            : "Neuanmeldung ist wieder gesperrt.",
+    });
 });
 
 /**

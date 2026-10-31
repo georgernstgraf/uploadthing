@@ -46,15 +46,13 @@ export const RegisterSchema = z.object({
     email: z.string().email("Ungültige E-Mail-Adresse"),
 });
 
-/** Notausgang für Neuanmeldungen während eines Examens (#146). */
-export const AdminRegistrationWindowSchema = zfd.formData({
-    action: zfd.text(
-        z.enum(["open", "close"], {
-            errorMap: () => ({
-                message: "Ungültige Aktion für das Anmeldefenster.",
-            }),
-        }),
-    ),
+/**
+ * Schalter „Neuanmeldung im Examen erlauben" (#161). Gleiche Form wie
+ * `AdminExamModeSchema`: eine Checkbox, die im Formular als `on` ankommt
+ * oder ganz fehlt.
+ */
+export const AdminExamRegistrationSchema = zfd.formData({
+    registration_open: zfd.text(z.enum(["on"]).optional()),
 });
 
 export const AdminQuerySchema = z.object({

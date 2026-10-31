@@ -6,6 +6,7 @@ import * as service from "../service/service.ts";
 import config, { parsePermittedFileTypes } from "../lib/config.ts";
 import { normalizeMac } from "../lib/mac.ts";
 import { requireAdmin } from "../middleware/admin.ts";
+import { buildExamPanelData } from "./render.ts";
 import {
     AdminCleanupDatabaseSchema,
     AdminFileTypesSchema,
@@ -43,11 +44,6 @@ async function renderApplicationPage(
         return c.redirect("/whoami");
     }
 
-    const exam = await service.exam.getStatusView();
-    const firewall = service.admin.buildExamFirewallPanel(
-        await service.admin.getExamModeStatus(),
-    );
-
     const content = hbs.adminFileTypesTemplate({
         permitted_filetypes: config.PERMITTED_FILETYPES.join(", "),
         current_filetypes: config.PERMITTED_FILETYPES,
@@ -63,15 +59,9 @@ async function renderApplicationPage(
             created_at: dateTimeString(entry.created_at.toISOString()),
         })),
         env_admin_macs: service.adminmac.envAllowedMacs(),
-        exam_panel_html: hbs.adminExamModeTemplate({
-            exam_status: exam.status,
-            exam_remaining_label: exam.remaining_label,
-            exam_open: exam.open,
-            exam_running: exam.status === "running" || exam.status === "paused",
-            firewall_state: firewall.firewall_state,
-            firewall_error: firewall.firewall_error,
-            firewall_modal: firewall.firewall_modal,
-        }),
+        exam_panel_html: hbs.adminExamModeTemplate(
+            await buildExamPanelData(),
+        ),
         available_themes: service.admin.listAvailableThemes(),
         current_theme_key: service.admin.getCurrentThemeKey(),
         success_message,

@@ -10,7 +10,7 @@ htmx 2.0.10, Bootstrap) für Abgaben bei Prüfungen an einer HTL. Sie läuft sei
 2026-10-30 als systemd-**User**-Dienst **auf dem Dell** (aus dem Repo), gebunden
 auf `192.168.21.2:443` mit eigenem TLS. Die OPNsense-Sense davor ist nur noch
 Firewall/DNS/DHCP; alles, was die Prüfungssituation steuert — Internet-Sperre,
-IP-/MAC-Präsenz, Anmeldefenster — läuft im App-Prozess. Persistenz ist eine
+IP-/MAC-Präsenz, Anmelde-Freigabe — läuft im App-Prozess. Persistenz ist eine
 SQLite-Datei über `@db/sqlite`; Schemaautorität ist Drizzle (keine
 Prisma-Engines, keine Runtime-Abhängigkeit auf Prisma).
 

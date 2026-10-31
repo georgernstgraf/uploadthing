@@ -410,66 +410,90 @@ Deno.test("getRemainingSeconds liefert null ohne Examen und 0 nach Stopp", async
     }
 });
 
-Deno.test("Anmeldefenster: außerhalb des Examens ist die Neuanmeldung offen", async () => {
+Deno.test("Anmelde-Freigabe: außerhalb des Examens ist die Neuanmeldung offen", async () => {
     clearExamState();
-    exam.closeRegistrationWindow();
+    exam.resetStudentRegistrationAllowed();
     try {
         assertEquals(await exam.isStudentRegistrationOpen(), true);
+        assertEquals(exam.isStudentRegistrationAllowed(), false);
     } finally {
         clearExamState();
-        exam.closeRegistrationWindow();
+        exam.resetStudentRegistrationAllowed();
     }
 });
 
-Deno.test("Anmeldefenster: im Examen gesperrt, Notausgang öffnet fünf Minuten", async () => {
+Deno.test("Anmelde-Freigabe: im Examen gesperrt, der Schalter öffnet ohne Frist", async () => {
     clearExamState();
-    exam.closeRegistrationWindow();
+    exam.resetStudentRegistrationAllowed();
     try {
         seedExamState("running");
 
         assertEquals(await exam.isStudentRegistrationOpen(), false);
+        assertEquals(exam.getStudentRegistrationOpenedAt(), null);
 
-        exam.openRegistrationWindow();
-        assertEquals(exam.getRegistrationWindowRemainingSeconds(), 300);
+        const clock = fakeClock("2026-10-12T08:05:00.000Z");
+        exam.setStudentRegistrationAllowed(true, clock.now);
+
+        assertEquals(exam.isStudentRegistrationAllowed(), true);
+        assertEquals(
+            exam.getStudentRegistrationOpenedAt()?.toISOString(),
+            clock.now().toISOString(),
+        );
         assertEquals(await exam.isStudentRegistrationOpen(), true);
 
-        exam.closeRegistrationWindow();
+        // Keine Frist: eine Stunde später ist die Freigabe unverändert.
+        clock.advance(3600);
+        assertEquals(exam.isStudentRegistrationAllowed(), true);
+        assertEquals(
+            exam.getStudentRegistrationOpenedAt()?.toISOString(),
+            "2026-10-12T08:05:00.000Z",
+        );
+
+        exam.setStudentRegistrationAllowed(false);
         assertEquals(await exam.isStudentRegistrationOpen(), false);
+        assertEquals(exam.getStudentRegistrationOpenedAt(), null);
     } finally {
         clearExamState();
-        exam.closeRegistrationWindow();
+        exam.resetStudentRegistrationAllowed();
     }
 });
 
-Deno.test("Anmeldefenster: Freigabe verfällt nach fünf Minuten", () => {
-    const clock = fakeClock(new Date().toISOString());
-    exam.closeRegistrationWindow();
-    try {
-        exam.openRegistrationWindow(clock.now);
-        clock.advance(299);
-        assertEquals(exam.getRegistrationWindowRemainingSeconds(clock.now), 1);
-
-        clock.advance(2);
-        assertEquals(exam.getRegistrationWindowRemainingSeconds(clock.now), 0);
-    } finally {
-        exam.closeRegistrationWindow();
-    }
-});
-
-Deno.test("Anmeldefenster: ein neues Examen schließt die Freigabe", async () => {
+Deno.test("Anmelde-Freigabe: die Pause berührt sie nicht", async () => {
     clearExamState();
+    exam.resetStudentRegistrationAllowed();
     try {
         const clock = fakeClock("2026-10-12T08:00:00.000Z");
         await exam.start(60, clock.now);
-        exam.openRegistrationWindow(clock.now);
-        assertEquals(exam.getRegistrationWindowRemainingSeconds(clock.now), 300);
+        exam.setStudentRegistrationAllowed(true, clock.now);
 
-        await exam.stop();
+        exam.pause(clock.now);
 
-        assertEquals(exam.getRegistrationWindowRemainingSeconds(clock.now), 0);
+        // Pause friert nur den Countdown ein (#161): Internet und
+        // Anmeldung bleiben, wie sie eingestellt waren.
+        assertEquals(exam.getState()?.status, "paused");
+        assertEquals(exam.isStudentRegistrationAllowed(), true);
         assertEquals(await exam.isStudentRegistrationOpen(clock.now), true);
     } finally {
         clearExamState();
-        exam.closeRegistrationWindow();
+        exam.resetStudentRegistrationAllowed();
+    }
+});
+
+Deno.test("Anmelde-Freigabe: ein neues Examen und das Exam-Ende schließen sie", async () => {
+    clearExamState();
+    exam.resetStudentRegistrationAllowed();
+    try {
+        const clock = fakeClock("2026-10-12T08:00:00.000Z");
+        await exam.start(60, clock.now);
+        exam.setStudentRegistrationAllowed(true, clock.now);
+        assertEquals(exam.isStudentRegistrationAllowed(), true);
+
+        await exam.stop();
+
+        assertEquals(exam.isStudentRegistrationAllowed(), false);
+        assertEquals(await exam.isStudentRegistrationOpen(clock.now), true);
+    } finally {
+        clearExamState();
+        exam.resetStudentRegistrationAllowed();
     }
 });

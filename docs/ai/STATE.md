@@ -26,6 +26,29 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **Tests**: 352 Deno-Tests (~5 s) plus neun Playwright-Smoke-Tests in
   `deno task e2e` (~12 s, Chromium, eigene Wegwerf-DB auf Port 8099).
 
+## Erledigt am 2026-10-31 (Anmelde-Freigabe als Schalter, #161 Phase 1)
+
+- **5-Minuten-Fenster → Schalter.** `service/exam.ts` hält jetzt
+  `registrationAllowed` + `registrationOpenedAt`; zurückgesetzt wird nur
+  in `start()` und `finishExam()`. `pause()` berührt die Freigabe nicht.
+  `openRegistrationWindow`/`closeRegistrationWindow`/
+  `getRegistrationWindowRemainingSeconds` sind weg, ebenso
+  `POST /api/exam/registration-window`, `buildRegistrationWindowPanel()`,
+  `templates/admin-registration-window.hbs` und der Wrapper in
+  `templates/home.hbs`.
+- **Neuer Endpunkt** `POST /api/exam/registration` (`registration_open`),
+  Antwort ist das ganze `#exam-admin-panel`.
+- **Warnbalken `#exam-warning`** mit einer Zeile pro Ursache:
+  `#exam-warning-internet` und `#exam-warning-registration` („freigegeben
+  seit HH:MM"). Die Gefahrenliste entsteht in `buildExamHazards()`
+  (`routes/render.ts`); `buildExamPanelData()` ersetzt die doppelte
+  Panel-Konstruktion in `routes/admin.ts` und `routes/api.ts`.
+- **Keine Rückfragen mehr** am Internet-Schalter und an beiden
+  Stopp-Knöpfen — der rote Balken ist die Warnung. Die fünf
+  Datenlösch-Rückfragen bleiben.
+- **Abnahme:** 366 Deno-Tests, 13 E2E-Tests, `check`/`lint` grün.
+  Details in `DECISIONS.md`.
+
 ## Erledigt am 2026-10-30 (Abschlusssession)
 
 - **#144:** Appliance-Cleanup auf der Sense (Cronjob `scan scan` per API,

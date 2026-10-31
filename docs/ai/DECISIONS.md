@@ -1,5 +1,51 @@
 # DECISIONS
 
+## 2026-10-31: Anmelde-Freigabe als Schalter, Warnbalken mit zwei Ursachen (#161)
+
+- **Problem:** Der Notausgang aus #146 war ein 5-Minuten-Fenster mit
+  statischem Label. Die Dauer war nie die richtige (zu kurz für einen
+  Sitzungsverlust, zu lang als Dauerzustand), nach Ablauf behauptete das
+  Panel weiter „geöffnet", und der Knopf lag auf der Schülerseite, wo
+  eine Lehrperson während der Prüfung nicht arbeitet.
+- **Schalter statt Frist.** `registrationAllowed` (prozesslokal) wird
+  nur in `start()` und `finishExam()` zurückgesetzt. Es gibt keine
+  Dauer: Der Admin entscheidet, sieht die Entscheidung im roten Balken
+  und nimmt sie mit demselben Schalter zurück. Das Gate bleibt
+  `isStudentRegistrationOpen()` — Aufrufer in `routes/auth.ts` sind
+  unverändert.
+- **Die Pause berührt sie nicht.** `pause()` friert ausschließlich den
+  Countdown ein. Internet und Anmeldung sind Konfigurationseigenschaften
+  des laufenden Examens und bleiben, wie sie eingestellt waren — wer
+  pausiert, um Zeit zu schenken, muss an nichts anderes denken.
+- **Endpunkt als Spiegel von `/api/exammode`:** `POST
+  /api/exam/registration` mit dem Feld `registration_open` (Checkbox,
+  `on` oder fehlend). Antwort ist das ganze `#exam-admin-panel`, also
+  derselbe outerHTML-Swap wie bei Pause, Stopp und Firewall.
+- **Ein Balken, zwei Ursachen.** `buildExamHazards()` in
+  `routes/render.ts` liefert `internet` (Regel offen) und `registration`
+  (Freigabe an); `#exam-warning` zeigt pro Ursache eine Zeile
+  (`#exam-warning-internet`, `#exam-warning-registration`), die
+  Anmelde-Zeile mit „freigegeben seit HH:MM". Nur bei `exam_running`;
+  nach einem Stopp steht der Zustand als Klartext im Panel.
+- **Keine Rückfragen an den Schaltern.** Die `hx-confirm`-Dialoge am
+  Internet-Schalter und an beiden Stopp-Knöpfen sind entfernt: Der rote
+  Balken ist die Warnung, ein Stopp lässt sich in Sekunden neu starten,
+  und ein `change`-getriggertes Checkbox-Formular bleibt nach einem
+  abgebrochenen `window.confirm` optisch umgelegt, obwohl der Server
+  nichts getan hat. Die fünf Rückfragen vor Datenverlusten
+  (Abgaben/Unterlagen löschen, Unterlage ersetzen, MAC-Freigabe
+  entfernen, Datenbankbereinigung) bleiben.
+- **Gefahrenliste an einer Stelle.** `buildExamPanelData()` ersetzt die
+  doppelte Panel-Konstruktion in `routes/admin.ts` und `routes/api.ts` —
+  sonst wäre die zweite Warnzeile irgendwann nur an einem der beiden
+  Aufrufer angekommen.
+- **Abnahme:** Schalter- und Pausen-Tests in `service/exam_test.ts`,
+  `buildExamHazards` in `routes/render_test.ts`, Template-Zustände in
+  `service/admin_test.ts`, Endpunkt/403/404 und der Balken auf
+  `/admin/application` in `test/endpoints_test.ts`, ein E2E-Test für
+  Schalter → Balken → zurück. 366 Deno-Tests, 13 E2E-Tests,
+  `check`/`lint` grün.
+
 ## 2026-10-31: Abgabe-Panel prüft bei Hover und Klick, ob das Examen läuft (#160)
 
 - **Problem:** `buildPanel` rendert `exam_open` einmal beim Seitenaufbau.
@@ -216,6 +262,8 @@
   zurückgesetzt. Endpunkt: `POST /api/exam/registration-window` mit
   `action=open|close`; der Knopf steht für Admins unter dem Formular,
   solange ein Examen läuft.
+  **Ersetzt am 2026-10-31 durch den Schalter in #161** (keine Frist,
+  eigene Karte in der Examen-Steuerung, Warnzeile im roten Balken).
 - **Erfolg als Toast, Formular bleibt.** Nach einer Abgabe antwortet
   `POST /upload` mit dem Panel und einem `#abgabe-toast`-Datenattribut;
   der globale afterSwap-Handler zeigt den Toast. Ein `HX-Trigger`-Header

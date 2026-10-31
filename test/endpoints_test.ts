@@ -333,14 +333,14 @@ Deno.test("Anmeldesperre: keine Neuanmeldung als Schüler im Examen, Lehrperson 
             body: `email=${encodeURIComponent(email)}`,
         });
 
-    const registrationWindow = (cookie: string, action: "open" | "close") =>
-        fetch(`${BASE_URL}/api/exam/registration-window`, {
+    const setRegistration = (cookie: string, open: boolean) =>
+        fetch(`${BASE_URL}/api/exam/registration`, {
             method: "POST",
             headers: {
                 "Cookie": cookie,
                 "Content-Type": "application/x-www-form-urlencoded",
             },
-            body: `action=${action}`,
+            body: open ? "registration_open=on" : "",
         });
 
     let adminCookie = "";
@@ -366,22 +366,39 @@ Deno.test("Anmeldesperre: keine Neuanmeldung als Schüler im Examen, Lehrperson 
         assertExists(teacher.headers.get("set-cookie"));
         assertEquals(teacherHtml.includes('id="abgabe-panel"'), true);
 
-        // Notausgang: fünf Minuten Anmeldefenster.
-        const openRes = await registrationWindow(adminCookie, "open");
+        // Freigabe-Schalter: die Neuanmeldung ist erlaubt, solange er an ist.
+        const openRes = await setRegistration(adminCookie, true);
         const openHtml = await openRes.text();
         assertEquals(openRes.status, 200);
-        assertEquals(openHtml.includes("Anmeldefenster ist offen"), true);
+        assertEquals(openHtml.includes("Anmeldung freigegeben"), true);
+        assertEquals(openHtml.includes('id="exam-warning-registration"'), true);
+
+        // Der rote Balken steht auch auf dem Dashboard.
+        const dashboard = await fetch(`${BASE_URL}/admin/application`, {
+            headers: { "Cookie": adminCookie },
+        });
+        const dashboardHtml = await dashboard.text();
+        assertEquals(dashboard.status, 200);
+        assertEquals(
+            dashboardHtml.includes('id="exam-warning-registration"'),
+            true,
+        );
+        assertEquals(
+            dashboardHtml.includes('id="exam-warning-internet"'),
+            false,
+        );
 
         const allowed = await register(studentEmail);
         await allowed.text();
         assertEquals(allowed.status, 200);
         assertExists(allowed.headers.get("set-cookie"));
 
-        // Fenster wieder zu: erneute Anmeldung ist gesperrt.
-        const closeRes = await registrationWindow(adminCookie, "close");
+        // Schalter wieder aus: erneute Anmeldung ist gesperrt.
+        const closeRes = await setRegistration(adminCookie, false);
         const closeHtml = await closeRes.text();
         assertEquals(closeRes.status, 200);
-        assertEquals(closeHtml.includes("Anmeldefenster ist offen"), false);
+        assertEquals(closeHtml.includes("Anmeldung gesperrt"), true);
+        assertEquals(closeHtml.includes('id="exam-warning-registration"'), false);
 
         const blockedAgain = await register(studentEmail);
         const blockedAgainHtml = await blockedAgain.text();
@@ -392,9 +409,49 @@ Deno.test("Anmeldesperre: keine Neuanmeldung als Schüler im Examen, Lehrperson 
         assertEquals(blockedAgain.headers.get("set-cookie"), null);
     } finally {
         if (adminCookie) {
-            await (await registrationWindow(adminCookie, "close")).text();
+            await (await setRegistration(adminCookie, false)).text();
         }
         clearExamState();
+        await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
+Deno.test("Anmelde-Freigabe: nur Admins schalten sie, der alte Endpunkt ist weg (#161)", async () => {
+    clearExamState();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `registration-switch-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Switch Student",
+        klasse: "5AHITM",
+    });
+
+    try {
+        const studentCookie = await registerAndGetCookie(studentEmail);
+        seedExamState("running");
+
+        const forbidden = await fetch(`${BASE_URL}/api/exam/registration`, {
+            method: "POST",
+            headers: {
+                "Cookie": studentCookie,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: "registration_open=on",
+        });
+        await forbidden.text();
+        assertEquals(forbidden.status, 403);
+        // Der Schalter bleibt aus: der abgelehnte Aufruf darf nichts ändern.
+        assertEquals(await service.exam.isStudentRegistrationOpen(), false);
+
+        const legacy = await fetch(
+            `${BASE_URL}/api/exam/registration-window`,
+            { method: "POST" },
+        );
+        await legacy.text();
+        assertEquals(legacy.status, 404);
+    } finally {
+        clearExamState();
+        service.exam.resetStudentRegistrationAllowed();
         await clearForensicsByUserEmail(studentEmail);
     }
 });

@@ -293,6 +293,12 @@ Deno.test("runExamModeOnStartup lässt fehlende oder beendete Exam-Zustände unv
 });
 
 Deno.test("Exam-Panel zeigt Warnband und Modal im Fehlerzustand", () => {
+    const internetHazard = {
+        key: "internet" as const,
+        title: "Internet frei",
+        detail:
+            "Die Sperrregel ist nicht aktiv. Der Internetzugang im Prüfungsnetz ist offen, solange das Examen läuft.",
+    };
     const warnung = hbs.adminExamModeTemplate({
         exam_status: "running",
         exam_remaining_label: "01:00:00",
@@ -300,9 +306,14 @@ Deno.test("Exam-Panel zeigt Warnband und Modal im Fehlerzustand", () => {
         exam_running: true,
         firewall_state: "frei",
         firewall_modal: false,
+        registration_open: false,
+        registration_since: "",
+        exam_hazards: [internetHazard],
     });
-    assertEquals(warnung.includes("Examen läuft · Internet frei"), true);
-    assertEquals(warnung.includes('id="exam-firewall-warning"'), true);
+    assertEquals(warnung.includes('id="exam-warning"'), true);
+    assertEquals(warnung.includes('id="exam-warning-internet"'), true);
+    assertEquals(warnung.includes('id="exam-warning-registration"'), false);
+    assertEquals(warnung.includes("Internet frei"), true);
 
     const unbekannt = hbs.adminExamModeTemplate({
         exam_status: "running",
@@ -312,12 +323,16 @@ Deno.test("Exam-Panel zeigt Warnband und Modal im Fehlerzustand", () => {
         firewall_state: "unbekannt",
         firewall_error: "Sperre konnte nicht geschaltet werden: HTTP 403",
         firewall_modal: true,
+        registration_open: false,
+        registration_since: "",
+        // „unbekannt" ist ein Modal-Fall, keine Gefahr im Balken.
+        exam_hazards: [],
     });
     assertEquals(unbekannt.includes("Zustand unbekannt"), true);
     assertEquals(unbekannt.includes('data-show="true"'), true);
     assertEquals(unbekannt.includes("HTTP 403"), true);
     assertEquals(unbekannt.includes("disabled"), true);
-    assertEquals(unbekannt.includes("Examen läuft · Internet frei"), false);
+    assertEquals(unbekannt.includes('id="exam-warning"'), false);
 
     const nichtKonfiguriert = hbs.adminExamModeTemplate({
         exam_status: "idle",
@@ -326,12 +341,17 @@ Deno.test("Exam-Panel zeigt Warnband und Modal im Fehlerzustand", () => {
         exam_running: false,
         firewall_state: "nicht-konfiguriert",
         firewall_modal: false,
+        registration_open: false,
+        registration_since: "",
+        exam_hazards: [],
     });
     assertEquals(nichtKonfiguriert.includes("Nicht konfiguriert"), true);
     assertEquals(nichtKonfiguriert.includes('data-show="true"'), false);
+    // Ohne laufendes Examen gibt es keinen Anmelde-Schalter.
+    assertEquals(nichtKonfiguriert.includes('id="registration_open"'), false);
 });
 
-Deno.test("Exam-Panel bestätigt das Freigeben während eines Examens", () => {
+Deno.test("Exam-Panel schaltet ohne Rückfrage und zeigt beide Gefahren (#161)", () => {
     const gesperrt = hbs.adminExamModeTemplate({
         exam_status: "running",
         exam_remaining_label: "01:00:00",
@@ -339,24 +359,44 @@ Deno.test("Exam-Panel bestätigt das Freigeben während eines Examens", () => {
         exam_running: true,
         firewall_state: "gesperrt",
         firewall_modal: false,
+        registration_open: false,
+        registration_since: "",
+        exam_hazards: [],
     });
-    assertEquals(
-        gesperrt.includes("hx-confirm=\"Examen läuft — Internet wirklich freigeben?\""),
-        true,
-    );
+    // Kein Confirm an den Schaltern: der rote Balken ist die Warnung.
+    assertEquals(gesperrt.includes("hx-confirm"), false);
+    assertEquals(gesperrt.includes('id="registration_open"'), true);
+    assertEquals(gesperrt.includes("Anmeldung gesperrt"), true);
+    assertEquals(gesperrt.includes('id="exam-warning"'), false);
 
-    const frei = hbs.adminExamModeTemplate({
+    const beide = hbs.adminExamModeTemplate({
         exam_status: "running",
         exam_remaining_label: "01:00:00",
         exam_open: true,
         exam_running: true,
         firewall_state: "frei",
         firewall_modal: false,
+        registration_open: true,
+        registration_since: "08:05",
+        exam_hazards: [
+            {
+                key: "internet",
+                title: "Internet frei",
+                detail: "Die Sperrregel ist nicht aktiv.",
+            },
+            {
+                key: "registration",
+                title: "Neuanmeldung freigegeben",
+                detail: "Seit 08:05 dürfen sich Schüler neu anmelden.",
+            },
+        ],
     });
-    assertEquals(
-        frei.includes("Internet wirklich freigeben"),
-        false,
-    );
+    assertEquals(beide.includes('id="exam-warning-internet"'), true);
+    assertEquals(beide.includes('id="exam-warning-registration"'), true);
+    assertEquals(beide.includes("Seit 08:05"), true);
+    assertEquals(beide.includes("Anmeldung freigegeben"), true);
+    // Ein Balken, nicht zwei.
+    assertEquals(beide.split('id="exam-warning"').length - 1, 1);
 });
 
 

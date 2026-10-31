@@ -1,9 +1,9 @@
 import { assertEquals, assertExists } from "@std/assert";
 import {
     AdminExamModeSchema,
+    AdminExamRegistrationSchema,
     AdminFileTypesSchema,
     AdminQuerySchema,
-    AdminRegistrationWindowSchema,
     AdminUnterlagenDeleteAllSchema,
     AdminUnterlagenDeleteSchema,
     AdminUnterlagenUploadSchema,
@@ -36,25 +36,29 @@ Deno.test("LdapSearchSchema - rejects an empty term", () => {
     }
 });
 
-Deno.test("AdminRegistrationWindowSchema - akzeptiert open und close", () => {
-    for (const action of ["open", "close"]) {
-        const form = new FormData();
-        form.append("action", action);
-        assertEquals(AdminRegistrationWindowSchema.safeParse(form).success, true);
+Deno.test("AdminExamRegistrationSchema - akzeptiert gesetztes und fehlendes Häkchen", () => {
+    const checked = new FormData();
+    checked.append("registration_open", "on");
+    const parsedChecked = AdminExamRegistrationSchema.safeParse(checked);
+    assertEquals(parsedChecked.success, true);
+    if (parsedChecked.success) {
+        assertEquals(parsedChecked.data.registration_open, "on");
+    }
+
+    // Ungeprüft schickt der Browser das Feld gar nicht mit.
+    const parsedUnchecked = AdminExamRegistrationSchema.safeParse(
+        new FormData(),
+    );
+    assertEquals(parsedUnchecked.success, true);
+    if (parsedUnchecked.success) {
+        assertEquals(parsedUnchecked.data.registration_open, undefined);
     }
 });
 
-Deno.test("AdminRegistrationWindowSchema - lehnt andere Aktionen ab", () => {
+Deno.test("AdminExamRegistrationSchema - lehnt fremde Werte ab", () => {
     const form = new FormData();
-    form.append("action", "reset");
-    const result = AdminRegistrationWindowSchema.safeParse(form);
-    assertEquals(result.success, false);
-    if (!result.success) {
-        assertEquals(
-            result.error.issues[0].message,
-            "Ungültige Aktion für das Anmeldefenster.",
-        );
-    }
+    form.append("registration_open", "off");
+    assertEquals(AdminExamRegistrationSchema.safeParse(form).success, false);
 });
 
 Deno.test("RegisterSchema - accepts valid email", () => {

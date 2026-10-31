@@ -13,7 +13,6 @@ import type { TikPanelState } from "../service/tik.ts";
 type StartPageTemplateData = {
     files: string[];
     panel_html: string;
-    registration_window_html?: string;
 };
 
 type AbgabeTemplateData = {
@@ -65,11 +64,6 @@ type LdapTemplateData = {
     has_more?: boolean;
 };
 
-type AdminRegistrationWindowTemplateData = {
-    open: boolean;
-    remaining_label: string;
-};
-
 type AdminTemplateData = {
     remote_user: UserType;
     spg_times: string[];
@@ -115,17 +109,30 @@ type AdminFileTypesTemplateData = {
     cleanup_result_html?: string;
 };
 
-type AdminExamModeTemplateData = {
+export type AdminExamModeTemplateData = {
     exam_status: "idle" | "running" | "paused" | "stopped";
     exam_remaining_label: string;
     exam_open: boolean;
-    /** true bei running und paused — steuert Warnband und Bestätigungsdialog. */
+    /** true bei running und paused — steuert Warnband, Schalter und Dialoge. */
     exam_running: boolean;
     firewall_state: FirewallState;
     firewall_error?: string;
     /** true = nicht wegklickbares Modal mit dem API-Fehler zeigen. */
     firewall_modal: boolean;
+    /** Anmelde-Freigabe während des Examens (#161). */
+    registration_open: boolean;
+    /** Anzeigefertige Uhrzeit der Freigabe, leer wenn gesperrt. */
+    registration_since: string;
+    /** Gründe, aus denen das Examen „nicht dicht" ist; leer = alles zu. */
+    exam_hazards: ExamHazardView[];
     success_message?: string;
+};
+
+/** Anzeigeform einer Gefahr im roten Balken. */
+export type ExamHazardView = {
+    key: "internet" | "registration";
+    title: string;
+    detail: string;
 };
 
 type AdminIPDetailTemplateData = ServiceIPDetail;
@@ -220,11 +227,6 @@ export const ldapTemplate = Handlebars.compile<LdapTemplateData>(
 );
 export const whoamiTemplate = Handlebars.compile<WhoamiTemplateData>(
     Deno.readTextFileSync("templates/whoami.hbs"),
-);
-export const adminRegistrationWindowTemplate = Handlebars.compile<
-    AdminRegistrationWindowTemplateData
->(
-    Deno.readTextFileSync("templates/admin-registration-window.hbs"),
 );
 export const adminTemplate = Handlebars.compile<AdminTemplateData>(
     Deno.readTextFileSync("templates/admin.hbs"),

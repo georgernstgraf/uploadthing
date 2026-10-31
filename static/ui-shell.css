@@ -107,7 +107,7 @@ body > header {
 }
 
 /* Breiter Schalter im Examen-Panel; die Größe stand früher inline. */
-.exam-firewall-switch {
+.exam-switch {
     width: 3.5rem;
     height: 1.75rem;
 }

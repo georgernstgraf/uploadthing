@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import config from "../lib/config.ts";
 import * as hbs from "../lib/handlebars.ts";
 import { get_unterlagen } from "../lib/pathfuncs.ts";
+import { localTimeString } from "../lib/timefunc.ts";
 import type { HonoContextVars } from "../lib/types.ts";
 import * as service from "../service/service.ts";
 
@@ -71,20 +72,91 @@ export async function buildPanel(
     });
 }
 
-/** Panel des Neuanmelde-Notausgangs; leer, wenn kein Examen läuft. */
-export async function buildRegistrationWindowPanel(): Promise<string> {
-    const examOpen = await service.exam.isExamWindowOpen();
-    if (!examOpen) {
-        return "";
+/** Eine Gefahr, die den roten Balken im Examen-Panel auslöst (#161). */
+export type ExamHazard = hbs.ExamHazardView;
+
+/**
+ * Sammelt die Gründe, aus denen das Examen gerade „nicht dicht" ist
+ * (#161). Leer, solange kein Examen läuft — nach einem Stopp ist die
+ * Gefahr vorbei und der Zustand steht als Klartext im Panel.
+ */
+export function buildExamHazards(options: {
+    exam_running: boolean;
+    firewall_state: string;
+    registration_open: boolean;
+    registration_since: string;
+}): ExamHazard[] {
+    if (!options.exam_running) {
+        return [];
     }
 
-    const remaining = service.exam.getRegistrationWindowRemainingSeconds();
-    return hbs.adminRegistrationWindowTemplate({
-        open: remaining > 0,
-        remaining_label: remaining > 0
-            ? `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`
-            : "",
-    });
+    const hazards: ExamHazard[] = [];
+
+    if (options.firewall_state === "frei") {
+        hazards.push({
+            key: "internet",
+            title: "Internet frei",
+            detail:
+                "Die Sperrregel ist nicht aktiv. Der Internetzugang im Prüfungsnetz ist offen, solange das Examen läuft.",
+        });
+    }
+
+    if (options.registration_open) {
+        hazards.push({
+            key: "registration",
+            title: "Neuanmeldung freigegeben",
+            detail: options.registration_since
+                ? `Seit ${options.registration_since} dürfen sich Schüler neu anmelden — ein Namenswechsel während der Prüfung ist damit möglich.`
+                : "Schüler dürfen sich neu anmelden — ein Namenswechsel während der Prüfung ist damit möglich.",
+        });
+    }
+
+    return hazards;
+}
+
+export type ExamPanelOptions = {
+    success_message?: string;
+    firewall_error?: string;
+};
+
+/**
+ * Einzige Stelle, die die Daten des Examen-Panels zusammenstellt (#161).
+ * Vorher bauten `routes/admin.ts` und `routes/api.ts` dasselbe Panel
+ * getrennt — dabei wäre die Gefahrenliste irgendwann auseinandergelaufen.
+ */
+export async function buildExamPanelData(
+    options: ExamPanelOptions = {},
+): Promise<hbs.AdminExamModeTemplateData> {
+    const exam = await service.exam.getStatusView();
+    const firewall = service.admin.buildExamFirewallPanel(
+        await service.admin.getExamModeStatus(),
+        options.firewall_error,
+    );
+    const exam_running = exam.status === "running" || exam.status === "paused";
+    const registration_open = service.exam.isStudentRegistrationAllowed();
+    const opened_at = service.exam.getStudentRegistrationOpenedAt();
+    const registration_since = registration_open && opened_at
+        ? localTimeString(opened_at)
+        : "";
+
+    return {
+        exam_status: exam.status,
+        exam_remaining_label: exam.remaining_label,
+        exam_open: exam.open,
+        exam_running,
+        firewall_state: firewall.firewall_state,
+        firewall_error: firewall.firewall_error,
+        firewall_modal: firewall.firewall_modal,
+        registration_open,
+        registration_since,
+        exam_hazards: buildExamHazards({
+            exam_running,
+            firewall_state: firewall.firewall_state,
+            registration_open,
+            registration_since,
+        }),
+        success_message: options.success_message,
+    };
 }
 
 /** Inhalt der Startseite (ohne Shell). */
@@ -92,16 +164,11 @@ export async function buildStartContent(
     c: PageContext,
     options: StartPageOptions = {},
 ): Promise<string> {
-    const is_admin = c.get("is_admin");
     const panel_html = await buildPanel(c, options);
-    const registration_window_html = is_admin
-        ? await buildRegistrationWindowPanel()
-        : "";
 
     return hbs.startPageTemplate({
         files: await get_unterlagen(),
         panel_html,
-        registration_window_html,
     });
 }
 

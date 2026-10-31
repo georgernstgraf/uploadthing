@@ -438,6 +438,61 @@ Deno.test({
 });
 
 Deno.test({
+    name: "E2E: Anmelde-Freigabe schaltet den roten Balken (#161)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await startExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, TEACHER.email);
+            try {
+                await page.goto("/admin/application");
+                await page.waitForSelector("#exam-registration-card");
+
+                // Gesperrt: Schalter aus, kein Anmelde-Balken.
+                assertEquals(
+                    await page.isChecked("#registration_open"),
+                    false,
+                );
+                assertEquals(
+                    await page.locator("#exam-warning-registration").count(),
+                    0,
+                    "Ohne Freigabe darf der Balken nicht stehen",
+                );
+
+                // Freigeben: der Balken erscheint ohne weitere Bestätigung.
+                await page.click("#registration_open");
+                await page.waitForSelector("#exam-warning-registration");
+                assertEquals(await page.isChecked("#registration_open"), true);
+                const badge = (await page.textContent(
+                    "#exam-registration-badge",
+                )) ?? "";
+                assert(
+                    badge.includes("Anmeldung freigegeben"),
+                    `Badge erwartet, war: "${badge}"`,
+                );
+                const warning = (await page.textContent("#exam-warning")) ?? "";
+                assert(
+                    warning.includes("Neuanmeldung freigegeben") &&
+                        warning.includes("Seit "),
+                    `Warnung mit Zeitpunkt erwartet, war: "${warning}"`,
+                );
+
+                // Zurücknehmen: Balken verschwindet, Schalter ist aus.
+                await page.click("#registration_open");
+                await page.waitForSelector("#exam-warning-registration", {
+                    state: "detached",
+                });
+                assertEquals(await page.isChecked("#registration_open"), false);
+            } finally {
+                await stopExam();
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
     name: "E2E: Fehlerantwort zeigt den globalen Toast",
     sanitizeOps: false,
     sanitizeResources: false,

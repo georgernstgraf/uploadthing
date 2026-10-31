@@ -1,9 +1,27 @@
-Last updated: 2026-10-31 (Security-Header gegen das „Not secure"-Badge — alle Tests grün).
+Last updated: 2026-10-31 (#161 Phase 1 — Anmelde-Freigabe als Schalter, alle Tests grün).
 
 ## Sofort weiter mit
 
-Nichts Blockierendes. Die nächsten Punkte sind **Abnahmen**, keine
-Umbauten — in dieser Reihenfolge:
+**#161 Phase 1 ist fertig.** Offen sind die Phasen 2–6 aus dem Issue:
+
+1. **Phase 2 — Cookie-Dedupe** (`cookiepresents` höchstens eine Zeile pro
+   IP+User je 30 s, kein Event für Lehrpersonen). Voraussetzung dafür,
+   dass der Admin-Kanal in Phase 5 keine Rückkopplung erzeugt.
+2. **Phase 3 — SSE-Grundlage**: `lib/event_hub.ts`, `lib/sse.ts`,
+   `service/events.ts`, `closeAllStreams()` als erster Schritt in
+   `stopBackgroundWork` (sonst hängt der Shutdown an offenen Streams).
+3. **Phase 4 — Exam-Kanal**, Hover-Trigger aus `abgabe.hbs` raus.
+4. **Phase 5 — Admin-Kanal**, `every 15s` raus, Freeze-Badge.
+5. **Phase 6 — Doku**: SSE-Regeln in `CONVENTIONS`, `ADMIN_REFRESH_SECONDS`
+   aus README/`.env.example` entfernen; die Schalter-Doku ist bereits
+   geschrieben.
+
+Nebenbefund: Der E2E-Test „Geschlossene Abgabe-Karte prüft bei Hover und
+Klick (#160)" ist einmalig geflackt (`mouseenter`- und `click`-Request
+rennen um denselben Swap). Phase 4 entfernt den Mechanismus ohnehin;
+bis dahin bei Rot einmal wiederholen.
+
+## Betriebliche Abnahmen (unverändert)
 
 1. **Security-Header im Betrieb prüfen:** Dienst neu starten
    (`systemctl --user restart uploadthing`, Deno liest nur beim Start),

@@ -182,6 +182,8 @@
   darf die echte Sense schalten.
 - Since #131, startup releases the internet (exam mode off) instead of blocking it; without API credentials only the examstate reset runs. Startup examstate reset is not tied to the configuration.
 - The examstate singleton persists across test runs; use `clearExamState()` (and `seedExamState()` for running/paused scenarios) from `test/helpers/forensics_fixture.ts` or tests will see leftovers from earlier runs.
+- Die Anmelde-Freigabe (#161) liegt im Prozessspeicher. Ein Neustart setzt sie auf gesperrt zurück — und setzt über `resetExamStateOnStartup()` zugleich den Exam-Zustand auf `stopped`, sodass danach ohnehin keine Anmeldesperre mehr greift. Wer den Exam-Zustand je über einen Neustart retten will, muss diese beiden Dinge zusammen entscheiden (dann braucht die Freigabe ein Feld in `examstate` samt Migration).
+- Tests, die den Schalter prüfen, müssen ihn über `resetStudentRegistrationAllowed()` zurücksetzen: `clearExamState()` allein löscht nur die Datenbankzeile, nicht das Flag.
 - The student countdown receives `ends_at_ms` server-rendered and ticks client-side via Alpine; after a resume it stays behind the server until page reload (no polling by design).
 - Browser-visible flows may also depend on local directories such as `ABGABEN_DIR` and `UNTERLAGEN_DIR` existing and being readable.
 

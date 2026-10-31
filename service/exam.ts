@@ -38,61 +38,62 @@ export type ExamStatusView = {
 };
 
 /**
- * Notausgang für Neuanmeldungen während eines Examens (#146).
+ * Anmelde-Freigabe während eines Examens (#161).
  *
  * Während eines Examens ist keine Neuanmeldung als Schüler möglich, damit
- * niemand den Namen wechselt. Der Admin-Knopf öffnet das Anmeldefenster
- * für fünf Minuten; die Freigabe liegt **nur im Speicherprozess** und
- * verfällt mit Ablauf, Neustart oder Exam-Ende von selbst.
+ * niemand den Namen wechselt. Der Schalter in der Examen-Steuerung hebt
+ * diese Sperre auf, **bis er wieder ausgeschaltet wird** — es gibt keine
+ * Frist, weil die richtige Dauer nicht vorhersehbar ist und der Admin die
+ * Entscheidung jederzeit zurücknehmen kann.
+ *
+ * Die Freigabe liegt **nur im Speicherprozess** und wird bei `start()` und
+ * am Exam-Ende zurückgesetzt. Ein Neustart setzt sie ebenfalls zurück — und
+ * setzt zugleich den Exam-Zustand auf `stopped`, sodass danach ohnehin
+ * keine Anmeldesperre mehr greift.
  */
-export const REGISTRATION_WINDOW_SECONDS = 5 * 60;
+let registrationAllowed = false;
+let registrationOpenedAt: Date | null = null;
 
-let registrationWindowUntilMs: number | null = null;
-
-/** Gibt die Anmeldung für Nicht-Lehrpersonen für 5 Minuten frei. */
-export function openRegistrationWindow(
+/** Schaltet die Neuanmeldung für Nicht-Lehrpersonen frei oder sperrt sie. */
+export function setStudentRegistrationAllowed(
+    allowed: boolean,
     now: () => Date = () => new Date(),
 ): void {
-    registrationWindowUntilMs = now().getTime() +
-        REGISTRATION_WINDOW_SECONDS * 1000;
+    registrationAllowed = allowed;
+    registrationOpenedAt = allowed ? now() : null;
 }
 
-/** Schließt das Anmeldefenster vorzeitig. */
-export function closeRegistrationWindow(): void {
-    registrationWindowUntilMs = null;
+/** Ist die Anmeldung für Nicht-Lehrpersonen gerade freigegeben? */
+export function isStudentRegistrationAllowed(): boolean {
+    return registrationAllowed;
 }
 
-/** Restliche Sekunden des Notausgangs; 0 = geschlossen. */
-export function getRegistrationWindowRemainingSeconds(
-    now: () => Date = () => new Date(),
-): number {
-    if (registrationWindowUntilMs === null) {
-        return 0;
-    }
+/** Beginn der Freigabe für „freigegeben seit …"; `null` = gesperrt. */
+export function getStudentRegistrationOpenedAt(): Date | null {
+    return registrationOpenedAt;
+}
 
-    const remaining = Math.ceil(
-        (registrationWindowUntilMs - now().getTime()) / 1000,
-    );
-    if (remaining <= 0) {
-        registrationWindowUntilMs = null;
-        return 0;
-    }
-
-    return remaining;
+/**
+ * Setzt die Freigabe auf den Ausgangszustand zurück. Wird von `start()`
+ * und am Exam-Ende gerufen; Tests brauchen denselben Weg.
+ */
+export function resetStudentRegistrationAllowed(): void {
+    registrationAllowed = false;
+    registrationOpenedAt = null;
 }
 
 /**
  * Darf sich eine Nicht-Lehrperson gerade neu anmelden?
  *
- * Außerhalb eines Examens immer; während eines Examens nur, solange der
- * Admin-Notausgang offen ist. Die Entscheidung fällt erst hier, weil die
+ * Außerhalb eines Examens immer; während eines Examens nur, solange die
+ * Freigabe eingeschaltet ist. Die Entscheidung fällt erst hier, weil die
  * Klasse eines Menschen erst nach dem LDAP-Lookup bekannt ist.
  */
 export async function isStudentRegistrationOpen(
     now: () => Date = () => new Date(),
     runner?: ExamModeRunner,
 ): Promise<boolean> {
-    if (getRegistrationWindowRemainingSeconds(now) > 0) {
+    if (registrationAllowed) {
         return true;
     }
 
@@ -133,9 +134,9 @@ export async function start(
     const startedAt = now();
     const result = await setInternetActive(false, runner);
 
-    // Ein Notausgang aus einem früheren Examen darf nicht in dieses
+    // Eine Freigabe aus einem früheren Examen darf nicht in dieses
     // hineinreichen.
-    closeRegistrationWindow();
+    resetStudentRegistrationAllowed();
 
     repo.exam.upsert({
         status: "running",
@@ -327,8 +328,8 @@ async function finishExam(
     state: RepoExamStateRecord,
     runner?: ExamModeRunner,
 ): Promise<ExamModeResult> {
-    // Mit dem Examen endet auch der Neuanmelde-Notausgang.
-    closeRegistrationWindow();
+    // Mit dem Examen endet auch die Anmelde-Freigabe.
+    resetStudentRegistrationAllowed();
 
     repo.exam.upsert({
         ...state,
