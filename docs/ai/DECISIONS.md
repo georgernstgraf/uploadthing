@@ -1,5 +1,44 @@
 # DECISIONS
 
+## 2026-10-31: Kopf-Abstand, Portrait-Reihenfolge, Hero-Breite und Du-Anrede (#158)
+
+- **Problem:** Das erste Element von `<main>` saß exakt auf der Unterkante
+  der Hero-Karte — gemessen 0 px Abstand zur Navigation (Admins) und zur
+  Namenskarte (Schüler), bei 390 px wie bei 1280 px. Zwei Karten mit
+  gleicher Breite und gleicher Innenkante ohne Zwischenraum lesen sich
+  als eine kaputte Karte.
+- **Die Klebung war im Kopf, nicht in der Navigation.** Deshalb eine
+  Zeile in `ui-shell.css` (`body > header { padding-bottom: 0.5rem }`)
+  statt `mt-*` an `nav.hbs` und `userbadge.hbs`: sie gilt für alle Seiten
+  und beide Rollen. 0.5rem ist derselbe Rhythmus, den die Karten
+  darunter über `mb-2` verwenden (gemessen 8 px).
+- **Kopf im Portrait:** Der Kopf war `flex-row-reverse` mit Umbruch und
+  der Markup-Reihenfolge `[Platzhalter, h1, Schalter]`. Unter 576 px
+  ergab das drei Zeilen (unsichtbarer Platzhalter, h1, Schalter) und
+  einen 124 px hohen Kopf; der Schalter stand **unter** dem Hero. Jetzt
+  `flex-column flex-sm-row`: mobil Schalter oben rechts (`order-first`,
+  `align-self-end`, Platzhalter `d-none d-sm-inline-block`), ab `sm`
+  unverändert eine Zeile mit Platzhalter links, Hero mittig, Schalter
+  rechts. Kopf mobil 85 px.
+- **Der Hero fluchtet mit dem Inhalt:** Der Kopf war mit `mx-2` fast
+  randlos (1264 px bei 1280 px Viewport), der Inhalt läuft in
+  `.container px-2` (1124 px). Der Kopf nutzt jetzt dieselbe
+  `container px-2`-Klasse; seitliche Kanten sind deckungsgleich. Aus
+  `mt-2` wurde `pt-2`, damit die 8 px oben auch im gestickten Zustand
+  bleiben (vorher klebte die Karte beim Scrollen am Viewport-Rand).
+- **Du statt Sie:** 11 Stellen (Toasts, `hx-confirm`-Dialoge,
+  4xx-Meldungen) auf „du/dein" umgestellt. Unpersönliche
+  Infinitiv-Aufforderungen („Bitte eine Datei auswählen.") bleiben: sie
+  sind kein „Sie", und eine Umstellung hätte die halbe
+  Validierungskette samt `lib/schemas_test.ts` mitgerissen.
+  `test/ui_copy_test.ts` verhindert Rückfälle in allen Templates sowie
+  in den String-Literalen von `routes/` und `lib/schemas.ts` — geprüft
+  werden Literale, nicht Kommentare.
+- **Abnahme:** E2E-Test misst den Abstand Hero→Navigation/Namenskarte
+  (≥ 8 px bei 390 und 1280 px), die Schalterposition über dem `h1`
+  (< 576 px) bzw. daneben (1280 px) und die Flucht von Hero- und
+  Inhaltkante bei 1280 px.
+
 ## 2026-10-31: Admin-Seite als Gruppendashboard in zwei bis drei Spalten (#157)
 
 - **Problem:** `/admin/application` war eine Einspalten-Seite mit einem

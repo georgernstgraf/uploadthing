@@ -48,6 +48,29 @@ Das System läuft so, wie es das Epic beschrieben hat:
   `hx-disabled-elt="this"` war an Formular-Submits wirkungslos; jetzt
   `hx-disabled-elt="find button[type='submit']"` am Formular.
 
+## Erledigt am 2026-10-31 (Kopf, Portrait-Schalter, Du-Anrede, #158)
+
+- **Kopf hatte unten 0 px Luft.** Navigation (Admins) und Namenskarte
+  (Schüler) klebten an der Hero-Karte — gemessen bei 390 px und 1280 px.
+  Jetzt `body > header { padding-bottom: 0.5rem }` in `ui-shell.css`,
+  also 8 px auf allen Seiten; die Korrektur sitzt im Kopf, nicht in
+  `nav.hbs`/`userbadge.hbs`.
+- **Handy-Portrait:** Der Kopf bricht nicht mehr in drei Zeilen
+  (unsichtbarer Platzhalter / h1 / Schalter), sondern ist eine Spalte:
+  Theme-Schalter oben rechts, Hero darunter. 85 px statt 124 px;
+  der Platzhalter-Button ist unter `sm` ausgeblendet.
+- **Hero-Breite:** Der Kopf nutzt jetzt `container px-2` wie `<main>`;
+  bei 1280 px fluchten beide Kanten (1124 px statt 1264 px), `mt-2`
+  wurde zu `pt-2` (die 8 px oben bleiben auch beim Scrollen).
+- **Durchgängig „Du":** 11 Stellen (Toasts, `hx-confirm`-Dialoge,
+  4xx-Meldungen) von „Sie/Ihr" auf „du/dein" umgestellt; unpersönliche
+  Infinitiv-Aufforderungen bleiben bewusst. Neuer Test
+  `test/ui_copy_test.ts` verbietet formelle Anrede in Templates und in
+  den String-Literalen von `routes/` und `lib/schemas.ts`.
+- **Abnahme:** neuer E2E-Test misst Abstände, Schalterposition und
+  Kantenflucht. 354 Deno-Tests, 10 E2E-Tests, `check`/`lint` grün.
+  Details in `DECISIONS.md`, Anrede-Regel in `CONVENTIONS.md`.
+
 ## Erledigt am 2026-10-31 (Admin-Dashboard, #157)
 
 - **`/admin/application` ist jetzt ein Gruppendashboard:** drei thematische

@@ -1,4 +1,4 @@
-Last updated: 2026-10-31 (Admin-Dashboard #157 — alle Tests grün).
+Last updated: 2026-10-31 (#158 Kopf-Abstand, Portrait-Schalter, Du-Anrede — alle Tests grün).
 
 ## Sofort weiter mit
 
@@ -31,6 +31,19 @@ Umbauten — in dieser Reihenfolge:
   `OPERATIONS.md` notiert.
 
 ## Was in dieser Session passiert ist
+
+- **#158:** Kopf und erste Zeile darunter hatten 0 px Abstand —
+  Navigation und Namenskarte klebten an der Hero-Karte (gemessen bei
+  390 und 1280 px). Jetzt `body > header { padding-bottom: 0.5rem }`.
+  Im Handy-Portrait ist der Kopf eine Spalte (Schalter oben rechts,
+  Hero darunter, Platzhalter ausgeblendet), statt drei Zeilen zu
+  brechen; der Kopf schrumpft von 124 auf 85 px. Der Kopf nutzt
+  außerdem `container px-2` wie `<main>` und fluchtet dadurch bei
+  1280 px (1124 px statt 1264 px). Elf UI-Stellen siezten noch
+  (Toasts, `hx-confirm`, 4xx) und duzen jetzt; `test/ui_copy_test.ts`
+  verbietet formelle Anrede in Templates und Routen-Meldungen.
+  Abnahme: E2E misst Abstände, Schalterposition und Kantenflucht;
+  354 Deno-Tests, 10 E2E-Tests, `check`/`lint` grün.
 
 - **#157:** `/admin/application` ist ein Gruppendashboard: drei thematische
   Gruppen (Prüfung / Unterlagen / Zugang & System) als

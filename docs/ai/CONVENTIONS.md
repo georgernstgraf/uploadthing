@@ -54,6 +54,7 @@
 - Reject invalid input early in routes.
 - Keep user-facing validation text consistent with the existing German UI tone.
 - User-facing UI text must be German-only for both student and admin flows; do not leave English empty states, headings, helper text, or status labels in templates.
+- The UI addresses the user informally (`du/dein`) in student and admin flows alike; formal `Sie/Ihr` is never used. `test/ui_copy_test.ts` guards all templates and the user-facing string literals in `routes/` and `lib/schemas.ts`.
 - HTMX admin controls should return plain response text with non-2xx status on failure so the global toast handler in `templates/index.hbs` can surface the error.
 - Invalid or missing `DATABASE_URL` values should fail fast at startup instead of silently falling back to a hardcoded SQLite filename.
 
