@@ -32,6 +32,21 @@
   - `deno task lint`
   - `deno task test`
 
+## Restart After Code Changes
+
+- The app runs as a systemd user unit from this working copy and does **not**
+  hot-reload. After any change that is loaded at startup — `main.ts`, `lib/`,
+  `middleware/`, `routes/`, `repo/`, `service/`, `templates/`, `.env` — run
+  `systemctl --user restart uploadthing`. A green `deno task test` only proves
+  the throwaway test server works, not the deployed instance.
+- `static/` is served from disk per request and needs no restart; the browser
+  may still hold a cached copy (`theme.css?v=…`).
+- Deno reads the TLS certificate only at startup, so a renewed certificate
+  also requires a restart.
+- The restart is fast (<0.1 s since #156). Check afterwards with
+  `systemctl --user status uploadthing` (no `stop-sigterm` timeout) and
+  `journalctl --user -u uploadthing -n 20`.
+
 ## Knowledge Persistence
 
 - Durable project knowledge belongs in `docs/ai/`.

@@ -4,6 +4,18 @@ Current status as of 2026-10-31.
 
 ## Current Focus
 
+**#161 — Server-Push statt Polling (SSE) + Anmelde-Freigabe als Schalter.**
+Phase 1 (Schalter, Warnbalken, keine Confirms an den Schaltern) ist
+umgesetzt und gepusht (`dde6330`), aber noch **nicht live**: der Dienst
+läuft weiter mit dem Build von 02:17. Nach `systemctl --user restart
+uploadthing` steht die Betriebsabnahme in `HANDOFF.md`. Die Phasen 2–6
+(Cookie-Dedupe, SSE-Grundlage, Exam-Kanal, Admin-Kanal, Doku) sind offen.
+
+**#162 — Namenssuche-Robustheit.** Einmaliger `NO_OBJECT`-Aussetzer am
+31.10. 12:05, von der App als „nicht erreichbar" gemeldet; Vorschlag
+(Retry nach Reconnect, ehrliche Fehlermeldung, injizierbarer Searcher)
+steht im Issue.
+
 **Epic #141 — Exam-Infrastruktur 2026/27 — abgeschlossen am 2026-10-31.**
 Alle Sub-Issues sind zu (#133, #134, #142–#149, #135, nebst den im
 Code-Review gefundenen #151–#154); #150 (htmx-4-Migration) wurde aus dem
@@ -214,6 +226,15 @@ sind behoben:
   `rgba(Body, 0.65)`.
 
 ## Pending
+
+- [ ] **#161 Phasen 2–6** — Cookie-Dedupe, SSE-Grundlage (Hub, Streams,
+      `closeAllStreams()` im Shutdown), Exam-Kanal (Hover-Trigger raus),
+      Admin-Kanal (`every 15s` raus, Freeze-Badge), Doku.
+- [ ] **#161 Betriebsabnahme** — neuer Schalter und Warnbalken nach dem
+      Neustart auf `/admin/application` prüfen (Checkliste in `HANDOFF.md`).
+- [ ] **#162 Namenssuche-Robustheit** — Retry nach Reconnect, `NO_OBJECT`
+      nicht als „nicht erreichbar" melden, Fehlerzweig per injizierbarem
+      Searcher testbar machen.
 
 - [ ] **Entscheidung: anonyme Namenssuche.** `/ldap` liefert ohne
       Anmeldung Namen **und Klasse** ab drei Zeichen (bewusst so in #146

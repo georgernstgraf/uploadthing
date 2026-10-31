@@ -1,8 +1,19 @@
-Last updated: 2026-10-31 (#161 Phase 1 — Anmelde-Freigabe als Schalter, alle Tests grün).
+Last updated: 2026-10-31 (#161 Phase 1 umgesetzt, Dienst-Neustart steht aus; LDAP-Aussetzer als #162 erfasst).
 
 ## Sofort weiter mit
 
-**#161 Phase 1 ist fertig.** Offen sind die Phasen 2–6 aus dem Issue:
+**Zuerst Betriebsabnahme von #161 Phase 1.** Der Dienst läuft noch mit dem
+Build von 02:17, Phase 1 ist also **nicht live**:
+
+1. `systemctl --user restart uploadthing` — Pflicht nach jeder
+   Code-Änderung, siehe `AGENTS.md`, Abschnitt „Restart After Code
+   Changes".
+2. `/admin/application` → Examen starten → die Karte „Anmeldung während
+   des Examens" ist da; Schalter an → `#exam-warning-registration` mit
+   „Seit HH:MM"; Schalter aus → Balken weg. Stopp und Internet-Schalter
+   fragen nicht mehr nach.
+
+**Danach #161 Phasen 2–6** (Plan im Issue):
 
 1. **Phase 2 — Cookie-Dedupe** (`cookiepresents` höchstens eine Zeile pro
    IP+User je 30 s, kein Event für Lehrpersonen). Voraussetzung dafür,
@@ -16,6 +27,14 @@ Last updated: 2026-10-31 (#161 Phase 1 — Anmelde-Freigabe als Schalter, alle T
    aus README/`.env.example` entfernen; die Schalter-Doku ist bereits
    geschrieben.
 
+**#162 (neu, unabhängig von #161):** Die Namenssuche meldete am 31.10. um
+12:05:01 für einen Request „nicht erreichbar", obwohl das AD mit
+`0000208D … NO_OBJECT` geantwortet hatte. Derselbe Prozess band sofort neu,
+alle Abfragen (`gra`, `Graf`, `ham`, `Hammer`) laufen seitdem wieder.
+Einmalig, nicht reproduzierbar, **nicht** durch Phase 1 verursacht (der
+Dienst lief mit dem Build von 02:17). Details und Vorschlag (Retry nach
+Reconnect, ehrliche Fehlermeldung, injizierbarer Searcher) in #162.
+
 Nebenbefund: Der E2E-Test „Geschlossene Abgabe-Karte prüft bei Hover und
 Klick (#160)" ist einmalig geflackt (`mouseenter`- und `click`-Request
 rennen um denselben Swap). Phase 4 entfernt den Mechanismus ohnehin;
@@ -24,7 +43,8 @@ bis dahin bei Rot einmal wiederholen.
 ## Betriebliche Abnahmen (unverändert)
 
 1. **Security-Header im Betrieb prüfen:** Dienst neu starten
-   (`systemctl --user restart uploadthing`, Deno liest nur beim Start),
+   (`systemctl --user restart uploadthing`, Deno liest nur beim Start —
+   derselbe Neustart bringt auch #161 Phase 1 live),
    dann `curl -sSI https://tst.spengergasse.at/ | grep -i content-security`
    → `upgrade-insecure-requests`. Danach beim Schüler-Gerät prüfen, ob
    das „Not secure"-Badge nach einem Hard Reload (Strg+Shift+R)
@@ -55,6 +75,31 @@ bis dahin bei Rot einmal wiederholen.
   `OPERATIONS.md` notiert.
 
 ## Was in dieser Session passiert ist
+
+- **#161 Phase 1: Anmelde-Freigabe als Schalter.** Das 5-Minuten-Fenster
+  aus #146 ist ersetzt: `registrationAllowed` + `registrationOpenedAt` in
+  `service/exam.ts`, Reset nur in `start()` und `finishExam()`, `pause()`
+  unberührt. Neuer Endpunkt `POST /api/exam/registration` (Spiegel von
+  `/api/exammode`), Antwort ist das ganze `#exam-admin-panel`. Der
+  Warnbalken `#exam-warning` hat jetzt zwei Zeilen
+  (`#exam-warning-internet`, `#exam-warning-registration` mit
+  „freigegeben seit"), berechnet in `buildExamHazards()`;
+  `buildExamPanelData()` ersetzt die doppelte Panel-Konstruktion aus
+  `routes/admin.ts` und `routes/api.ts`. Drei `hx-confirm` entfernt
+  (Stopp ×2, Internet-Schalter), die fünf Datenlösch-Rückfragen bleiben.
+  Entfernt: `POST /api/exam/registration-window`,
+  `buildRegistrationWindowPanel()`, `templates/admin-registration-window.hbs`,
+  der Wrapper in `home.hbs`, `registration_window_html`. Commit `dde6330`;
+  366 Deno-Tests, 13 E2E-Tests, `check`/`lint` grün.
+- **LDAP-Aussetzer → #162.** Ein Request der Namenssuche scheiterte um
+  12:05:01 mit `NO_OBJECT` (AD-Antwort, kein Netzausfall), die App zeigte
+  „nicht erreichbar"; derselbe Prozess band sofort neu, danach lief alles.
+  Ursache im Code: Hintergrund-Reconnect + pauschale Fehlermeldung; kein
+  Test für den Fehlerzweig. Siehe #162.
+- **`AGENTS.md`: Restart-Pflicht.** Neue Sektion „Restart After Code
+  Changes" — nach Änderungen an `main.ts`, `lib/`, `middleware/`,
+  `routes/`, `repo/`, `service/`, `templates/` oder `.env` muss
+  `systemctl --user restart uploadthing` laufen.
 
 - **Security-Header gegen das „Not secure"-Badge.** Chrome zeigte bei
   `tst.spengergasse.at` trotz gültigem Let's-Encrypt-Zertifikat

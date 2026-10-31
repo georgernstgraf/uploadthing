@@ -116,6 +116,8 @@
   `node_modules/` is gitignored and belongs to the kit only.
 - LDAP access can be slow or unavailable; the code includes reconnect logic and retry timing.
 - Do not start LDAP connections at module import time; eager startup causes unrelated tests to leak timers, reads, and TLS handshakes.
+- **A server-side LDAP answer is not an outage.** `searchUsers()` (`repo/ldapuser.ts`) catches every error, fires the reconnect in the background (`void makeClient()`) and rethrows, so the *causing* request always fails while the next one succeeds; `routes/auth.ts` then tells the student "Die Namenssuche ist gerade nicht erreichbar". On 2026-10-31 a single request hit `0000208D … problem 2001 (NO_OBJECT), best match of 'DC=htl-wien5,DC=schule'` — the AD answering "this base does not exist for me", not a network failure — and the same queries worked milliseconds later. Before debugging the network, read the message: a result code (`0x20`, `NO_OBJECT`, `referral`) names a server answer. #162 tracks the retry and the honest error text.
+- The search endpoint has no test for its failure branch: `GET /ldap?q=Graf` in `test/endpoints_test.ts` asserts real content but talks to the school LDAP, so it cannot provoke an error. #162 adds an injectable searcher.
 
 ## OPNsense 26.7: Migration Assistant und der Legacy-Block
 
