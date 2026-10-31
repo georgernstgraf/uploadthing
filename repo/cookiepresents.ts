@@ -21,6 +21,14 @@ const deleteOlderThanStmt = db.prepare(
 const latestUserIdForIPStmt = db.prepare(
     `SELECT userId FROM cookiepresents WHERE ip = ? ORDER BY at DESC LIMIT 1`,
 );
+const recentByIPAndUserStmt = db.prepare(
+    `SELECT 1
+    FROM cookiepresents
+    WHERE ip = ?
+        AND userId = ?
+        AND at >= ?
+    LIMIT 1`,
+);
 
 export type RepoCookiePresentRecord = {
     id: number;
@@ -75,4 +83,20 @@ export function deleteOlderThan(cutoff: Date): number {
 export function getLatestUserIdForIP(ip: string): number | null {
     const result = latestUserIdForIPStmt.get(ip) as { userId: number } | undefined;
     return result?.userId ?? null;
+}
+
+/**
+ * Gibt es für (IP, User) bereits eine Zeile ab `since`?
+ *
+ * Die Abfrage bleibt auf `ip`/`at` beschränkt, damit sie den vorhandenen
+ * Index `cookiepresents_ip_at_idx (ip, at)` als Bereichssuche nutzt;
+ * `userId` wird auf den Treffern gefiltert.
+ */
+export function recentByIPAndUser(
+    ip: string,
+    userId: number,
+    since: Date,
+): boolean {
+    return recentByIPAndUserStmt.get(ip, userId, since.toISOString()) !==
+        undefined;
 }

@@ -3,6 +3,13 @@ import type { UserType } from "../lib/types.ts";
 import { userRecordToUserType } from "../lib/user_mapper.ts";
 import * as repo from "../repo/repo.ts";
 
+/**
+ * Mindestabstand zwischen zwei Presence-Zeilen für dasselbe Paar
+ * (IP, User). Eine Seite erzeugt mehrere Requests; ohne diese Grenze
+ * würde jeder davon eine Zeile schreiben.
+ */
+export const COOKIE_PRESENT_MIN_INTERVAL_MS = 30_000;
+
 export async function byIPInRange(
     ip: string,
     start: Date,
@@ -25,10 +32,22 @@ export async function byIPInRange(
     return result;
 }
 
-export async function recordByEmail(email: string, ip: string): Promise<void> {
+export async function recordByEmail(
+    email: string,
+    ip: string,
+    now: () => Date = () => new Date(),
+): Promise<boolean> {
     const user = await repo.users.getByEmail(email.trim().toLowerCase());
-    if (!user) return;
-    await repo.cookiepresents.create(ip, user.id, new Date());
+    if (!user) return false;
+
+    const at = now();
+    const since = new Date(at.getTime() - COOKIE_PRESENT_MIN_INTERVAL_MS);
+    if (repo.cookiepresents.recentByIPAndUser(ip, user.id, since)) {
+        return false;
+    }
+
+    await repo.cookiepresents.create(ip, user.id, at);
+    return true;
 }
 
 export async function getLatestUserByIp(ip: string): Promise<UserType | null> {

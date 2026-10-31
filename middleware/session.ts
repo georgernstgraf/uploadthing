@@ -196,6 +196,12 @@ export const remoteIPMiddleware = createMiddleware<
     let is_admin = false;
 
     if (session.isLoggedIn() && session.email) {
+        // Statische Assets sind pro Seite ~8 Requests. Sie sollen keine
+        // Presence-Zeile schreiben; die Entscheidung fällt vor dem
+        // Nutzer-Lookup in recordByEmail, der dort der eigentliche
+        // Aufwand ist. remoteuser/is_admin/Session-Refresh bleiben für
+        // alle Pfade unverändert.
+        const isStaticAsset = c.req.path.startsWith("/static/");
         const user = await service.user.getUserByEmail(session.email);
         if (user) {
             remoteuser = user;
@@ -206,7 +212,12 @@ export const remoteIPMiddleware = createMiddleware<
                 session.refreshTimestamp();
             }
 
-            await service.cookiepresents.recordByEmail(session.email, remoteip);
+            if (!isStaticAsset) {
+                await service.cookiepresents.recordByEmail(
+                    session.email,
+                    remoteip,
+                );
+            }
 
             // Admin-Rechte hängen allein an der LDAP-Klasse. Die
             // Gerätefreigabe per MAC (#147) greift beim Login
