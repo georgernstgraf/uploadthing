@@ -46,7 +46,8 @@ Umbauten — in dieser Reihenfolge:
   `#app-content` initialisierte — Countdown und Dateiname standen nach
   jedem Panel-Swap still; jetzt auch für `#abgabe-panel`. Im selben Zug
   Alpine 3.15.12 → 3.17.5 (htmx bleibt 2.0.10, letzte 2.x). 355
-  Deno-Tests, 12 E2E-Tests, `check`/`lint` grün.
+  Deno-Tests, 12 E2E-Tests, `check`/`lint` grün. Issue #160 ist
+  geschlossen.
 - Der Anomalie-Test auf `/admin/students` scheiterte reproduzierbar
   außerhalb der Schulzeit (die Route rastet den Zeitraum auf `spg_times`
   ein, das Fenster liegt dann in der Zukunft); er gibt den Zeitraum jetzt

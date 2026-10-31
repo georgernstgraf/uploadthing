@@ -71,6 +71,7 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **Abnahme:** Endpoint-Test auf beide Zustände von `GET /abgabe-panel`;
   zwei E2E-Tests (Hover/Klick mit tickendem Countdown, Exam-Ende bei
   offenem Formular). 355 Deno-Tests, 12 E2E-Tests, `check`/`lint` grün.
+  Issue #160 geschlossen.
 - **Nebenbefund:** Der Test
   „GET /admin/students shows user anomalies …" scheiterte reproduzierbar
   außerhalb der Schulzeit, weil die Route den Zeitraum auf `spg_times`
