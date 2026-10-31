@@ -15,11 +15,24 @@
 - **Kopf im Portrait:** Der Kopf war `flex-row-reverse` mit Umbruch und
   der Markup-Reihenfolge `[Platzhalter, h1, Schalter]`. Unter 576 px
   ergab das drei Zeilen (unsichtbarer Platzhalter, h1, Schalter) und
-  einen 124 px hohen Kopf; der Schalter stand **unter** dem Hero. Jetzt
-  `flex-column flex-sm-row`: mobil Schalter oben rechts (`order-first`,
-  `align-self-end`, Platzhalter `d-none d-sm-inline-block`), ab `sm`
-  unverändert eine Zeile mit Platzhalter links, Hero mittig, Schalter
-  rechts. Kopf mobil 85 px.
+  einen 124 px hohen Kopf; der Schalter stand **unter** dem Hero.
+- **Der Kopf bricht jetzt selbst um, statt an einem Breakpoint zu
+  springen:** `d-flex flex-wrap flex-wrap-reverse` mit `[h1, Schalter]`
+  — passt der Titel nicht mehr neben den Schalter, landet der Schalter
+  durch `wrap-reverse` **über** dem Hero (`ms-auto` hält ihn dort
+  rechts). Damit entscheidet die Titelbreite, nicht die Viewport-Breite:
+  mit `PUBLIC_URL=https://tst.spengergasse.at` steht der Schalter unter
+  ~460 px oben, darüber daneben; Kopf mobil 85 px statt 124 px.
+- **Der unsichtbare Platzhalter-Button ist weg.** Er hielt den Hero
+  zwischen zwei gleich breiten Buttons exakt mittig, kostete aber in
+  der umgebrochenen Zeile 86 px links vom Titel — der Hero saß dann
+  43 px rechts der Kartenmitte, am Handy direkt am Kartenrand. Beim
+  Umbruch (Handy, also der häufigste Fall) ist der Titel jetzt exakt
+  mittig; **wenn der Schalter daneben steht, sitzt der Titel bewusst
+  43 px links der Kartenmitte** (halbe Schalterbreite plus `gap`) —
+  das ist der Preis dafür, dass der Schalter im Fluss bleibt und
+  mitwandert. Bitte nicht durch einen Platzhalter „korrigieren": der
+  verschiebt den Titel im umgebrochenen Zustand.
 - **Der Hero fluchtet mit dem Inhalt:** Der Kopf war mit `mx-2` fast
   randlos (1264 px bei 1280 px Viewport), der Inhalt läuft in
   `.container px-2` (1124 px). Der Kopf nutzt jetzt dieselbe

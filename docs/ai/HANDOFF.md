@@ -35,9 +35,11 @@ Umbauten — in dieser Reihenfolge:
 - **#158:** Kopf und erste Zeile darunter hatten 0 px Abstand —
   Navigation und Namenskarte klebten an der Hero-Karte (gemessen bei
   390 und 1280 px). Jetzt `body > header { padding-bottom: 0.5rem }`.
-  Im Handy-Portrait ist der Kopf eine Spalte (Schalter oben rechts,
-  Hero darunter, Platzhalter ausgeblendet), statt drei Zeilen zu
-  brechen; der Kopf schrumpft von 124 auf 85 px. Der Kopf nutzt
+  Im Handy-Portrait bricht der Kopf nicht mehr in drei Zeilen
+  (unsichtbarer Platzhalter / h1 / Schalter), sondern umbricht selbst:
+  `flex-wrap-reverse` schiebt den Schalter über den Hero, sobald der
+  Titel nicht mehr daneben passt; der Platzhalter-Button ist entfallen.
+  Der Kopf schrumpft von 124 auf 85 px. Der Kopf nutzt
   außerdem `container px-2` wie `<main>` und fluchtet dadurch bei
   1280 px (1124 px statt 1264 px). Elf UI-Stellen siezten noch
   (Toasts, `hx-confirm`, 4xx) und duzen jetzt; `test/ui_copy_test.ts`

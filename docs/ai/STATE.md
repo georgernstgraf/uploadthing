@@ -56,9 +56,10 @@ Das System läuft so, wie es das Epic beschrieben hat:
   also 8 px auf allen Seiten; die Korrektur sitzt im Kopf, nicht in
   `nav.hbs`/`userbadge.hbs`.
 - **Handy-Portrait:** Der Kopf bricht nicht mehr in drei Zeilen
-  (unsichtbarer Platzhalter / h1 / Schalter), sondern ist eine Spalte:
-  Theme-Schalter oben rechts, Hero darunter. 85 px statt 124 px;
-  der Platzhalter-Button ist unter `sm` ausgeblendet.
+  (unsichtbarer Platzhalter / h1 / Schalter), sondern bricht selbst um:
+  `flex-wrap-reverse` schiebt den Theme-Schalter über den Hero, sobald
+  der Titel nicht mehr daneben passt. 85 px statt 124 px; der
+  Platzhalter-Button ist entfallen.
 - **Hero-Breite:** Der Kopf nutzt jetzt `container px-2` wie `<main>`;
   bei 1280 px fluchten beide Kanten (1124 px statt 1264 px), `mt-2`
   wurde zu `pt-2` (die 8 px oben bleiben auch beim Scrollen).
