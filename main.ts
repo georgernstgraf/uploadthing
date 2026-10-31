@@ -14,6 +14,7 @@ import apiRouter from "./routes/api.ts";
 import filesRouter from "./routes/files.ts";
 
 import { errorHandler } from "./middleware/error.ts";
+import { securityHeaders } from "./middleware/security_headers.ts";
 
 // ensure ABGABEN_DIR exists
 await Deno.mkdir(config.ABGABEN_DIR, { recursive: true });
@@ -23,6 +24,9 @@ await Deno.mkdir(config.UNTERLAGEN_DIR, { recursive: true });
 
 const app = new Hono<{ Bindings: Bindings; Variables: HonoContextVars }>();
 app.onError(errorHandler);
+// Vor der Session-Middleware, damit auch Ablehnungen und Fehler die
+// Security-Header tragen.
+app.use("*", securityHeaders);
 app.use("*", sessionMiddleware);
 app.use("*", remoteIPMiddleware);
 

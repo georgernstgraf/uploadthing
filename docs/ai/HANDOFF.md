@@ -1,17 +1,23 @@
-Last updated: 2026-10-31 (#160 Abgabe-Panel prüft bei Hover und Klick — alle Tests grün).
+Last updated: 2026-10-31 (Security-Header gegen das „Not secure"-Badge — alle Tests grün).
 
 ## Sofort weiter mit
 
 Nichts Blockierendes. Die nächsten Punkte sind **Abnahmen**, keine
 Umbauten — in dieser Reihenfolge:
 
-1. **Handy-Test der Sperre** im Prüfungs-WLAN: Regel `doku` scharf
+1. **Security-Header im Betrieb prüfen:** Dienst neu starten
+   (`systemctl --user restart uploadthing`, Deno liest nur beim Start),
+   dann `curl -sSI https://tst.spengergasse.at/ | grep -i content-security`
+   → `upgrade-insecure-requests`. Danach beim Schüler-Gerät prüfen, ob
+   das „Not secure"-Badge nach einem Hard Reload (Strg+Shift+R)
+   verschwunden ist; eine bereits gecachte Seite hat den Header nicht.
+2. **Handy-Test der Sperre** im Prüfungs-WLAN: Regel `doku` scharf
    schalten → `example.com` scheitert, `learn.microsoft.com` geht →
    wieder aus. Nur von einem Client im Prüfungsnetz prüfbar, nicht vom
    Dell.
-2. **Lehrer-Login vom Dell** einmal mit echten LDAP-Daten bestätigen
+3. **Lehrer-Login vom Dell** einmal mit echten LDAP-Daten bestätigen
    (`ADMIN_IPS` enthält `192.168.21.2`).
-3. **Zertifikat erneuern** bis 2027-01-12 (Erinnerung Dezember);
+4. **Zertifikat erneuern** bis 2027-01-12 (Erinnerung Dezember);
    Checkliste in `OPERATIONS.md`, Abschnitt „Zertifikats-Checkliste".
 
 ## Offene Entscheidungen
@@ -31,6 +37,25 @@ Umbauten — in dieser Reihenfolge:
   `OPERATIONS.md` notiert.
 
 ## Was in dieser Session passiert ist
+
+- **Security-Header gegen das „Not secure"-Badge.** Chrome zeigte bei
+  `tst.spengergasse.at` trotz gültigem Let's-Encrypt-Zertifikat
+  (14.10.2026–12.01.2027, TLS 1.3, HTTP/2) und leerem DevTools-Panel
+  „Not secure" mit „Certificate is valid" im Bubble — der Chrome-State
+  `WARNING`, also **Mixed Content** oder ein Formular mit `http://`-Ziel.
+  Die Instanz liefert nachweislich keine `http://`-Referenz aus (HTML,
+  `theme.css`, `ui-shell.css`, `ibm-plex-sans.css`, Templates; Port 80
+  zu, keine iframes/CDNs), der per CDP ausgelesene
+  `Security.visibleSecurityStateChanged` meldet `secure`. Der Auslöser
+  saß also im Client (alter Cache vor dem Umzug auf den Dell, Extension
+  oder Proxy). Neu: `middleware/security_headers.ts` setzt auf **jeder**
+  Antwort `Content-Security-Policy: upgrade-insecure-requests` und hebt
+  damit eingeschleuste http-Ressourcen auf https. **Bewusst kein HSTS**
+  (Begründung in `CONVENTIONS.md`: kein http-Dienst, aber die
+  „Trotzdem fortfahren"-Notbremse muss wegen der manuellen
+  Zertifikatserneuerung bleiben). Vier Tests in
+  `middleware/security_headers_test.ts` plus eine Endpoint-Zeile;
+  360 Deno-Tests, `check`/`lint` grün.
 
 - **#160:** Das Abgabe-Panel wertete `exam_open` einmal beim Rendern aus —
   wer die Seite vor dem Exam-Start geladen hatte, sah dauerhaft nur den

@@ -48,6 +48,27 @@
 - Do not add new optional env vars with silent fallbacks for anything that affects security or runtime behavior.
 - The old `!` non-null assertion pattern on `Deno.env.get()` is no longer sufficient; convert to `requireEnv()`.
 
+## Sicherheits-Header
+
+- Jede Antwort trägt `Content-Security-Policy: upgrade-insecure-requests`
+  (`middleware/security_headers.ts`, registriert in `main.ts` **vor** der
+  Session-Middleware). Grund: Chrome zeigte am 2026-10-31 trotz gültigem
+  Let's-Encrypt-Zertifikat und TLS 1.3 „Not secure" — das ist immer Mixed
+  Content, also eine `http://`-Ressource auf einer https-Seite. Die
+  ausgelieferte Seite selbst enthält keine (geprüft), der Auslöser kam vom
+  Client (Cache, Extension, Proxy). Der Header hebt solche Anfragen
+  automatisch auf https und schließt damit die ganze Fehlerklasse.
+- **Bewusst kein `Strict-Transport-Security`.** Port 80 ist zu, es gibt
+  keinen http-Dienst und keine Subdomains — der Downgrade-Schutz bringt
+  also fast nichts. Er würde aber die „Trotzdem fortfahren"-Notbremse
+  entfernen, und die Zertifikatserneuerung ist manuell
+  (`OPERATIONS.md`, 2×/Jahr, Deno liest das Zertifikat nur beim Start).
+  Ein fehlgeschlagener Tausch würde den Dienst für die gesamte
+  `max-age`-Dauer unbenutzbar machen, auch mitten im Examen. Wer HSTS
+  nachrüstet, muss diese Abwägung zuerst auflösen.
+- Neue Header gehören in `securityHeaderValues()`, damit
+  `middleware/security_headers_test.ts` sie abdeckt.
+
 ## Validation And Parsing
 
 - Prefer schema validation with Zod and `zod-form-data` where the project already uses it.

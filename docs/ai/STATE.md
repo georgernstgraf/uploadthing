@@ -48,6 +48,26 @@ Das System läuft so, wie es das Epic beschrieben hat:
   `hx-disabled-elt="this"` war an Formular-Submits wirkungslos; jetzt
   `hx-disabled-elt="find button[type='submit']"` am Formular.
 
+## Erledigt am 2026-10-31 (Security-Header gegen „Not secure")
+
+- **Befund:** Chrome meldete bei `https://tst.spengergasse.at` „Not secure",
+  obwohl das Zertifikat gültig war (LE, 14.10.2026–12.01.2027, TLS 1.3,
+  HTTP/2). Diese Kombination ist per Definition **Mixed Content** — eine
+  `http://`-Ressource auf einer https-Seite. Die Instanz liefert keine
+  solche Referenz aus (HTML, alle CSS, Templates geprüft; Port 80 zu;
+  CDP-`visibleSecurityStateChanged` sagt `secure`), der Auslöser kam vom
+  Client (alter Cache, Extension, Proxy).
+- **Fix:** `middleware/security_headers.ts` setzt auf jeder Antwort
+  `Content-Security-Policy: upgrade-insecure-requests`; registriert in
+  `main.ts` vor der Session-Middleware, damit auch 4xx/5xx die Header
+  tragen.
+- **Bewusst kein HSTS:** kein http-Dienst und keine Subdomains, dafür
+  würde `max-age` die „Trotzdem fortfahren"-Notbremse bei manueller
+  Zertifikatserneuerung entfernen. Steht so in `CONVENTIONS.md`.
+- **Abnahme:** 4 Tests in `middleware/security_headers_test.ts` (Erfolg,
+  Fragment, 500, Header-Werte) plus Endpoint-Prüfung auf `GET /`.
+  360 Deno-Tests, `check`/`lint` grün.
+
 ## Erledigt am 2026-10-31 (Abgabe-Panel prüft selbst, #160)
 
 - **Das Abgabe-Panel veraltete.** `exam_open` wurde einmal beim Rendern

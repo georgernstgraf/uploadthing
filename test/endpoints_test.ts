@@ -61,6 +61,17 @@ Deno.test("GET / - Home page", async () => {
     assertEquals(res.headers.get("content-type")?.includes("text/html"), true);
 });
 
+Deno.test("GET / - Security-Header", async () => {
+    const res = await fetch(`${BASE_URL}/`);
+    assertEquals(res.status, 200);
+    // Verhindert das „Not secure"-Badge bei gültigem Zertifikat, siehe
+    // middleware/security_headers.ts.
+    assertEquals(
+        res.headers.get("content-security-policy"),
+        "upgrade-insecure-requests",
+    );
+});
+
 Deno.test("GET /admin/logs - Admin logs", async () => {
     const res = await fetch(`${BASE_URL}/admin/logs`);
     // Route wurde entfernt: für Anonyme liefert die requireAdmin-Middleware
