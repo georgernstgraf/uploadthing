@@ -9,13 +9,13 @@
  */
 
 import * as hub from "../lib/event_hub.ts";
+import { ACTIVITY_CHANNEL, EXAM_CHANNEL } from "../lib/event_hub.ts";
 import * as exam from "./exam.ts";
 import type { ExamStatus } from "./exam.ts";
 
-/** Kanal für den Exam-Zustand (eingeloggte Schüler). */
-export const EXAM_CHANNEL = "exam";
-/** Kanal für die Admin-Aktivität (nur Lehrpersonen). */
-export const ACTIVITY_CHANNEL = "activity";
+// Die Kanalnamen gehören dem Bus (Zyklusfreiheit, siehe
+// `lib/event_hub.ts`) und werden hier nur weitergereicht.
+export { ACTIVITY_CHANNEL, EXAM_CHANNEL };
 
 /**
  * Mindestabstand zwischen zwei Admin-Events. Bewusst keine

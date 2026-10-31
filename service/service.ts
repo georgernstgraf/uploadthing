@@ -6,6 +6,7 @@ import * as abgaben from "./abgaben.ts";
 import * as ipadmin from "./ipadmin.ts";
 import * as admin from "./admin.ts";
 import * as exam from "./exam.ts";
+import * as exam_watchdog from "./exam_watchdog.ts";
 import * as tik from "./tik.ts";
 import * as adminmac from "./adminmac.ts";
 import * as unterlagen from "./unterlagen.ts";
@@ -19,6 +20,7 @@ export {
     ipadmin,
     admin,
     exam,
+    exam_watchdog,
     tik,
     adminmac,
     unterlagen,

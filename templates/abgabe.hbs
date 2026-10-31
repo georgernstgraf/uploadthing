@@ -1,14 +1,11 @@
-{{! Geschlossen prüft die Karte bei Hover und Klick, ob das Examen
-    inzwischen läuft, und tauscht sich gegen das Abgabe-Formular (#160).
-    `throttle` ist Pflicht: der Swap ersetzt den Knoten unter dem Cursor,
-    Chrome feuert darauf ein neues `mouseenter` — ohne Drossel eine
-    Request-Schleife. Bei offenem Examen bleibt die Karte tot, damit kein
-    Swap die gewählte Datei wegwirft. }}
-<div class="card shadow-sm border-0{{#unless exam_open}} cursor-pointer{{/unless}}"
-     {{#unless exam_open}}hx-get="/abgabe-panel"
-     hx-target="#abgabe-panel"
-     hx-swap="innerHTML"
-     hx-trigger="mouseenter throttle:3s, click"{{/unless}}>
+{{! Dieses Panel zieht sich selbst nach (#161): `static/events.js`
+    hält den Exam-Zustand über Server-Sent Events aktuell und swappt die
+    Karte, sobald das Examen beginnt oder endet. Hier steht deshalb kein
+    Trigger mehr — ein Hover-Swap würde bei offenem Formular die gewählte
+    Datei verwerfen. Der Countdown wird ebenfalls von `events.js`
+    gerechnet (data-ends-at-ms), damit es nur einen Besitzer der Anzeige
+    und einen Serverzeit-Offset gibt. }}
+<div class="card shadow-sm border-0">
     <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
         <h2 class="card-title mb-0">Deine Abgabe</h2>
     </div>
@@ -54,14 +51,14 @@
                 {{#if exam_ends_at_ms}}
                     <div id="exam-countdown"
                          class="text-center mb-3"
-                         x-data="{ endsAt: {{exam_ends_at_ms}}, paused: {{#if exam_paused}}true{{else}}false{{/if}}, label: '{{exam_remaining_label}}', tick() { if (this.paused) { return; } const total = Math.max(0, Math.ceil((this.endsAt - Date.now()) / 1000)); const h = Math.floor(total / 3600); const m = Math.floor((total % 3600) / 60); const s = total % 60; this.label = (h > 0 ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'); } }"
-                         x-init="if (!paused) { tick(); setInterval(() => tick(), 1000); }">
+                         data-ends-at-ms="{{exam_ends_at_ms}}"
+                         data-paused="{{#if exam_paused}}true{{else}}false{{/if}}">
                         {{#if exam_paused}}
                             <span id="exam-countdown-badge"
                                   class="badge rounded-pill px-3 py-2 fs-6 text-bg-warning">Prüfungszeit pausiert &ndash; Restzeit: {{exam_remaining_label}}</span>
                         {{else}}
                             <span id="exam-countdown-badge"
-                                  class="badge rounded-pill px-3 py-2 fs-6 text-bg-primary">Restzeit: <span x-text="label">{{exam_remaining_label}}</span></span>
+                                  class="badge rounded-pill px-3 py-2 fs-6 text-bg-primary">Restzeit: <span id="exam-countdown-label">{{exam_remaining_label}}</span></span>
                         {{/if}}
                     </div>
                 {{/if}}
@@ -119,7 +116,7 @@
                  role="alert">
                 <h3 class="alert-heading h5 mb-2">Uploads sind nur während des Examens möglich.</h3>
                 <p class="mb-0">Bitte warte, bis deine Lehrperson das Examen gestartet hat.</p>
-                <p class="mb-0 small">Tippe oder klicke hier, sobald es losgeht.</p>
+                <p class="mb-0 small">Diese Seite aktualisiert sich von selbst, sobald es losgeht — du musst nichts tun.</p>
             </div>
         {{/if}}
     </div>

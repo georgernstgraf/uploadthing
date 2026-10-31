@@ -14,6 +14,17 @@
  * übrigen nicht ab.
  */
 
+// Kanäle des Busses (#161). Die Namen liegen hier und nicht in
+// `service/events.ts`, weil `service/exam.ts` auf den Bus publizieren
+// muss, ohne `service/events.ts` zu importieren (das wäre ein Zyklus).
+// `service/events.ts` re-exportiert beide Konstanten, damit Aufrufer
+// weiterhin nur eine Stelle kennen.
+
+/** Kanal für den Exam-Zustand (jede angemeldete Person, auch Admins). */
+export const EXAM_CHANNEL = "exam";
+/** Kanal für die Admin-Aktivität (nur Lehrpersonen). */
+export const ACTIVITY_CHANNEL = "activity";
+
 export type HubEvent<T = unknown> = {
     channel: string;
     /** Monoton je Kanal, beginnt bei 1. */

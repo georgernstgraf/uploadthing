@@ -1,9 +1,34 @@
 import * as repo from "../repo/repo.ts";
 import type { ExamStatus, RepoExamStateRecord } from "../repo/exam.ts";
 import { durationString } from "../lib/timefunc.ts";
+import * as hub from "../lib/event_hub.ts";
 import { isExamModeConfigured, setInternetActive } from "./admin.ts";
 import type { ExamModeResult } from "./admin.ts";
 import type { ExamModeRunner } from "./opnsense.ts";
+
+/**
+ * Meldet eine Änderung am Exam-Zustand als zustandslosen Tick (#161).
+ *
+ * Bewusst direkt auf den Bus statt über `service/events.ts`: dieses Modul
+ * darf `service/events.ts` nicht importieren, weil dort das Gegenstück
+ * (`snapshotExam()`) dieses Modul liest. Den vollständigen Snapshot baut
+ * der Stream beim Senden.
+ */
+function publishExamChanged(): void {
+    hub.publish(hub.EXAM_CHANNEL, null);
+}
+
+/**
+ * Serialisiert laufende Abschlüsse (#161).
+ *
+ * Der Watchdog und der lazy Pfad in `getRemainingSeconds()` können im
+ * selben Moment feuern. Ohne diesen Riegel würden beide
+ * `setInternetActive(true)` rufen (zwei Toggle-Runden gegen die Sense)
+ * und zweimal publizieren. Der zweite Aufrufer (`stop()` oder der lazy
+ * Pfad) bekommt dasselbe Ergebnis; der Riegel fällt erst, wenn der
+ * Abschluss fertig ist.
+ */
+let finishInFlight: Promise<ExamModeResult> | null = null;
 
 /**
  * Zeitarithmetik (einfachste konsistente Variante mit den vorhandenen
@@ -61,6 +86,7 @@ export function setStudentRegistrationAllowed(
 ): void {
     registrationAllowed = allowed;
     registrationOpenedAt = allowed ? now() : null;
+    publishExamChanged();
 }
 
 /** Ist die Anmeldung für Nicht-Lehrpersonen gerade freigegeben? */
@@ -153,6 +179,8 @@ export async function start(
         );
     }
 
+    publishExamChanged();
+
     return result;
 }
 
@@ -165,6 +193,7 @@ export function pause(now: () => Date = () => new Date()): void {
         // updated_at dient ab jetzt als Pausenbeginn-Anker.
         updated_at: now(),
     });
+    publishExamChanged();
 }
 
 export function resume(now: () => Date = () => new Date()): void {
@@ -180,6 +209,7 @@ export function resume(now: () => Date = () => new Date()): void {
         paused_seconds: state.paused_seconds + Math.max(0, pauseSeconds),
         updated_at: nowDate,
     });
+    publishExamChanged();
 }
 
 /**
@@ -191,14 +221,23 @@ export function resume(now: () => Date = () => new Date()): void {
  * melden kann, ohne den bereits vollzogenen Zustandswechsel
  * rückgängig zu machen.
  */
-export async function stop(runner?: ExamModeRunner): Promise<ExamModeResult> {
+export async function stop(
+    runner?: ExamModeRunner,
+    now: () => Date = () => new Date(),
+): Promise<ExamModeResult> {
+    // Läuft gerade ein Abschluss (Watchdog oder lazy Pfad), ist das
+    // Ergebnis schon unterwegs: der Admin bekommt es statt eines 409.
+    if (finishInFlight) {
+        return await finishInFlight;
+    }
+
     const state = requireState(
         "Es läuft kein Examen, das gestoppt werden kann.",
         "running",
         "paused",
     );
 
-    return await finishExam(state, runner);
+    return await finishExam(state, now, runner);
 }
 
 /**
@@ -226,6 +265,7 @@ export function addExtra(
         extra_seconds: state.extra_seconds + seconds,
         updated_at: updatedAt,
     });
+    publishExamChanged();
 }
 
 function computeRemainingSeconds(
@@ -271,7 +311,7 @@ export async function getRemainingSeconds(
 
     const remaining = computeRemainingSeconds(state, now());
     if (remaining <= 0) {
-        await finishExam(state, runner);
+        await finishExam(state, now, runner);
         return 0;
     }
 
@@ -288,15 +328,31 @@ export async function getRemainingSeconds(
  * positiver Restzeit) — während einer Pause ist es der hypothetische
  * Endzeitpunkt ab Renderzeit, der Client zeigt in der Pause statisch
  * „pausiert" an.
+ *
+ * `ends_at_ms` wird aus der **exakten** Restzeit gerechnet, nicht aus
+ * der aufgerundeten Anzeige: der Client zählt auf diesen Zeitpunkt
+ * herunter, und eine um bis zu eine Sekunde zu späte Endzeit wäre ein
+ * sichtbarer Sprung direkt nach dem Verbinden (#161).
  */
 export async function getStatusView(
     now: () => Date = () => new Date(),
     runner?: ExamModeRunner,
 ): Promise<ExamStatusView> {
-    const remaining = await getRemainingSeconds(now, runner);
-    const remainingSeconds = remaining === null ? 0 : Math.max(0, remaining);
+    // Schließt ein abgelaufenes Examen ab (Seiteneffekt); die exakte
+    // Restzeit wird danach frisch gelesen.
+    await getRemainingSeconds(now, runner);
 
-    return buildStatusView(repo.exam.get(), now(), remainingSeconds);
+    const nowDate = now();
+    const state = repo.exam.get();
+    if (!state || state.status === "idle" || state.status === "stopped") {
+        return buildStatusView(state, nowDate, 0);
+    }
+
+    return buildStatusView(
+        state,
+        nowDate,
+        computeRemainingSeconds(state, nowDate),
+    );
 }
 
 /**
@@ -321,21 +377,28 @@ export function getStatusViewPassive(
     return buildStatusView(
         state,
         nowDate,
-        Math.max(0, Math.ceil(computeRemainingSeconds(state, nowDate))),
+        computeRemainingSeconds(state, nowDate),
     );
 }
 
+/**
+ * Baut die Sicht aus der **exakten** Restzeit; `remaining_seconds` und
+ * `remaining_label` bleiben aufgerundet (Anzeige), `ends_at_ms` ist der
+ * echte Endzeitpunkt.
+ */
 function buildStatusView(
     state: RepoExamStateRecord | null,
     nowDate: Date,
-    remainingSeconds: number,
+    remainingExactSeconds: number,
 ): ExamStatusView {
+    const remainingSeconds = Math.max(0, Math.ceil(remainingExactSeconds));
+
     return {
         status: state?.status ?? "idle",
         remaining_seconds: remainingSeconds,
         remaining_label: durationString(remainingSeconds),
-        ends_at_ms: remainingSeconds > 0
-            ? nowDate.getTime() + remainingSeconds * 1000
+        ends_at_ms: remainingExactSeconds > 0
+            ? nowDate.getTime() + remainingExactSeconds * 1000
             : null,
         open: remainingSeconds > 0,
     };
@@ -359,30 +422,58 @@ export async function isExamWindowOpen(
     return remaining !== null && remaining > 0;
 }
 
+/**
+ * Führt den Abschluss genau einmal aus; parallele Aufrufer warten auf
+ * dasselbe Ergebnis (siehe `finishInFlight`).
+ */
 async function finishExam(
     state: RepoExamStateRecord,
+    now: () => Date = () => new Date(),
     runner?: ExamModeRunner,
 ): Promise<ExamModeResult> {
-    // Mit dem Examen endet auch die Anmelde-Freigabe.
-    resetStudentRegistrationAllowed();
-
-    repo.exam.upsert({
-        ...state,
-        status: "stopped",
-        updated_at: new Date(),
-    });
-
-    // Exam Mode Off: Internet wird wieder freigeschaltet. Der
-    // Zustandswechsel bleibt unabhängig vom Firewall-Ergebnis
-    // bestehen; ein Fehler wird geloggt und dem Aufrufer gemeldet.
-    const result = await setInternetActive(true, runner);
-    if (!result.ok && isExamModeConfigured()) {
-        console.error(
-            `Exam-Sperre konnte nicht gelöst werden (HTTP ${result.code}): ${result.stderr}`,
-        );
+    if (finishInFlight) {
+        return await finishInFlight;
     }
 
-    return result;
+    const run = (async (): Promise<ExamModeResult> => {
+        // Frisch lesen: zwischen Aufrufer-Snapshot und Abschluss kann
+        // eine Zusatzzeit dazugekommen sein.
+        const current = repo.exam.get() ?? state;
+
+        // Mit dem Examen endet auch die Anmelde-Freigabe.
+        resetStudentRegistrationAllowed();
+
+        repo.exam.upsert({
+            ...current,
+            status: "stopped",
+            updated_at: now(),
+        });
+
+        // Exam Mode Off: Internet wird wieder freigeschaltet. Der
+        // Zustandswechsel bleibt unabhängig vom Firewall-Ergebnis
+        // bestehen; ein Fehler wird geloggt und dem Aufrufer gemeldet.
+        try {
+            const result = await setInternetActive(true, runner);
+            if (!result.ok && isExamModeConfigured()) {
+                console.error(
+                    `Exam-Sperre konnte nicht gelöst werden (HTTP ${result.code}): ${result.stderr}`,
+                );
+            }
+            return result;
+        } finally {
+            // Genau ein Tick pro Abschluss — auch wenn die Firewall
+            // wirft. Erst hier, damit ein Panel-Refresh den echten
+            // Firewall-Zustand liest und nicht den von davor.
+            publishExamChanged();
+        }
+    })();
+
+    finishInFlight = run;
+    try {
+        return await run;
+    } finally {
+        finishInFlight = null;
+    }
 }
 
 function requireState(

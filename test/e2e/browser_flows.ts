@@ -1,10 +1,13 @@
 /**
  * Playwright-Smoke-Suite für die examkritischen Browser-Flows (#135).
  *
- * Neun Tests, ausschließlich nutzersichtbares Verhalten — keine
- * htmx-Event-Interna. Damit ist die Suite auch die Abnahme für die
- * htmx-4-Migration (#150). Selektoren: nur stabile `id`s aus den
- * Templates, keine Text- oder CSS-Selektoren.
+ * Die Suite deckt die examkritischen Browser-Flows ab, ausschließlich
+ * nutzersichtbares Verhalten — keine htmx-Event-Interna. Seit #161
+ * gehört der Push-Weg dazu: Das Abgabe-Panel zieht sich über
+ * Server-Sent Events selbst nach, ohne Hover und ohne Reload. Damit ist
+ * die Suite auch die Abnahme für die htmx-4-Migration (#150).
+ * Selektoren: nur stabile `id`s aus den Templates, keine Text- oder
+ * CSS-Selektoren.
  *
  * Start über `deno task e2e` (scripts/e2e.sh): dort laufen Fixture-Seed
  * und Testserver. Direkt aufrufbar ist die Datei nicht, sie braucht die
@@ -195,7 +198,7 @@ Deno.test({
 });
 
 Deno.test({
-    name: "E2E: Geschlossene Abgabe-Karte prüft bei Hover und Klick (#160)",
+    name: "E2E: Exam-Start ersetzt den Hinweis ohne Hover durch das Formular (#161)",
     sanitizeOps: false,
     sanitizeResources: false,
     async fn() {
@@ -210,20 +213,21 @@ Deno.test({
                     0,
                     "Ohne Examen darf kein Abgabe-Formular stehen",
                 );
+                const hint = (await page.textContent("#abgabe-closed")) ?? "";
+                assert(
+                    hint.includes("Diese Seite aktualisiert sich von selbst"),
+                    `Ehrlicher Hinweis erwartet, war: "${hint}"`,
+                );
 
-                // Das Examen startet, während die Seite schon offen ist.
+                // Das Examen startet, während die Seite schon offen ist —
+                // ohne Hover und ohne Klick. Der Push (SSE) zieht nach.
                 await startExam();
-
-                // Hover genügt: die Karte prüft selbst nach.
-                await page.hover("#abgabe-closed");
                 await page.waitForSelector("#abgabe-form");
 
-                // Der getauschte Inhalt ist für Alpine initialisiert —
-                // sonst bliebe der Countdown stehen.
                 const first = (await page.textContent("#exam-countdown-badge")) ?? "";
                 assert(
-                    /Restzeit:\s*\d{2}:\d{2}/.test(first),
-                    `Countdown nach dem Swap erwartet, war: "${first}"`,
+                    /Restzeit:\s*\d{1,2}:\d{2}/.test(first),
+                    `Countdown nach dem Panel-Swap erwartet, war: "${first}"`,
                 );
                 await page.waitForTimeout(1200);
                 const second = (await page.textContent("#exam-countdown-badge")) ?? "";
@@ -231,14 +235,6 @@ Deno.test({
                     second !== first,
                     `Countdown muss nach dem Panel-Swap ticken, blieb bei "${first}"`,
                 );
-
-                // Klick-Weg (Touch/Tastatur): frische Seite, wieder zu.
-                await stopExam();
-                await page.goto("/");
-                await page.waitForSelector("#abgabe-closed");
-                await startExam();
-                await page.click("#abgabe-closed");
-                await page.waitForSelector("#abgabe-form");
             } finally {
                 await stopExam();
                 await context.close();
@@ -248,7 +244,7 @@ Deno.test({
 });
 
 Deno.test({
-    name: "E2E: Endet das Examen, ersetzt der Hinweis das Formular (#160)",
+    name: "E2E: Exam-Ende ohne Interaktion ersetzt das Formular durch den Hinweis (#161)",
     sanitizeOps: false,
     sanitizeResources: false,
     async fn() {
@@ -259,7 +255,58 @@ Deno.test({
                 await page.goto("/");
                 await page.waitForSelector("#abgabe-form");
 
-                // Das Examen endet, während das Formular offen ist.
+                // Das Examen endet, während das Formular offen ist. Es
+                // gibt weder Klick noch Hover noch Reload.
+                await stopExam();
+                await page.waitForSelector("#abgabe-closed", { timeout: 10_000 });
+                assertEquals(
+                    await page.locator("#abgabe-form").count(),
+                    0,
+                    "Nach dem Exam-Ende darf das Formular nicht stehen bleiben",
+                );
+                const hint = (await page.textContent("#abgabe-closed")) ?? "";
+                assert(
+                    hint.includes("Uploads sind nur während des Examens möglich."),
+                    `Hinweis erwartet, war: "${hint}"`,
+                );
+
+                // Der Wechsel wird erklärt, nicht still vollzogen.
+                await page.waitForSelector("#toast-dialog");
+                const message = (await page.textContent("#toast-dialog-message")) ?? "";
+                assert(
+                    message.includes("Das Examen ist beendet"),
+                    `Hinweis-Toast erwartet, war: "${message}"`,
+                );
+                await page.click("#toast-dialog-close");
+            } finally {
+                await stopExam();
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Ohne Push bleibt der Server die Wahrheit (403 ersetzt das Formular)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await startExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, STUDENT.email);
+            try {
+                await page.goto("/");
+                await page.waitForSelector("#abgabe-form");
+
+                // Verbindung kappen: ab jetzt kommt kein Push mehr an.
+                // Die 403-Antwort des Servers ist die letzte Verteidigung.
+                await page.evaluate(() => {
+                    const target = window as unknown as {
+                        __uploadthingExamEvents?: { close: () => void };
+                    };
+                    target.__uploadthingExamEvents?.close();
+                });
+
                 await stopExam();
 
                 await page.setInputFiles("#abgabe-file-input", {
@@ -285,6 +332,7 @@ Deno.test({
                     "Nach dem Exam-Ende darf das Formular nicht stehen bleiben",
                 );
             } finally {
+                await stopExam();
                 await context.close();
             }
         });
@@ -428,6 +476,46 @@ Deno.test({
                 assert(
                     badge.includes("Examen pausiert"),
                     `Statusanzeige erwartet, war: "${badge}"`,
+                );
+            } finally {
+                await stopExam();
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Admin-Panel zieht den Exam-Zustand ohne Klick nach (#161)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await startExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, TEACHER.email);
+            try {
+                await page.goto("/admin/application");
+                await page.waitForSelector("#exam-pause-button");
+
+                // Das Examen endet ohne Zutun dieser Seite — etwa weil
+                // die Zeit abläuft. Der Push muss das Panel nachziehen.
+                await stopExam();
+
+                await page.waitForFunction(() => {
+                    const badge = document.getElementById("exam-status-badge");
+                    return badge?.textContent?.includes("Examen beendet") ??
+                        false;
+                }, undefined, { timeout: 10_000 });
+
+                assertEquals(
+                    await page.locator("#exam-pause-button").count(),
+                    0,
+                    "Nach dem Exam-Ende darf der Pause-Knopf nicht stehen bleiben",
+                );
+                assertEquals(
+                    await page.locator("#exam-start-form").count(),
+                    1,
+                    "Das Panel muss den Start wieder anbieten",
                 );
             } finally {
                 await stopExam();

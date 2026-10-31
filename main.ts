@@ -13,6 +13,7 @@ import uploadRouter from "./routes/upload.ts";
 import authRouter from "./routes/auth.ts";
 import apiRouter from "./routes/api.ts";
 import filesRouter from "./routes/files.ts";
+import eventsRouter from "./routes/events.ts";
 
 import { errorHandler } from "./middleware/error.ts";
 import { securityHeaders } from "./middleware/security_headers.ts";
@@ -38,6 +39,7 @@ app.route("/", homeRouter);
 app.route("/", authRouter);
 app.route("/api", apiRouter);
 app.route("/", filesRouter);
+app.route("/", eventsRouter);
 
 const abortController = new AbortController();
 let tikPoller: ReturnType<typeof service.tik.startPolling> = null;
@@ -49,6 +51,9 @@ let server: Deno.HttpServer | null = null;
 // SIGTERM hängen und systemd musste ihn nach 20 s hart killen.
 const shutdown = createShutdown({
     stopBackgroundWork: async () => {
+        // Der Watchdog darf nach dem Schließen der Datenbank nicht mehr
+        // feuern (#161).
+        service.exam_watchdog.disarm();
         // Offene SSE-Streams zuerst (#161): sie sind sonst „in-flight
         // Requests" und `server.finished` wartet bis zum 10-s-Watchdog.
         closeAllStreams();
@@ -74,6 +79,10 @@ Deno.addSignalListener("SIGTERM", () => {
 });
 
 await service.admin.runExamModeOnStartup();
+// Ab hier läuft die Uhr: ein beim Start auf `stopped` gesetzter Zustand
+// braucht keinen Timer, ein laufender (etwa nach einem Neustart mit
+// bewusst erhaltenem Zustand) schon.
+service.exam_watchdog.arm();
 
 // Aktive IPs und MACs direkt aus dem MikroTik: Sofortabruf, dann alle 60 s.
 tikPoller = service.tik.startPolling();

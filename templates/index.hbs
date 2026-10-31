@@ -90,9 +90,10 @@
                     Alpine.initTree(evt.detail.target);
                 }
             }
-            // Das Abgabe-Panel bringt ebenfalls x-data mit (Countdown,
-            // Dateiname). Ohne eigene Initialisierung bleibt der Countdown
-            // nach einem Panel-Swap stehen (#160).
+            // Das Abgabe-Panel bringt ebenfalls x-data mit (Dateiname bei
+            // Drag & Drop). Der Countdown läuft seit #161 in
+            // `static/events.js`; ohne diese Initialisierung bliebe der
+            // Dateiname nach einem Panel-Swap beim Platzhalter.
             if (evt.detail.target && evt.detail.target.id === 'abgabe-panel' && window.Alpine) {
                 Alpine.initTree(evt.detail.target);
             }
@@ -148,9 +149,11 @@
     </script>
     <script src="/static/alpine.js"
             defer></script>
+    <script src="/static/events.js"
+            defer></script>
 </head>
 
-     <body>
+     <body{{#if remote_user}} data-exam-events{{/if}}>
     <header style="backdrop-filter: blur(var(--CTBS-GlassBlur)); -webkit-backdrop-filter: blur(var(--CTBS-GlassBlur));">
         <div class="container position-relative px-2 pt-2">
             <div class="card shadow-sm border-0 rounded-4">

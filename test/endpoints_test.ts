@@ -264,8 +264,8 @@ Deno.test("GET /abgabe-panel liefert das Panel je nach Exam-Zustand (#160)", asy
     try {
         const cookie = await registerAndGetCookie(studentEmail);
 
-        // Geschlossen: Hinweis statt Formular — und die Karte prüft selbst
-        // nach, damit das Formular ohne Reload erscheint.
+        // Geschlossen: ehrlicher Hinweis statt Formular. Kein Trigger
+        // mehr — `static/events.js` zieht das Panel über SSE nach (#161).
         const closedRes = await fetch(`${BASE_URL}/abgabe-panel`, {
             headers: { Cookie: cookie },
         });
@@ -273,14 +273,15 @@ Deno.test("GET /abgabe-panel liefert das Panel je nach Exam-Zustand (#160)", asy
         const closedHtml = await closedRes.text();
         assertEquals(closedHtml.includes('id="abgabe-form"'), false);
         assertEquals(closedHtml.includes('id="abgabe-closed"'), true);
-        assertEquals(closedHtml.includes('hx-get="/abgabe-panel"'), true);
-        assertEquals(closedHtml.includes('hx-target="#abgabe-panel"'), true);
+        assertEquals(closedHtml.includes("hx-get=\"/abgabe-panel\""), false);
+        assertEquals(closedHtml.includes("hx-trigger=\"mouseenter"), false);
         assertEquals(
-            closedHtml.includes('hx-trigger="mouseenter throttle:3s, click"'),
+            closedHtml.includes("Diese Seite aktualisiert sich von selbst"),
             true,
         );
 
-        // Offen: dasselbe Fragment ist das Formular, ohne Trigger.
+        // Offen: dasselbe Fragment ist das Formular, dessen Countdown
+        // `events.js` aus `data-ends-at-ms` rechnet.
         seedExamState("running");
         const openRes = await fetch(`${BASE_URL}/abgabe-panel`, {
             headers: { Cookie: cookie },
@@ -289,8 +290,107 @@ Deno.test("GET /abgabe-panel liefert das Panel je nach Exam-Zustand (#160)", asy
         const openHtml = await openRes.text();
         assertEquals(openHtml.includes('id="abgabe-form"'), true);
         assertEquals(openHtml.includes('id="exam-countdown"'), true);
+        assert(
+            /id="exam-countdown"[^>]*data-ends-at-ms="\d+"/s.test(openHtml),
+            "Der Countdown muss seinen Endzeitpunkt als Datenattribut tragen",
+        );
+        assert(
+            /id="exam-countdown"[^>]*data-paused="false"/s.test(openHtml),
+            "Ein laufendes Examen ist nicht pausiert",
+        );
         assertEquals(openHtml.includes('id="abgabe-closed"'), false);
-        assertEquals(openHtml.includes('hx-get="/abgabe-panel"'), false);
+    } finally {
+        clearExamState();
+        await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
+Deno.test("GET /events/exam: 401 ohne Sitzung, 200 mit sofortigem Snapshot (#161)", async () => {
+    clearExamState();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `exam-events-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Exam Events Student",
+        klasse: "5AHITM",
+    });
+
+    try {
+        const anonymousRes = await fetch(`${BASE_URL}/events/exam`);
+        assertEquals(anonymousRes.status, 401);
+        await anonymousRes.text(); // consume body to avoid resource leak
+
+        const cookie = await registerAndGetCookie(studentEmail);
+        seedExamState("running");
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        Deno.unrefTimer(timeout);
+        let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+        try {
+            const res = await fetch(`${BASE_URL}/events/exam`, {
+                headers: { Cookie: cookie },
+                signal: controller.signal,
+            });
+            assertEquals(res.status, 200);
+            assertEquals(
+                res.headers.get("content-type"),
+                "text/event-stream; charset=utf-8",
+            );
+            assertEquals(res.headers.get("cache-control"), "no-store");
+            if (!res.body) {
+                throw new Error("Antwort ohne Body");
+            }
+
+            // Erster Frame kommt beim Verbinden, ohne dass jemand einen
+            // Tick auslösen muss.
+            reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let text = "";
+            while (!text.includes("\n\n")) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                text += decoder.decode(value, { stream: true });
+            }
+
+            assert(
+                text.startsWith("event: exam\ndata: "),
+                `SSE-Frame erwartet, war: ${JSON.stringify(text)}`,
+            );
+            const dataLine = text.split("\n").find((line) =>
+                line.startsWith("data: ")
+            );
+            assertExists(dataLine);
+            const frame = JSON.parse(dataLine.slice("data: ".length));
+            assertEquals(frame.type, "exam");
+            assertEquals(frame.status, "running");
+            assertEquals(frame.open, true);
+            assert(frame.remaining_seconds > 0);
+            assertEquals(typeof frame.server_now_ms, "number");
+            assertEquals(frame.registration_open, false);
+            // Kein Event-Log, also kein `id:`-Feld.
+            assertEquals(text.includes("id:"), false);
+        } finally {
+            clearTimeout(timeout);
+            controller.abort();
+            await reader?.cancel().catch(() => {});
+        }
+
+        // Auch Lehrpersonen brauchen den Kanal (Admin-Panel).
+        const adminController = new AbortController();
+        const adminTimeout = setTimeout(() => adminController.abort(), 5000);
+        Deno.unrefTimer(adminTimeout);
+        try {
+            const adminRes = await fetch(`${BASE_URL}/events/exam`, {
+                headers: { Cookie: await registerAndGetCookie("grafg@spengergasse.at") },
+                signal: adminController.signal,
+            });
+            assertEquals(adminRes.status, 200);
+            await adminRes.body?.cancel().catch(() => {});
+        } finally {
+            clearTimeout(adminTimeout);
+            adminController.abort();
+        }
     } finally {
         clearExamState();
         await clearForensicsByUserEmail(studentEmail);

@@ -1,4 +1,5 @@
 import { assertEquals, assertRejects, assertThrows } from "@std/assert";
+import * as hub from "../lib/event_hub.ts";
 import * as exam from "./exam.ts";
 import { clearExamState, seedExamState } from "../test/helpers/forensics_fixture.ts";
 import {
@@ -519,6 +520,86 @@ Deno.test("getStatusViewPassive lässt ein abgelaufenes Examen unangetastet", as
         assertEquals(view.open, false);
         assertEquals(exam.getState()?.status, "stopped");
     } finally {
+        clearExamState();
+    }
+});
+
+Deno.test("zwei parallele Abschlüsse ergeben einen Firewall-Zyklus und einen Tick", async () => {
+    clearExamState();
+    hub.resetHub();
+    try {
+        const firewall = fakeFirewall({ enabled: false });
+        const clock = fakeClock("2026-10-12T08:00:00.000Z");
+
+        await withOpnsenseConfig(TEST_OPNSENSE_CONFIG, async () => {
+            await exam.start(60, clock.now, firewall.runner);
+            assertEquals(firewall.isEnabled(), true);
+            const callsAfterStart = toggleCalls(firewall.calls).length;
+            clock.advance(61);
+
+            let ticks = 0;
+            const unsubscribe = hub.subscribe(hub.EXAM_CHANNEL, () => {
+                ticks += 1;
+            });
+
+            // Watchdog (lazy Pfad) und Admin-Stopp im selben Moment: der
+            // zweite Aufrufer bekommt das Ergebnis des laufenden
+            // Abschlusses, statt die Firewall ein zweites Mal zu runden.
+            const [remaining, result, secondRemaining] = await Promise.all([
+                exam.getRemainingSeconds(clock.now, firewall.runner),
+                exam.stop(firewall.runner, clock.now),
+                exam.getRemainingSeconds(clock.now, firewall.runner),
+            ]);
+            unsubscribe();
+
+            assertEquals(remaining, 0);
+            assertEquals(secondRemaining, 0);
+            assertEquals(result.ok, true);
+            // Genau ein Freigabe-Zyklus (toggle + apply), nicht zwei.
+            assertEquals(toggleCalls(firewall.calls).length - callsAfterStart, 2);
+            assertEquals(ticks, 1);
+            assertEquals(exam.getState()?.status, "stopped");
+            assertEquals(firewall.isEnabled(), false);
+        });
+    } finally {
+        hub.resetHub();
+        clearExamState();
+    }
+});
+
+Deno.test("jede Zustandsänderung publiziert genau einen Tick", async () => {
+    clearExamState();
+    hub.resetHub();
+    exam.resetStudentRegistrationAllowed();
+    try {
+        const clock = fakeClock("2026-10-12T08:00:00.000Z");
+        const seq = () => hub.currentSeq(hub.EXAM_CHANNEL);
+
+        assertEquals(seq(), 0);
+        await exam.start(600, clock.now);
+        assertEquals(seq(), 1);
+
+        clock.advance(10);
+        exam.pause(clock.now);
+        assertEquals(seq(), 2);
+
+        clock.advance(5);
+        exam.resume(clock.now);
+        assertEquals(seq(), 3);
+
+        exam.addExtra(60, clock.now);
+        assertEquals(seq(), 4);
+
+        exam.setStudentRegistrationAllowed(true, clock.now);
+        assertEquals(seq(), 5);
+        exam.setStudentRegistrationAllowed(false, clock.now);
+        assertEquals(seq(), 6);
+
+        await exam.stop(undefined, clock.now);
+        assertEquals(seq(), 7);
+    } finally {
+        exam.resetStudentRegistrationAllowed();
+        hub.resetHub();
         clearExamState();
     }
 });

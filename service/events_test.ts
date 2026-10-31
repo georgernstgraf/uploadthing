@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assert, assertEquals } from "@std/assert";
 import * as hub from "../lib/event_hub.ts";
 import * as examRepo from "../repo/exam.ts";
 import { clearExamState, seedExamState } from "../test/helpers/forensics_fixture.ts";
@@ -126,13 +126,18 @@ Deno.test("snapshotExam liefert den Zustand und löst keinen Tick aus", () => {
     resetStudentRegistrationAllowed();
     try {
         seedExamState("running", 3600);
+        // Die Freigabe ist eine Zustandsänderung und meldet sich als
+        // Tick (#161); der danach gebaute Snapshot darf keinen weiteren
+        // auslösen.
         setStudentRegistrationAllowed(true);
+        const seqBefore = hub.currentSeq(events.EXAM_CHANNEL);
+        assertEquals(seqBefore, 1);
 
         const before = Date.now();
         const snapshot = events.snapshotExam();
         const after = Date.now();
 
-        assertEquals(snapshot.seq, 0);
+        assertEquals(snapshot.seq, seqBefore);
         assertEquals(snapshot.type, "exam");
         assertEquals(snapshot.status, "running");
         assertEquals(snapshot.open, true);
@@ -145,14 +150,23 @@ Deno.test("snapshotExam liefert den Zustand und löst keinen Tick aus", () => {
             snapshot.server_now_ms >= before && snapshot.server_now_ms <= after,
             true,
         );
-        assertEquals(
-            snapshot.ends_at_ms,
-            snapshot.server_now_ms + snapshot.remaining_seconds * 1000,
+        // Der Endzeitpunkt kommt aus der exakten Restzeit: höchstens die
+        // aufgerundete Anzeige, aber nie mehr als eine Sekunde davor.
+        assert(snapshot.ends_at_ms !== null);
+        assert(snapshot.ends_at_ms! > snapshot.server_now_ms);
+        assert(
+            snapshot.ends_at_ms! <=
+                snapshot.server_now_ms + snapshot.remaining_seconds * 1000,
+        );
+        assert(
+            snapshot.ends_at_ms! >
+                snapshot.server_now_ms +
+                    (snapshot.remaining_seconds - 1) * 1000,
         );
         assertEquals(snapshot.registration_open, true);
         assertEquals(typeof snapshot.registration_since, "number");
         // Der Snapshot ist ein Lesevorgang: kein Tick, kein Seiteneffekt.
-        assertEquals(hub.currentSeq(events.EXAM_CHANNEL), 0);
+        assertEquals(hub.currentSeq(events.EXAM_CHANNEL), seqBefore);
     } finally {
         resetStudentRegistrationAllowed();
         clearExamState();
