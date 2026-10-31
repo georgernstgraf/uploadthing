@@ -39,7 +39,7 @@ uploadRouter.post("/", async (c) => {
     } catch (e) {
         console.error(`[UPLOAD] FormData parse error from ${remote_ip}: ${(e as Error).message}`);
         throw new AppError(
-            `Fehler beim Parsen des Formulars. Bitte versuchen Sie einen anderen Browser (Edge/Firefox) oder laden Sie die Seite neu.`,
+            `Fehler beim Parsen des Formulars. Bitte versuche es mit einem anderen Browser (Edge/Firefox) oder lade die Seite neu.`,
             400,
         );
     }
@@ -82,7 +82,7 @@ uploadRouter.post("/", async (c) => {
     if (remote_user.id) {
         if (!service.abgaben.canResubmit(remote_user.id, remote_ip)) {
             throw new AppError(
-                "Sie haben das WLAN verlassen. Eine erneute Abgabe ist nicht möglich.",
+                "Du hast das WLAN verlassen. Eine erneute Abgabe ist nicht möglich.",
                 403,
             );
         }

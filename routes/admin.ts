@@ -104,7 +104,7 @@ adminRouter.get("/students", async (c) => {
     const query = c.req.query();
     const validation = AdminQuerySchema.safeParse(query);
     if (!validation.success) {
-        return c.text("Ungültiges Datums- oder Zeitformat. Bitte verwenden Sie YYYY-MM-DD und HH:MM.", 400);
+        return c.text("Ungültiges Datums- oder Zeitformat. Bitte verwende YYYY-MM-DD und HH:MM.", 400);
     }
 
     let startdate = c.req.query("startdate") ||

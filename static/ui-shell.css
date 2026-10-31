@@ -28,6 +28,12 @@ body > header {
     position: sticky;
     top: 0;
     z-index: 1030;
+
+    /* Luft unter dem Kopf (#158): vorher saß das erste Element von
+       <main> exakt auf der Unterkante der Hero-Karte, Navigation und
+       Namenskarte klebten am Hero. 0.5rem ist derselbe Rhythmus, den
+       die Karten darunter über `mb-2` verwenden. */
+    padding-bottom: 0.5rem;
 }
 
 /*

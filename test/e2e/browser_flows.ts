@@ -641,3 +641,109 @@ Deno.test({
         });
     },
 });
+
+Deno.test({
+    name:
+        "E2E: Kopf klebt nicht an Navigation/Namenskarte, Schalter steht im Portrait über dem Hero (#158)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        /** Geometrie des Kopfes und der ersten Zeile darunter. */
+        async function layout(page: Page) {
+            return await page.evaluate(() => {
+                const rect = (selector: string) => {
+                    const el = document.querySelector(selector);
+                    return el ? el.getBoundingClientRect() : null;
+                };
+                const hero = rect("body > header .card");
+                const nav = rect("#main-nav");
+                const badge = rect("#user-badge-panel");
+                const toggle = rect("#theme-toggle");
+                const title = rect("body > header h1");
+                const content = rect("#app-ip-banner");
+
+                const gapTo = (rectBelow: DOMRect | null) =>
+                    rectBelow && hero ? rectBelow.top - hero.bottom : null;
+
+                return {
+                    gapHeroNav: gapTo(nav),
+                    gapHeroBadge: gapTo(badge),
+                    toggleBottom: toggle?.bottom ?? null,
+                    toggleLeft: toggle?.left ?? null,
+                    titleTop: title?.top ?? null,
+                    titleRight: title?.right ?? null,
+                    heroX: hero?.x ?? null,
+                    heroWidth: hero?.width ?? null,
+                    contentX: content?.x ?? null,
+                    contentWidth: content?.width ?? null,
+                };
+            });
+        }
+
+        /** „Mindestens 8 px Luft" — halbe Pixel Toleranz für Subpixel-Layout. */
+        const MIN_GAP = 7.5;
+
+        await withBrowser(async (browser) => {
+            // Handy-Portrait, Schüler: Hero → Namenskarte, Schalter über dem h1.
+            const student = await openPage(browser, STUDENT.email);
+            try {
+                await student.page.setViewportSize({ width: 390, height: 844 });
+                await student.page.goto("/");
+                await student.page.waitForSelector("#hero-link");
+                const mobile = await layout(student.page);
+
+                assert(
+                    mobile.gapHeroBadge !== null && mobile.gapHeroBadge >= MIN_GAP,
+                    `Unter dem Hero muss Luft zur Namenskarte sein, Abstand war ${mobile.gapHeroBadge}px`,
+                );
+                assert(
+                    mobile.toggleBottom !== null && mobile.titleTop !== null &&
+                        mobile.toggleBottom <= mobile.titleTop,
+                    `Im Portrait muss der Theme-Schalter über dem h1 stehen (Schalter unten ${mobile.toggleBottom}, h1 oben ${mobile.titleTop})`,
+                );
+            } finally {
+                await student.context.close();
+            }
+
+            // Handy-Portrait und Desktop, Lehrperson: Hero → Navigation (+ Kanten).
+            const teacher = await openPage(browser, TEACHER.email);
+            const page = teacher.page;
+            try {
+                await page.setViewportSize({ width: 390, height: 844 });
+                await page.goto("/");
+                await page.waitForSelector("#main-nav");
+                const narrow = await layout(page);
+
+                assert(
+                    narrow.gapHeroNav !== null && narrow.gapHeroNav >= MIN_GAP,
+                    `Unter dem Hero muss Luft zur Navigation sein, Abstand war ${narrow.gapHeroNav}px`,
+                );
+
+                await page.setViewportSize({ width: 1280, height: 900 });
+                const wide = await layout(page);
+
+                assert(
+                    wide.gapHeroNav !== null && wide.gapHeroNav >= MIN_GAP,
+                    `Unter dem Hero muss Luft zur Navigation sein, Abstand war ${wide.gapHeroNav}px`,
+                );
+                assert(
+                    wide.heroX !== null && wide.contentX !== null &&
+                        Math.abs(wide.heroX - wide.contentX) <= 1.5,
+                    `Die Hero-Karte muss mit dem Inhalt fluchten, x war ${wide.heroX} vs. ${wide.contentX}`,
+                );
+                assert(
+                    wide.heroWidth !== null && wide.contentWidth !== null &&
+                        Math.abs(wide.heroWidth - wide.contentWidth) <= 1.5,
+                    `Die Hero-Karte muss so breit wie der Inhalt sein, Breite war ${wide.heroWidth} vs. ${wide.contentWidth}`,
+                );
+                assert(
+                    wide.toggleLeft !== null && wide.titleRight !== null &&
+                        wide.toggleLeft >= wide.titleRight - 1,
+                    `Ab sm muss der Schalter neben dem h1 stehen (Schalter links ${wide.toggleLeft}, h1 rechts ${wide.titleRight})`,
+                );
+            } finally {
+                await teacher.context.close();
+            }
+        });
+    },
+});

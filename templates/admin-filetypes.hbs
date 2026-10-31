@@ -35,7 +35,7 @@
                                 Abgaben &amp; Datenbank herunterladen (TAR.GZ)
                             </a>
                             <button hx-post="/admin/wipe-abgaben"
-                                    hx-confirm="Sind Sie sicher, dass Sie ALLE Abgaben unwiderruflich löschen möchten?"
+                                    hx-confirm="Bist du sicher, dass du ALLE Abgaben unwiderruflich löschen willst?"
                                     hx-target="#wipe-feedback"
                                     class="btn btn-warning fw-semibold">
                                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -133,7 +133,7 @@
                                         hx-vals='{"confirm_delete_all": "unterlagen-loeschen"}'
                                         hx-target="#app-content"
                                         hx-swap="innerHTML"
-                                        hx-confirm="Sind Sie sicher, dass Sie ALLE Unterlagen löschen möchten? Das ist nicht rückgängig zu machen."
+                                        hx-confirm="Bist du sicher, dass du ALLE Unterlagen löschen willst? Das ist nicht rückgängig zu machen."
                                         class="btn btn-outline-warning fw-semibold">
                                     Alle Unterlagen löschen
                                 </button>
@@ -194,7 +194,7 @@
                         <h4 class="h6 text-uppercase text-body-secondary mb-1">Admin-Freigabe per MAC</h4>
                         <p class="small text-body-secondary mb-2">
                             Lehrpersonen dürfen sich auch von einer IP anmelden, die nicht in
-                            <code>ADMIN_IPS</code> steht, wenn ihr Gerät hier freigegeben ist.
+                            <code>ADMIN_IPS</code> steht, wenn dein Gerät hier freigegeben ist.
                             Die LDAP-Klasse <code>LehrendeR</code> bleibt Voraussetzung — eine
                             freigegebene MAC-Adresse allein macht niemanden zum Admin.
                         </p>
@@ -318,7 +318,7 @@
                               hx-post="/admin/cleanup-database"
                               hx-target="#app-content"
                               hx-swap="innerHTML"
-                              hx-confirm="Möchten Sie wirklich alle Datenbankeinträge löschen, die älter als ein Monat sind?">
+                              hx-confirm="Willst du wirklich alle Datenbankeinträge löschen, die älter als ein Monat sind?">
                             <input type="hidden"
                                    name="confirm_cleanup"
                                    value="cleanup-db">
