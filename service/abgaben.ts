@@ -1,6 +1,7 @@
 import { RepoAbgabeRecord } from "../repo/abgaben.ts";
 import { localAdminIpString } from "../lib/timefunc.ts";
 import * as repo from "../repo/repo.ts";
+import { noteAdminActivity } from "./events.ts";
 
 /**
  * Persist a new submission record for a user and IP.
@@ -10,7 +11,10 @@ export function recordSubmission(
     ip: string,
     filename: string,
 ): RepoAbgabeRecord {
-    return repo.abgaben.create(userId, ip, filename, new Date());
+    const record = repo.abgaben.create(userId, ip, filename, new Date());
+    // Die „Abgabe"-Badge der Forensik hängt an dieser Zeile.
+    noteAdminActivity("submission");
+    return record;
 }
 
 /**

@@ -1,11 +1,24 @@
 import { assertEquals, assertExists } from "@std/assert";
+import { Hono } from "hono";
+import config from "../lib/config.ts";
+import * as hub from "../lib/event_hub.ts";
+import type { Bindings, HonoContextVars } from "../lib/types.ts";
+import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
+import * as events from "../service/events.ts";
+import {
+    clearForensicsByUserEmail,
+    LOCAL_TEST_IP,
+    upsertFixtureUser,
+} from "../test/helpers/forensics_fixture.ts";
 import {
     decodeSessionData,
     encodeSessionData,
     hmacSign,
     hmacVerify,
     parseSignedCookie,
+    remoteIPMiddleware,
     Session,
+    sessionMiddleware,
     signCookieValue,
 } from "./session.ts";
 
@@ -173,4 +186,177 @@ Deno.test("Session class - getData returns same object reference", () => {
         retrieved.email = "modified@example.com";
     }
     assertEquals(session.email, "modified@example.com");
+});
+
+// ----------------------------------------------------------------------
+// Presence-Ereignisse der Session-Middleware (#161)
+// ----------------------------------------------------------------------
+
+/**
+ * Nur ein echter Insert einer Schüler-Presence-Zeile darf den
+ * Admin-Kanal wecken. Lehrpersonen sind ausgenommen, sonst löst der
+ * Admin-Render den nächsten Admin-Render aus.
+ */
+
+/** Scheduler-Stub: sammelt Timer und lässt sie von Hand laufen. */
+function fakeScheduler() {
+    const pending: (() => void)[] = [];
+    const delays: number[] = [];
+
+    const hooks: events.ActivityHooks = {
+        now: () => new Date(),
+        schedule: (callback, delayMs) => {
+            delays.push(delayMs);
+            pending.push(callback);
+            return pending.length;
+        },
+        cancel: () => {},
+    };
+
+    return {
+        hooks,
+        delays,
+        flush: () => {
+            const callback = pending.shift();
+            if (!callback) {
+                throw new Error("kein Fenster offen");
+            }
+            callback();
+        },
+    };
+}
+
+async function sessionCookie(email: string): Promise<string> {
+    const data = { email, createdAt: Date.now() };
+    const encoded = encodeSessionData(data);
+    const signature = await hmacSign(encoded, config.COOKIE_SECRET);
+    return `${config.COOKIE_NAME}=${signCookieValue(data, signature)}`;
+}
+
+/**
+ * Dieselbe Middleware-Kette wie in `main.ts`, aber ohne Router-Details:
+ * `remoteIPMiddleware` liest die Socket-IP aus den Bindings.
+ */
+function buildApp() {
+    const app = new Hono<{ Bindings: Bindings; Variables: HonoContextVars }>();
+    app.use("*", sessionMiddleware);
+    app.use("*", remoteIPMiddleware);
+    app.get("/probe", (c) => c.text("ok"));
+    return app;
+}
+
+const TEST_ENV = {
+    info: {
+        remoteAddr: { transport: "tcp", hostname: LOCAL_TEST_IP },
+    },
+} as unknown as Bindings;
+
+Deno.test("Schüler-Cookie meldet nur den echten Presence-Insert (#161)", async () => {
+    hub.resetHub();
+    events.resetActivity();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const email = `session-cookie-student-${suffix}@example.com`;
+    const scheduler = fakeScheduler();
+    events.setActivityHooks(scheduler.hooks);
+
+    const batches: string[][] = [];
+    const unsubscribe = events.subscribeActivity((reasons) =>
+        batches.push(reasons)
+    );
+
+    try {
+        const user = await upsertFixtureUser({
+            email,
+            name: "Presence Schüler",
+            klasse: "5AHITM",
+        });
+        const cookie = await sessionCookie(email);
+        const app = buildApp();
+
+        const first = await app.request(
+            "/probe",
+            { headers: { Cookie: cookie } },
+            TEST_ENV,
+        );
+        assertEquals(first.status, 200);
+        assertEquals(
+            cookiepresentsRepo.recentByIPAndUser(
+                LOCAL_TEST_IP,
+                user.id,
+                new Date(Date.now() - 60_000),
+            ),
+            true,
+            "Die Presence-Zeile muss geschrieben werden",
+        );
+        assertEquals(scheduler.delays.length, 1);
+
+        scheduler.flush();
+        assertEquals(batches, [["cookie"]]);
+
+        // Innerhalb von 30 s dedupliziert `recordByEmail`: kein zweiter
+        // Insert, also kein zweites Ereignis und kein neuer Timer.
+        const second = await app.request(
+            "/probe",
+            { headers: { Cookie: cookie } },
+            TEST_ENV,
+        );
+        assertEquals(second.status, 200);
+        assertEquals(scheduler.delays.length, 1);
+        assertEquals(batches, [["cookie"]]);
+    } finally {
+        unsubscribe();
+        await clearForensicsByUserEmail(email);
+        events.resetActivity();
+        hub.resetHub();
+    }
+});
+
+Deno.test("Lehrpersonen-Cookie schreibt Presence, meldet aber kein Ereignis (#161)", async () => {
+    hub.resetHub();
+    events.resetActivity();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const email = `session-cookie-teacher-${suffix}@example.com`;
+    const scheduler = fakeScheduler();
+    events.setActivityHooks(scheduler.hooks);
+
+    const batches: string[][] = [];
+    const unsubscribe = events.subscribeActivity((reasons) =>
+        batches.push(reasons)
+    );
+
+    try {
+        const user = await upsertFixtureUser({
+            email,
+            name: "Presence Lehrperson",
+            klasse: "LehrendeR",
+        });
+        const cookie = await sessionCookie(email);
+        const app = buildApp();
+
+        const res = await app.request(
+            "/probe",
+            { headers: { Cookie: cookie } },
+            TEST_ENV,
+        );
+        assertEquals(res.status, 200);
+
+        // Die Zeile entsteht wie bei Schülern — der Unterschied ist nur
+        // die Rückkopplung, nicht die Erfassung.
+        assertEquals(
+            cookiepresentsRepo.recentByIPAndUser(
+                LOCAL_TEST_IP,
+                user.id,
+                new Date(Date.now() - 60_000),
+            ),
+            true,
+            "Auch Lehrpersonen werden als Presence erfasst",
+        );
+        assertEquals(scheduler.delays, []);
+        assertEquals(batches, []);
+    } finally {
+        unsubscribe();
+        await clearForensicsByUserEmail(email);
+        events.resetActivity();
+        hub.resetHub();
+    }
 });

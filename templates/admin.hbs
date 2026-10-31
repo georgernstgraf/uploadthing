@@ -219,6 +219,14 @@
             button.setAttribute('aria-expanded', String(!isOpen));
         };
     </script>
+    <div id="admin-refresh-status"
+         class="d-flex flex-wrap justify-content-center align-items-center gap-2 mb-1 small text-body-secondary">
+        <span id="admin-refresh-pending"
+              class="badge text-bg-info d-none"
+              role="status"
+              aria-live="polite"></span>
+        <span id="admin-refresh-stand">Stand: –</span>
+    </div>
     {{> admin-report}}
 </div>
 <div class="modal fade" id="ip-detail-modal" tabindex="-1" aria-hidden="true">

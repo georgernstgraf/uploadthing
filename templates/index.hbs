@@ -286,6 +286,9 @@
                         updateGlobalIndicator();
                     }
                     event.preventDefault();
+                    // Nicht still schlucken: `static/events.js` zählt den
+                    // Aufschub als „n neue Ereignisse" (#161).
+                    document.dispatchEvent(new CustomEvent('admin-refresh-frozen'));
                 }
             });
         })();

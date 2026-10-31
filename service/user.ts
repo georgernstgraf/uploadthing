@@ -3,6 +3,7 @@ import type { UserType } from "../lib/types.ts";
 import * as usersRepo from "../repo/users.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
 import * as cookiepresentsService from "./cookiepresents.ts";
+import { noteAdminActivity } from "./events.ts";
 
 /**
  * LDAP-Klasse, die Lehrpersonen kennzeichnet. Sie ist die einzige Quelle
@@ -34,6 +35,8 @@ export async function getRegisteredByIp(ip: string): Promise<UserType | null> {
 export async function register(userData: UserType, ip: string) {
     const userRecord = await usersRepo.upsert(userData);
     registrationsRepo.create(ip, userRecord.id, new Date());
+    // Neue Registrierung ist eine sichtbare Änderung für die Forensik.
+    noteAdminActivity("registration");
 }
 
 /**

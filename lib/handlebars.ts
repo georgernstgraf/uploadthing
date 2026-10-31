@@ -80,7 +80,6 @@ type AdminTemplateData = {
     withinTimeCutoff: boolean;
     endtimeInFuture: boolean;
     endtimeProvided: boolean;
-    admin_refresh_seconds: number;
     tik_state: TikPanelState;
     tik_last_attempt: string;
     tik_last_success: string;

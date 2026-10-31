@@ -3,6 +3,7 @@ import { getCookie, setCookie } from "hono/cookie";
 import config, { isProduction } from "../lib/config.ts";
 import type { Bindings, HonoContextVars, UserType } from "../lib/types.ts";
 import * as service from "../service/service.ts";
+import * as events from "../service/events.ts";
 
 export type SessionData = {
     email: string;
@@ -213,10 +214,22 @@ export const remoteIPMiddleware = createMiddleware<
             }
 
             if (!isStaticAsset) {
-                await service.cookiepresents.recordByEmail(
+                const recorded = await service.cookiepresents.recordByEmail(
                     session.email,
                     remoteip,
                 );
+
+                // Nur ein echter Insert ist ein Ereignis; die
+                // 30-s-Deduplizierung von `recordByEmail` darf die
+                // Forensik nicht fluten.
+                //
+                // Lehrpersonen sind ausgenommen: ihr eigener Admin-Render
+                // ist ein Presence-Schreibvorgang, der sonst den nächsten
+                // Admin-Render auslösen würde — eine Rückkopplung, die
+                // sich selbst am Leben hält.
+                if (recorded && !service.user.isTeacher(user)) {
+                    events.noteAdminActivity("cookie");
+                }
             }
 
             // Admin-Rechte hängen allein an der LDAP-Klasse. Die

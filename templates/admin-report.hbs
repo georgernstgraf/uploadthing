@@ -1,7 +1,7 @@
 <section class="container"
          id="admin-report-panel"
          hx-get="/admin/students"
-         hx-trigger="every {{admin_refresh_seconds}}s"
+         hx-trigger="admin-refresh"
          hx-target="#admin-report-panel"
          hx-swap="innerHTML"
          hx-select="#admin-report-panel > *"

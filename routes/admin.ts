@@ -2,7 +2,9 @@ import { Context, Hono } from "hono";
 import { HonoContextVars } from "../lib/types.ts";
 import { localDateString, localTimeString, dateTimeString } from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
+import { formatEvent, openEventStream } from "../lib/sse.ts";
 import * as service from "../service/service.ts";
+import * as events from "../service/events.ts";
 import config, { parsePermittedFileTypes } from "../lib/config.ts";
 import { normalizeMac } from "../lib/mac.ts";
 import { requireAdmin } from "../middleware/admin.ts";
@@ -129,8 +131,6 @@ adminRouter.get("/students", async (c) => {
     ) < time_cutoff_ms;
     const endtimeInFuture = endDateTime.getTime() > new Date().getTime();
 
-    const refreshSeconds = config.admin_refresh_seconds;
-
     const { registered, unregistered, teacher_ips, anomalies, range_first_seen, range_last_seen } = await service.ipadmin.for_range(
         startDateTime,
         endDateTime,
@@ -154,7 +154,6 @@ adminRouter.get("/students", async (c) => {
         withinTimeCutoff,
         endtimeInFuture,
         endtimeProvided,
-        admin_refresh_seconds: refreshSeconds,
         tik_state: tik.state,
         tik_last_attempt: tik.last_attempt,
         tik_last_success: tik.last_success,
@@ -175,6 +174,36 @@ adminRouter.get("/students", async (c) => {
         theme_asset_version: config.THEME_ASSET_VERSION,
         content,
     }));
+});
+
+/**
+ * Admin-Aktivität als Push (#161).
+ *
+ * Nur für Lehrpersonen: `requireAdmin` läuft auf `*`, Schüler bekommen
+ * 403 und verbinden gar nicht. Der Kanal hat kein Event-Log — beim
+ * Verbinden geht der zuletzt ausgelieferte Stand raus, danach ein Frame
+ * je koalesziertem Bus-Ereignis. Die Route sendet nur, was der Bus
+ * liefert; die Zusammenfassung entsteht in `service/events.ts`.
+ */
+adminRouter.get("/events", (c) => {
+    return openEventStream(c.req.raw, {
+        onOpen: (stream) => {
+            // Erst abonnieren, dann den ersten Frame bauen: ein Event
+            // zwischen beiden Schritten kann so nicht verloren gehen.
+            const unsubscribe = events.subscribeActivity((reasons) => {
+                stream.write(
+                    formatEvent("activity", {
+                        ...events.snapshotActivity(),
+                        reasons,
+                    }),
+                );
+            });
+
+            stream.write(formatEvent("activity", events.snapshotActivity()));
+
+            return unsubscribe;
+        },
+    });
 });
 
 adminRouter.get("/ip-detail", async (c) => {

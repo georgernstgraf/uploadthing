@@ -1018,3 +1018,191 @@ Deno.test({
         });
     },
 });
+
+/** Lokales Datum (`YYYY-MM-DD`) für den Admin-Zeitraum. */
+function localIsoDate(date: Date): string {
+    const pad = (value: number) => String(value).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${
+        pad(date.getDate())
+    }`;
+}
+
+/** Wählt die erste Karte der Forensik und öffnet das Detail-Modal. */
+async function openFirstIpDetail(page: Page): Promise<Locator> {
+    const card = page.locator("#admin-report-panel .card[hx-get]").first();
+    await card.waitFor({ state: "visible", timeout: 15_000 });
+    await card.click();
+    await page.waitForSelector("#ip-detail-modal.show");
+    return card;
+}
+
+Deno.test({
+    name: "E2E: Abgabe-Badge erscheint in der Forensik ohne Reload (#161)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        const today = localIsoDate(new Date());
+        await withBrowser(async (browser) => {
+            const teacher = await openPage(browser, TEACHER.email);
+            try {
+                // Expliziter Zeitraum: der Default rastet auf Schulstunden
+                // ein und liegt außerhalb der Schulzeit in der Zukunft.
+                await teacher.page.goto(
+                    `/admin/students?startdate=${today}&starttime=00:00`,
+                );
+                await teacher.page.waitForSelector("#admin-report-panel");
+                await teacher.page.evaluate(() => {
+                    document.body.dataset.e2eMarker = "vorher";
+                });
+
+                await startExam();
+                const student = await openPage(browser, STUDENT.email);
+                try {
+                    await student.page.goto("/");
+                    await student.page.waitForSelector("#abgabe-form");
+                    await student.page.setInputFiles("#abgabe-file-input", {
+                        name: UPLOAD_FILENAME,
+                        mimeType: "application/zip",
+                        buffer: Buffer.from(ZIP_BYTES),
+                    });
+                    await student.page.click("#abgabe-submit");
+                    await student.page.waitForSelector("#toast-dialog");
+                    await student.page.click("#toast-dialog-close");
+
+                    // Kein Reload, kein Klick: der Push zieht das Panel
+                    // nach, die Abgabe-Badge stammt aus dem neuen Render.
+                    await teacher.page.waitForFunction(() => {
+                        const panel = document.getElementById(
+                            "admin-report-panel",
+                        );
+                        if (!panel) return false;
+                        return Array.from(panel.querySelectorAll(".badge"))
+                            .some((badge) =>
+                                badge.textContent?.trim() === "Abgabe"
+                            );
+                    }, undefined, { timeout: 15_000 });
+
+                    assertEquals(
+                        await teacher.page.evaluate(() =>
+                            document.body.dataset.e2eMarker
+                        ),
+                        "vorher",
+                        "Die Forensik darf sich ohne Reload nachziehen",
+                    );
+                    const stand =
+                        (await teacher.page.textContent(
+                            "#admin-refresh-stand",
+                        )) ?? "";
+                    assert(
+                        /Stand: \d{2}:\d{2}:\d{2}/.test(stand),
+                        `Serverzeit im Kopf erwartet, war: "${stand}"`,
+                    );
+                } finally {
+                    await student.context.close();
+                }
+            } finally {
+                await stopExam();
+                await teacher.context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Offenes Detail hält die Forensik an, Zähler holt nach (#161)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        const today = localIsoDate(new Date());
+        await withBrowser(async (browser) => {
+            const teacher = await openPage(browser, TEACHER.email);
+            try {
+                await teacher.page.goto(
+                    `/admin/students?startdate=${today}&starttime=00:00`,
+                );
+                await teacher.page.waitForSelector("#admin-report-panel");
+
+                await startExam();
+                const student = await openPage(browser, STUDENT.email);
+                try {
+                    await student.page.goto("/");
+                    await student.page.waitForSelector("#abgabe-form");
+
+                    // Presence-Ereignis ausklingen lassen, damit die Karte
+                    // beim Klick nicht mitten im Swap verschwindet.
+                    await teacher.page.waitForTimeout(2000);
+                    const card = await openFirstIpDetail(teacher.page);
+
+                    // Marker am Kind: ein innerHTML-Swap des Panels würde
+                    // die Karte und damit den Marker ersetzen.
+                    await card.evaluate((element) => {
+                        (element as HTMLElement).dataset.e2eMarker = "vorher";
+                    });
+
+                    await student.page.setInputFiles("#abgabe-file-input", {
+                        name: UPLOAD_FILENAME,
+                        mimeType: "application/zip",
+                        buffer: Buffer.from(ZIP_BYTES),
+                    });
+                    await student.page.click("#abgabe-submit");
+                    await student.page.waitForSelector("#toast-dialog");
+                    await student.page.click("#toast-dialog-close");
+
+                    // Offenes Detail: kein Swap, stattdessen der Zähler.
+                    await teacher.page.waitForSelector(
+                        "#admin-refresh-pending:not(.d-none)",
+                        { timeout: 15_000 },
+                    );
+                    const pending =
+                        (await teacher.page.textContent(
+                            "#admin-refresh-pending",
+                        )) ?? "";
+                    assert(
+                        /\d+ neue[s]? Ereignis/.test(pending),
+                        `Zähler erwartet, war: "${pending}"`,
+                    );
+                    assertEquals(
+                        await card.evaluate((element) =>
+                            (element as HTMLElement).dataset.e2eMarker ??
+                                null
+                        ),
+                        "vorher",
+                        "Bei offenem Detail darf das Panel nicht getauscht werden",
+                    );
+
+                    // Schließen: der Nachlauf zieht das Panel nach, der
+                    // Zähler verschwindet, die Abgabe ist sichtbar.
+                    await teacher.page.click("#ip-detail-modal .btn-close");
+                    await teacher.page.waitForSelector("#ip-detail-modal.show", {
+                        state: "detached",
+                    });
+
+                    await teacher.page.waitForFunction(() => {
+                        const badge = document.getElementById(
+                            "admin-refresh-pending",
+                        );
+                        return badge?.classList.contains("d-none") ?? false;
+                    }, undefined, { timeout: 15_000 });
+
+                    await teacher.page.waitForFunction(() => {
+                        const panel = document.getElementById(
+                            "admin-report-panel",
+                        );
+                        if (!panel) return false;
+                        return Array.from(panel.querySelectorAll(".badge"))
+                            .some((badge) =>
+                                badge.textContent?.trim() === "Abgabe"
+                            );
+                    }, undefined, { timeout: 15_000 });
+                } finally {
+                    await student.context.close();
+                }
+            } finally {
+                await stopExam();
+                await teacher.context.close();
+            }
+        });
+    },
+});

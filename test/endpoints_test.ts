@@ -397,6 +397,91 @@ Deno.test("GET /events/exam: 401 ohne Sitzung, 200 mit sofortigem Snapshot (#161
     }
 });
 
+Deno.test("GET /admin/events: 403 für Schüler, erster Activity-Frame für Admins (#161)", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `admin-events-student-${suffix}@example.com`;
+    const teacherEmail = `admin-events-teacher-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Activity Schüler",
+        klasse: "5AHITM",
+    });
+    await upsertFixtureUser({
+        email: teacherEmail,
+        name: "Activity Lehrer",
+        klasse: "LehrendeR",
+    });
+
+    try {
+        // Schüler und Anonyme bekommen kein Abo auf den Admin-Kanal.
+        const studentCookie = await registerAndGetCookie(studentEmail);
+        const studentRes = await fetch(`${BASE_URL}/admin/events`, {
+            headers: { Cookie: studentCookie },
+        });
+        assertEquals(studentRes.status, 403);
+        await studentRes.text();
+
+        const anonymousRes = await fetch(`${BASE_URL}/admin/events`);
+        assertEquals(anonymousRes.status, 403);
+        await anonymousRes.text();
+
+        const adminCookie = await registerAndGetCookie(teacherEmail);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        Deno.unrefTimer(timeout);
+        let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+        try {
+            const res = await fetch(`${BASE_URL}/admin/events`, {
+                headers: { Cookie: adminCookie },
+                signal: controller.signal,
+            });
+            assertEquals(res.status, 200);
+            assertEquals(
+                res.headers.get("content-type"),
+                "text/event-stream; charset=utf-8",
+            );
+            assertEquals(res.headers.get("cache-control"), "no-store");
+            if (!res.body) {
+                throw new Error("Antwort ohne Body");
+            }
+
+            // Erster Frame kommt beim Verbinden, ohne dass Aktivität
+            // nötig wäre.
+            reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let text = "";
+            while (!text.includes("\n\n")) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                text += decoder.decode(value, { stream: true });
+            }
+
+            assert(
+                text.startsWith("event: activity\ndata: "),
+                `SSE-Frame erwartet, war: ${JSON.stringify(text)}`,
+            );
+            const dataLine = text.split("\n").find((line) =>
+                line.startsWith("data: ")
+            );
+            assertExists(dataLine);
+            const frame = JSON.parse(dataLine.slice("data: ".length));
+            assertEquals(frame.type, "activity");
+            assertEquals(Array.isArray(frame.reasons), true);
+            assertEquals(typeof frame.at, "string");
+            assertEquals(typeof frame.server_now_ms, "number");
+            // Kein Event-Log, also kein `id:`-Feld.
+            assertEquals(text.includes("id:"), false);
+        } finally {
+            clearTimeout(timeout);
+            controller.abort();
+            await reader?.cancel().catch(() => {});
+        }
+    } finally {
+        await clearForensicsByUserEmail(studentEmail);
+        await clearForensicsByUserEmail(teacherEmail);
+    }
+});
+
 Deno.test("static/toast.js baut den Dialog ohne innerHTML (#152)", async () => {
     const res = await fetch(`${BASE_URL}/static/toast.js`);
     assertEquals(res.status, 200);

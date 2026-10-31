@@ -2,6 +2,7 @@ import config from "../lib/config.ts";
 import type { TikConfig } from "../lib/config.ts";
 import * as repo from "../repo/repo.ts";
 import { localAdminIpString } from "../lib/timefunc.ts";
+import { noteAdminActivity } from "./events.ts";
 
 /**
  * Polling der WLAN-Registrierungstabelle des MikroTik (#145).
@@ -226,7 +227,8 @@ export async function pollOnce(
         status.last_attempt_at = at;
         if (options.signal?.aborted) {
             // Nach `stop()` schreibt auch ein bereits gelieferter Abruf
-            // nichts mehr: er gehört zu einem abgebrochenen Lauf.
+            // nichts mehr: er gehört zu einem abgebrochenen Lauf. Ein
+            // Abbruch ist kein Ausfall und wird nicht gemeldet.
             status.last_error = "Abruf abgebrochen.";
             return { ok: false, error: "Abruf abgebrochen." };
         }
@@ -239,6 +241,7 @@ export async function pollOnce(
                     : String(error);
                 const failure = `Speichern in ipfact fehlgeschlagen: ${message}`;
                 status.last_error = failure;
+                noteAdminActivity("tik");
                 return { ok: false, error: failure };
             }
             status.last_success_at = at;
@@ -247,6 +250,12 @@ export async function pollOnce(
         } else {
             status.last_error = outcome.error;
         }
+
+        // Jeder abgeschlossene Abruf meldet sich: neue Clients genauso
+        // wie ein Ausfall, sonst bliebe das Panel bis zum nächsten
+        // Zeitintervall auf einem veralteten Bild stehen. `is_stale` und
+        // „zuletzt gesehen" hängen an der Wanduhr.
+        noteAdminActivity("tik");
         return outcome;
     };
 

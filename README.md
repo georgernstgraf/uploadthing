@@ -83,7 +83,6 @@ the whole process.
 | `LOGDIR` | `/var/log/exampy` | Log directory |
 | `TODAY_HOURS_CUTOFF` | `12` | Hours before midnight for admin time filter default |
 | `ADMIN_STALE_MINUTES` | `3` | Minutes before an IP is considered stale |
-| `ADMIN_REFRESH_SECONDS` | `15` | Auto-refresh interval for admin forensics page |
 | `ADMIN_MACS` | — | Comma-separated MAC addresses allowed to log in as teacher in addition to `ADMIN_IPS`; empty/absent means no MAC approval via env (the in-app allowlist still works). Invalid entries abort startup with a German message |
 | `PUBLIC_URL` | `http://<LISTEN_HOST>:<LISTEN_PORT>/` | URL displayed in the hero header (full URL incl. scheme, optionally with port); decoupled from `LISTEN_HOST`, which only determines the bind address. Its hostname is also the browser tab title (`page_title`); without it the tab shows `<LISTEN_HOST>:<LISTEN_PORT>`. An unparseable value aborts startup with a German message |
 

@@ -1,13 +1,22 @@
 import { assert, assertEquals } from "@std/assert";
+import config from "../lib/config.ts";
 import * as hub from "../lib/event_hub.ts";
 import * as examRepo from "../repo/exam.ts";
-import { clearExamState, seedExamState } from "../test/helpers/forensics_fixture.ts";
+import {
+    clearExamState,
+    clearForensicsByIp,
+    clearForensicsByUserEmail,
+    seedExamState,
+    upsertFixtureUser,
+} from "../test/helpers/forensics_fixture.ts";
+import * as abgaben from "./abgaben.ts";
 import * as events from "./events.ts";
 import {
     getState,
     resetStudentRegistrationAllowed,
     setStudentRegistrationAllowed,
 } from "./exam.ts";
+import { pollOnce, resetStatus } from "./tik.ts";
 
 /**
  * Fenster mit injizierbarer Uhr und Scheduler: `flush()` löst genau den
@@ -198,6 +207,90 @@ Deno.test("snapshotExam beendet ein abgelaufenes Examen nicht selbst", () => {
         assertEquals(hub.currentSeq(events.EXAM_CHANNEL), 0);
     } finally {
         clearExamState();
+        hub.resetHub();
+    }
+});
+
+Deno.test("recordSubmission meldet 'submission' am Admin-Kanal (#161)", async () => {
+    hub.resetHub();
+    events.resetActivity();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const email = `activity-submission-${suffix}@example.com`;
+    const ip = `10.98.${Number.parseInt(suffix.slice(0, 2), 16) % 200}.7`;
+
+    try {
+        const window = fakeWindow("2026-10-31T10:00:00.000Z");
+        events.setActivityHooks(window.hooks);
+
+        const batches: string[][] = [];
+        events.subscribeActivity((reasons) => batches.push(reasons));
+
+        const user = await upsertFixtureUser({
+            email,
+            name: "Activity Abgabe",
+            klasse: "5AHITM",
+        });
+
+        const record = abgaben.recordSubmission(user.id, ip, "abgabe.zip");
+        assertEquals(record.filename, "abgabe.zip");
+        // Die Schreiboperation selbst ist still; erst die Nachlaufkante
+        // fasst sie zu einem Event zusammen.
+        assertEquals(batches, []);
+
+        window.flush();
+        assertEquals(batches, [["submission"]]);
+    } finally {
+        clearForensicsByIp(ip);
+        await clearForensicsByUserEmail(email);
+        events.resetActivity();
+        hub.resetHub();
+    }
+});
+
+Deno.test("jeder Tik-Poll meldet 'tik' — Erfolg und Ausfall (#161)", async () => {
+    hub.resetHub();
+    events.resetActivity();
+    const originalTik = config.TIK;
+    config.TIK = { url: "http://tik.test", user: "tik", password: "test" };
+    resetStatus();
+
+    try {
+        const window = fakeWindow("2026-10-31T10:00:00.000Z");
+        events.setActivityHooks(window.hooks);
+
+        const batches: string[][] = [];
+        events.subscribeActivity((reasons) => batches.push(reasons));
+
+        const success = await pollOnce({
+            fetcher: () => Promise.resolve(new Response("[]")),
+            register: () => {},
+            now: () => new Date("2026-10-31T10:00:00.000Z"),
+        });
+        assertEquals(success.ok, true);
+
+        const failure = await pollOnce({
+            fetcher: () => Promise.reject(new Error("Tik nicht erreichbar")),
+            now: () => new Date("2026-10-31T10:00:30.000Z"),
+        });
+        assertEquals(failure.ok, false);
+
+        // Beide Polls liegen im selben Fenster: ein Event, ein Grund.
+        assertEquals(batches, []);
+        window.flush();
+        assertEquals(batches, [["tik"]]);
+
+        // Der nächste Ausfall nach dem Fenster ist ein eigenes Ereignis.
+        await pollOnce({
+            fetcher: () => Promise.resolve(new Response("[]", { status: 500 })),
+            now: () => new Date("2026-10-31T10:00:31.000Z"),
+        });
+        assertEquals(batches.length, 1);
+        window.flush();
+        assertEquals(batches, [["tik"], ["tik"]]);
+    } finally {
+        config.TIK = originalTik;
+        resetStatus();
+        events.resetActivity();
         hub.resetHub();
     }
 });

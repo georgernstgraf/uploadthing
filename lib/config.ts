@@ -312,9 +312,6 @@ const config = {
     admin_stale_minutes: Number(
         Deno.env.get("ADMIN_STALE_MINUTES") || "3",
     ),
-    admin_refresh_seconds: Number(
-        Deno.env.get("ADMIN_REFRESH_SECONDS") || "15",
-    ),
     spg_times: [
         "08:00",
         "08:50",
