@@ -5,11 +5,11 @@ Current status as of 2026-10-31.
 ## Current Focus
 
 **#161 — Server-Push statt Polling (SSE) + Anmelde-Freigabe als Schalter.**
-Phase 1 (Schalter, Warnbalken, keine Confirms an den Schaltern) ist
-umgesetzt und gepusht (`dde6330`), aber noch **nicht live**: der Dienst
-läuft weiter mit dem Build von 02:17. Nach `systemctl --user restart
-uploadthing` steht die Betriebsabnahme in `HANDOFF.md`. Die Phasen 2–6
-(Cookie-Dedupe, SSE-Grundlage, Exam-Kanal, Admin-Kanal, Doku) sind offen.
+Phase 1 (Schalter, Warnbalken, keine Confirms an den Schaltern) ist live:
+Deploy am 2026-10-31 um 12:17, geprüft über `/` (200), den neuen Endpunkt
+(403 ohne Admin) und den entfallenen alten Endpunkt (404). Offen ist nur
+die Sichtprüfung im Panel. Die Phasen 2–6 (Cookie-Dedupe, SSE-Grundlage,
+Exam-Kanal, Admin-Kanal, Doku) sind offen.
 
 **#162 — Namenssuche-Robustheit.** Einmaliger `NO_OBJECT`-Aussetzer am
 31.10. 12:05, von der App als „nicht erreichbar" gemeldet; Vorschlag
@@ -230,8 +230,9 @@ sind behoben:
 - [ ] **#161 Phasen 2–6** — Cookie-Dedupe, SSE-Grundlage (Hub, Streams,
       `closeAllStreams()` im Shutdown), Exam-Kanal (Hover-Trigger raus),
       Admin-Kanal (`every 15s` raus, Freeze-Badge), Doku.
-- [ ] **#161 Betriebsabnahme** — neuer Schalter und Warnbalken nach dem
-      Neustart auf `/admin/application` prüfen (Checkliste in `HANDOFF.md`).
+- [ ] **#161 Sichtprüfung** — neuer Schalter und Warnbalken auf
+      `/admin/application` einmal mit laufendem Examen prüfen
+      (Checkliste in `HANDOFF.md`); der Deploy selbst ist durch.
 - [ ] **#162 Namenssuche-Robustheit** — Retry nach Reconnect, `NO_OBJECT`
       nicht als „nicht erreichbar" melden, Fehlerzweig per injizierbarem
       Searcher testbar machen.

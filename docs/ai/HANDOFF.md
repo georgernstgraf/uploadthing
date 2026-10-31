@@ -1,17 +1,18 @@
-Last updated: 2026-10-31 (#161 Phase 1 umgesetzt, Dienst-Neustart steht aus; LDAP-Aussetzer als #162 erfasst).
+Last updated: 2026-10-31 (#161 Phase 1 live, Sichtprüfung im Panel offen; LDAP-Aussetzer als #162 erfasst).
 
 ## Sofort weiter mit
 
-**Zuerst Betriebsabnahme von #161 Phase 1.** Der Dienst läuft noch mit dem
-Build von 02:17, Phase 1 ist also **nicht live**:
+**#161 Phase 1 ist live.** Neustart am 2026-10-31 um 12:17 (sauberer
+Shutdown, kein `stop-sigterm`), geprüft: `/` → 200, CSP-Header vorhanden,
+`POST /api/exam/registration` → 403 ohne Admin (Route existiert), alter
+Endpunkt `registration-window` → 404. Offen ist nur die Sichtprüfung:
 
-1. `systemctl --user restart uploadthing` — Pflicht nach jeder
-   Code-Änderung, siehe `AGENTS.md`, Abschnitt „Restart After Code
-   Changes".
-2. `/admin/application` → Examen starten → die Karte „Anmeldung während
+1. `/admin/application` → Examen starten → die Karte „Anmeldung während
    des Examens" ist da; Schalter an → `#exam-warning-registration` mit
    „Seit HH:MM"; Schalter aus → Balken weg. Stopp und Internet-Schalter
    fragen nicht mehr nach.
+2. Nach der Prüfung: `systemctl --user restart uploadthing` nicht
+   vergessen, falls in der Zwischenzeit weiter am Code gearbeitet wurde.
 
 **Danach #161 Phasen 2–6** (Plan im Issue):
 
@@ -42,13 +43,12 @@ bis dahin bei Rot einmal wiederholen.
 
 ## Betriebliche Abnahmen (unverändert)
 
-1. **Security-Header im Betrieb prüfen:** Dienst neu starten
-   (`systemctl --user restart uploadthing`, Deno liest nur beim Start —
-   derselbe Neustart bringt auch #161 Phase 1 live),
-   dann `curl -sSI https://tst.spengergasse.at/ | grep -i content-security`
-   → `upgrade-insecure-requests`. Danach beim Schüler-Gerät prüfen, ob
-   das „Not secure"-Badge nach einem Hard Reload (Strg+Shift+R)
-   verschwunden ist; eine bereits gecachte Seite hat den Header nicht.
+1. **Security-Header im Betrieb prüfen:** Der Header ist am 31.10. nach
+   dem Neustart per `curl -sSI https://tst.spengergasse.at/` bestätigt
+   (`upgrade-insecure-requests`). Offen ist nur der Blick am
+   Schüler-Gerät, ob das „Not secure"-Badge nach einem Hard Reload
+   (Strg+Shift+R) verschwunden ist; eine bereits gecachte Seite hat den
+   Header nicht.
 2. **Handy-Test der Sperre** im Prüfungs-WLAN: Regel `doku` scharf
    schalten → `example.com` scheitert, `learn.microsoft.com` geht →
    wieder aus. Nur von einem Client im Prüfungsnetz prüfbar, nicht vom
