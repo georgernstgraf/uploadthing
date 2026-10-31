@@ -4,14 +4,19 @@ Current status as of 2026-10-31.
 
 ## Current Focus
 
-**#161 — Server-Push statt Polling (SSE) + Anmelde-Freigabe als Schalter.**
-Der Umbau ist fertig und committet (Phasen 1–6): Anmelde-Freigabe als
-Schalter, Cookie-Dedupe, Event-Bus und Streams, Exam-Kanal mit Watchdog,
-Admin-Kanal mit Freeze-Badge, Doku. Phase 1 ist live (Deploy am
-2026-10-31 um 12:17), **die Phasen 2–6 sind noch nicht deployt**: Es fehlt
-`systemctl --user restart uploadthing` und danach der h2-Beweis per
-`curl -N --http2 …/events/exam`. Offen bleibt außerdem die Sichtprüfung
-der Phase 1 im Panel. Die Checkliste steht in `HANDOFF.md`.
+**#161 — Server-Push statt Polling (SSE) + Anmelde-Freigabe als Schalter —
+erledigt am 2026-10-31, Issue geschlossen.**
+Phasen 1–6 sind committet, getestet und live (Phase 1 ab 12:17, Phasen 2–6
+ab 13:08): Anmelde-Freigabe als Schalter, Cookie-Dedupe, Event-Bus und
+Streams, Exam-Kanal mit Watchdog, Admin-Kanal mit Freeze-Badge, Doku.
+Der h2-Beweis im Betrieb ist geführt: `/events/exam` liefert über HTTP/2
+sofort den ersten Frame (`event: exam`), die Antwort trägt nur
+`content-type: text/event-stream; charset=utf-8` und `cache-control:
+no-store`, kein `connection`/`transfer-encoding`, CSP bleibt gesetzt;
+ohne Sitzung 401. `/admin/events` ist für Schüler 403, für Lehrpersonen
+`event: activity` plus `: ping` nach 20 s; eine Lehrpersonen-Sitzung
+erzeugt kein `cookie`-Event. Offen bleibt nur die **Sichtprüfung der
+Phase 1** im Panel (Checkliste in `HANDOFF.md`).
 
 **#162 — Namenssuche-Robustheit — erledigt am 2026-10-31.**
 Server-Antworten (Result-Code) werden nicht mehr als Netzausfall gemeldet,
@@ -288,14 +293,14 @@ sind behoben:
 
 ## Pending
 
-- [ ] **#161 deployen und den h2-Beweis führen** — der Code der Phasen 2–6
-      ist committet, aber noch nicht neu gestartet. Checkliste in
-      `HANDOFF.md` (Restart, Journal ohne `stop-sigterm`, `/` = 200 mit
-      CSP, `curl -N --http2 …/events/exam` mit Sitzungs-Cookie). Der
-      HTTP/2-Fall ist der einzige Punkt, den die Tests nicht abdecken.
 - [ ] **#161 Sichtprüfung** — neuer Schalter und Warnbalken auf
-      `/admin/application` einmal mit laufendem Examen prüfen; der
-      Deploy der Phase 1 selbst ist durch.
+      `/admin/application` einmal mit laufendem Examen prüfen: Karte
+      „Anmeldung während des Examens", Schalter an → Warnzeile mit
+      „Seit HH:MM", Schalter aus → Balken weg; dazu das neue
+      Push-Verhalten (Panel zieht ohne Klick nach, Abgabe-Panel wechselt
+      beim Start/Ende von selbst, „Stand HH:MM:SS" und Ereignis-Zähler auf
+      `/admin/students`, offenes Detail friert den Refresh ein).
+      Der Deploy selbst ist durch (13:08), der h2-Beweis ebenfalls.
 
 - [ ] **Entscheidung: anonyme Namenssuche.** `/ldap` liefert ohne
       Anmeldung Namen **und Klasse** ab drei Zeichen (bewusst so in #146

@@ -1,43 +1,37 @@
-Last updated: 2026-10-31 (#161 Phasen 2–6 committet, Deploy steht aus; #162 erledigt; Sichtprüfung Phase 1 offen).
+Last updated: 2026-10-31 (#161 Phasen 2–6 deployt, h2-Beweis geführt; Sichtprüfung offen; #161 und #162 geschlossen).
 
 ## Sofort weiter mit
 
-**Der Deploy fehlt.** Der Code der Phasen 2–6 (Cookie-Dedupe, SSE-Grundlage,
-Exam-Kanal, Admin-Kanal, Doku) ist committet und getestet, läuft aber noch
-nicht auf dem Dienst. Der Reihe nach:
+**Der Deploy ist durch (2026-10-31, 13:08:58).** Phasen 2–6 laufen auf dem
+Dienst; der Neustart brauchte unter 1 s (kein `stop-sigterm`), Journal ohne
+Watchdog- oder Listener-Fehler, `Listening on https://192.168.21.2:443/`.
+Damit ist auch der h2-Beweis geführt, den die Tests nicht führen können:
 
-1. `systemctl --user restart uploadthing` — danach
-   `systemctl --user status uploadthing` (kein `stop-sigterm`) und
-   `journalctl --user -u uploadthing -n 20` (keine
-   „Ereignis-Listener … gescheitert", kein Watchdog-Fehler).
-2. `curl -sSI https://tst.spengergasse.at/` → 200 und die
-   `content-security-policy`-Zeile.
-3. **Der h2-Beweis, den die Tests nicht führen:** mit dem Cookie einer
-   angemeldeten Sitzung (DevTools → Network → Request-Header `Cookie:`,
-   Standardname `ut_session`)
+- `/events/exam` über HTTP/2 → sofort `event: exam` mit
+  `server_now_ms`/`ends_at_ms`/`open`; Antwort-Header genau
+  `content-type: text/event-stream; charset=utf-8` und
+  `cache-control: no-store` (kein `connection`, kein `transfer-encoding`),
+  CSP bleibt gesetzt. Ohne Sitzung 401.
+- `/admin/events` → 403 für Schüler, für Lehrpersonen `event: activity`
+  (Snapshot beim Verbinden, danach live der Tik-Poll) plus `: ping` nach
+  20 s. Eine Lehrpersonen-Sitzung erzeugt kein `cookie`-Event.
+- **Cookie-Name in dieser Installation: `uploadthing`** (`COOKIE_NAME` in
+  `~/.config/uploadthing/uploadthing.env`), nicht `ut_session` (das ist nur
+  der App-Default).
 
-   ```
-   curl -N --http2 -b "ut_session=<wert>" https://tst.spengergasse.at/events/exam
-   ```
+Offen ist nur noch die **Sichtprüfung aus Phase 1** plus das neue
+Push-Verhalten:
 
-   muss sofort der erste Frame kommen (`event: exam` + `data: {...}` mit
-   `server_now_ms`, `ends_at_ms`, `open`), danach spätestens alle 20 s
-   `: ping`. Kommt nichts, sind `Connection`/`Transfer-Encoding` im Spiel
-   (über HTTP/2 verboten, siehe `PITFALLS.md`). Analog einmal
-   `https://tst.spengergasse.at/admin/events` mit einem Lehrer-Cookie
-   (erster `event: activity`-Frame) und ohne Sitzung ein 401 auf
-   `/events/exam`.
-4. **Danach die Sichtprüfung aus Phase 1**, die seit dem Deploy offen ist:
-   `/admin/application` → Examen starten → die Karte „Anmeldung während
-   des Examens" ist da; Schalter an → `#exam-warning-registration` mit
-   „Seit HH:MM"; Schalter aus → Balken weg. Stopp und Internet-Schalter
-   fragen nicht mehr nach. Neu zu sehen: Das Admin-Panel zieht den Zustand
-   ohne Klick nach, das Abgabe-Panel wechselt beim Exam-Start/-Ende von
-   selbst, und auf `/admin/students` steht „Stand HH:MM:SS" mit dem
-   Ereignis-Zähler; ein offenes Detail friert den Refresh ein und zählt
-   mit.
+`/admin/application` → Examen starten → die Karte „Anmeldung während des
+Examens" ist da; Schalter an → `#exam-warning-registration` mit „Seit
+HH:MM"; Schalter aus → Balken weg. Stopp und Internet-Schalter fragen nicht
+mehr nach. Neu zu sehen: Das Admin-Panel zieht den Zustand ohne Klick nach,
+das Abgabe-Panel wechselt beim Exam-Start/-Ende von selbst, und auf
+`/admin/students` steht „Stand HH:MM:SS" mit dem Ereignis-Zähler; ein
+offenes Detail friert den Refresh ein und zählt mit.
 
-**#162 ist erledigt** (Server-Antwort ≠ Ausfall, ein begrenzter
+**#161 und #162 sind geschlossen** (SSE-Umbau inklusive Anmelde-Freigabe als
+Schalter; Namenssuche: Server-Antwort ≠ Ausfall, ein begrenzter
 Transport-Retry, injizierbarer Searcher). Die betrieblichen Abnahmen unten
 bleiben unverändert offen.
 
