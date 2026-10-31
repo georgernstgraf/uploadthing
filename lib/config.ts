@@ -308,7 +308,6 @@ const config = {
     SERVICE_URL: requireEnv("SERVICE_URL"),
     SEARCH_BASE: requireEnv("SEARCH_BASE"),
     logdir: Deno.env.get("LOGDIR") || "/var/log/exampy",
-    ldap_retry_wait_seconds: 7,
     TODAY_HOURS_CUTOFF: Number(Deno.env.get("TODAY_HOURS_CUTOFF") || "12"),
     admin_stale_minutes: Number(
         Deno.env.get("ADMIN_STALE_MINUTES") || "3",

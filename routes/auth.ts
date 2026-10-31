@@ -66,8 +66,7 @@ authRouter.get("/ldap", async (c) => {
         console.error("LDAP-Suche fehlgeschlagen:", (e as Error).message);
         return c.html(hbs.ldapTemplate({
             users: [],
-            error:
-                "Die Namenssuche ist gerade nicht erreichbar. Bitte melde dich bei deiner Lehrperson.",
+            error: service.ldap.searchFailureMessage(e),
         }));
     }
 });

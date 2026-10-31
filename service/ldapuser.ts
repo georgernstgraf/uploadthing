@@ -21,12 +21,20 @@ export type LoginCandidate = {
 };
 
 /**
+ * Naht für Tests (#162): die eigentliche LDAP-Suche ist injizierbar,
+ * damit der Fehlerzweig ohne echtes Verzeichnis prüfbar ist — analog zu
+ * `TikFetcher` in `service/tik.ts`.
+ */
+export type LdapUserSearcher = (term: string) => Promise<LdapUserType[]>;
+
+/**
  * Sucht Personen nach Namensteil oder Kontocode für die Anmeldung.
  * Es wird **nichts** registriert: die lokale Registrierung passiert erst
  * beim Klick auf einen Treffer (`resolveLoginUser`).
  */
 export async function searchLoginCandidates(
     term: string,
+    searcher: LdapUserSearcher = repo.ldap.searchUsersByTerm,
 ): Promise<{ users: LoginCandidate[]; has_more: boolean }> {
     const trimmed = term.trim();
     if (trimmed.length < MIN_SEARCH_LENGTH) {
@@ -35,7 +43,7 @@ export async function searchLoginCandidates(
         );
     }
 
-    const entries = await repo.ldap.searchUsersByTerm(trimmed);
+    const entries = await searcher(trimmed);
     const candidates = entries
         .map(loginCandidateFromLdap)
         // Personen ohne Mail können sich nicht anmelden (z. B. technische
@@ -49,6 +57,22 @@ export async function searchLoginCandidates(
         users: candidates.slice(0, MAX_SEARCH_RESULTS),
         has_more: candidates.length > MAX_SEARCH_RESULTS,
     };
+}
+
+/**
+ * Ehrliche Meldung für eine gescheiterte Namenssuche (#162).
+ *
+ * Eine Server-Antwort (Result-Code) ist kein Ausfall der Verbindung und
+ * darf nicht als „nicht erreichbar" erzählt werden; nur ein
+ * Transportfehler ist wirklich ein Erreichbarkeitsproblem.
+ */
+export function searchFailureMessage(error: unknown): string {
+    const failure = repo.ldap.toLdapSearchError(error);
+    if (failure.kind === "server") {
+        const code = `0x${failure.code.toString(16)}`;
+        return `Die Namenssuche ist am Server gescheitert (LDAP-Code ${code}). Bitte melde dich bei deiner Lehrperson.`;
+    }
+    return "Die Namenssuche ist gerade nicht erreichbar. Bitte melde dich bei deiner Lehrperson.";
 }
 
 /**
