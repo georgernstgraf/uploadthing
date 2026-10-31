@@ -497,3 +497,28 @@ Deno.test("Anmelde-Freigabe: ein neues Examen und das Exam-Ende schließen sie",
         exam.resetStudentRegistrationAllowed();
     }
 });
+
+Deno.test("getStatusViewPassive lässt ein abgelaufenes Examen unangetastet", async () => {
+    clearExamState();
+    try {
+        const clock = fakeClock("2026-10-12T08:00:00.000Z");
+        await exam.start(60, clock.now);
+        clock.advance(61);
+
+        const passive = exam.getStatusViewPassive(clock.now);
+        assertEquals(passive.status, "running");
+        assertEquals(passive.remaining_seconds, 0);
+        assertEquals(passive.open, false);
+        assertEquals(passive.ends_at_ms, null);
+        // Kein lazy Abschluss: der Zustand bleibt stehen.
+        assertEquals(exam.getState()?.status, "running");
+
+        // getStatusView() schließt weiterhin beim Abruf ab.
+        const view = await exam.getStatusView(clock.now);
+        assertEquals(view.status, "stopped");
+        assertEquals(view.open, false);
+        assertEquals(exam.getState()?.status, "stopped");
+    } finally {
+        clearExamState();
+    }
+});

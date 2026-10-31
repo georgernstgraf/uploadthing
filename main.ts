@@ -4,6 +4,7 @@ import { sessionMiddleware, remoteIPMiddleware } from "./middleware/session.ts";
 import { Bindings, HonoContextVars } from "./lib/types.ts";
 import { shutdownSqlite } from "./repo/db.ts";
 import { createShutdown } from "./lib/shutdown.ts";
+import { closeAllStreams } from "./lib/sse.ts";
 import * as service from "./service/service.ts";
 
 import adminRouter from "./routes/admin.ts";
@@ -48,6 +49,9 @@ let server: Deno.HttpServer | null = null;
 // SIGTERM hängen und systemd musste ihn nach 20 s hart killen.
 const shutdown = createShutdown({
     stopBackgroundWork: async () => {
+        // Offene SSE-Streams zuerst (#161): sie sind sonst „in-flight
+        // Requests" und `server.finished` wartet bis zum 10-s-Watchdog.
+        closeAllStreams();
         // Ein laufender Abruf schreibt in die Datenbank und darf das
         // SQLite-Handle nicht überleben.
         await tikPoller?.stop();

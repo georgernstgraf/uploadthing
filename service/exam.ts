@@ -294,14 +294,49 @@ export async function getStatusView(
     runner?: ExamModeRunner,
 ): Promise<ExamStatusView> {
     const remaining = await getRemainingSeconds(now, runner);
-    const state = repo.exam.get();
     const remainingSeconds = remaining === null ? 0 : Math.max(0, remaining);
 
+    return buildStatusView(repo.exam.get(), now(), remainingSeconds);
+}
+
+/**
+ * Zustandssicht **ohne Seiteneffekt** (#161).
+ *
+ * Wie `getStatusView()`, aber ein natürlich abgelaufenes Examen wird
+ * nicht lazy beendet: der Zustand bleibt `running`, `open` ist `false`
+ * und `remaining_seconds` ist `0`. Push-Snapshots dürfen den Abschluss
+ * nicht auslösen, sonst würde das Publizieren des Ticks während des
+ * Snapshot-Baus wieder einen Snapshot anfordern. Den fälligen Abschluss
+ * übernimmt der Watchdog (Phase 4).
+ */
+export function getStatusViewPassive(
+    now: () => Date = () => new Date(),
+): ExamStatusView {
+    const nowDate = now();
+    const state = repo.exam.get();
+    if (!state || state.status === "idle" || state.status === "stopped") {
+        return buildStatusView(state, nowDate, 0);
+    }
+
+    return buildStatusView(
+        state,
+        nowDate,
+        Math.max(0, Math.ceil(computeRemainingSeconds(state, nowDate))),
+    );
+}
+
+function buildStatusView(
+    state: RepoExamStateRecord | null,
+    nowDate: Date,
+    remainingSeconds: number,
+): ExamStatusView {
     return {
         status: state?.status ?? "idle",
         remaining_seconds: remainingSeconds,
         remaining_label: durationString(remainingSeconds),
-        ends_at_ms: remainingSeconds > 0 ? now().getTime() + remainingSeconds * 1000 : null,
+        ends_at_ms: remainingSeconds > 0
+            ? nowDate.getTime() + remainingSeconds * 1000
+            : null,
         open: remainingSeconds > 0,
     };
 }
