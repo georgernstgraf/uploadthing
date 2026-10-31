@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { HonoContextVars } from "../lib/types.ts";
 import config from "../lib/config.ts";
 import * as hbs from "../lib/handlebars.ts";
-import { buildStartContent } from "./render.ts";
+import { buildPanel, buildStartContent } from "./render.ts";
 
 const homeRouter = new Hono<{ Variables: HonoContextVars }>();
 
@@ -26,6 +26,19 @@ homeRouter.get("/", async (c) => {
         theme_asset_version: config.THEME_ASSET_VERSION,
         content,
     }));
+});
+
+/**
+ * Nur die rechte Spalte (Anmeldung bzw. Abgabe) als Fragment.
+ *
+ * Das Abgabe-Panel entsteht einmal beim Seitenaufbau; startet die
+ * Lehrperson danach das Examen, muss es ohne Reload nachziehen können
+ * (#160). Deshalb dieser Endpunkt statt `GET /` mit `hx-select`:
+ * `buildStartContent` würde bei jedem Aufruf zusätzlich die Unterlagen
+ * einlesen und die ganze Seite rendern — hier genügt ein SQLite-Read.
+ */
+homeRouter.get("/abgabe-panel", async (c) => {
+    return c.html(await buildPanel(c));
 });
 
 export default homeRouter;

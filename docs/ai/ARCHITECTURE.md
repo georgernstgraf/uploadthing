@@ -47,6 +47,9 @@ Prisma-Engines, keine Runtime-Abhängigkeit auf Prisma).
   Handlebars; Login gegen LDAP (`ldaps://ldap.spengergasse.at`, Filter über
   `givenName`/`sn`/`mail`/`sAMAccountName`), Abgabe als Datei nach
   `ABGABEN_DIR`, Metadaten in SQLite (`abgaben`, `users`, `registrations`).
+  Das Abgabe-Panel ist serverseitig gerendert; `GET /abgabe-panel` liefert
+  es als Fragment, damit die geschlossene Karte bei Hover/Klick den
+  Exam-Zustand nachziehen kann (#160).
 - **Exam-Sperre**: App → `https://sense.internal/api/firewall/filter/…`
   (`toggleRule` + `apply`, gelesen über `searchRule`), TLS gegen die interne
   CA (`DENO_CERT`). Kein Polling: Zustand wird beim Rendern bzw. bei einer

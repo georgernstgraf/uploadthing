@@ -59,6 +59,16 @@
             if (xhr.status >= 400) {
                 showToast(xhr.responseText || 'Ein Fehler ist aufgetreten', 'danger');
             }
+            // Endet das Examen, während das Formular noch offen ist, wird
+            // der Upload mit 403 abgelehnt. Dann das Panel neu holen,
+            // damit der geschlossene Hinweis das Formular ersetzt (#160).
+            // Der Server bleibt die Wahrheit: läuft das Examen doch noch
+            // (etwa nach „WLAN verlassen"), kommt dasselbe Formular leer
+            // zurück.
+            const elt = evt.detail.elt;
+            if (xhr.status === 403 && elt && elt.closest && elt.closest('#abgabe-form')) {
+                htmx.ajax('GET', '/abgabe-panel', { target: '#abgabe-panel', swap: 'innerHTML' });
+            }
         });
 
         document.addEventListener('htmx:sendError', function() {
@@ -79,6 +89,12 @@
                 if (window.Alpine && evt.detail.target) {
                     Alpine.initTree(evt.detail.target);
                 }
+            }
+            // Das Abgabe-Panel bringt ebenfalls x-data mit (Countdown,
+            // Dateiname). Ohne eigene Initialisierung bleibt der Countdown
+            // nach einem Panel-Swap stehen (#160).
+            if (evt.detail.target && evt.detail.target.id === 'abgabe-panel' && window.Alpine) {
+                Alpine.initTree(evt.detail.target);
             }
             if (evt.detail.target && evt.detail.target.id === 'ip-detail-modal-content') {
                 bootstrap.Modal.getOrCreateInstance(document.getElementById('ip-detail-modal')).show();

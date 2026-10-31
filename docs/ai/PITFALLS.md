@@ -416,3 +416,36 @@
   text-body-secondary`) stützen, nicht auf `.section-heading`. Wer die
   Klasse mit Bedeutung füllt, muss sie in `theme.css`/`ui-shell.css`
   global definieren, nicht in einem einzelnen Theme.
+
+## Serverseitig gerenderte Panels veralten (#160)
+
+- Ein Panel, das `exam_open` beim Rendern einmal auswertet, bleibt stehen,
+  bis der Nutzer die Seite neu lädt. Wenn eine Aktion davon abhängt, muss
+  das Panel sich selbst nachziehen — hier per `GET /abgabe-panel` bei
+  Hover und Klick.
+- **Ein Hover-Trigger, der sein eigenes Ziel austauscht, braucht
+  `throttle`.** Der Swap ersetzt den Knoten unter dem Cursor; Chrome feuert
+  auf den neuen Knoten ein `mouseenter`, und ohne `throttle:3s` dreht das
+  eine Request-Schleife.
+- **Trigger-Attribute gehören nur in den Zustand, in dem sie gelten**
+  (`{{#unless exam_open}}`): ein Hover-Swap bei offenem Formular würde die
+  im `<input type="file">` gewählte Datei verwerfen.
+- **Jeder Panel-Swap braucht `Alpine.initTree`.** Der afterSwap-Handler in
+  `index.hbs` initialisierte nur `#app-content`; nach einem Swap von
+  `#abgabe-panel` stand der Countdown still und der Dateiname blieb beim
+  Platzhalter. Neue Swap-Ziele mit `x-data` dort ergänzen.
+- `cursor-pointer` ist **keine** Bootstrap-5.3-Utility. Sie ist in
+  `static/ui-shell.css` definiert; wer eine neue Cursor-Utility braucht,
+  legt sie dort an, nicht als Inline-Style.
+
+## `/admin/students` rastet den Zeitraum auf Schulstunden ein
+
+- Ohne `starttime`-Query nimmt die Route `now - 90 min` und zieht den Wert
+  auf den nächstkleineren Eintrag aus `config.spg_times`; `endtime` wird
+  gleich `starttime` gesetzt. Läuft der Test vor der ersten Schulstunde
+  (abends/nachts), liegt das Fenster dadurch **in der Zukunft** — eben
+  geschriebene `ipfact`/`registrations`-Zeilen fallen heraus und
+  Anomalie-Tests scheitern reproduzierbar.
+- Tests, die auf geseedeten Zeitstempeln aufbauen, geben den Zeitraum
+  deshalb explizit mit (`startdate`/`starttime`/`enddate`/`endtime`).
+

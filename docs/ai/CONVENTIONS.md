@@ -133,7 +133,7 @@
 ## External Library Management
 
 - All external JS/CSS libraries must be stored as non-minified, readable source files.
-- Use versioned filenames with symlinks: `static/htmx.js` → `static/htmx-2.0.10.js`, `static/alpine.js` → `static/alpine-3.15.12.js`, `static/bootstrap.css` → `static/bootstrap-5.3.8.css`, `static/bootstrap.bundle.js` → `static/bootstrap-5.3.8.bundle.js`.
+- Use versioned filenames with symlinks: `static/htmx.js` → `static/htmx-2.0.10.js`, `static/alpine.js` → `static/alpine-3.17.5.js`, `static/bootstrap.css` → `static/bootstrap-5.3.8.css`, `static/bootstrap.bundle.js` → `static/bootstrap-5.3.8.bundle.js`.
 - When upgrading, download the new versioned file, update the symlink target. Old versioned files remain for rollback.
 - Bootstrap JS (`bootstrap.bundle.js`) must be loaded for modals, tooltips, and `data-bs-*` attributes to work. `bootstrap.css` alone is not enough.
 
@@ -146,3 +146,4 @@
 - `hx-disabled-elt="this"` only works when the element carrying the attribute is the **requesting** element. With `hx-post` on a `<form>`, put `hx-disabled-elt="find button[type='submit']"` on the form — an attribute on the submit button is never found, because htmx's attribute lookup walks upwards from the requesting element. `find` returns only the **first** match, so a form with several submit buttons needs an explicit selector.
 - `hx-confirm` has the same lookup rule as `hx-disabled-elt`: put it on the element that carries `hx-post`. With `hx-post` on a `<form>`, `hx-confirm` belongs on the form; on a submit button it is never found and the destructive action runs without a prompt.
 - New structural UI elements need a stable `id` if any browser test touches them; `test/e2e` selects exclusively by `id` (plus ARIA roles where an element deliberately has none).
+- Panels whose content depends on a server-side state (e.g. `exam_open`) get a fragment endpoint and a `hx-trigger` that only exists in the state where the re-check applies — see `templates/abgabe.hbs` and `GET /abgabe-panel` (#160). A `mouseenter` trigger that swaps its own target needs `throttle:`, otherwise the swap re-fires `mouseenter` under the cursor.

@@ -1,4 +1,4 @@
-Last updated: 2026-10-31 (#158 Kopf-Abstand, Portrait-Schalter, Du-Anrede — alle Tests grün).
+Last updated: 2026-10-31 (#160 Abgabe-Panel prüft bei Hover und Klick — alle Tests grün).
 
 ## Sofort weiter mit
 
@@ -31,6 +31,26 @@ Umbauten — in dieser Reihenfolge:
   `OPERATIONS.md` notiert.
 
 ## Was in dieser Session passiert ist
+
+- **#160:** Das Abgabe-Panel wertete `exam_open` einmal beim Rendern aus —
+  wer die Seite vor dem Exam-Start geladen hatte, sah dauerhaft nur den
+  Hinweis und musste neu laden. Die geschlossene Karte prüft jetzt bei
+  Hover **und** Klick gegen den neuen Fragment-Endpunkt `GET /abgabe-panel`
+  (nur `buildPanel`) und tauscht sich gegen das Formular. `throttle:3s`
+  verhindert die Request-Schleife (der Swap ersetzt den Knoten unter dem
+  Cursor), `click` ist der Touch-/Tastaturweg; die Trigger-Attribute
+  existieren nur im geschlossenen Zweig, damit bei offenem Formular keine
+  gewählte Datei verloren geht. Endet das Examen bei offenem Formular,
+  bleibt `POST /upload` bei 403 und `htmx:responseError` holt das Panel neu.
+  Dabei fiel auf, dass `Alpine.initTree` im afterSwap-Handler nur
+  `#app-content` initialisierte — Countdown und Dateiname standen nach
+  jedem Panel-Swap still; jetzt auch für `#abgabe-panel`. Im selben Zug
+  Alpine 3.15.12 → 3.17.5 (htmx bleibt 2.0.10, letzte 2.x). 355
+  Deno-Tests, 12 E2E-Tests, `check`/`lint` grün.
+- Der Anomalie-Test auf `/admin/students` scheiterte reproduzierbar
+  außerhalb der Schulzeit (die Route rastet den Zeitraum auf `spg_times`
+  ein, das Fenster liegt dann in der Zukunft); er gibt den Zeitraum jetzt
+  explizit mit. Siehe `PITFALLS.md`.
 
 - **#158:** Kopf und erste Zeile darunter hatten 0 px Abstand —
   Navigation und Namenskarte klebten an der Hero-Karte (gemessen bei

@@ -48,6 +48,35 @@ Das System läuft so, wie es das Epic beschrieben hat:
   `hx-disabled-elt="this"` war an Formular-Submits wirkungslos; jetzt
   `hx-disabled-elt="find button[type='submit']"` am Formular.
 
+## Erledigt am 2026-10-31 (Abgabe-Panel prüft selbst, #160)
+
+- **Das Abgabe-Panel veraltete.** `exam_open` wurde einmal beim Rendern
+  ausgewertet; wer die Seite vor dem Exam-Start geladen hatte, sah nur den
+  Hinweis. Die geschlossene Karte prüft jetzt bei Hover und Klick gegen
+  `GET /abgabe-panel` (neuer Fragment-Endpunkt, nur `buildPanel`) und
+  tauscht sich gegen das Formular.
+- **`throttle:3s`** verhindert die Request-Schleife, die entsteht, weil der
+  Swap den Knoten unter dem Cursor ersetzt; `click` ist der Touch- und
+  Tastaturweg. Die Trigger-Attribute existieren nur im geschlossenen
+  Zweig, damit bei offenem Formular keine gewählte Datei verloren geht.
+- **Gegenrichtung:** Endet das Examen bei offenem Formular, bleibt
+  `POST /upload` bei 403; `htmx:responseError` holt das Panel neu, der
+  Hinweis ersetzt das Formular.
+- **Alpine-Init beim Panel-Swap** ergänzt (`Alpine.initTree` für
+  `#abgabe-panel`) — vorher blieben Countdown und Dateiname nach jedem
+  Panel-Swap stehen, auch nach dem Upload-POST.
+- **Alpine 3.15.12 → 3.17.5**; htmx bleibt 2.0.10 (letzte 2.x, 4.0.0 wird
+  erst Anfang 2027 npm-`latest`). `cursor-pointer` ist jetzt in
+  `ui-shell.css` definiert (war schon benutzt, aber nirgends deklariert).
+- **Abnahme:** Endpoint-Test auf beide Zustände von `GET /abgabe-panel`;
+  zwei E2E-Tests (Hover/Klick mit tickendem Countdown, Exam-Ende bei
+  offenem Formular). 355 Deno-Tests, 12 E2E-Tests, `check`/`lint` grün.
+- **Nebenbefund:** Der Test
+  „GET /admin/students shows user anomalies …" scheiterte reproduzierbar
+  außerhalb der Schulzeit, weil die Route den Zeitraum auf `spg_times`
+  einrastet (Fenster liegt dann in der Zukunft). Der Test gibt den
+  Zeitraum jetzt explizit mit; Details in `PITFALLS.md`.
+
 ## Erledigt am 2026-10-31 (Kopf, Portrait-Schalter, Du-Anrede, #158)
 
 - **Kopf hatte unten 0 px Luft.** Navigation (Admins) und Namenskarte

@@ -1,5 +1,44 @@
 # DECISIONS
 
+## 2026-10-31: Abgabe-Panel prüft bei Hover und Klick, ob das Examen läuft (#160)
+
+- **Problem:** `buildPanel` rendert `exam_open` einmal beim Seitenaufbau.
+  Wer die Seite vor dem Exam-Start geladen hat, sieht dauerhaft den Hinweis
+  und muss neu laden. Die Angaben-Links haben das Problem nicht — ihr
+  Riegel in `routes/files.ts` greift bei jedem Klick neu.
+- **On-Demand statt Polling.** Kein `hx-trigger="every Ns"`: die Prüfung
+  hängt an Hover und Klick der geschlossenen Karte. Ein Timer würde alle N
+  Sekunden das Panel unter dem Cursor austauschen und pro Schüler zwei
+  Requests pro Minute kosten; eine Mausbewegung oder ein Tipp genügen.
+- **Eigener Fragment-Endpunkt** `GET /abgabe-panel` statt `GET /` mit
+  `hx-select`: `/` rendert `buildStartContent` samt `get_unterlagen()`
+  (Verzeichnis-Stat) und der ganzen linken Spalte. `buildPanel` ist ein
+  SQLite-Read.
+- **Trigger nur im geschlossenen Zweig** (`{{#unless exam_open}}` am
+  Karten-Wrapper in `abgabe.hbs`). Bei offenem Examen wäre ein Hover-Swap
+  fatal: er würde die gewählte Datei aus dem `<input type="file">` werfen.
+- **`throttle:3s` ist Pflicht, nicht Kosmetik:** der Swap ersetzt den
+  Knoten unter dem Cursor, Chrome feuert darauf ein neues `mouseenter` —
+  ohne Drossel eine Request-Schleife. `click` ist ein eigener Trigger,
+  damit Touch und Tastatur nicht durch die Drossel warten müssen.
+- **Gegenrichtung über den Fehlerpfad.** `POST /upload` bleibt bei 403
+  (der Server ist die Wahrheit); `htmx:responseError` holt bei 403 aus
+  `#abgabe-form` das Panel neu, sodass der geschlossene Hinweis das
+  Formular ersetzt. Läuft das Examen doch noch (403 „WLAN verlassen"),
+  kommt dasselbe Formular leer zurück.
+- **Alpine muss den Swap kennen.** `Alpine.initTree` läuft im
+  afterSwap-Handler jetzt auch für `#abgabe-panel`; ohne das erschien das
+  Formular, aber Countdown und Dateiname blieben tot. Ein latenter Fehler,
+  der schon den Upload-POST betraf.
+- **Alpine 3.15.12 → 3.17.5** im selben Zug (3.x, keine Breaking Changes,
+  `Alpine.initTree` unverändert). htmx bleibt bei 2.0.10 — das ist die
+  letzte 2.x; 4.0.0 ist seit 2026-08-28 draußen, wird aber bewusst erst
+  Anfang 2027 npm-`latest` (#150 bleibt Februar 2027).
+- **Abnahme:** Endpoint-Test auf beide Zustände von `GET /abgabe-panel`;
+  zwei E2E-Tests (Hover und Klick inklusive tickendem Countdown nach dem
+  Swap, Exam-Ende bei offenem Formular). 355 Deno-Tests, 12 E2E-Tests,
+  `check`/`lint` grün.
+
 ## 2026-10-31: Kopf-Abstand, Portrait-Reihenfolge, Hero-Breite und Du-Anrede (#158)
 
 - **Problem:** Das erste Element von `<main>` saß exakt auf der Unterkante

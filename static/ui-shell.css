@@ -130,6 +130,13 @@ details > summary {
     list-style: none;
 }
 
+/* Bootstrap 5.3 kennt keine Cursor-Utilities; `cursor-pointer` wird in
+   den Templates schon verwendet (Datei-Dropzone, geschlossene
+   Abgabe-Karte, #160). */
+.cursor-pointer {
+    cursor: pointer;
+}
+
 details > summary::-webkit-details-marker {
     display: none;
 }

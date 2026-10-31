@@ -7,6 +7,7 @@ import { db } from "../repo/db.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
 import * as usersRepo from "../repo/users.ts";
+import { dateString, timeString } from "../lib/timefunc.ts";
 import {
     LOCAL_TEST_IP,
     clearExamState,
@@ -233,6 +234,52 @@ Deno.test("Schüler sieht Angaben und Abgabe ohne Navigation (#146)", async () =
             /<a id="hero-link"[^>]*href="\/"/.test(html),
             "Der Hero muss auch im Examen ein Link auf / sein",
         );
+    } finally {
+        clearExamState();
+        await clearForensicsByUserEmail(studentEmail);
+    }
+});
+
+Deno.test("GET /abgabe-panel liefert das Panel je nach Exam-Zustand (#160)", async () => {
+    clearExamState();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const studentEmail = `abgabe-panel-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: studentEmail,
+        name: "Panel Check Student",
+        klasse: "5AHITM",
+    });
+
+    try {
+        const cookie = await registerAndGetCookie(studentEmail);
+
+        // Geschlossen: Hinweis statt Formular — und die Karte prüft selbst
+        // nach, damit das Formular ohne Reload erscheint.
+        const closedRes = await fetch(`${BASE_URL}/abgabe-panel`, {
+            headers: { Cookie: cookie },
+        });
+        assertEquals(closedRes.status, 200);
+        const closedHtml = await closedRes.text();
+        assertEquals(closedHtml.includes('id="abgabe-form"'), false);
+        assertEquals(closedHtml.includes('id="abgabe-closed"'), true);
+        assertEquals(closedHtml.includes('hx-get="/abgabe-panel"'), true);
+        assertEquals(closedHtml.includes('hx-target="#abgabe-panel"'), true);
+        assertEquals(
+            closedHtml.includes('hx-trigger="mouseenter throttle:3s, click"'),
+            true,
+        );
+
+        // Offen: dasselbe Fragment ist das Formular, ohne Trigger.
+        seedExamState("running");
+        const openRes = await fetch(`${BASE_URL}/abgabe-panel`, {
+            headers: { Cookie: cookie },
+        });
+        assertEquals(openRes.status, 200);
+        const openHtml = await openRes.text();
+        assertEquals(openHtml.includes('id="abgabe-form"'), true);
+        assertEquals(openHtml.includes('id="exam-countdown"'), true);
+        assertEquals(openHtml.includes('id="abgabe-closed"'), false);
+        assertEquals(openHtml.includes('hx-get="/abgabe-panel"'), false);
     } finally {
         clearExamState();
         await clearForensicsByUserEmail(studentEmail);
@@ -976,6 +1023,18 @@ Deno.test("GET /admin/students shows user anomalies without shared-IP anomalies"
     const firstIp = `203.0.113.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
     const secondIp = `198.51.100.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
     const seenAt = new Date();
+    // Ohne Zeitangabe rastet die Seite die Startzeit auf eine Schulstunde
+    // aus `spg_times` ein — vor der ersten Stunde (also abends/nachts) liegt
+    // das Fenster dann in der Zukunft und die eben geschriebenen Zeilen
+    // fallen heraus. Der Zeitraum wird deshalb explizit mitgegeben.
+    const rangeStart = new Date(seenAt.getTime() - 5 * 60_000);
+    const rangeEnd = new Date(seenAt.getTime() + 5 * 60_000);
+    const rangeQuery = new URLSearchParams({
+        startdate: dateString(rangeStart.toISOString()),
+        starttime: timeString(rangeStart.toISOString()),
+        enddate: dateString(rangeEnd.toISOString()),
+        endtime: timeString(rangeEnd.toISOString()),
+    }).toString();
 
     try {
         const adminRegisterRes = await fetch(`${BASE_URL}/register`, {
@@ -998,7 +1057,7 @@ Deno.test("GET /admin/students shows user anomalies without shared-IP anomalies"
         registrationsRepo.create(firstIp, user.id, seenAt);
         registrationsRepo.create(secondIp, user.id, seenAt);
 
-        const res = await fetch(`${BASE_URL}/admin/students`, {
+        const res = await fetch(`${BASE_URL}/admin/students?${rangeQuery}`, {
             headers: { "Cookie": cookie },
         });
         const html = await res.text();

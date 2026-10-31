@@ -195,6 +195,103 @@ Deno.test({
 });
 
 Deno.test({
+    name: "E2E: Geschlossene Abgabe-Karte prüft bei Hover und Klick (#160)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, STUDENT.email);
+            try {
+                await page.goto("/");
+                await page.waitForSelector("#abgabe-closed");
+                assertEquals(
+                    await page.locator("#abgabe-form").count(),
+                    0,
+                    "Ohne Examen darf kein Abgabe-Formular stehen",
+                );
+
+                // Das Examen startet, während die Seite schon offen ist.
+                await startExam();
+
+                // Hover genügt: die Karte prüft selbst nach.
+                await page.hover("#abgabe-closed");
+                await page.waitForSelector("#abgabe-form");
+
+                // Der getauschte Inhalt ist für Alpine initialisiert —
+                // sonst bliebe der Countdown stehen.
+                const first = (await page.textContent("#exam-countdown-badge")) ?? "";
+                assert(
+                    /Restzeit:\s*\d{2}:\d{2}/.test(first),
+                    `Countdown nach dem Swap erwartet, war: "${first}"`,
+                );
+                await page.waitForTimeout(1200);
+                const second = (await page.textContent("#exam-countdown-badge")) ?? "";
+                assert(
+                    second !== first,
+                    `Countdown muss nach dem Panel-Swap ticken, blieb bei "${first}"`,
+                );
+
+                // Klick-Weg (Touch/Tastatur): frische Seite, wieder zu.
+                await stopExam();
+                await page.goto("/");
+                await page.waitForSelector("#abgabe-closed");
+                await startExam();
+                await page.click("#abgabe-closed");
+                await page.waitForSelector("#abgabe-form");
+            } finally {
+                await stopExam();
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Endet das Examen, ersetzt der Hinweis das Formular (#160)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await startExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, STUDENT.email);
+            try {
+                await page.goto("/");
+                await page.waitForSelector("#abgabe-form");
+
+                // Das Examen endet, während das Formular offen ist.
+                await stopExam();
+
+                await page.setInputFiles("#abgabe-file-input", {
+                    name: UPLOAD_FILENAME,
+                    mimeType: "application/zip",
+                    buffer: Buffer.from(ZIP_BYTES),
+                });
+                await page.click("#abgabe-submit");
+
+                await page.waitForSelector("#toast-dialog");
+                const message = (await page.textContent("#toast-dialog-message")) ?? "";
+                assert(
+                    message.includes("Uploads sind nur während des Examens möglich."),
+                    `Sperrmeldung im Toast erwartet, war: "${message}"`,
+                );
+
+                // Die 403-Antwort holt das Panel neu: der Hinweis steht
+                // dort, wo eben noch das Formular war.
+                await page.waitForSelector("#abgabe-closed");
+                assertEquals(
+                    await page.locator("#abgabe-form").count(),
+                    0,
+                    "Nach dem Exam-Ende darf das Formular nicht stehen bleiben",
+                );
+            } finally {
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
     name: "E2E: Upload während des Examens läuft durch (Panel + Toast)",
     sanitizeOps: false,
     sanitizeResources: false,

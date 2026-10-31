@@ -1,4 +1,14 @@
-<div class="card shadow-sm border-0">
+{{! Geschlossen prüft die Karte bei Hover und Klick, ob das Examen
+    inzwischen läuft, und tauscht sich gegen das Abgabe-Formular (#160).
+    `throttle` ist Pflicht: der Swap ersetzt den Knoten unter dem Cursor,
+    Chrome feuert darauf ein neues `mouseenter` — ohne Drossel eine
+    Request-Schleife. Bei offenem Examen bleibt die Karte tot, damit kein
+    Swap die gewählte Datei wegwirft. }}
+<div class="card shadow-sm border-0{{#unless exam_open}} cursor-pointer{{/unless}}"
+     {{#unless exam_open}}hx-get="/abgabe-panel"
+     hx-target="#abgabe-panel"
+     hx-swap="innerHTML"
+     hx-trigger="mouseenter throttle:3s, click"{{/unless}}>
     <div class="card-header bg-transparent border-0 text-center pt-4 pb-0">
         <h2 class="card-title mb-0">Deine Abgabe</h2>
     </div>
@@ -109,6 +119,7 @@
                  role="alert">
                 <h3 class="alert-heading h5 mb-2">Uploads sind nur während des Examens möglich.</h3>
                 <p class="mb-0">Bitte warte, bis deine Lehrperson das Examen gestartet hat.</p>
+                <p class="mb-0 small">Tippe oder klicke hier, sobald es losgeht.</p>
             </div>
         {{/if}}
     </div>
