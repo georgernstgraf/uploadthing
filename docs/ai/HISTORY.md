@@ -95,3 +95,36 @@ Entries here are no longer active truth. Never delete from this file.
   Symlinks, configd-Snippets, den Cronjob und das `examsense`-Checkout auf
   der Sense sowie `appliance/bin/` und fast alle `appliance/files/` aus
   dem Repo entfernt. Im Repo bleibt nur Nachschlage- und Belegmaterial.
+
+## 2026-10-31 (SUPERSEDED 2026-10-31, origin: DECISIONS.md, reason: #161 — Server-Push statt Polling): On-Demand statt Polling im Abgabe-Panel
+
+- **Choice**: No `hx-trigger="every Ns"` on the submission panel; the
+  closed card re-checked the exam state on `mouseenter throttle:3s` and
+  `click` against `GET /abgabe-panel` and swapped itself for the form.
+- **Reason (damals)**: a timer would swap the panel under the cursor every
+  N seconds and cost two requests per minute per student; a mouse move or
+  a tap was enough.
+- **Origin**: DECISIONS.md, section „2026-10-31: Abgabe-Panel prüft bei
+  Hover und Klick, ob das Examen läuft (#160)"
+- **Reason**: Since #161 the state is pushed over SSE
+  (`/events/exam` → `static/events.js` → `GET /abgabe-panel` on an
+  `open` transition). The hover/click trigger was removed from
+  `templates/abgabe.hbs`; the fragment endpoint and `buildPanel` stay.
+  One-time "on demand instead of polling" is history.
+
+## 2026-10-31 (SUPERSEDED 2026-10-31, origin: DECISIONS.md, reason: #161 — Anmelde-Freigabe als Schalter): Notausgang nur im Speicher (5-Minuten-Fenster)
+
+- **Choice**: `service.exam.openRegistrationWindow()` opened student
+  registration for five minutes; the permission lived in process memory
+  only, expired after the window and was reset on exam start and exam end.
+  Endpoint: `POST /api/exam/registration-window` with `action=open|close`.
+- **Reason (damals)**: a short, self-expiring escape hatch so a student who
+  lost the session could log in again during an exam.
+- **Origin**: DECISIONS.md, section „2026-10-30: Eine Schülerseite —
+  Anmeldung und Abgabe auf / (#146)"
+- **Reason**: The duration was never right (too short for a lost session,
+  too long as a permanent state) and the panel claimed "open" after
+  expiry. Replaced on 2026-10-31 by the admin switch in #161
+  (`registrationAllowed`, no deadline, reset only in `start()` and
+  `finishExam()`); the endpoint, `buildRegistrationWindowPanel()` and
+  `templates/admin-registration-window.hbs` are gone.

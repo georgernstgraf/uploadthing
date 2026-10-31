@@ -5,16 +5,18 @@ Current status as of 2026-10-31.
 ## Current Focus
 
 **#161 — Server-Push statt Polling (SSE) + Anmelde-Freigabe als Schalter.**
-Phase 1 (Schalter, Warnbalken, keine Confirms an den Schaltern) ist live:
-Deploy am 2026-10-31 um 12:17, geprüft über `/` (200), den neuen Endpunkt
-(403 ohne Admin) und den entfallenen alten Endpunkt (404). Offen ist nur
-die Sichtprüfung im Panel. Die Phasen 2–6 (Cookie-Dedupe, SSE-Grundlage,
-Exam-Kanal, Admin-Kanal, Doku) sind offen.
+Der Umbau ist fertig und committet (Phasen 1–6): Anmelde-Freigabe als
+Schalter, Cookie-Dedupe, Event-Bus und Streams, Exam-Kanal mit Watchdog,
+Admin-Kanal mit Freeze-Badge, Doku. Phase 1 ist live (Deploy am
+2026-10-31 um 12:17), **die Phasen 2–6 sind noch nicht deployt**: Es fehlt
+`systemctl --user restart uploadthing` und danach der h2-Beweis per
+`curl -N --http2 …/events/exam`. Offen bleibt außerdem die Sichtprüfung
+der Phase 1 im Panel. Die Checkliste steht in `HANDOFF.md`.
 
-**#162 — Namenssuche-Robustheit.** Einmaliger `NO_OBJECT`-Aussetzer am
-31.10. 12:05, von der App als „nicht erreichbar" gemeldet; Vorschlag
-(Retry nach Reconnect, ehrliche Fehlermeldung, injizierbarer Searcher)
-steht im Issue.
+**#162 — Namenssuche-Robustheit — erledigt am 2026-10-31.**
+Server-Antworten (Result-Code) werden nicht mehr als Netzausfall gemeldet,
+der Neuversuch ist auf einen begrenzten Transport-Retry reduziert, die
+Suche ist per injizierbarem Searcher testbar.
 
 **Epic #141 — Exam-Infrastruktur 2026/27 — abgeschlossen am 2026-10-31.**
 Alle Sub-Issues sind zu (#133, #134, #142–#149, #135, nebst den im
@@ -35,8 +37,63 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **IP-/MAC-Präsenz** per Tik-REST im App-Prozess (`service/tik.ts`);
   MikroTik-Konto `uploadthing`, strikt auf `192.168.21.2/32`, nur
   `monitoring-rest`.
-- **Tests**: 352 Deno-Tests (~5 s) plus neun Playwright-Smoke-Tests in
-  `deno task e2e` (~12 s, Chromium, eigene Wegwerf-DB auf Port 8099).
+- **Tests**: 407 Deno-Tests plus 17 Playwright-E2E-Tests in
+  `deno task e2e` (Chromium, eigene Wegwerf-DB auf Port 8099).
+
+## Erledigt am 2026-10-31 (Server-Push statt Polling, #161 Phasen 2–6)
+
+- **Cookie-Dedupe (#161).** `service/cookiepresents.recordByEmail()` schreibt
+  höchstens eine Zeile pro (IP, User) je 30 s und meldet per Rückgabewert,
+  ob es ein echter Insert war; `/static/*` schreibt gar keine Presence mehr
+  (rund acht Asset-Requests pro Seite), und Lehrpersonen erzeugen kein
+  `cookie`-Ereignis. Ohne diese drei Riegel löst der Admin-Render den
+  nächsten aus.
+- **SSE-Grundlage (#161).** `lib/event_hub.ts` (Kanäle, Seq, Listener, kein
+  Event-Log), `lib/sse.ts` (eigener `Response` statt `streamSSE`, weil
+  `Connection`/`Transfer-Encoding` über HTTP/2 verboten sind; Heartbeat
+  `: ping` alle 20 s, unref'd), `service/events.ts` (Snapshots,
+  1-s-Koaleszierung der Admin-Aktivität). `closeAllStreams()` und
+  `exam_watchdog.disarm()` sind die ersten Schritte im Shutdown — offene
+  Streams sind sonst in-flight Requests.
+- **Exam-Kanal (#161).** `GET /events/exam` (401 ohne Sitzung) schickt beim
+  Verbinden den vollständigen Zustand; `static/events.js` tickt den
+  Countdown mit dem Serveruhr-Offset aus `server_now_ms`, tauscht
+  `#abgabe-panel` bei `open`-Wechsel und zieht das Admin-Panel ohne Klick
+  nach. Der Hover-/Klick-Trigger aus #160 ist entfallen.
+- **Pünktlicher Abschluss (#161).** `service/exam_watchdog.ts` plant auf die
+  Restzeit (`SAFETY_MARGIN_MS = 250`) und stößt den bestehenden lazy Pfad
+  an; `finishInFlight` in `service/exam.ts` verhindert doppelte
+  `setInternetActive`-Runden, wenn Watchdog und Admin-Stopp gleichzeitig
+  feuern. `ends_at_ms` wird aus der exakten Restzeit gerechnet, nicht mehr
+  aus `ceil`.
+- **Admin-Kanal (#161).** `GET /admin/events` (403 für Schüler) ersetzt
+  `every 15s`; `hx-trigger="admin-refresh"` auf `#admin-report-panel`.
+  Offene Details, Accordion oder IP-Modal frieren den Swap ein und zählen
+  in `#admin-refresh-pending` („n neue Ereignisse"); `#admin-refresh-stand`
+  zeigt „Stand HH:MM:SS". `ADMIN_REFRESH_SECONDS` ist aus
+  `lib/config.ts`, `README.md` und `.env.example` entfernt.
+- **Abnahme:** 407 Deno-Tests, 17 E2E-Tests, `check`/`lint` grün. Details in
+  `DECISIONS.md` („Server-Push statt Polling"), Regeln in `CONVENTIONS.md`
+  („Server-Sent Events").
+
+## Erledigt am 2026-10-31 (Namenssuche-Robustheit, #162)
+
+- **Server-Antwort ≠ Netzausfall.** `repo/ldapuser.ts` typisiert Fehler:
+  `LdapServerResponseError` (numerischer Result-Code aus ldapts'
+  `ResultCodeError`, z. B. 32 = `NO_OBJECT`) und `LdapTransportError`.
+  Genau **ein** Neuversuch, nur bei Transportfehlern; Server-Antworten
+  gehen sofort weiter.
+- **Keine Endlosschleife mehr.** Der Client wird je Versuch mit
+  `LDAP_REQUEST_TIMEOUT_MS = 5000` gebaut; ein laufender Aufbau wird von
+  weiteren Aufrufern geteilt statt verdoppelt. Die frühere
+  `while (true)`-Schleife mit `ldap_retry_wait_seconds` ist entfernt.
+- **Ehrliche Meldung.** `service/ldapuser.searchFailureMessage()` sagt
+  „am Server gescheitert (LDAP-Code 0x…)" bzw. nur bei Transportfehlern
+  „nicht erreichbar".
+- **Testbar ohne Verzeichnis.** `searchLoginCandidates(term, searcher)`
+  nimmt einen `LdapUserSearcher` (analog zu `TikFetcher`);
+  `service/ldapuser_test.ts` und `repo/ldapuser_test.ts` decken
+  Server-Antwort, Transportfehler und den einen Neuversuch ab.
 
 ## Erledigt am 2026-10-31 (Anmelde-Freigabe als Schalter, #161 Phase 1)
 
@@ -58,7 +115,8 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **Keine Rückfragen mehr** am Internet-Schalter und an beiden
   Stopp-Knöpfen — der rote Balken ist die Warnung. Die fünf
   Datenlösch-Rückfragen bleiben.
-- **Abnahme:** 366 Deno-Tests, 13 E2E-Tests, `check`/`lint` grün.
+- **Abnahme (Stand nach diesem Commit):** 366 Deno-Tests, 13 E2E-Tests,
+  `check`/`lint` grün.
   Details in `DECISIONS.md`.
 
 ## Erledigt am 2026-10-30 (Abschlusssession)
@@ -103,27 +161,30 @@ Das System läuft so, wie es das Epic beschrieben hat:
   Fragment, 500, Header-Werte) plus Endpoint-Prüfung auf `GET /`.
   360 Deno-Tests, `check`/`lint` grün.
 
-## Erledigt am 2026-10-31 (Abgabe-Panel prüft selbst, #160)
+## Erledigt am 2026-10-31 (Abgabe-Panel prüft selbst, #160 — seit #161 überholt)
 
 - **Das Abgabe-Panel veraltete.** `exam_open` wurde einmal beim Rendern
   ausgewertet; wer die Seite vor dem Exam-Start geladen hatte, sah nur den
-  Hinweis. Die geschlossene Karte prüft jetzt bei Hover und Klick gegen
+  Hinweis. Damals prüfte die geschlossene Karte bei Hover und Klick gegen
   `GET /abgabe-panel` (neuer Fragment-Endpunkt, nur `buildPanel`) und
-  tauscht sich gegen das Formular.
-- **`throttle:3s`** verhindert die Request-Schleife, die entsteht, weil der
-  Swap den Knoten unter dem Cursor ersetzt; `click` ist der Touch- und
-  Tastaturweg. Die Trigger-Attribute existieren nur im geschlossenen
+  tauschte sich gegen das Formular. **Seit #161 entfällt der Trigger:** den
+  Wechsel schiebt `static/events.js` über SSE, der Fragment-Endpunkt bleibt.
+- **`throttle:3s`** verhinderte damals die Request-Schleife, die entsteht,
+  weil der Swap den Knoten unter dem Cursor ersetzt; `click` war der Touch-
+  und Tastaturweg. Die Trigger-Attribute existierten nur im geschlossenen
   Zweig, damit bei offenem Formular keine gewählte Datei verloren geht.
 - **Gegenrichtung:** Endet das Examen bei offenem Formular, bleibt
   `POST /upload` bei 403; `htmx:responseError` holt das Panel neu, der
   Hinweis ersetzt das Formular.
 - **Alpine-Init beim Panel-Swap** ergänzt (`Alpine.initTree` für
   `#abgabe-panel`) — vorher blieben Countdown und Dateiname nach jedem
-  Panel-Swap stehen, auch nach dem Upload-POST.
+  Panel-Swap stehen, auch nach dem Upload-POST. Seit #161 braucht es das
+  nur noch für den Dateinamen; der Countdown läuft in `static/events.js`.
 - **Alpine 3.15.12 → 3.17.5**; htmx bleibt 2.0.10 (letzte 2.x, 4.0.0 wird
   erst Anfang 2027 npm-`latest`). `cursor-pointer` ist jetzt in
   `ui-shell.css` definiert (war schon benutzt, aber nirgends deklariert).
-- **Abnahme:** Endpoint-Test auf beide Zustände von `GET /abgabe-panel`;
+- **Abnahme (damaliger Stand):** Endpoint-Test auf beide Zustände von
+  `GET /abgabe-panel`;
   zwei E2E-Tests (Hover/Klick mit tickendem Countdown, Exam-Ende bei
   offenem Formular). 355 Deno-Tests, 12 E2E-Tests, `check`/`lint` grün.
   Issue #160 geschlossen.
@@ -227,15 +288,14 @@ sind behoben:
 
 ## Pending
 
-- [ ] **#161 Phasen 2–6** — Cookie-Dedupe, SSE-Grundlage (Hub, Streams,
-      `closeAllStreams()` im Shutdown), Exam-Kanal (Hover-Trigger raus),
-      Admin-Kanal (`every 15s` raus, Freeze-Badge), Doku.
+- [ ] **#161 deployen und den h2-Beweis führen** — der Code der Phasen 2–6
+      ist committet, aber noch nicht neu gestartet. Checkliste in
+      `HANDOFF.md` (Restart, Journal ohne `stop-sigterm`, `/` = 200 mit
+      CSP, `curl -N --http2 …/events/exam` mit Sitzungs-Cookie). Der
+      HTTP/2-Fall ist der einzige Punkt, den die Tests nicht abdecken.
 - [ ] **#161 Sichtprüfung** — neuer Schalter und Warnbalken auf
-      `/admin/application` einmal mit laufendem Examen prüfen
-      (Checkliste in `HANDOFF.md`); der Deploy selbst ist durch.
-- [ ] **#162 Namenssuche-Robustheit** — Retry nach Reconnect, `NO_OBJECT`
-      nicht als „nicht erreichbar" melden, Fehlerzweig per injizierbarem
-      Searcher testbar machen.
+      `/admin/application` einmal mit laufendem Examen prüfen; der
+      Deploy der Phase 1 selbst ist durch.
 
 - [ ] **Entscheidung: anonyme Namenssuche.** `/ldap` liefert ohne
       Anmeldung Namen **und Klasse** ab drei Zeichen (bewusst so in #146
@@ -293,7 +353,12 @@ None.
 
 ## Next Session Suggestion
 
-Der Betrieb ist vollständig; die nächsten Schritte sind Abnahmen, keine
-Umbauten: Handy-Test der Sperre im Prüfungsnetz, Lehrer-Login vom Dell,
-Zertifikatserneuerung im Dezember. Wer Code anfassen will, nimmt #150 —
-aber erst, wenn htmx 4 `latest` ist.
+Zuerst der Deploy, den die Tests nicht ersetzen können: `systemctl --user
+restart uploadthing`, Journal ohne `stop-sigterm` prüfen, dann
+`curl -N --http2 https://tst.spengergasse.at/events/exam` mit einem
+Sitzungs-Cookie — erst wenn dort der erste `event: exam`-Frame ankommt,
+ist der SSE-Weg über HTTP/2 bewiesen. Danach die offene Sichtprüfung aus
+Phase 1 (Schalter → roter Balken → zurück). Die betrieblichen Abnahmen
+(Handy-Test der Sperre, Lehrer-Login vom Dell, Zertifikat bis 2027-01-12)
+stehen unverändert an. Wer Code anfassen will, nimmt #150 — aber erst,
+wenn htmx 4 `latest` ist.

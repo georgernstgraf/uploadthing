@@ -1,5 +1,105 @@
 # DECISIONS
 
+## 2026-10-31: Server-Push statt Polling (SSE) (#161)
+
+Ersetzt zwei frühere Einträge: „On-Demand statt Polling" (#160, unten —
+Hover/Klick-Trigger auf der Abgabe-Karte) und „Notausgang nur im Speicher"
+(#146, unten — Fünf-Minuten-Fenster). Beide bleiben als Geschichte
+stehen, gelten aber nicht mehr.
+
+- **Problem:** Jeder Zustand, den der Server kennt, erreichte den Client
+  nur, wenn dieser nachfragte. Die Admin-Forensik lud sich alle 15 s neu
+  (`hx-trigger="every 15s"`), das Abgabe-Panel prüfte bei Hover und Klick,
+  und ein abgelaufenes Examen wurde erst beendet, wenn jemand eine Seite
+  aufrief (`getRemainingSeconds()` als lazy Abschluss). Alles zusammen
+  heißt: Wer die Seite offen liegen ließ, sah einen falschen Stand, und
+  die Sperre konnte über die Zeitgrenze hinaus stehen bleiben.
+- **SSE statt WebSocket.** Der Datenfluss ist ausschließlich
+  Server → Client; `EventSource` bringt Reconnect und Heartbeat-Semantik
+  mit, ein WebSocket-Server wäre ein zweiter, zustandsbehafteter Pfad ohne
+  Gegenrichtung. Zwei Kanäle, ein Endpunkt je Kanal: `/events/exam`
+  (`exam`, jede angemeldete Person, 401 ohne Sitzung, weil auch Admins den
+  Zustand brauchen) und `/admin/events` (`activity`, nur Lehrpersonen,
+  403 für Schüler über das bestehende `requireAdmin`).
+- **Kein Event-Log.** Die Datenbank bleibt die Wahrheit; der Bus
+  (`lib/event_hub.ts`) kennt nur Kanäle, einen monotonen Zähler und
+  Listener. Ein Zustandswechsel publiziert einen **zustandslosen Tick**
+  (`null`), der Empfänger baut den vollständigen Snapshot beim Senden aus
+  der DB (`service/events.snapshotExam()`/`snapshotActivity()`). Deshalb
+  gibt es kein `id:`-Feld und keine `Last-Event-ID`: nach einem Reconnect
+  kommt derselbe Snapshot wie beim ersten Verbinden, nur frischer.
+- **Der Snapshot ist seiteneffektfrei.** `snapshotExam()` liest über
+  `exam.getStatusViewPassive()`; ein abgelaufenes, noch nicht
+  aufgeräumtes Examen erscheint als `status: "running"` mit `open: false`.
+  Ein lazy Abschluss im Snapshot würde beim Publizieren des eigenen Ticks
+  den nächsten Snapshot anfordern — eine Schleife.
+- **Pünktlicher Abschluss per Watchdog statt lazy.**
+  `service/exam_watchdog.ts` stellt auf die Restzeit einen Timer
+  (`SAFETY_MARGIN_MS = 250` gegen Rundung und Jitter), feuert in den
+  bestehenden lazy Pfad (`getRemainingSeconds()`) und plant nach jedem
+  Exam-Tick neu. Nur `running` ist scharf, `paused` entwaffnet. Ein
+  `finishInFlight`-Riegel in `service/exam.ts` sorgt dafür, dass Watchdog
+  und Admin-Stopp nie zwei `setInternetActive(true)`-Runden fahren; der
+  zweite Aufrufer bekommt dasselbe Ergebnis. `arm()` läuft in `main.ts`
+  nach `runExamModeOnStartup()`, `disarm()` als erster Schritt im
+  Shutdown.
+- **`ends_at_ms` ist jetzt exakt.** Er wird aus der ungerundeten Restzeit
+  gerechnet (`now + remainingExactSeconds * 1000`), nicht mehr aus dem
+  aufgerundeten `ceil`-Wert. Der Client zählt auf diesen Zeitpunkt; eine um
+  bis zu eine Sekunde zu späte Endzeit war direkt nach dem Verbinden ein
+  sichtbarer Sprung. `remaining_seconds`/`remaining_label` bleiben
+  aufgerundet, weil sie die Anzeige sind.
+- **Serverseitige Koaleszierung 1 s gegen die Cookie-Rückkopplung.** Ohne
+  Dedupe schreibt jeder Request mit gültigem Cookie eine Presence-Zeile —
+  auch der eigene Admin-Render. Ohne Gegenmaßnahme löst ein Admin-Render den
+  nächsten aus. Drei Riegel: (1) `recordByEmail()` schreibt höchstens eine
+  Zeile pro (IP, User) je `COOKIE_PRESENT_MIN_INTERVAL_MS = 30_000` und
+  meldet per Rückgabewert, ob es ein echter Insert war; (2) `/static/*`
+  schreibt gar keine Presence (eine Seite erzeugt ~8 Asset-Requests);
+  (3) Lehrpersonen erzeugen kein `cookie`-Ereignis. Zusätzlich fasst
+  `service/events.noteAdminActivity()` alle Gründe eines
+  `ADMIN_PUSH_MIN_MS = 1000`-Fensters zu **einem** Event mit
+  deduplizierten Gründen zusammen (Nachlaufkante). Die Konstante ist
+  bewusst keine Env-Variable: Koaleszierung ist eine Eigenschaft des
+  Kanals, kein Betriebsparameter.
+- **Freeze-Badge statt stillem Verwerfen.** Die Forensik darf nicht
+  getauscht werden, solange Details, das Anomalie-Accordion oder das
+  IP-Detail-Modal offen sind — der Swap würde die offene Ansicht
+  zerstören. Statt das Ereignis zu schlucken, zählt
+  `#admin-refresh-pending` („n neue Ereignisse") mit; nach dem Schließen
+  wird einmal nachgeholt, ein echter Swap setzt den Zähler zurück.
+  `#admin-refresh-stand` zeigt „Stand HH:MM:SS" aus `server_now_ms` des
+  Frames.
+- **Der 403-Pfad auf `/upload` bleibt die letzte Verteidigungslinie.** Der
+  Push ist Komfort, nicht die Sicherheitsgrenze: Endet das Examen bei
+  offenem Formular, antwortet `POST /upload` weiter 403, und
+  `htmx:responseError` holt das Panel neu. Ein ausgefallener Stream kostet
+  Bequemlichkeit, keine Regel — dafür deckt ein E2E-Test genau diesen Fall
+  ab („Ohne Push bleibt der Server die Wahrheit").
+- **Der Client hat einen Besitzer für den Countdown.** `static/events.js`
+  rechnet die Restzeit aus `data-ends-at-ms` und dem Offset
+  `server_now_ms − Date.now()` des letzten Frames; Alpine bleibt nur für
+  den Dateinamen im Panel. Der Sekundentakt zielt auf den Moment, in dem
+  die aufgerundete Anzeige springt (statt fester 1-s-Takt, der bis zu zwei
+  Sekunden nachhinkt). Kleine Abweichungen (< 1,5 s) überschreiben den
+  Endzeitpunkt nicht — sonst zappelte die Anzeige bei jedem Frame.
+- **Der Client gibt begrenzt auf.** Nach drei Verbindungsfehlern ohne
+  zwischenzeitlichen Frame schließt er den `EventSource` (dauerhaftes
+  401/403 darf kein Reconnect-Karussell werden). Reconnect selbst ist Sache
+  von `EventSource`.
+- **Abnahme:** Endpoint-Tests auf 401/200 (`/events/exam`, sofortiger
+  Snapshot) und 403/erster Frame (`/admin/events`); `lib/event_hub_test.ts`,
+  `lib/sse_test.ts` (Header, Reihenfolge, `closeAllStreams()`),
+  `service/events_test.ts` (Koaleszierung, Snapshot ohne Seiteneffekt),
+  `service/exam_watchdog_test.ts` (Planung, Pause, Nachholen),
+  `service/cookiepresents_test.ts` und `middleware/session_test.ts`
+  (Dedupe, kein Presence auf `/static/`, kein Ereignis für Lehrpersonen).
+  Sechs E2E-Tests decken den Push ab: Exam-Start ersetzt den Hinweis ohne
+  Hover, Exam-Ende ohne Interaktion, 403 ohne Push (der Server bleibt die
+  Wahrheit), Admin-Panel folgt ohne Klick, Abgabe-Badge ohne Reload,
+  offenes Detail hält die Forensik an. Der Hover/Klick-Test aus #160 ist
+  entfallen. 407 Deno-Tests, 17 E2E-Tests, `check`/`lint` grün.
+
 ## 2026-10-31: Anmelde-Freigabe als Schalter, Warnbalken mit zwei Ursachen (#161)
 
 - **Problem:** Der Notausgang aus #146 war ein 5-Minuten-Fenster mit
@@ -43,8 +143,8 @@
   `buildExamHazards` in `routes/render_test.ts`, Template-Zustände in
   `service/admin_test.ts`, Endpunkt/403/404 und der Balken auf
   `/admin/application` in `test/endpoints_test.ts`, ein E2E-Test für
-  Schalter → Balken → zurück. 366 Deno-Tests, 13 E2E-Tests,
-  `check`/`lint` grün.
+  Schalter → Balken → zurück. 366 Deno-Tests, 13 E2E-Tests (Stand nach
+  diesem Commit), `check`/`lint` grün.
 
 ## 2026-10-31: Abgabe-Panel prüft bei Hover und Klick, ob das Examen läuft (#160)
 
@@ -56,6 +156,10 @@
   hängt an Hover und Klick der geschlossenen Karte. Ein Timer würde alle N
   Sekunden das Panel unter dem Cursor austauschen und pro Schüler zwei
   Requests pro Minute kosten; eine Mausbewegung oder ein Tipp genügen.
+  **Überholt am 2026-10-31:** Hover und Klick sind entfallen, den Zustand
+  schiebt jetzt SSE (`static/events.js`, siehe „Server-Push statt Polling").
+  Der Fragment-Endpunkt `GET /abgabe-panel` bleibt — der Client holt ihn
+  beim Zustandswechsel.
 - **Eigener Fragment-Endpunkt** `GET /abgabe-panel` statt `GET /` mit
   `hx-select`: `/` rendert `buildStartContent` samt `get_unterlagen()`
   (Verzeichnis-Stat) und der ganzen linken Spalte. `buildPanel` ist ein
@@ -172,7 +276,8 @@
   aus Zeit + Datum (Start), Switch, Zeit + Datum (Ende), Suchen. Ids,
   Feldnamen, die Alpine-Komponente und der `localStorage`-Schlüssel
   bleiben — `admin-report.hbs` hängt per `hx-include` an
-  `#admin-time-filter form`, und das Polling darf nicht brechen.
+  `#admin-time-filter form`, und der Panel-Refresh darf nicht brechen
+  (seit #161 ein `admin-refresh`-Event statt `every 15s`).
 - **Abnahme ist Geometrie, nicht Augenschein:** der neue E2E-Test misst
   die Gruppenkästen — bei 1600 px gleiches `y` und steigendes `x`, bei
   1000 px zwei nebeneinander und die dritte umgebrochen.
@@ -264,6 +369,9 @@
   solange ein Examen läuft.
   **Ersetzt am 2026-10-31 durch den Schalter in #161** (keine Frist,
   eigene Karte in der Examen-Steuerung, Warnzeile im roten Balken).
+  **Der Schalter selbst ist seit demselben Tag Teil des SSE-Stands:** sein
+  Zustandswechsel publiziert einen `exam`-Tick, das Admin-Panel zieht ohne
+  Klick nach (siehe „Server-Push statt Polling").
 - **Erfolg als Toast, Formular bleibt.** Nach einer Abgabe antwortet
   `POST /upload` mit dem Panel und einem `#abgabe-toast`-Datenattribut;
   der globale afterSwap-Handler zeigt den Toast. Ein `HX-Trigger`-Header
@@ -497,7 +605,7 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
 
 - Exam duration is preset by the admin: `examstate` is a SQLite singleton (`idle`/`running`/`paused`/`stopped`) with duration, extra seconds, and accumulated pause time; Drizzle owns the schema, runtime access is direct SQLite via `repo/exam.ts`.
 - `service/exam.ts` is authoritative for remaining time; the clock is injectable for tests. `updated_at` doubles as the pause-start anchor (pause()/resume() only touch it; addExtra during a pause deliberately does not).
-- Pause only stops the countdown — uploads and Unterlagen downloads stay allowed. Stop and natural expiry both mean exam mode off with internet released; there is no grace period.
+- Pause only stops the countdown — uploads and Unterlagen downloads stay allowed. Stop and natural expiry both mean exam mode off with internet released; there is no grace period. Natural expiry fires punctually: the exam watchdog (`service/exam_watchdog.ts`, #161) triggers the same finish path instead of waiting for the next request, and the remaining lazy finish in `getRemainingSeconds()` stays as the fallback (`finishInFlight` guarantees exactly one run).
 - Startup always resets to exam mode off / internet free and forces a stuck `running`/`paused` examstate to `stopped` — this reverses the earlier "block internet on startup" behavior.
 - Uploads (`POST /upload`) and Unterlagen downloads (`GET /unterlagen/*`) are gated by `service.exam.isExamWindowOpen()`; the Unterlagen index (`GET /`) stays public. Admins are not exempted from the Unterlagen gating.
 - Early submissions are encouraged; `canResubmit()` already enforces "submitted + left the network = no resubmission, submitted + stayed = resubmission allowed".
@@ -592,7 +700,9 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
 
 - Explicit registration events and ongoing cookie-based presence are distinct concepts.
 - `registrations` records deliberate registration actions.
-- `cookiepresents` records each request that arrives with a valid cookie and resolved user.
+- `cookiepresents` records presence, not every request: at most one row per
+  (IP, user) per `COOKIE_PRESENT_MIN_INTERVAL_MS = 30_000`, and none at all
+  for `/static/*` requests (#161, see „Server-Push statt Polling").
 - The admin forensics view treats cookie presence as the current user attribution for an IP while still showing explicit registration history separately.
 - The student/admin overview IP set is derived from the union of `ipfact`, `cookiepresents`, `registrations`, and submissions so cookie-only IPs are not dropped from the report.
 - The overview's displayed report count now combines in-range `ipfact` hits with in-range `cookiepresents` hits, while the detailed IP history list remains an `ipfact`-only breakdown.

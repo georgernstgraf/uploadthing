@@ -90,6 +90,7 @@
 
 - A task is not complete until `deno task check`, `deno task lint`, and `deno task test` succeed.
 - `deno task test` is the automated test command; ignore older references such as `main_test_db.ts`.
+- **Tests ausschließlich über `deno task test` bzw. `deno task e2e` starten — nie `deno test --env-file` direkt.** Der direkte Aufruf lädt die Produktions-`.env` (inklusive OPNsense- und Tik-Zugang) in den Testprozess; das ist 2026-10 real passiert. Die Tasks setzen die Test-Env über `scripts/test-with-server.sh` (eigene Wegwerf-DB, `TIK_*` leer).
 - If a command cannot run because of missing env, LDAP, filesystem, or another dependency, report that explicitly.
 - For admin forensics database work, verify index usage directly against `uploadthing.db` with `sqlite3 "uploadthing.db" "EXPLAIN QUERY PLAN ..."`; capture the exact hot queries being evaluated and compare plans before and after schema/query changes.
 - For admin/student forensics bugs, prefer both a service-level regression in `service/ipadmin_test.ts` and a rendered-page regression in `test/endpoints_test.ts` when the failure is visible in the HTML.
@@ -158,6 +159,55 @@
 - When upgrading, download the new versioned file, update the symlink target. Old versioned files remain for rollback.
 - Bootstrap JS (`bootstrap.bundle.js`) must be loaded for modals, tooltips, and `data-bs-*` attributes to work. `bootstrap.css` alone is not enough.
 
+## Server-Sent Events (#161)
+
+- **Der Stream wird in `lib/sse.ts` gebaut, nicht mit `hono/streaming`
+  `streamSSE`.** Der Hono-Helfer setzt `Transfer-Encoding: chunked` und
+  `Connection: keep-alive`; der Dienst terminiert TLS selbst mit ALPN `h2`,
+  und über HTTP/2 sind beide Header **verboten** — die Antwort bricht. Der
+  eigene `Response` setzt genau `Content-Type: text/event-stream;
+  charset=utf-8` und `Cache-Control: no-store`, sonst nichts. Wer Header
+  ergänzt, prüft zuerst `lib/sse_test.ts` („setzt nur Content-Type und
+  Cache-Control").
+- **Heartbeat:** `: ping` alle 20 s (`HEARTBEAT_MS`) als Kommentarzeile,
+  Timer per `Deno.unrefTimer` — ein Heartbeat darf den Prozess nicht am
+  Leben halten und keinen Frame-Zähler auslösen.
+- **`closeAllStreams()` gehört in die ersten Schritte von
+  `stopBackgroundWork`** (vor dem ersten `await`, zusammen mit
+  `exam_watchdog.disarm()`): ein offener SSE-Request ist ein in-flight
+  Request, `server.finished` wartet sonst bis zum 10-s-Shutdown-Watchdog,
+  und der Neustart dauert wieder 20 s.
+- **Kein `id:`-Feld, keine `Last-Event-ID`.** Es gibt kein Event-Log; beim
+  Verbinden und nach jedem Reconnect schickt der Server einen vollständigen
+  Snapshot. Wer ein Event-Log einführt, muss Replay, Speichergrenze und
+  Shutdown-Verhalten mitentscheiden — nicht nebenbei.
+- **`publish` ist synchron und awaitet nichts.** Listener laufen über eine
+  Kopie der Liste, ein werfender Listener wird geloggt und bricht die
+  übrigen nicht ab. Ein Kanal mit vielen Zuhörern darf keinen Request
+  aufhalten.
+- **Der Snapshot wird beim Senden aus der DB gebaut und ist
+  seiteneffektfrei.** `exam.getStatusViewPassive()` statt
+  `getStatusView()`; ein lazy Abschluss im Snapshot löst beim Publizieren
+  den nächsten Tick aus.
+- **Importrichtung `events → exam`, nie umgekehrt.** `service/exam.ts`
+  publiziert deshalb direkt über `lib/event_hub.ts`; die Kanalnamen
+  (`EXAM_CHANNEL`, `ACTIVITY_CHANNEL`) liegen im Bus und werden von
+  `service/events.ts` nur re-exportiert.
+- **Erst abonnieren, dann den ersten Frame schreiben.** Sonst geht ein Tick
+  zwischen beiden Schritten verloren; die Schreibkette in `lib/sse.ts` hält
+  die Reihenfolge trotzdem.
+- **Admin-Aktivität nur über `noteAdminActivity(reason)` melden**, nie
+  direkt auf den Bus: nur dort greift die 1-s-Koaleszierung. Ein neuer
+  Grund ist ein neues Wort (`submission`, `tik`, `cookie`,
+  `registration`), keine Meldung pro Datensatz.
+- **Nicht verwerfen, was nicht getauscht werden darf:** Panel-Freeze
+  (offene `<details>`, Accordion, Modal) zählt in ein Badge und holt nach;
+  siehe `static/events.js`.
+- **SSE-Tests brauchen einen echten Server** (`Deno.serve` auf Port 0) für
+  Header und Stream-Ende, und `heartbeatMs` als Testoption statt echter
+  20 s. Client-Verhalten wird in `test/e2e/` geprüft, nicht in
+  `static/events.js` nachgebaut.
+
 ## HTMX Event and Attribute Rules
 
 - When using `hx-on:` attributes, always use kebab-case event names. HTML attribute names are case-insensitive and get lowercased by the browser, breaking camelCase matches.
@@ -168,4 +218,6 @@
 - `hx-confirm` has the same lookup rule as `hx-disabled-elt`: put it on the element that carries `hx-post`. With `hx-post` on a `<form>`, `hx-confirm` belongs on the form; on a submit button it is never found and the destructive action runs without a prompt.
 - Keine `hx-confirm` an Schaltern, deren Zustand im selben Panel als roter Warnbalken steht (#161): Der Balken ist die Warnung, der Schalter der Rückweg. Bei einem `change`-getriggerten Checkbox-Formular bleibt nach einem abgebrochenen `window.confirm` der Schalter optisch umgelegt, obwohl der Server nichts getan hat — die UI lügt. Rückfragen bleiben für irreversible Datenverluste (Löschen, Ersetzen, Bereinigen).
 - New structural UI elements need a stable `id` if any browser test touches them; `test/e2e` selects exclusively by `id` (plus ARIA roles where an element deliberately has none).
-- Panels whose content depends on a server-side state (e.g. `exam_open`) get a fragment endpoint and a `hx-trigger` that only exists in the state where the re-check applies — see `templates/abgabe.hbs` and `GET /abgabe-panel` (#160). A `mouseenter` trigger that swaps its own target needs `throttle:`, otherwise the swap re-fires `mouseenter` under the cursor.
+- Panels whose content depends on a server-side state (e.g. `exam_open`) get a fragment endpoint and are refreshed by a push, not by a timer: `static/events.js` fires the `admin-refresh` custom event (`hx-trigger="admin-refresh"` on `#admin-report-panel`) and calls `htmx.ajax` for `GET /abgabe-panel` (#161). **Kein `hx-trigger="every Ns"` für Zustände, die der Server ohnehin kennt** — ein Timer kostet pro Client Requests pro Minute und zeigt zwischen zwei Läufen weiter einen falschen Stand.
+- Zähler und Status-Badges gehören **außerhalb** des per `hx-select` getauschten Teilbaums (`#admin-refresh-status` steht vor `#admin-report-panel`): ein Badge im Panel würde beim nächsten Swap mit ersetzt und stünde danach auf altem Stand.
+- **Ein Trigger, der sein eigenes Ziel austauscht, braucht `throttle`** — der Swap ersetzt den Knoten unter dem Cursor, Chrome feuert darauf ein neues `mouseenter`, ohne Drossel dreht das eine Request-Schleife. Seit #161 gibt es keinen solchen Trigger mehr; wer einen einführt, drosselt ihn und prüft, ob nicht ein Push das richtige Werkzeug ist.

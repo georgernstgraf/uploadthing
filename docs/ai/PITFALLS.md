@@ -114,10 +114,12 @@
   `--node-modules-dir=auto`. Without it the CLI prints
   "Please install latest version of drizzle-orm" and exits. The resulting
   `node_modules/` is gitignored and belongs to the kit only.
-- LDAP access can be slow or unavailable; the code includes reconnect logic and retry timing.
+- LDAP access can be slow or unavailable; the client is built per attempt with a timeout (`LDAP_REQUEST_TIMEOUT_MS`) and exactly one retry on transport errors (#162) — there is no background reconnect loop anymore.
 - Do not start LDAP connections at module import time; eager startup causes unrelated tests to leak timers, reads, and TLS handshakes.
-- **A server-side LDAP answer is not an outage.** `searchUsers()` (`repo/ldapuser.ts`) catches every error, fires the reconnect in the background (`void makeClient()`) and rethrows, so the *causing* request always fails while the next one succeeds; `routes/auth.ts` then tells the student "Die Namenssuche ist gerade nicht erreichbar". On 2026-10-31 a single request hit `0000208D … problem 2001 (NO_OBJECT), best match of 'DC=htl-wien5,DC=schule'` — the AD answering "this base does not exist for me", not a network failure — and the same queries worked milliseconds later. Before debugging the network, read the message: a result code (`0x20`, `NO_OBJECT`, `referral`) names a server answer. #162 tracks the retry and the honest error text.
-- The search endpoint has no test for its failure branch: `GET /ldap?q=Graf` in `test/endpoints_test.ts` asserts real content but talks to the school LDAP, so it cannot provoke an error. #162 adds an injectable searcher.
+- **A server-side LDAP answer is not an outage.** On 2026-10-31 a single request hit `0000208D … problem 2001 (NO_OBJECT), best match of 'DC=htl-wien5,DC=schule'` — the AD answering "this base does not exist for me", not a network failure — and the same queries worked milliseconds later. Before debugging the network, read the message: a result code (`0x20`, `NO_OBJECT`, `referral`) names a server answer. The lesson stands even though the code changed in #162: a server answer is still never an outage, it only gets a different message now.
+- **Was #162 geändert hat (nicht zurückdrehen):** `repo/ldapuser.ts` wirft typisierte Fehler — `LdapServerResponseError` (`kind: "server"`, numerischer `code` aus ldapts' `ResultCodeError`, z. B. 32 = `NO_OBJECT`) und `LdapTransportError` (`kind: "transport"`). Der Client wird mit Frist aufgebaut (`LDAP_REQUEST_TIMEOUT_MS = 5000` je Verbindungsschritt), und `retryOnceOnTransportError()` erlaubt **genau einen** Neuversuch — nur bei Transportfehlern, nie bei einer Server-Antwort. Die frühere Endlosschleife (`while (true)` mit `ldap_retry_wait_seconds`) ist weg; wer sie zurückbringt, hängt den Request wieder minutenlang an ein antwortendes, aber ablehnendes Verzeichnis.
+- **Die Meldung entscheidet über den nächsten Schritt:** `service/ldapuser.searchFailureMessage()` sagt bei Server-Antworten „am Server gescheitert (LDAP-Code 0x…)" und nur bei Transportfehlern „nicht erreichbar". Wer pauschal „nicht erreichbar" schreibt, schickt den nächsten Debugger in die falsche Richtung.
+- Die Suche ist seit #162 testbar ohne Verzeichnis: `searchLoginCandidates(term, searcher)` nimmt einen `LdapUserSearcher` (analog zu `TikFetcher`); `service/ldapuser_test.ts` und `repo/ldapuser_test.ts` decken Server-Antwort, Transportfehler und den einen Neuversuch ab. `GET /ldap?q=Graf` in `test/endpoints_test.ts` redet weiter mit der echten Schule — dieser Test darf keinen Fehlerzweig erzwingen.
 
 ## OPNsense 26.7: Migration Assistant und der Legacy-Block
 
@@ -186,7 +188,7 @@
 - The examstate singleton persists across test runs; use `clearExamState()` (and `seedExamState()` for running/paused scenarios) from `test/helpers/forensics_fixture.ts` or tests will see leftovers from earlier runs.
 - Die Anmelde-Freigabe (#161) liegt im Prozessspeicher. Ein Neustart setzt sie auf gesperrt zurück — und setzt über `resetExamStateOnStartup()` zugleich den Exam-Zustand auf `stopped`, sodass danach ohnehin keine Anmeldesperre mehr greift. Wer den Exam-Zustand je über einen Neustart retten will, muss diese beiden Dinge zusammen entscheiden (dann braucht die Freigabe ein Feld in `examstate` samt Migration).
 - Tests, die den Schalter prüfen, müssen ihn über `resetStudentRegistrationAllowed()` zurücksetzen: `clearExamState()` allein löscht nur die Datenbankzeile, nicht das Flag.
-- The student countdown receives `ends_at_ms` server-rendered and ticks client-side via Alpine; after a resume it stays behind the server until page reload (no polling by design).
+- Der Countdown gehört seit #161 `static/events.js`, nicht mehr Alpine: der Server rendert `data-ends-at-ms` und `data-paused` an `#exam-countdown`, der Client rechnet mit dem Offset aus `server_now_ms` (Serveruhr minus Browseruhr) des letzten SSE-Frames — eine falsch gehende Browseruhr verschiebt die Anzeige nicht, und nach Pause/Fortsetzen/Zusatzzeit synchronisiert der nächste Frame. Kleine Abweichungen unter 1,5 s (`COUNTDOWN_RESYNC_MS`) überschreiben den Endzeitpunkt bewusst nicht, sonst springt die Anzeige bei jedem Verbinden um bis zu eine Sekunde. Wer den Countdown wieder auf `Date.now()` oder Alpine umstellt, baut genau diesen Fehler zurück.
 - Browser-visible flows may also depend on local directories such as `ABGABEN_DIR` and `UNTERLAGEN_DIR` existing and being readable.
 
 ## Cookie Presence Semantics
@@ -421,23 +423,32 @@
   Klasse mit Bedeutung füllt, muss sie in `theme.css`/`ui-shell.css`
   global definieren, nicht in einem einzelnen Theme.
 
-## Serverseitig gerenderte Panels veralten (#160)
+## Serverseitig gerenderte Panels veralten (#160, seit #161 per Push)
 
 - Ein Panel, das `exam_open` beim Rendern einmal auswertet, bleibt stehen,
-  bis der Nutzer die Seite neu lädt. Wenn eine Aktion davon abhängt, muss
-  das Panel sich selbst nachziehen — hier per `GET /abgabe-panel` bei
-  Hover und Klick.
-- **Ein Hover-Trigger, der sein eigenes Ziel austauscht, braucht
-  `throttle`.** Der Swap ersetzt den Knoten unter dem Cursor; Chrome feuert
-  auf den neuen Knoten ein `mouseenter`, und ohne `throttle:3s` dreht das
-  eine Request-Schleife.
-- **Trigger-Attribute gehören nur in den Zustand, in dem sie gelten**
-  (`{{#unless exam_open}}`): ein Hover-Swap bei offenem Formular würde die
-  im `<input type="file">` gewählte Datei verwerfen.
+  bis es neu geholt wird. Seit #161 holt es sich nicht mehr bei Hover und
+  Klick, sondern wenn `static/events.js` einen Zustandswechsel sieht:
+  `GET /abgabe-panel` (Fragment, nur `buildPanel`) für die Abgabe-Karte,
+  `GET /api/exammode` für das Admin-Panel. Ein Timer ist dafür der falsche
+  Weg; ein Hover-Trigger war es auch.
+- **Einen Trigger nur in den Zustand legen, in dem er gelten darf:** bei
+  offenem Formular würde ein Panel-Swap die im `<input type="file">`
+  gewählte Datei verwerfen — der Client tauscht deshalb nur, wenn `open`
+  sich ändert (`syncPanel()`), und niemals während eines laufenden Uploads
+  (`uploadInFlight`/`pendingClose`).
+- **Der Zustand ist `open`, nicht `status`.** Ein abgelaufenes, noch nicht
+  aufgeräumtes Examen meldet `running` mit `open: false`; wer `status`
+  prüft, lässt das Formular stehen, obwohl der Server jeden Upload mit 403
+  abweist.
+- **Wer sein eigenes Ziel austauscht, braucht `throttle`**: der Swap
+  ersetzt den Knoten unter dem Cursor, Chrome feuert auf den neuen Knoten
+  ein `mouseenter` — ohne Drossel eine Request-Schleife. Seit #161 gibt es
+  keinen solchen Trigger mehr; die Regel gilt für jede Wiedereinführung.
 - **Jeder Panel-Swap braucht `Alpine.initTree`.** Der afterSwap-Handler in
   `index.hbs` initialisierte nur `#app-content`; nach einem Swap von
-  `#abgabe-panel` stand der Countdown still und der Dateiname blieb beim
-  Platzhalter. Neue Swap-Ziele mit `x-data` dort ergänzen.
+  `#abgabe-panel` blieb der Dateiname beim Platzhalter (der Countdown
+  gehört seit #161 `static/events.js`, nicht mehr Alpine). Neue
+  Swap-Ziele mit `x-data` dort ergänzen.
 - `cursor-pointer` ist **keine** Bootstrap-5.3-Utility. Sie ist in
   `static/ui-shell.css` definiert; wer eine neue Cursor-Utility braucht,
   legt sie dort an, nicht als Inline-Style.
@@ -452,4 +463,52 @@
   Anomalie-Tests scheitern reproduzierbar.
 - Tests, die auf geseedeten Zeitstempeln aufbauen, geben den Zeitraum
   deshalb explizit mit (`startdate`/`starttime`/`enddate`/`endtime`).
+
+## Server-Sent Events (#161)
+
+- **`Connection` und `Transfer-Encoding` sind über HTTP/2 verboten.** Der
+  Dienst terminiert TLS selbst mit ALPN `h2`; `hono/streaming.streamSSE`
+  setzt beide Header und bricht damit die Antwort — der Stream bleibt
+  einfach leer. Deshalb baut `lib/sse.ts` den `Response` selbst und setzt
+  nur `Content-Type` und `Cache-Control`. Der Fehler zeigt sich **nicht**
+  im Test (der läuft über HTTP/1.1), sondern erst am echten `/events/exam`
+  mit `curl --http2`; genau dieser eine Handgriff fehlt der Suite.
+- **Shutdown mit offenen Streams hängt bis zum Watchdog.** Ein offener
+  SSE-Request zählt als in-flight Request; `server.finished` löst erst auf,
+  wenn der Stream zu ist. `closeAllStreams()` muss deshalb **vor** dem
+  ersten `await` in `stopBackgroundWork` laufen (und
+  `exam_watchdog.disarm()` daneben), sonst dauert jeder Neustart 20 s und
+  endet im `stop-sigterm`-Timeout. `lib/sse_test.ts` prüft das mit einem
+  echten Server auf Port 0.
+- **`request.signal` allein reicht nicht.** Deno feuert das Abbruchsignal
+  eines Server-Requests nicht zuverlässig in dem Moment, in dem der Client
+  geht; bei erfolgreich beantworteten Anfragen kommt es erst am Ende der
+  Antwort. `lib/sse.ts` schließt den Stream deshalb auch über
+  `cancel()` des `ReadableStream` und über den fehlschlagenden
+  `controller.enqueue` — und beim Shutdown über `closeAllStreams()`.
+- **Die Anmelde-Freigabe ist prozesslokal** (`registrationAllowed` in
+  `service/exam.ts`), nicht in der DB. Ein Neustart setzt sie zurück — was
+  hier harmlos ist, weil `resetExamStateOnStartup()` das Examen ohnehin auf
+  `stopped` setzt; die Freigabe reist auch nicht über den Stream, sondern
+  wird beim Senden frisch gelesen (`registration_open`,
+  `registration_since`).
+- **`open` ist die Wahrheit, nicht `status`.** Ein abgelaufenes, noch nicht
+  aufgeräumtes Examen steht kurz auf `status: "running"` mit `open: false`;
+  der Watchdog setzt es Sekundenbruchteile später auf `stopped`. Clients
+  und Tests entscheiden deshalb über `open`. Wer im Snapshot den lazy
+  Abschluss (`getStatusView()`) statt `getStatusViewPassive()` aufruft,
+  baut die Rückkopplung wieder ein: Publizieren → Snapshot → Abschluss →
+  Publizieren.
+- **Ein Snapshot ist seiteneffektfrei und wird beim Senden gebaut.** Kein
+  Event-Log, kein `id:`; nach einem Reconnect kommt derselbe Snapshot,
+  nur frisch. Der Bus transportiert nur Ticks.
+- **Admin-Aktivität nur über `noteAdminActivity()`** melden (1-s-Fenster,
+  deduplizierte Gründe) und Presence nur bei echtem Insert
+  (`recordByEmail()` gibt `false` zurück, wenn die 30-s-Dedupe greift);
+  Lehrpersonen erzeugen kein `cookie`-Ereignis, `/static/*` schreibt keine
+  Presence. Ohne diese drei Riegel löst der Admin-Render den nächsten aus.
+- **Der Client gibt nach drei Verbindungsfehlern ohne Frame auf.** Ein
+  dauerhaftes 401/403 würde sonst alle drei Sekunden neu klopfen; der
+  Reconnect selbst ist Sache von `EventSource`, ein eigener Timer dafür
+  wäre ein zweiter Reconnect-Mechanismus.
 

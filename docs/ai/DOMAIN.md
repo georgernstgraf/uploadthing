@@ -19,9 +19,10 @@ This application supports supervised exam workflows where students identify them
 2. `/` is the single student page: materials and documentation links on the left, login (or the submission form once logged in) on the right. Login and upload never leave that page.
 3. A person is found by a name search over `givenName`, `sn`, `mail` and `sAMAccountName` (minimum three characters); the search itself registers nobody.
 4. Logging in resolves the person against LDAP (local record as fallback), binds that identity to the current socket IP and creates a session.
-5. While an exam window is open, non-teachers cannot log in — the name on the submission must not change mid-exam. Teachers are exempt and can release a five-minute login window for everybody else.
+5. While an exam window is open, non-teachers cannot log in — the name on the submission must not change mid-exam. Teachers are exempt and can switch the login permission on for everybody else (a switch, not a time window, #161); the switch resets on exam start and exam end.
 6. The authenticated user can access `unterlagen` and upload an exam file; the form stays in place and the success message appears as a toast.
 7. Teachers use `/admin/students` to correlate sightings, registrations, cookie presence, anomalies, and submissions, and `/admin/application` for runtime administration settings.
+8. Exam state and admin activity reach the browser as server push (SSE, `exam`/`activity` channels, #161): the submission panel, the countdown and the admin panels follow the server without reloading the page. The database stays the truth; the push only says "something changed".
 
 ## Network Scan vs Upload Timing
 

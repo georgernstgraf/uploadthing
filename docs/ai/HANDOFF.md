@@ -1,45 +1,50 @@
-Last updated: 2026-10-31 (#161 Phase 1 live, Sichtprüfung im Panel offen; LDAP-Aussetzer als #162 erfasst).
+Last updated: 2026-10-31 (#161 Phasen 2–6 committet, Deploy steht aus; #162 erledigt; Sichtprüfung Phase 1 offen).
 
 ## Sofort weiter mit
 
-**#161 Phase 1 ist live.** Neustart am 2026-10-31 um 12:17 (sauberer
-Shutdown, kein `stop-sigterm`), geprüft: `/` → 200, CSP-Header vorhanden,
-`POST /api/exam/registration` → 403 ohne Admin (Route existiert), alter
-Endpunkt `registration-window` → 404. Offen ist nur die Sichtprüfung:
+**Der Deploy fehlt.** Der Code der Phasen 2–6 (Cookie-Dedupe, SSE-Grundlage,
+Exam-Kanal, Admin-Kanal, Doku) ist committet und getestet, läuft aber noch
+nicht auf dem Dienst. Der Reihe nach:
 
-1. `/admin/application` → Examen starten → die Karte „Anmeldung während
+1. `systemctl --user restart uploadthing` — danach
+   `systemctl --user status uploadthing` (kein `stop-sigterm`) und
+   `journalctl --user -u uploadthing -n 20` (keine
+   „Ereignis-Listener … gescheitert", kein Watchdog-Fehler).
+2. `curl -sSI https://tst.spengergasse.at/` → 200 und die
+   `content-security-policy`-Zeile.
+3. **Der h2-Beweis, den die Tests nicht führen:** mit dem Cookie einer
+   angemeldeten Sitzung (DevTools → Network → Request-Header `Cookie:`,
+   Standardname `ut_session`)
+
+   ```
+   curl -N --http2 -b "ut_session=<wert>" https://tst.spengergasse.at/events/exam
+   ```
+
+   muss sofort der erste Frame kommen (`event: exam` + `data: {...}` mit
+   `server_now_ms`, `ends_at_ms`, `open`), danach spätestens alle 20 s
+   `: ping`. Kommt nichts, sind `Connection`/`Transfer-Encoding` im Spiel
+   (über HTTP/2 verboten, siehe `PITFALLS.md`). Analog einmal
+   `https://tst.spengergasse.at/admin/events` mit einem Lehrer-Cookie
+   (erster `event: activity`-Frame) und ohne Sitzung ein 401 auf
+   `/events/exam`.
+4. **Danach die Sichtprüfung aus Phase 1**, die seit dem Deploy offen ist:
+   `/admin/application` → Examen starten → die Karte „Anmeldung während
    des Examens" ist da; Schalter an → `#exam-warning-registration` mit
    „Seit HH:MM"; Schalter aus → Balken weg. Stopp und Internet-Schalter
-   fragen nicht mehr nach.
-2. Nach der Prüfung: `systemctl --user restart uploadthing` nicht
-   vergessen, falls in der Zwischenzeit weiter am Code gearbeitet wurde.
+   fragen nicht mehr nach. Neu zu sehen: Das Admin-Panel zieht den Zustand
+   ohne Klick nach, das Abgabe-Panel wechselt beim Exam-Start/-Ende von
+   selbst, und auf `/admin/students` steht „Stand HH:MM:SS" mit dem
+   Ereignis-Zähler; ein offenes Detail friert den Refresh ein und zählt
+   mit.
 
-**Danach #161 Phasen 2–6** (Plan im Issue):
+**#162 ist erledigt** (Server-Antwort ≠ Ausfall, ein begrenzter
+Transport-Retry, injizierbarer Searcher). Die betrieblichen Abnahmen unten
+bleiben unverändert offen.
 
-1. **Phase 2 — Cookie-Dedupe** (`cookiepresents` höchstens eine Zeile pro
-   IP+User je 30 s, kein Event für Lehrpersonen). Voraussetzung dafür,
-   dass der Admin-Kanal in Phase 5 keine Rückkopplung erzeugt.
-2. **Phase 3 — SSE-Grundlage**: `lib/event_hub.ts`, `lib/sse.ts`,
-   `service/events.ts`, `closeAllStreams()` als erster Schritt in
-   `stopBackgroundWork` (sonst hängt der Shutdown an offenen Streams).
-3. **Phase 4 — Exam-Kanal**, Hover-Trigger aus `abgabe.hbs` raus.
-4. **Phase 5 — Admin-Kanal**, `every 15s` raus, Freeze-Badge.
-5. **Phase 6 — Doku**: SSE-Regeln in `CONVENTIONS`, `ADMIN_REFRESH_SECONDS`
-   aus README/`.env.example` entfernen; die Schalter-Doku ist bereits
-   geschrieben.
-
-**#162 (neu, unabhängig von #161):** Die Namenssuche meldete am 31.10. um
-12:05:01 für einen Request „nicht erreichbar", obwohl das AD mit
-`0000208D … NO_OBJECT` geantwortet hatte. Derselbe Prozess band sofort neu,
-alle Abfragen (`gra`, `Graf`, `ham`, `Hammer`) laufen seitdem wieder.
-Einmalig, nicht reproduzierbar, **nicht** durch Phase 1 verursacht (der
-Dienst lief mit dem Build von 02:17). Details und Vorschlag (Retry nach
-Reconnect, ehrliche Fehlermeldung, injizierbarer Searcher) in #162.
-
-Nebenbefund: Der E2E-Test „Geschlossene Abgabe-Karte prüft bei Hover und
-Klick (#160)" ist einmalig geflackt (`mouseenter`- und `click`-Request
-rennen um denselben Swap). Phase 4 entfernt den Mechanismus ohnehin;
-bis dahin bei Rot einmal wiederholen.
+Nebenbefund, erledigt: Der E2E-Test „Geschlossene Abgabe-Karte prüft bei
+Hover und Klick (#160)" ist mit dem Trigger entfallen; an seine Stelle
+treten die Push-Tests (Exam-Start/-Ende ohne Interaktion, Admin-Panel ohne
+Klick, Badge ohne Reload, offenes Detail friert ein).
 
 ## Betriebliche Abnahmen (unverändert)
 
@@ -76,6 +81,33 @@ bis dahin bei Rot einmal wiederholen.
 
 ## Was in dieser Session passiert ist
 
+- **#161 Phasen 2–6: Server-Push statt Polling (SSE).** Vier Commits
+  (`718ffca`, `2a08d97`, `6f04b50`, `2dc12a0`): (1) Presence-Zeilen
+  dedupliziert (`COOKIE_PRESENT_MIN_INTERVAL_MS = 30_000`, `recordByEmail`
+  meldet den echten Insert) und `/static/*` von der Presence ausgenommen;
+  (2) `lib/event_hub.ts` (zwei Kanäle `exam`/`activity`, Seq-Zähler, kein
+  Event-Log), `lib/sse.ts` (eigener `Response` — `streamSSE` setzt
+  `Connection`/`Transfer-Encoding`, über HTTP/2 verboten; Heartbeat
+  `: ping` alle 20 s unref'd; `closeAllStreams()`), `service/events.ts`
+  (Snapshots, 1-s-Koaleszierung) und `closeAllStreams()` +
+  `exam_watchdog.disarm()` als erste Schritte im Shutdown; (3) Exam-Kanal
+  `GET /events/exam` mit Watchdog für den pünktlichen Abschluss und
+  `ends_at_ms` aus der exakten Restzeit, Client `static/events.js`
+  übernimmt Countdown (Serveruhr-Offset) und Panel-Swap; (4) Admin-Kanal
+  `GET /admin/events` statt `every 15s`, `hx-trigger="admin-refresh"`,
+  Freeze-Badge `#admin-refresh-pending` und „Stand HH:MM:SS".
+  `ADMIN_REFRESH_SECONDS` ist aus `lib/config.ts`, `README.md` und
+  `.env.example` entfernt. Abnahme: 407 Deno-Tests, 17 E2E-Tests,
+  `check`/`lint` grün.
+- **#162: LDAP — Server-Antwort vom Transportfehler trennen.**
+  `repo/ldapuser.ts` wirft `LdapServerResponseError` (numerischer
+  Result-Code aus ldapts' `ResultCodeError`) bzw. `LdapTransportError`,
+  erlaubt genau **einen** Neuversuch nur bei Transportfehlern und baut den
+  Client mit 5-s-Frist auf; die `while (true)`-Schleife ist weg.
+  `service/ldapuser.searchFailureMessage()` meldet „am Server gescheitert
+  (LDAP-Code 0x…)" statt pauschal „nicht erreichbar";
+  `searchLoginCandidates(term, searcher)` macht den Fehlerzweig ohne
+  echtes Verzeichnis testbar. Commit `2233956`.
 - **#161 Phase 1: Anmelde-Freigabe als Schalter.** Das 5-Minuten-Fenster
   aus #146 ist ersetzt: `registrationAllowed` + `registrationOpenedAt` in
   `service/exam.ts`, Reset nur in `start()` und `finishExam()`, `pause()`
@@ -90,12 +122,12 @@ bis dahin bei Rot einmal wiederholen.
   Entfernt: `POST /api/exam/registration-window`,
   `buildRegistrationWindowPanel()`, `templates/admin-registration-window.hbs`,
   der Wrapper in `home.hbs`, `registration_window_html`. Commit `dde6330`;
-  366 Deno-Tests, 13 E2E-Tests, `check`/`lint` grün.
+  366 Deno-Tests, 13 E2E-Tests (damaliger Stand), `check`/`lint` grün.
 - **LDAP-Aussetzer → #162.** Ein Request der Namenssuche scheiterte um
   12:05:01 mit `NO_OBJECT` (AD-Antwort, kein Netzausfall), die App zeigte
   „nicht erreichbar"; derselbe Prozess band sofort neu, danach lief alles.
   Ursache im Code: Hintergrund-Reconnect + pauschale Fehlermeldung; kein
-  Test für den Fehlerzweig. Siehe #162.
+  Test für den Fehlerzweig. Behoben in `2233956` (siehe oben).
 - **`AGENTS.md`: Restart-Pflicht.** Neue Sektion „Restart After Code
   Changes" — nach Änderungen an `main.ts`, `lib/`, `middleware/`,
   `routes/`, `repo/`, `service/`, `templates/` oder `.env` muss
@@ -122,9 +154,11 @@ bis dahin bei Rot einmal wiederholen.
 
 - **#160:** Das Abgabe-Panel wertete `exam_open` einmal beim Rendern aus —
   wer die Seite vor dem Exam-Start geladen hatte, sah dauerhaft nur den
-  Hinweis und musste neu laden. Die geschlossene Karte prüft jetzt bei
+  Hinweis und musste neu laden. Die geschlossene Karte prüfte damals bei
   Hover **und** Klick gegen den neuen Fragment-Endpunkt `GET /abgabe-panel`
-  (nur `buildPanel`) und tauscht sich gegen das Formular. `throttle:3s`
+  (nur `buildPanel`) und tauschte sich gegen das Formular; **seit #161
+  entfällt der Trigger**, den Wechsel schiebt SSE, der Fragment-Endpunkt
+  bleibt. `throttle:3s`
   verhindert die Request-Schleife (der Swap ersetzt den Knoten unter dem
   Cursor), `click` ist der Touch-/Tastaturweg; die Trigger-Attribute
   existieren nur im geschlossenen Zweig, damit bei offenem Formular keine

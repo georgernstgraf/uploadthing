@@ -248,7 +248,9 @@ only in the operator's head; it is now recorded here (see #132).
   `startloop.sh`, PIDfile-Quirk, `STOPPED`-Datei) sind mit #143/#144
   entfallen.
 - **Neustart dauert unter einer Sekunde (#156).** Der Signalhandler in
-  `lib/shutdown.ts` beendet den Prozess selbst: Tik-Polling stoppen,
+  `lib/shutdown.ts` beendet den Prozess selbst: Exam-Watchdog entwaffnen
+  und offene SSE-Streams schließen (`closeAllStreams()`, #161 — sonst
+  hängt der HTTP-Server an den in-flight Streams), Tik-Polling stoppen,
   HTTP-Server abbrechen und auslaufen lassen, SQLite schließen,
   `Deno.exit(0)`. Der Watchdog (10 s) und `TimeoutStopSec=20` im
   Unit-File sind nur Rückfallebenen — im Journal darf **kein** „State
