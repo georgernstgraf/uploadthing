@@ -2,3 +2,4 @@
 # Spalten (TAB-getrennt): datum, opnsense-version, sha256-des-chiffrats, empfänger-key-id, datei
 # Der private GPG-Schlüssel und jeder Klartext (config.xml) liegen nie im Repo.
 2026-10-30	26.7.3_11	9f5b9a2f8f0af67aa89194f5b06f0d7346f261a6952f20210c3815bca0bbd66b	EC23CFDFDDA530BD	appliance/backups/config-2026-10-30.xml.gpg
+2026-11-01	26.7.8_1	88705af1b36da820741d24b60f3d2c02a0266010947d600db97af9a236127a42	EC23CFDFDDA530BD	appliance/backups/config-2026-11-01.xml.gpg

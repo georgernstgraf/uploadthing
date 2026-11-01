@@ -98,12 +98,52 @@ only in the operator's head; it is now recorded here (see #132).
 - **`getRule/{uuid}` ist auf 26.7 unbrauchbar** (antwortet `[]`, auch
   für existierende Regeln). Gelesen wird ausschließlich über
   `POST /api/firewall/filter/searchRule`; `toggleRule` liefert
-  `{result: "Enabled"|"Disabled", changed: bool}`.
+  `{result: "Enabled"|"Disabled", changed: bool}`. Am 2026-11-01 lieferte
+  `getRule` auf 26.7.8_1 dagegen das vollständige Regelobjekt — die App
+  bleibt trotzdem bei `searchRule`, das auf beiden Ständen trägt.
 - **Regel `doku`:** UUID `69c0079a-7b83-4cc2-95b5-78183f4b222b`
   (`descr=doku`, `action=reject`, LAN → alles außer Alias `DOKU`,
-  erste Regel der LAN-Gruppe, direkt nach Anti-Lockout und DHCP).
+  `sequence 550`, direkt **nach** „→ (self)" und „→ INFRA").
   Sie wurde am 2026-10-30 neu angelegt, weil der 26.7-Regelset-Schritt
   die Legacy-`<filter>`-Regel nicht übernommen hatte.
+
+### Regel-Reihenfolge (seit 2026-11-01, #165)
+
+Die Sperre muss **unter** der Anti-Lockout- und der INFRA-Regel stehen,
+sonst nimmt sie DNS und Connectivity-Checks mit. Verbindliche Ordnung
+(alle `lan`, `quick`):
+
+| Seq | Regel | Zweck |
+|---|---|---|
+| 200 | pass `(self)` → any | Unbound-Upstream |
+| 300 | pass wan ICMP → `(self)` | Ping von außen |
+| 400 | pass any → `(self)` | DNS zur Sense, GUI, SSH |
+| 500 | pass `lan` → `INFRA` | Connectivity-Checks, NTP → Geräte bleiben im WLAN |
+| 550 | **reject `lan` → !DOKU** | Examensperre |
+| 600 | pass `lan` → any | freies Internet außerhalb des Examens |
+
+`INFRA` ist der Captive-Portal-/NTP-Satz (`msftconnecttest`,
+`captive.apple.com`, `connectivitycheck.*`, `detectportal.firefox.com`,
+`dns.msftncsi.com`, `time.*`, `pool.ntp.org` …). Fehlt er, erklären
+Windows und Android das Netz für offline und die Geräte wechseln ins
+nächste WLAN. `DOKU` ist die Doku-Whitelist (`learn.microsoft.com`, MDN,
+npmjs, jsr.io …).
+
+Sequenz ändern (API-Body **muss** unter `rule` liegen, siehe
+`PITFALLS.md`):
+
+```sh
+curl -sk -u "$OPNSENSE_API_KEY:$OPNSENSE_API_SECRET" \
+  -X POST -H 'Content-Type: application/json' \
+  -d '{"rule":{"sequence":"550"}}' \
+  "https://sense.internal/api/firewall/filter/setRule/$OPNSENSE_EXAMMODE_RULE_UUID"
+curl -sk -u "$OPNSENSE_API_KEY:$OPNSENSE_API_SECRET" \
+  -X POST "https://sense.internal/api/firewall/filter/apply"
+```
+
+Der App-API-Key hat nur `page-filter-api`; Alias-Änderungen laufen über
+das GUI (oder direkt in `/conf/config.xml` + `/usr/local/etc/rc.filter_configure
+restart`).
 - **Legacy-Block ist weg (2026-10-30):** Der `Migration assistant`
   (`/ui/firewall/migration`) hat die 6 Legacy-Regeln als CSV exportiert
   (`appliance/legacy-rules-2026-10-30.csv`) und per `flush` gelöscht.

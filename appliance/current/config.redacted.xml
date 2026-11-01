@@ -137,13 +137,14 @@
     </ssh>
     <rrdbackup>-1</rrdbackup>
     <netflowbackup>-1</netflowbackup>
-    <firmware version="1.0.1" persisted_at="1764889241.47" description="Firmware settings">
+    <firmware version="1.0.1" persisted_at="1793482901.70" description="Firmware settings">
       <mirror>https://opnsense-mirror.hiho.ch</mirror>
       <flavour/>
       <plugins>os-isc-dhcp,os-virtualbox</plugins>
       <type/>
       <subscription/>
       <reboot>1</reboot>
+      <aux>1</aux>
     </firmware>
     <serialspeed>115200</serialspeed>
     <primaryconsole>efi</primaryconsole>
@@ -463,8 +464,8 @@
   <revision>
     <username>uploadthing-api@192.168.21.2</username>
     <user_apitoken>API token not revealed.</user_apitoken>
-    <description>/api/firewall/filter/toggleRule/69c0079a-7b83-4cc2-95b5-78183f4b222b made changes</description>
-    <time>1793399594.67</time>
+    <description>/api/firewall/filter/setRule/69c0079a-7b83-4cc2-95b5-78183f4b222b made changes</description>
+    <time>1793533739.81</time>
   </revision>
   <OPNsense>
     <wireguard>
@@ -478,7 +479,7 @@
         <servers/>
       </server>
     </wireguard>
-    <IPsec version="1.0.5" persisted_at="1764881327.35" description="IPsec settings">
+    <IPsec version="1.0.6" persisted_at="1793481978.50" description="IPsec settings">
       <general>
         <enabled/>
         <preferred_oldsa>0</preferred_oldsa>
@@ -503,6 +504,7 @@
         <retransmit_jitter/>
         <retransmit_limit/>
         <reqid_base/>
+        <retry_initiate_interval>30</retry_initiate_interval>
         <syslog>
           <daemon>
             <ike_name>1</ike_name>
@@ -594,7 +596,7 @@
     </cron>
     <DHCRelay version="1.0.1" persisted_at="1764878448.13"/>
     <Firewall>
-      <Lvtemplate version="0.0.1" persisted_at="1764878448.14">
+      <Lvtemplate version="1.0.0" persisted_at="1793481976.43" description="Firewall Live View filter templates">
         <templates/>
       </Lvtemplate>
       <Alias version="1.0.1" persisted_at="1768837477.98" description="Firewall aliases">
@@ -674,7 +676,7 @@ time.google.com
 time.windows.com
 www.airport.us
 www.itools.info
-www.thinkdifferent.usipv6.msftconnecttest.com
+www.thinkdifferent.us
 binaries.prisma.sh</content>
             <password/>
             <username/>
@@ -704,14 +706,14 @@ binaries.prisma.sh</content>
           </category>
         </categories>
       </Category>
-      <Filter version="1.0.6" persisted_at="1793399594.67" description="Firewall rules (new)">
+      <Filter version="1.0.6" persisted_at="1793533739.81" description="Firewall rules (new)">
         <general/>
         <rules>
           <rule uuid="69c0079a-7b83-4cc2-95b5-78183f4b222b">
-            <enabled>0</enabled>
+            <enabled>1</enabled>
             <statetype>keep</statetype>
             <state-policy/>
-            <sequence>100</sequence>
+            <sequence>550</sequence>
             <action>reject</action>
             <quick>1</quick>
             <interfacenot>0</interfacenot>
@@ -766,6 +768,7 @@ binaries.prisma.sh</content>
             <shaper1/>
             <shaper2/>
             <description>doku</description>
+            <audit>Audit metadata not revealed.</audit>
           </rule>
           <rule uuid="8409b704-c820-445a-8cee-046993460952">
             <enabled>1</enabled>
@@ -826,6 +829,7 @@ binaries.prisma.sh</content>
             <shaper1/>
             <shaper2/>
             <description>floaty</description>
+            <audit/>
           </rule>
           <rule uuid="bdade668-82a3-4751-a3be-d18b1ca36eca">
             <enabled>1</enabled>
@@ -886,6 +890,7 @@ binaries.prisma.sh</content>
             <shaper1/>
             <shaper2/>
             <description/>
+            <audit/>
           </rule>
           <rule uuid="af255cec-a730-46cf-95b1-3ce266c44703">
             <enabled>1</enabled>
@@ -946,6 +951,7 @@ binaries.prisma.sh</content>
             <shaper1/>
             <shaper2/>
             <description/>
+            <audit/>
           </rule>
           <rule uuid="e58f753d-1643-4656-8261-5ec7d1c0af04">
             <enabled>1</enabled>
@@ -1006,6 +1012,7 @@ binaries.prisma.sh</content>
             <shaper1/>
             <shaper2/>
             <description>infra</description>
+            <audit/>
           </rule>
           <rule uuid="532750fe-3878-4a3f-9ad8-10d39547f112">
             <enabled>1</enabled>
@@ -1066,6 +1073,7 @@ binaries.prisma.sh</content>
             <shaper1/>
             <shaper2/>
             <description>Default allow LAN to any rule</description>
+            <audit/>
           </rule>
         </rules>
         <snatrules/>
@@ -1152,7 +1160,7 @@ binaries.prisma.sh</content>
           <http_port>8000</http_port>
         </general>
       </ctrl_agent>
-      <dhcp4 version="1.0.6" persisted_at="1789123347.30" description="Kea DHCPv4 configuration">
+      <dhcp4 version="1.0.7" persisted_at="1793481977.91" description="Kea DHCPv4 configuration">
         <general>
           <enabled>0</enabled>
           <manual_config>0</manual_config>
@@ -1651,9 +1659,7 @@ binaries.prisma.sh</content>
   <ppps>
     <ppp/>
   </ppps>
-  <wireless>
-    <clone/>
-  </wireless>
+  <wireless version="1.0.0" persisted_at="1793481977.04" description="Wireless configuration"/>
   <ca uuid="d8e0b4d9-ce7d-4395-a1d8-247d7b5e22c0">
     <refid>6ae4f7c5dbfb2</refid>
     <descr>uploadthing internal CA</descr>

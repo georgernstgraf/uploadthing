@@ -1,6 +1,15 @@
-Last updated: 2026-11-01 (#164 deployt und geschlossen; Sichtprüfung mit echtem Examen offen).
+Last updated: 2026-11-01 (#164 deployt und geschlossen, Sichtprüfung offen; #165 Regel-Reihenfolge der Prüfungssperre korrigiert).
 
 ## Sofort weiter mit
+
+**#165 ist erledigt (2026-11-01, 12:49).** Die Sperrregel `doku` steht
+jetzt auf `sequence 550`, also unter „LAN → (self)" und „LAN → INFRA";
+DNS, GUI/SSH und die Connectivity-Checks überleben damit ein Examen.
+Verifiziert bei **eingeschalteter** Sperre. Ein Punkt bleibt offen:
+**die Sperre ist derzeit `enabled=1`** (eingeschaltet am 2026-11-01 um
+12:25 über die App-API). Läuft kein Examen, im Panel „Internet frei"
+schalten — die App liest den Zustand bei jedem Rendern, es gibt kein
+Polling und keine Selbstheilung.
 
 **#164 ist deployt (2026-11-01, 11:40:18) und geschlossen.** Neustart
 unter 1 s, Journal ohne Watchdog-/Listener-Fehler, `Listening on

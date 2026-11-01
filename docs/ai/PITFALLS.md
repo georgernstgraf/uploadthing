@@ -198,6 +198,37 @@
 - Der Countdown gehört seit #161 `static/events.js`, nicht mehr Alpine: der Server rendert `data-ends-at-ms` und `data-paused` an `#exam-countdown`, der Client rechnet mit dem Offset aus `server_now_ms` (Serveruhr minus Browseruhr) des letzten SSE-Frames — eine falsch gehende Browseruhr verschiebt die Anzeige nicht, und nach Pause/Fortsetzen/Zusatzzeit synchronisiert der nächste Frame. Kleine Abweichungen unter 1,5 s (`COUNTDOWN_RESYNC_MS`) überschreiben den Endzeitpunkt bewusst nicht, sonst springt die Anzeige bei jedem Verbinden um bis zu eine Sekunde. Wer den Countdown wieder auf `Date.now()` oder Alpine umstellt, baut genau diesen Fehler zurück.
 - Browser-visible flows may also depend on local directories such as `ABGABEN_DIR` and `UNTERLAGEN_DIR` existing and being readable.
 
+## Prüfungssperre über Anti-Lockout und INFRA (#165)
+
+- **Symptom:** Im Prüfungsnetz antwortet kein DNS mehr —
+  `dig @192.168.21.1 …` meldet `connection refused`, die App auf
+  `192.168.21.2` kann `sense.internal` nicht mehr auflösen, Clients
+  erklären „kein Internet". Unbound selbst ist gesund (`configctl unbound
+  status`, `sockstat | grep :53`, Antworten auf `127.0.0.1`).
+- **Ursache:** Die Sperrregel `doku` (`action=reject`, `lan` → `!DOKU`)
+  stand mit `sequence 100` **vor** „LAN → (self)" und „LAN → INFRA".
+  Damit fiel auch Port 53 an die Sense unter `reject` — das RST bzw.
+  ICMP-unreachable ist genau das „connection refused" von `dig`.
+  SSH und GUI liefen weiter, weil die automatische Anti-Lockout-Regel
+  (Port 22/443 → `(self)`) noch davor liegt.
+- **Lehre:** Eine Examenssperre gehört **unter** alle Regeln, die das
+  Netz am Leben halten: DNS/GUI/SSH an die Firewall selbst und der
+  `INFRA`-Alias (Connectivity-Checks, NTP). Sonst halten Windows und
+  Android das WLAN für offline und wechseln weg. Verbindliche Reihenfolge
+  in `OPERATIONS.md`, Abschnitt „Regel-Reihenfolge".
+- **Diagnose in zwei Befehlen** (auf der Sense):
+  `pfctl -sr | nl -ba` zeigt die Reihenfolge, und im Filterlog steht die
+  Regel-UUID im Feld 5, Quelle/Ziel/Port in 19/20/22:
+  `tail -3000 /var/log/filter/latest.log | grep match,block`.
+  Ein `block return` erzeugt RST — Timeouts deuten dagegen auf `block drop`.
+- **API-Fallen:** `setRule/{uuid}` verlangt den Body unter dem Feld
+  `rule` (`{"rule":{"sequence":"550"}}`) — ein flaches Objekt oder das
+  komplette `getRule`-Ergebnis scheitert mit `{"result":"failed"}`.
+  Der App-API-Key hat nur `page-filter-api`: Alias-Endpunkte antworten
+  `403`. Alias-Inhalte also über das GUI ändern oder in
+  `/conf/config.xml` editieren und `/usr/local/etc/rc.filter_configure
+  restart` laufen lassen (vorher `cp /conf/config.xml /tmp/…`).
+
 ## Cookie Presence Semantics
 
 - Do not treat a valid session cookie hit as a new `registrations` event.

@@ -10,3 +10,4 @@ s|<ldap_bindpw>[^<]*</ldap_bindpw>|<ldap_bindpw>Bind password not revealed.</lda
 s|<bindpw>[^<]*</bindpw>|<bindpw>Bind password not revealed.</bindpw>|g
 s|<pre-shared-key>[^<]*</pre-shared-key>|<pre-shared-key>PSK not revealed.</pre-shared-key>|g
 s|<community>[^<]*</community>|<community>Community not revealed.</community>|g
+s|<audit>[^<]*</audit>|<audit>Audit metadata not revealed.</audit>|g

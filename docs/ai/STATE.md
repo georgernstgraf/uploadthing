@@ -4,6 +4,20 @@ Current status as of 2026-11-01.
 
 ## Current Focus
 
+**#165 — Prüfungssperre blockierte DNS und Infrastruktur — erledigt am
+2026-11-01, Issue geschlossen.**
+Unbound auf der Sense war nie defekt; die Regel `doku` stand mit
+`sequence 100` vor „LAN → (self)" und „LAN → INFRA" und hat damit auch
+Port 53 verworfen (`reject` → RST, in `dig` als „connection refused").
+Sie steht jetzt auf `sequence 550`: DNS zur Sense, GUI/SSH und der
+`INFRA`-Satz (Connectivity-Checks, NTP) sind immer erreichbar, gesperrt
+bleibt nur das freie Internet. Im INFRA-Alias war `www.thinkdifferent.us`
+mit `ipv6.msftconnecttest.com` verklebt — getrennt. Verifiziert bei
+**eingeschalteter** Sperre: `tst.spengergasse.at → 192.168.21.2`,
+`sense.internal → 192.168.21.1`, `1.1.1.1` blockiert, `INFRA`-Host
+erreichbar. Config-Backup `appliance/backups/config-2026-11-01.xml.gpg`
+liegt vor.
+
 **#164 — Forensikkarte, WLAN-Sperre, Unterlagen-Push — deployt am
 2026-11-01 (11:40:18), Issue geschlossen, Sichtprüfung offen.**
 Vier Fehlerbilder aus dem laufenden Examen, alle datengetrieben statt per
