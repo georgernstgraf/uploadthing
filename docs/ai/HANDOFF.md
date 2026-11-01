@@ -1,15 +1,57 @@
-Last updated: 2026-11-01 (#166 implementiert, Deploy und Sichtprüfung offen; #165 Regel-Reihenfolge der Prüfungssperre korrigiert; #164 deployt und geschlossen).
+Last updated: 2026-11-01 (#167 Codebase-Audit gefiled: Epic #167 mit den
+Sub-Issues #168–#175; der Fehlzustand aus dem Vortag ist behoben;
+#166 live teilweise belegt, Sichtprüfung am Gerät bleibt offen).
 
 ## Sofort weiter mit
+
+**Das Codebase-Audit ist gefiled (2026-11-01).** Epic **#167** trägt acht
+Sub-Issues, formal verlinkt, Label `ready-for-agent`:
+
+| Issue | Thema | Severity |
+|---|---|---|
+| #168 | OPNsense-**Root**-API-Key im Arbeitsbaum (`.env`, 644) — rotieren, Datei weg | high |
+| #169 | Lehrer-Anmeldung von der MAC lösen; keine E-Mail mehr aus `/ldap`, Rate-Limit | high |
+| #170 | Sitzungen an das Examen binden (Epoch, Ablauf, Logout), Marker fälschungssicher | high |
+| #171 | Upload-Größe **vor** dem Parsen prüfen, Content-Sniffing härten (`file-type` 16.5.4) | high |
+| #172 | Exam-Lebenszyklus zentralisieren; abgelaufene `running`-Sitzung beim Start abschließen | high |
+| #173 | `config` nicht als Singleton, DB-Handle als Naht (Migration nicht beim Import) | medium |
+| #174 | Importrichtung schärfen (`lib/` entkoppeln, Barrels, Template-Registry) | medium |
+| #175 | Logik aus Routen, `Date` statt Anzeige-Strings in Services | medium |
+
+Reihenfolge: #168 → #169 → #170 (Sicherheit), dann #171 → #172
+(Verfügbarkeit), dann #173 → #174 → #175 (Struktur). Der Epic-Body enthält
+Methode, Werkzeuge, Degradationen und die Liste der geprüft-sauberen
+Punkte (Path Traversal, IDOR, SQL/LDAP-Injection, `appliance/`-Secrets,
+nicht erreichbare Handlebars-/zod-/hono-Advisories).
+
+**Behoben: der Fehlzustand aus dem Vortag.** `examstate` stand noch auf
+`running` (`started_at=10:52:43Z`, 5400 s → Fenster endete 13:22:43), die
+Sperrregel `doku` war `enabled=1`. Neustart am 2026-11-01 um 15:39
+(0,037 s) → `stopped`, Sperre gelöst, `doku enabled=0`, MikroTik-Polling
+läuft. **Ursache und Merke:** Ein Neustart während des Examens verwirft
+die Sitzung und entwaffnet den Watchdog; wer den Zustand danach von Hand
+wiederherstellt, hinterlässt nach Ablauf eine `running`-Zeile, die
+niemand abschließt, samt scharfer Sperre. Das ist #172.
+
+**Live belegt (2026-11-01, echtes 20-Minuten-Examen ohne Schüler):**
+`#166`-Warnband „Du warst 1 Minute nicht im WLAN (1 Dropout)" und
+Dateiname `…-DROPOUTS-1.md`, nach Exam-Ende Band leer, `POST /upload` →
+403, Sperre `enabled=0`. Auf `/admin/events` über HTTP/2: `stand`,
+`cards`, `tik`, `card-192-168-21-2` und `: ping`. Registrierungssperre im
+Examen greift, Freigabe-Schalter wirkt.
+
+**Offen bleibt die Sichtprüfung am echten Gerät** (unverändert die
+Checklisten aus #163, #164 und #166 weiter unten): WLAN wirklich trennen,
+gewählte Datei im Formular behalten, Laptop/Handy-Identitätswechsel,
+„nicht anwesend"-Karte, Unterlagen-Push im Browser. Die Dropout-Zeile im
+Audit war **geseedet**, kein echter Funkabbruch.
 
 **#165 ist erledigt (2026-11-01, 12:49).** Die Sperrregel `doku` steht
 jetzt auf `sequence 550`, also unter „LAN → (self)" und „LAN → INFRA";
 DNS, GUI/SSH und die Connectivity-Checks überleben damit ein Examen.
-Verifiziert bei **eingeschalteter** Sperre. Ein Punkt bleibt offen:
-**die Sperre ist derzeit `enabled=1`** (eingeschaltet am 2026-11-01 um
-12:25 über die App-API). Läuft kein Examen, im Panel „Internet frei"
-schalten — die App liest den Zustand bei jedem Rendern, es gibt kein
-Polling und keine Selbstheilung.
+Verifiziert bei **eingeschalteter** Sperre. Die Sperre selbst ist seit
+dem Neustart um 15:39 **aus** (`enabled=0`); sie ist kein Selbstheiler —
+läuft kein Examen, muss sie aus bleiben.
 
 **#166 ist implementiert, aber noch nicht deployt.** WLAN-Dropouts sperren
 die Abgabe nicht mehr; die Sperre `canResubmit()` ist entfernt. Was jetzt

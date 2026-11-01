@@ -4,6 +4,45 @@ Current status as of 2026-11-01.
 
 ## Current Focus
 
+**#167 — Codebase-Audit vom 2026-11-01 — Epic mit 8 Sub-Issues gefiled.**
+Vier Achsen (Security in der Tiefe, Struktur/Schichten, Kopplung,
+Architektur/tiefe Module), Tier *Small* (18,2k LOC, 65 Module), Werkzeuge
+dependency-cruiser/madge/jscpd/gitleaks/osv-scanner/semgrep plus
+Live-Prüfung gegen die laufende Instanz und ein echtes Examen.
+
+- **Sechs high:** #168 Root-API-Key der Sense weltlesbar in `.env` (644);
+  #169 Admin-Übernahme über MAC-Spoofing, weil `/ldap` anonym E-Mail und
+  Klasse liefert (live: 31 Treffer je 3-Zeichen-Präfix, 20/20 Anfragen
+  ohne Rate-Limit); #170 Identität frei wählbar, Sitzungen serverseitig
+  nie ablaufend/widerrufbar; #171 Upload-Body vor der Größenprüfung
+  gepuffert (OOM) und `file-type@16.5.4` mit ASF-Endlosschleife;
+  #172 Neustart mitten im Examen hinterlässt eine abgelaufene
+  `running`-Sitzung samt scharfer Sperre (am 2026-11-01 beobachtet).
+- **Drei medium:** #173 `config`-Singleton + Persistenz ohne Naht;
+  #174 Barrel-Fassaden, `lib/` importiert nach oben (Typ-Zyklus),
+  `lib/handlebars.ts` als Vierfach-Sammelbecken (ein Fragment = 17–24
+  Dateien); #175 Kernlogik in Routen, Anzeige-Strings statt `Date` in
+  Services, Präsenz dreifach modelliert, 346 Zeilen Inline-JS.
+- **Bewusst verworfen:** semgrep-Treffer (Block-Helper ohne Nutzerdaten),
+  Handlebars-/zod-CVEs und ~45 hono-Advisories (kein erreichbarer Pfad),
+  Path Traversal, IDOR, SQL- und LDAP-Injection, Secrets im Journal,
+  `appliance/`-Residualsecrets.
+- **Degradationen:** `osv-scanner` liest `deno.lock` nicht (npm-Pakete
+  manuell über die OSV-API, JSR-Pakete ungeprüft), `knip` braucht eine
+  `package.json`.
+- **Live belegt:** #166-Warnband und `…-DROPOUTS-1.md`, nach Exam-Ende
+  Band leer + Upload 403 + Sperre aus; auf `/admin/events` `stand`,
+  `cards`, `tik`, `card-<slug>`, `: ping` über HTTP/2. Die Dropout-Zeile
+  war geseedet, kein echter Funkabbruch — die Sichtprüfung am Gerät
+  bleibt offen.
+
+**Fehlzustand behoben (2026-11-01, 15:39).** `examstate` stand noch auf
+`running` bei abgelaufenem Fenster (Ende 13:22:43), `doku` war
+`enabled=1`. Neustart (0,037 s) → `stopped`, Sperre gelöst. Ursache: der
+Neustart um 13:09 hatte die Sitzung verworfen und den Watchdog
+entwaffnet; die manuelle Wiederherstellung um 13:11 hat den Zustand
+gesetzt, aber niemand hat ihn nach Ablauf abgeschlossen. → #172.
+
 **#165 — Prüfungssperre blockierte DNS und Infrastruktur — erledigt am
 2026-11-01, Issue geschlossen.**
 Unbound auf der Sense war nie defekt; die Regel `doku` stand mit
@@ -443,6 +482,12 @@ sind behoben:
   `rgba(Body, 0.65)`.
 
 ## Pending
+
+- [ ] **#167 Codebase-Audit — acht Sub-Issues offen** (#168–#175, Epic
+      #167). Reihenfolge: #168 → #169 → #170 (Sicherheit), #171 → #172
+      (Verfügbarkeit/Examen), #173 → #174 → #175 (Struktur). Die
+      Sichtprüfungen aus #163/#164/#166 sind davon unabhängig und
+      brauchen weiter ein echtes Gerät im Prüfungsnetz.
 
 - [ ] **#163 Sichtprüfung** — der Deploy ist durch (2026-11-01, 03:28:43,
       Migrationen `0003`/`0004`, `event: stand` live bestätigt); offen ist

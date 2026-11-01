@@ -588,6 +588,18 @@
   Abschluss (`getStatusView()`) statt `getStatusViewPassive()` aufruft,
   baut die Rückkopplung wieder ein: Publizieren → Snapshot → Abschluss →
   Publizieren.
+- **Ein Neustart mitten im Examen hinterlässt einen Zustand, den niemand
+  abschließt.** Der Start schreibt `stopped` und löst die Sperre
+  (`service/admin.ts`, `resetExamStateOnStartup()`), der Watchdog ist
+  entwaffnet. Wird der Zustand danach **von Hand** wieder auf `running`
+  gesetzt (so am 2026-11-01 um 13:11 geschehen), gibt es keinen Lazy-Pfad
+  mehr, der ihn nach Ablauf abschließt: am 15:39 stand `examstate` noch
+  auf `running` (`started_at=10:52:43Z`, 5400 s → Fenster endete 13:22:43),
+  die Regel `doku` war weiter `enabled=1`, und im Prüfungsnetz war das
+  Internet gesperrt. **Merke:** Ein Neustart ist kein Reparaturweg für ein
+  laufendes Examen; wer ihn braucht, muss anschließend selbst
+  `finishExam()` auslösen (Stopp über das Panel) und die Sperre prüfen —
+  oder auf #172 warten, das diesen Abschluss beim Start nachholt.
 - **Ein Snapshot ist seiteneffektfrei und wird beim Senden gebaut.** Kein
   Event-Log, kein `id:`; nach einem Reconnect kommt derselbe Snapshot,
   nur frisch. Der Bus transportiert nur Ticks.
