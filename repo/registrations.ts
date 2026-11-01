@@ -12,6 +12,13 @@ const registrationsByRangeStmt = db.prepare(
     FROM registrations
     WHERE at BETWEEN ? AND ?`,
 );
+const registrationsByUserInRangeStmt = db.prepare(
+    `SELECT id, userId, ip, at
+    FROM registrations
+    WHERE userId = ?
+        AND at BETWEEN ? AND ?
+    ORDER BY at DESC`,
+);
 const latestRegistrationForIPStmt = db.prepare(
     `select userId from registrations where ip = ? order by at desc limit 1`,
 );
@@ -78,6 +85,28 @@ export function getLatestRegistrationForIP(ip: string): number | null {
         | { userId: number }
         | undefined;
     return result?.userId ?? null;
+}
+
+/**
+ * Registrierungen eines Nutzers im Zeitraum (#166) — ergänzt die
+ * Präsenzzeilen um IPs, unter denen der Schüler im Examen auftrat.
+ */
+export function byUserInRange(
+    userId: number,
+    start: Date,
+    end: Date,
+): RepoRegistrationRecord[] {
+    const rows = registrationsByUserInRangeStmt.all(
+        userId,
+        start.toISOString(),
+        end.toISOString(),
+    ) as { id: number; userId: number; ip: string; at: string }[];
+    return rows.map((row) => ({
+        id: row.id,
+        ip: row.ip,
+        userId: row.userId,
+        at: new Date(row.at),
+    }));
 }
 
 /**

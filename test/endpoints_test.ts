@@ -94,6 +94,25 @@ Deno.test("GET /angaben-panel: nur die Angaben-Karte (#164)", async () => {
     assertEquals(home.includes('id="angaben-list"'), true);
 });
 
+Deno.test("GET /abgabe-dropouts: nur das Warnband (#166)", async () => {
+    const res = await fetch(`${BASE_URL}/abgabe-dropouts`);
+    assertEquals(res.status, 200);
+    assertEquals(res.headers.get("content-type")?.includes("text/html"), true);
+    const html = await res.text();
+
+    // Eigenes Fragment: die Hülle, aber weder Abgabe-Panel noch Shell.
+    assertEquals(html.includes('id="abgabe-dropouts"'), true);
+    assertEquals(html.includes('id="abgabe-panel"'), false);
+    assertEquals(html.includes("<html"), false);
+
+    // Dieselbe Hülle steht als Partial im Abgabe-Panel einer Sitzung.
+    const cookie = await registerAndGetCookie("grafg@spengergasse.at");
+    const home = await (await fetch(`${BASE_URL}/`, {
+        headers: { "Cookie": cookie },
+    })).text();
+    assertEquals(home.includes('id="abgabe-dropouts"'), true);
+});
+
 Deno.test("GET /admin/logs - Admin logs", async () => {
     const res = await fetch(`${BASE_URL}/admin/logs`);
     // Route wurde entfernt: für Anonyme liefert die requireAdmin-Middleware
@@ -1474,7 +1493,7 @@ Deno.test("POST /upload - Authenticated upload with MD5 verification", async () 
     let cookie: string | null = null;
 
     try {
-        // Clear prior submissions to avoid canResubmit rejections
+        // Clear prior submissions to keep the upload deterministic
         db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
 
         // Uploads sind nur während Examenzeit erlaubt
@@ -1614,6 +1633,108 @@ Deno.test("POST /upload: Abgabe von vor dem Exam-Start sperrt nicht (#164)", asy
         clearExamState();
         clearScans(scanAt);
         db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
+        if (uploadedFilename) {
+            await Deno.remove(`${config.ABGABEN_DIR}/${uploadedFilename}`)
+                .catch(() => {});
+        }
+        if (cookie) {
+            const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cookie": cookie,
+                },
+                body: `permitted_filetypes=${
+                    encodeURIComponent(originalTypes.join(", "))
+                }`,
+            });
+            await restoreRes.text();
+        }
+        clearForensicsByIp(LOCAL_TEST_IP);
+    }
+});
+
+Deno.test("POST /upload: WLAN-Dropout sperrt nicht mehr und markiert den Dateinamen (#166)", async () => {
+    // Seit #166 ist ein Dropout kein Sperrgrund: die Abgabe geht durch,
+    // der Dateiname trägt die Zahl der Dropouts.
+    const testEmail = "grafg@spengergasse.at";
+    const originalTypes = [...config.PERMITTED_FILETYPES];
+    let cookie: string | null = null;
+    let uploadedFilename: string | null = null;
+    let t1: Date | null = null;
+    let t2: Date | null = null;
+
+    clearExamState();
+    try {
+        const user = await usersRepo.upsert({
+            email: testEmail,
+            name: "Georg Graf",
+            klasse: "LehrendeR",
+        });
+        db.exec(`DELETE FROM abgaben WHERE userId = ${user.id}`);
+        db.exec("DELETE FROM ipfact");
+
+        seedExamState("running");
+        const examStart = service.exam.getState()?.started_at;
+        assertExists(examStart);
+        db.prepare("DELETE FROM tikscan WHERE at >= ?").run(
+            examStart.toISOString(),
+        );
+
+        // Erst anwesend, dann ein Scan ohne die IP: genau ein Dropout.
+        t1 = new Date(examStart.getTime() + 10_000);
+        t2 = new Date(examStart.getTime() + 20_000);
+        ipfactRepo.registerSeen(LOCAL_TEST_IP, t1);
+        seedScan(t1);
+        seedScan(t2);
+
+        cookie = await registerAndGetCookie(testEmail);
+        const setTypesRes = await fetch(`${BASE_URL}/admin/application`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie,
+            },
+            body: "permitted_filetypes=zip,%20md",
+        });
+        assertEquals(setTypesRes.status, 200);
+        await setTypesRes.text();
+
+        const formData = new FormData();
+        formData.append(
+            "file",
+            new Blob([uploadZipBytes], { type: "application/zip" }),
+            `dropout-${crypto.randomUUID().slice(0, 6)}.zip`,
+        );
+
+        const uploadRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            headers: { "Cookie": cookie },
+            body: formData,
+        });
+        assertEquals(
+            uploadRes.status,
+            200,
+            "Ein WLAN-Dropout darf die Abgabe nicht mehr sperren",
+        );
+        await uploadRes.text();
+
+        const row = db.prepare(
+            "SELECT filename FROM abgaben WHERE userId = ? ORDER BY id DESC LIMIT 1",
+        ).get(user.id) as { filename: string } | undefined;
+        uploadedFilename = row?.filename ?? null;
+        assertExists(uploadedFilename);
+        assertEquals(
+            uploadedFilename.endsWith("-DROPOUTS-1.zip"),
+            true,
+            `Dateiname ohne Dropout-Marker: ${uploadedFilename}`,
+        );
+    } finally {
+        clearExamState();
+        if (t1 && t2) clearScans(t1, t2);
+        db.exec(
+            `DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`,
+        );
         if (uploadedFilename) {
             await Deno.remove(`${config.ABGABEN_DIR}/${uploadedFilename}`)
                 .catch(() => {});

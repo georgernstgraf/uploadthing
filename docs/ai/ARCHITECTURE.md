@@ -116,10 +116,11 @@ Runtime-Abhängigkeit auf Prisma).
   wireless/registration-table` (Basic-Auth, 60 s + Sofortabruf) → `tikscan`
   (eine Zeile je abgeschlossenem Abruf, auch leer) und `ipfact`
   (IP, MAC, `seen`). `tikscan` ist die Scan-Achse für `is_stale`,
-  `missed_count`, `canResubmit()` und den Scan-Delta; `ipfact` bleibt die
-  Sichtachse. `canResubmit()` prüft seit #164 nur Scans **seit dem
-  Exam-Start** und nur für Abgaben aus dem laufenden Examen. Grundlage für
-  die MAC-basierte Admin-Freigabe.
+  `missed_count`, `examPresence()` und den Scan-Delta; `ipfact` bleibt die
+  Sichtachse. `examPresence()` zählt seit #166 Dropouts/Minuten ab der
+  ersten Sichtung im laufenden Examen und markiert einen IP-Wechsel; die
+  Abgabe sperrt sie nicht mehr. Grundlage für die MAC-basierte
+  Admin-Freigabe.
 - **DNS**: Dell → `192.168.21.1` (Unbound auf der Sense; Host Overrides
   `tst` → `.2`, `tik.internal` → `.5`, `sense.internal` → `.1`).
 - **Datenbank**: `~/uploadthing-data/uploadthing.db` (WAL), Migrationen beim

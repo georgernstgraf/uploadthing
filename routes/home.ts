@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { HonoContextVars } from "../lib/types.ts";
 import config from "../lib/config.ts";
 import * as hbs from "../lib/handlebars.ts";
-import { buildAngabenPanel, buildPanel, buildStartContent } from "./render.ts";
+import { buildAngabenPanel, buildDropoutsPanel, buildPanel, buildStartContent } from "./render.ts";
 
 const homeRouter = new Hono<{ Variables: HonoContextVars }>();
 
@@ -52,6 +52,18 @@ homeRouter.get("/abgabe-panel", async (c) => {
  */
 homeRouter.get("/angaben-panel", async (c) => {
     return c.html(await buildAngabenPanel());
+});
+
+/**
+ * Nur das Warnband der Abgabe (#166).
+ *
+ * Ein abgeschlossener MikroTik-Scan kann die Dropout-Lage ändern; der
+ * Push auf `/events/exam` (`event: dropouts`) lässt die Seite dieses
+ * Fragment holen. Es tauscht nur das Band — die gewählte Datei im
+ * Formular bleibt erhalten.
+ */
+homeRouter.get("/abgabe-dropouts", async (c) => {
+    return c.html(await buildDropoutsPanel(c));
 });
 
 export default homeRouter;

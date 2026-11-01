@@ -1,4 +1,4 @@
-Last updated: 2026-11-01 (#164 deployt und geschlossen, Sichtprüfung offen; #165 Regel-Reihenfolge der Prüfungssperre korrigiert).
+Last updated: 2026-11-01 (#166 implementiert, Deploy und Sichtprüfung offen; #165 Regel-Reihenfolge der Prüfungssperre korrigiert; #164 deployt und geschlossen).
 
 ## Sofort weiter mit
 
@@ -10,6 +10,37 @@ Verifiziert bei **eingeschalteter** Sperre. Ein Punkt bleibt offen:
 12:25 über die App-API). Läuft kein Examen, im Panel „Internet frei"
 schalten — die App liest den Zustand bei jedem Rendern, es gibt kein
 Polling und keine Selbstheilung.
+
+**#166 ist implementiert, aber noch nicht deployt.** WLAN-Dropouts sperren
+die Abgabe nicht mehr; die Sperre `canResubmit()` ist entfernt. Was jetzt
+gilt:
+
+- `service/abgaben.examPresence(userId, currentIp, examStartedAt)` zählt ab
+  der ersten Sichtung im Examensfenster über alle IPs des Schülers seit dem
+  Exam-Start (`countMissed()` als reiner Kern). `dropouts` = zusammenhängende
+  Blöcke fehlender Scans, `missed_minutes` = fehlende Scans × 1 Minute,
+  `ip_change` = mehr als eine IP im Examen.
+- `routes/upload.ts` hängt `-DROPOUTS-n` und `-IP-CHANGE` vor die
+  Dateiendung und wirft keinen 403 mehr wegen einer WLAN-Lücke.
+- Das Abgabe-Panel trägt das Band `#abgabe-dropouts` (Fragment
+  `GET /abgabe-dropouts`); `DROPOUTS_CHANNEL` / `event: dropouts` auf
+  `/events/exam` aktualisiert es nach jedem abgeschlossenen Scan, aber nur
+  bei offenem Examen.
+- Verifikation: `check`/`lint` grün, **471 Deno-Tests**. Deploy und
+  Sichtprüfung (echtes Examen) stehen aus. **Vor dem Neustart beachten:**
+  ein Restart setzt `examstate` auf `stopped` und löst die Sperre — niemals
+  während eines laufenden Examens.
+
+Offene Sichtprüfung zu #166 (nur mit echtem Examen):
+1. WLAN am Schüler-Gerät trennen, wieder verbinden, abgeben → Abgabe geht
+   durch, Dateiname trägt `-DROPOUTS-n` (und ggf. `-IP-CHANGE`).
+2. Offene Schüler-Seite: nach dem nächsten Scan erscheint/aktualisiert sich
+   das Warnband mit Minuten und Dropouts, die gewählte Datei im Formular
+   bleibt erhalten.
+3. Nach Exam-Ende verschwindet das Band; die Abgabe bleibt gesperrt
+   (Exam-Fenster).
+
+## Aus #164 (Sichtprüfung weiterhin offen)
 
 **#164 ist deployt (2026-11-01, 11:40:18) und geschlossen.** Neustart
 unter 1 s, Journal ohne Watchdog-/Listener-Fehler, `Listening on

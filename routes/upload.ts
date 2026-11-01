@@ -7,9 +7,33 @@ import { HonoContextVars } from "../lib/types.ts";
 import { AppError } from "../lib/errors.ts";
 import { UploadSchema } from "../lib/schemas.ts";
 import { validateUploadedFileType } from "../lib/upload_filetype.ts";
+import type { ExamPresence } from "../service/abgaben.ts";
 import { buildPanel, respondWithStartPage } from "./render.ts";
 
 const uploadRouter = new Hono<{ Variables: HonoContextVars }>();
+
+/**
+ * Marker des Dateinamens (#166): die Dropouts im laufenden Examen und
+ * ein DHCP-Wechsel, in dieser Reihenfolge. Nur was zutrifft, erscheint.
+ */
+function filenameMarkers(presence: ExamPresence): string[] {
+    const markers: string[] = [];
+    if (presence.dropouts > 0) {
+        markers.push(`DROPOUTS-${presence.dropouts}`);
+    }
+    if (presence.ip_change) {
+        markers.push("IP-CHANGE");
+    }
+    return markers;
+}
+
+/** Hängt ein Suffix vor die Dateiendung: `a-b.pdf` → `a-b-X.pdf`. */
+function appendBeforeExtension(filename: string, suffix: string): string {
+    const dot = filename.lastIndexOf(".");
+    return dot > 0
+        ? `${filename.slice(0, dot)}${suffix}${filename.slice(dot)}`
+        : `${filename}${suffix}`;
+}
 
 /**
  * Die Abgabe liegt auf der Startseite (#146). Ein eigener Aufruf von
@@ -79,32 +103,31 @@ uploadRouter.post("/", async (c) => {
         throw e;
     }
 
+    let markers: string[] = [];
     if (remote_user.id) {
-        // Nur das laufende Examen schützt vor einer zweiten Abgabe (#164).
+        // Seit #166 sperrt eine WLAN-Unterbrechung die Abgabe nicht mehr.
+        // Die Lücken werden im Dateinamen markiert; das Warnband auf der
+        // Startseite nennt Minuten und Dropouts.
         const examStartedAt = service.exam.getState()?.started_at ?? null;
-        if (
-            !service.abgaben.canResubmit(
-                remote_user.id,
-                remote_ip,
-                examStartedAt,
-            )
-        ) {
-            throw new AppError(
-                "Du hast das WLAN verlassen. Eine erneute Abgabe ist nicht möglich.",
-                403,
-            );
-        }
+        const presence = service.abgaben.examPresence(
+            remote_user.id,
+            remote_ip,
+            examStartedAt,
+        );
+        markers = filenameMarkers(presence);
     }
-
     const userName = safeFileComponent(remote_user.name);
     const safeFileName = safeFileComponent(file.name);
     const baseFilename = safeFileName.toLowerCase().includes(userName.toLowerCase())
         ? safeFileName
         : `${userName}-${safeFileName}`;
+    const markedFilename = markers.length > 0
+        ? appendBeforeExtension(baseFilename, `-${markers.join("-")}`)
+        : baseFilename;
 
     const { filename: real_filename, outPath } = await getVersionedPath(
         config.ABGABEN_DIR,
-        baseFilename,
+        markedFilename,
     );
 
     const hash = createHash("md5");

@@ -38,6 +38,15 @@ eventsRouter.get("/events/exam", (c) => {
                 stream.write(formatEvent("unterlagen", null));
             });
 
+            // Drittes Abo (#166): ein abgeschlossener Scan kann die
+            // Dropout-Lage ändern. Der Frame geht nur bei offenem Examen
+            // hinaus — außerhalb gibt es nichts zu markieren.
+            const unsubscribeDropouts = events.subscribeDropouts(() => {
+                if (events.snapshotExam().open) {
+                    stream.write(formatEvent("dropouts", null));
+                }
+            });
+
             // Beim Verbinden sofort der vollständige Zustand. Der
             // Snapshot wird synchron gebaut (kein `await` zwischen
             // DB-Read und Write), damit der Shutdown die Datenbank nicht
@@ -52,6 +61,7 @@ eventsRouter.get("/events/exam", (c) => {
             return () => {
                 unsubscribeExam();
                 unsubscribeUnterlagen();
+                unsubscribeDropouts();
             };
         },
     });

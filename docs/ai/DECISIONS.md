@@ -32,6 +32,40 @@
   Seitenaufbau; wer das Panel vor dem Exam-Start öffnet, sieht ihn erst
   nach dem nächsten vollen Render aktiv.
 
+## 2026-11-01: WLAN-Dropouts sperren die Abgabe nicht mehr (#166)
+
+- **Entscheidung:** `canResubmit()` ist entfernt. Wer im laufenden Examen
+  das WLAN verlässt, darf trotzdem abgeben; die Abgabe ist nur noch am
+  Exam-Fenster gegated (`isExamWindowOpen()`). Statt einer Sperre liefert
+  `service.abgaben.examPresence()` ein Anwesenheitsbild
+  `{dropouts, missed_minutes, ip_change}`:
+  - `dropouts` = zusammenhängende Blöcke fehlender Scans,
+  - `missed_minutes` = fehlende Scans × 1 Minute (Poll-Intervall des Tik),
+  - `ip_change` = der Schüler trat im Examen unter mehr als einer IP auf.
+- **Sichtbarkeit statt Sperre:** Der Dateiname trägt `-DROPOUTS-n` und
+  `-IP-CHANGE` (vor der Dateiendung, nur wenn zutreffend). Das
+  Abgabe-Panel zeigt ein Warnband mit Minuten und Dropouts; es wird über
+  `DROPOUTS_CHANNEL` (`event: dropouts` auf `/events/exam`) und das
+  Fragment `GET /abgabe-dropouts` nach jedem abgeschlossenen Scan
+  aktualisiert — nur bei offenem Examen.
+- **Gezählt wird per IP, nicht per MAC:** DHCP vergibt in den meisten
+  Fällen die alte IP erneut; einen Wechsel deckt zusätzlich die
+  Anomalie-Erkennung ab (`by_user`, Nutzer mit mehreren IPs). Die IP-Menge
+  stammt aus Präsenzzeilen, Registrierungen und Abgaben seit dem
+  Exam-Start — dadurch zählt nach einem Wechsel auch die Lücke auf der
+  alten IP weiter.
+- **Gezählt wird ab der ersten Sichtung** im Examensfenster: Zeit vor dem
+  ersten Erscheinen im Netz ist kein Dropout (Spätankömmling), konsistent
+  zu `ipadmin.missed_count`.
+- **Warum keine Sperre:** Ein Netzaussetzer ist kein Betrugsindiz; die
+  Sperre traf legitime Schüler härter als das Problem, das sie lösen
+  sollte. Die Forensik behält die Information (Kärtchen, Anomalien).
+- **Ein Zählkern:** `countMissed(scans, seen)` ist rein und trägt die
+  Schüler-Zählung. `ipadmin.missed_count` behält bewusst sein eigenes
+  Fenster (erste Sichtung bis letzte Abgabe) — eine Umstellung auf den
+  Kern wäre ein eigener, durch die bestehenden `ipadmin`-Tests gedeckter
+  Refactor.
+
 ## 2026-11-01: Die WLAN-Sperre gilt nur im laufenden Examen (#164)
 
 - **Entscheidung:** `canResubmit(userId, currentIp, examStartedAt)` prüft
@@ -122,9 +156,9 @@
   einen leeren; `ipfact` bleibt die Sichtachse (welche IP war in welchem
   Scan da). `insertScan()` ist über den Unique-Index idempotent.
   `scansInRange()`/`latestScan()`/`previousScan()` sind die Leseform;
-  `missed_count` zählt fehlende Scans **inklusive leerer**, und `canResubmit()`
-  prüft gegen dieselbe Achse. Vorher war ein Abruf ohne sichtbaren Client
-  als Scan unsichtbar.
+  `missed_count` zählt fehlende Scans **inklusive leerer**, und
+  `examPresence()` (#166) zählt gegen dieselbe Achse. Vorher war ein
+  Abruf ohne sichtbaren Client als Scan unsichtbar.
 - **`stale` ist scan-basiert; die Wanduhr entfällt.** „Nicht anwesend" heißt
   jetzt: im Zeitraum vor dem jüngsten Scan gesehen, in genau diesem Scan
   nicht mehr da, und nicht nach der letzten Abgabe gegangen
@@ -774,7 +808,7 @@ Ersetzt den früheren Abschnitt „Appliance Structure: current/ + rollout/"
 - Pause only stops the countdown — uploads and Unterlagen downloads stay allowed. Stop and natural expiry both mean exam mode off with internet released; there is no grace period. Natural expiry fires punctually: the exam watchdog (`service/exam_watchdog.ts`, #161) triggers the same finish path instead of waiting for the next request, and the remaining lazy finish in `getRemainingSeconds()` stays as the fallback (`finishInFlight` guarantees exactly one run).
 - Startup always resets to exam mode off / internet free and forces a stuck `running`/`paused` examstate to `stopped` — this reverses the earlier "block internet on startup" behavior.
 - Uploads (`POST /upload`) and Unterlagen downloads (`GET /unterlagen/*`) are gated by `service.exam.isExamWindowOpen()`; the Unterlagen index (`GET /`) stays public. Admins are not exempted from the Unterlagen gating.
-- Early submissions are encouraged; `canResubmit()` already enforces "submitted + left the network = no resubmission, submitted + stayed = resubmission allowed".
+- Early submissions are encouraged; WLAN dropouts no longer block a resubmission (`canResubmit()` removed, #166). The filename carries `-DROPOUTS-n` / `-IP-CHANGE`, and the submission panel warns with the missed minutes.
 
 ## Runtime-Editable Upload Policy
 

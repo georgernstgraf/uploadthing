@@ -17,6 +17,8 @@
  *    Kärtchen hängt an seinem eigenen Ereignis.
  * 5. Die Angaben-Karte nachziehen, wenn die Lehrperson Unterlagen ändert
  *    (#164) — ein Fragment, keine ganze Seite.
+ * 6. Das Warnband der Abgabe nachziehen, wenn ein WLAN-Scan die
+ *    Dropout-Lage im Examen ändert (#166).
  *
  * Verbunden wird nur auf Seiten mit `data-exam-events` am `<main>`, also
  * nur für angemeldete Personen. Ohne Sitzung antwortet der Endpunkt mit
@@ -296,7 +298,7 @@
      * Hat dieser Stream sich schon einmal geöffnet? Dann ist der nächste
      * `open` ein Reconnect — Ereignisse können verloren gegangen sein.
      */
-    let unterlagenReconnected = false;
+    let streamReconnected = false;
 
     /**
      * Holt die Angaben-Karte neu. Seiten ohne `#angaben-panel` (etwa
@@ -317,6 +319,37 @@
             // Netzfehler: der nächste Reconnect holt nach.
         }).finally(function () {
             unterlagenRequestInFlight = false;
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Warnband der Abgabe (#166)
+    // ------------------------------------------------------------------
+
+    /** Ein Fragment-Request gleichzeitig; ein zweiter wäre nur Arbeit. */
+    let dropoutsRequestInFlight = false;
+
+    /**
+     * Holt das Warnband neu. Seiten ohne `#abgabe-dropouts` (etwa
+     * `/whoami`, Admin-Seiten oder die Anmeldung) ignorieren das
+     * Ereignis; ein Fragment-Austausch lässt die gewählte Datei im
+     * Formular unberührt.
+     */
+    function requestDropoutsPanel() {
+        if (!document.getElementById("abgabe-dropouts")) {
+            return;
+        }
+        if (typeof window.htmx === "undefined" || dropoutsRequestInFlight) {
+            return;
+        }
+        dropoutsRequestInFlight = true;
+        window.htmx.ajax("GET", "/abgabe-dropouts", {
+            target: "#abgabe-dropouts",
+            swap: "outerHTML",
+        }).catch(function () {
+            // Netzfehler: der nächste Reconnect holt nach.
+        }).finally(function () {
+            dropoutsRequestInFlight = false;
         });
     }
 
@@ -628,7 +661,7 @@
         errorCount = 0;
         // Ein neuer Stream hat keine Vorgeschichte: sein erster `open`
         // ist kein Reconnect und holt nichts nach.
-        unterlagenReconnected = false;
+        streamReconnected = false;
         const source = new EventSource("/events/exam");
         window.__uploadthingExamEvents = source;
 
@@ -647,14 +680,20 @@
             requestAngabenPanel();
         });
 
+        source.addEventListener("dropouts", function () {
+            requestDropoutsPanel();
+        });
+
         source.addEventListener("open", function () {
             errorCount = 0;
-            // Nach einem Reconnect kann ein `unterlagen`-Ereignis
-            // verloren gegangen sein: einmal nachholen.
-            if (unterlagenReconnected) {
+            // Nach einem Reconnect kann ein `unterlagen`- oder
+            // `dropouts`-Ereignis verloren gegangen sein: einmal
+            // nachholen.
+            if (streamReconnected) {
                 requestAngabenPanel();
+                requestDropoutsPanel();
             }
-            unterlagenReconnected = true;
+            streamReconnected = true;
         });
 
         source.addEventListener("error", function () {

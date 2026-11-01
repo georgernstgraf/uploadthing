@@ -210,7 +210,7 @@
 - Der Countdown gehört seit #161 `static/events.js`, nicht mehr Alpine: der Server rendert `data-ends-at-ms` und `data-paused` an `#exam-countdown`, der Client rechnet mit dem Offset aus `server_now_ms` (Serveruhr minus Browseruhr) des letzten SSE-Frames — eine falsch gehende Browseruhr verschiebt die Anzeige nicht, und nach Pause/Fortsetzen/Zusatzzeit synchronisiert der nächste Frame. Kleine Abweichungen unter 1,5 s (`COUNTDOWN_RESYNC_MS`) überschreiben den Endzeitpunkt bewusst nicht, sonst springt die Anzeige bei jedem Verbinden um bis zu eine Sekunde. Wer den Countdown wieder auf `Date.now()` oder Alpine umstellt, baut genau diesen Fehler zurück.
 - Browser-visible flows may also depend on local directories such as `ABGABEN_DIR` and `UNTERLAGEN_DIR` existing and being readable.
 
-## Prüfungssperre über Anti-Lockout und INFRA (#165)
+## Prüfungssperre über Anti-Lockout und INFRA (#166)
 
 - **Symptom:** Im Prüfungsnetz antwortet kein DNS mehr —
   `dig @192.168.21.1 …` meldet `connection refused`, die App auf
@@ -269,12 +269,19 @@
   baut den Fehler aus #164 zurück: eine Schülerin, die am Vortag schon auf
   derselben IP war, erscheint dann auf dem offenen Panel weiter als
   „Unbekannt".
-- **Die WLAN-Sperre gilt nur im laufenden Examen (#164).** `canResubmit()`
-  bekommt den Exam-Start und prüft nur Abgaben, die **nach** ihm liegen.
-  Der Aufrufer ist `routes/upload.ts` mit
-  `service.exam.getState()?.started_at ?? null`; wer ohne dritten Parameter
-  aufruft, prüft gegen die Vorgeschichte und sperrt zu Recht unschuldige
-  Spätankömmlinge.
+- **WLAN-Dropouts sperren die Abgabe nicht mehr (#166).** `canResubmit()`
+  ist entfernt; `routes/upload.ts` berechnet nur noch
+  `service.abgaben.examPresence(userId, ip, started_at)` und hängt
+  `-DROPOUTS-n` / `-IP-CHANGE` an den Dateinamen. Wer hier wieder eine
+  Sperre einbaut, trifft legitime Schüler bei einem Netzaussetzer. Das
+  Warnband (`#abgabe-dropouts`) ist ein eigenes Fragment, weil ein
+  Panel-Swap die gewählte Datei verlieren würde; aktualisiert wird es über
+  `DROPOUTS_CHANNEL` nur bei offenem Examen.
+- **`examPresence()` zählt ab der ersten Sichtung, nicht ab dem
+  Exam-Start.** Sonst bekäme ein Spätankömmling die Minuten vor seinem
+  ersten Erscheinen als Dropout angelastet. Die IP-Menge kommt aus
+  Präsenzzeilen, Registrierungen und Abgaben seit dem Exam-Start, damit
+  die Lücke nach einem DHCP-Wechsel nicht verschwindet.
 - Current attribution for the admin forensics page comes from `cookiepresents`, while `registrations` remains a history of explicit registration actions.
 - Runtime code should no longer depend on `forensic_registrations`; the table no longer exists in the schema, and `cookiepresents` carries the presence.
 - Do not show known-IP card counts from total `ipfact` rows for an IP; the card count must come from the selected time window, currently `seen_at_desc.length`.

@@ -2,7 +2,7 @@ import config from "../lib/config.ts";
 import type { TikConfig } from "../lib/config.ts";
 import * as repo from "../repo/repo.ts";
 import { localAdminIpString } from "../lib/timefunc.ts";
-import { noteAdminActivity } from "./events.ts";
+import { noteAdminActivity, publishDropoutsChanged } from "./events.ts";
 import { scanDelta } from "./ipadmin.ts";
 
 /**
@@ -289,6 +289,10 @@ export async function pollOnce(
             // Scan mit dem vorigen. Ein gescheiterter, abgebrochener oder
             // nicht speicherbarer Abruf stößt keine Kärtchen an.
             publishScanComponents(at);
+            // Jeder abgeschlossene Scan kann die Dropout-Lage im Examen
+            // ändern (#166); den Frame schreibt der Stream nur bei
+            // offenem Examen.
+            publishDropoutsChanged();
         } else {
             status.last_error = outcome.error;
         }

@@ -5,6 +5,7 @@ import { get_unterlagen } from "../lib/pathfuncs.ts";
 import { localTimeString } from "../lib/timefunc.ts";
 import type { HonoContextVars } from "../lib/types.ts";
 import type { ServiceIpAdmin } from "../service/ipadmin.ts";
+import type { ExamPresence } from "../service/abgaben.ts";
 import * as service from "../service/service.ts";
 
 /**
@@ -41,6 +42,66 @@ function germanFileTypes(types: string[]): { label: string; feedback: string } {
     return { label, feedback: label };
 }
 
+/**
+ * Warntext zu WLAN-Unterbrechungen im laufenden Examen (#166).
+ *
+ * Reine Textbildung, damit sie ohne Datenbank prüfbar ist. Leer, wenn
+ * weder Dropouts noch ein IP-Wechsel vorliegen; die Abgabe bleibt in
+ * jedem Fall möglich.
+ */
+export function formatDropoutNotice(
+    presence: ExamPresence,
+): string | undefined {
+    const parts: string[] = [];
+
+    if (presence.dropouts > 0) {
+        const minutes = presence.missed_minutes;
+        const dropouts = presence.dropouts;
+        const minuteWord = minutes === 1 ? "Minute" : "Minuten";
+        const dropoutWord = dropouts === 1 ? "Dropout" : "Dropouts";
+        parts.push(
+            `Du warst ${minutes} ${minuteWord} nicht im WLAN (${dropouts} ${dropoutWord}).`,
+        );
+    }
+
+    if (presence.ip_change) {
+        parts.push("Deine IP-Adresse hat sich während des Examens geändert.");
+    }
+
+    if (parts.length === 0) {
+        return undefined;
+    }
+
+    parts.push(
+        "Du kannst trotzdem abgeben; der Dateiname wird entsprechend markiert.",
+    );
+    return parts.join(" ");
+}
+
+/**
+ * Warntext für die aktuelle Person im laufenden Examen. `exam_open`
+ * entscheidet, ob überhaupt gemessen wird: außerhalb des Examens gibt es
+ * keinen Dropout, über den zu informieren wäre.
+ */
+function dropoutNotice(
+    c: PageContext,
+    examOpen: boolean,
+): string | undefined {
+    const user = c.get("remoteuser");
+    const ip = c.get("remoteip");
+    if (!user?.id || !ip || !examOpen) {
+        return undefined;
+    }
+
+    return formatDropoutNotice(
+        service.abgaben.examPresence(
+            user.id,
+            ip,
+            service.exam.getState()?.started_at ?? null,
+        ),
+    );
+}
+
 /** Panel der rechten Spalte: Anmeldung oder Abgabe. */
 export async function buildPanel(
     c: PageContext,
@@ -63,6 +124,7 @@ export async function buildPanel(
         exam_ends_at_ms: exam.ends_at_ms ?? undefined,
         exam_paused: exam.status === "paused",
         exam_remaining_label: exam.remaining_label,
+        dropout_notice: dropoutNotice(c, exam.open),
         success: options.success,
         toast_message: options.toast_message,
         toast_type: options.toast_type,
@@ -70,6 +132,20 @@ export async function buildPanel(
         // Examen) muss auch den bereits angemeldeten Nutzer erreichen
         // (#152) — er sieht das Abgabe-Panel, nicht die Anmeldung.
         login_error: options.login_error,
+    });
+}
+
+/**
+ * Nur das Warnband der Abgabe (#166).
+ *
+ * Ein abgeschlossener Scan kann die Dropout-Lage ändern; der Push holt
+ * dann nur dieses Fragment, damit die im Formular gewählte Datei
+ * erhalten bleibt. Ohne laufendes Examen bleibt die Hülle leer.
+ */
+export async function buildDropoutsPanel(c: PageContext): Promise<string> {
+    const exam = await service.exam.getStatusView();
+    return hbs.abgabeDropoutsTemplate({
+        dropout_notice: dropoutNotice(c, exam.open),
     });
 }
 

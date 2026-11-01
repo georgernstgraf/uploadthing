@@ -13,6 +13,7 @@
 import * as hub from "../lib/event_hub.ts";
 import {
     ACTIVITY_CHANNEL,
+    DROPOUTS_CHANNEL,
     EXAM_CHANNEL,
     UNTERLAGEN_CHANNEL,
 } from "../lib/event_hub.ts";
@@ -21,7 +22,7 @@ import type { ExamStatus } from "./exam.ts";
 
 // Die Kanalnamen gehören dem Bus (Zyklusfreiheit, siehe
 // `lib/event_hub.ts`) und werden hier nur weitergereicht.
-export { ACTIVITY_CHANNEL, EXAM_CHANNEL, UNTERLAGEN_CHANNEL };
+export { ACTIVITY_CHANNEL, DROPOUTS_CHANNEL, EXAM_CHANNEL, UNTERLAGEN_CHANNEL };
 
 /**
  * Mindestabstand zwischen zwei Admin-Events. Bewusst keine
@@ -186,6 +187,22 @@ export function publishUnterlagenChanged(): void {
 /** Hört auf Unterlagen-Änderungen; die Rückgabe meldet ab. */
 export function subscribeUnterlagen(listener: () => void): () => void {
     return hub.subscribe<null>(UNTERLAGEN_CHANNEL, () => listener());
+}
+
+/**
+ * Meldet einen abgeschlossenen WLAN-Scan (#166).
+ *
+ * Wie die übrigen Kanäle nur ein Tick ohne Payload: ob der Frame beim
+ * Schüler ankommt, entscheidet der Stream anhand des Exam-Zustands
+ * (`snapshotExam().open`). Der Aufrufer ist `service/tik.ts`.
+ */
+export function publishDropoutsChanged(): void {
+    hub.publish(DROPOUTS_CHANNEL, null);
+}
+
+/** Hört auf abgeschlossene Scans; die Rückgabe meldet ab. */
+export function subscribeDropouts(listener: () => void): () => void {
+    return hub.subscribe<null>(DROPOUTS_CHANNEL, () => listener());
 }
 
 /** Hört auf Admin-Aktivität; die Rückgabe meldet ab. */

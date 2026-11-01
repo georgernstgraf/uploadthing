@@ -30,6 +30,13 @@ export const ACTIVITY_CHANNEL = "activity";
  * ohne Reload und ohne eigenes Abo pro Schüler.
  */
 export const UNTERLAGEN_CHANNEL = "unterlagen";
+/**
+ * Kanal für die WLAN-Unterbrechungen im laufenden Examen (#166). Jeder
+ * abgeschlossene MikroTik-Scan kann die Lage ändern; die Schüler-Seite
+ * holt dann ihr Warnband-Fragment. Der Stream schreibt den Frame nur,
+ * solange das Examen offen ist.
+ */
+export const DROPOUTS_CHANNEL = "dropouts";
 
 export type HubEvent<T = unknown> = {
     channel: string;

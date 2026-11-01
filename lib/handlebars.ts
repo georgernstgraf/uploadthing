@@ -31,6 +31,8 @@ type AbgabeTemplateData = {
     exam_remaining_label?: string;
     toast_message?: string;
     toast_type?: string;
+    /** Warntext zu WLAN-Unterbrechungen im Examen (#166). */
+    dropout_notice?: string;
     /** Abgelehnte Anmeldung, sichtbar auch für bereits Angemeldete (#152). */
     login_error?: string;
     success?: {
@@ -39,6 +41,11 @@ type AbgabeTemplateData = {
         duration_seconds: string;
         md5sum: string;
     };
+};
+
+/** Eigenes Fragment für den Scan-Push (#166) — nur das Warnband. */
+type AbgabeDropoutsTemplateData = {
+    dropout_notice?: string;
 };
 
 type LoginPanelTemplateData = {
@@ -242,6 +249,10 @@ Handlebars.registerPartial(
     Deno.readTextFileSync("templates/angaben.hbs"),
 );
 Handlebars.registerPartial(
+    "abgabe-dropouts",
+    Deno.readTextFileSync("templates/abgabe-dropouts.hbs"),
+);
+Handlebars.registerPartial(
     "admin-report",
     Deno.readTextFileSync("templates/admin-report.hbs"),
 );
@@ -274,6 +285,11 @@ export const angabenTemplate = Handlebars.compile<AngabenTemplateData>(
 );
 export const abgabeTemplate = Handlebars.compile<AbgabeTemplateData>(
     Deno.readTextFileSync("templates/abgabe.hbs"),
+);
+export const abgabeDropoutsTemplate = Handlebars.compile<
+    AbgabeDropoutsTemplateData
+>(
+    Deno.readTextFileSync("templates/abgabe-dropouts.hbs"),
 );
 export const loginPanelTemplate = Handlebars.compile<LoginPanelTemplateData>(
     Deno.readTextFileSync("templates/login-panel.hbs"),

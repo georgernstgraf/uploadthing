@@ -1,7 +1,8 @@
 import { assertEquals } from "@std/assert";
-import { canResubmit } from "./abgaben.ts";
+import { countMissed, examPresence } from "./abgaben.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as abgabenRepo from "../repo/abgaben.ts";
+import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
 import { db } from "../repo/db.ts";
 import {
     clearForensicsByIp,
@@ -12,208 +13,267 @@ import {
 } from "../test/helpers/forensics_fixture.ts";
 
 /**
- * Die Scan-Achse (#163) liegt in `tikscan` und kennt keine IP. Für das
- * Fenster `[Abgabe, jetzt]` dieser Tests muss sie leer sein, sonst zählen
- * fremde Scans mit. Geleert werden nur die letzten Minuten, nicht die
- * Historie.
+ * Die Scan-Achse (#163) liegt in `tikscan` und kennt keine IP. Für die
+ * Fenster dieser Tests muss sie leer sein, sonst zählen fremde Scans mit.
+ * Geleert werden nur die letzten Minuten, nicht die Historie.
  */
-const SCAN_WINDOW_MS = 120_000;
-
-function resetScanAxis(subTime: Date): void {
+function resetScanAxis(since: Date): void {
     db.exec("DELETE FROM ipfact");
-    db.prepare("DELETE FROM tikscan WHERE at >= ?").run(subTime.toISOString());
+    db.prepare("DELETE FROM tikscan WHERE at >= ?").run(since.toISOString());
 }
 
-function recentSubmission(): Date {
-    return new Date(Date.now() - SCAN_WINDOW_MS);
+function uniqueIp(prefix: number, suffix: string): string {
+    return `10.${prefix}.0.${Number.parseInt(suffix.slice(0, 2), 16) % 200 + 10}`;
 }
 
-Deno.test("canResubmit - first submission always allowed", () => {
-    const result = canResubmit(999999, "10.0.0.1", null);
-    assertEquals(result, true);
+function at(base: Date, seconds: number): Date {
+    return new Date(base.getTime() + seconds * 1000);
+}
+
+// ---------------------------------------------------------------------
+// Zählkern (rein, ohne Datenbank)
+// ---------------------------------------------------------------------
+
+Deno.test("countMissed: lückenlose Anwesenheit zählt nichts", () => {
+    const scans = [new Date("2026-11-01T08:00:00Z"), new Date("2026-11-01T08:01:00Z")];
+    const seen = new Set(scans.map((scan) => scan.toISOString()));
+
+    assertEquals(countMissed(scans, seen), { missed: 0, dropouts: 0 });
 });
 
-/**
- * Prüf-Start des laufenden Examens: liegt **vor** der Abgabe, damit die
- * Lückenprüfung greift. Die Abgabe von vor dem Exam-Start ist der Fall
- * aus #164 und wird unten eigens geprüft.
- */
-function examStartBefore(subTime: Date): Date {
-    return new Date(subTime.getTime() - 60_000);
-}
+Deno.test("countMissed: ein fehlender Scan ist eine Minute und ein Dropout", () => {
+    const scans = [
+        new Date("2026-11-01T08:00:00Z"),
+        new Date("2026-11-01T08:01:00Z"),
+        new Date("2026-11-01T08:02:00Z"),
+    ];
+    const seen = new Set([
+        scans[0].toISOString(),
+        scans[2].toISOString(),
+    ]);
 
-Deno.test("canResubmit - student present in all scans since last submission returns true", async () => {
-    const subTime = recentSubmission();
-    resetScanAxis(subTime);
+    assertEquals(countMissed(scans, seen), { missed: 1, dropouts: 1 });
+});
+
+Deno.test("countMissed: ein Block fehlender Scans ist genau ein Dropout", () => {
+    const scans = [
+        new Date("2026-11-01T08:00:00Z"),
+        new Date("2026-11-01T08:01:00Z"),
+        new Date("2026-11-01T08:02:00Z"),
+        new Date("2026-11-01T08:03:00Z"),
+        new Date("2026-11-01T08:04:00Z"),
+    ];
+    const seen = new Set([
+        scans[0].toISOString(),
+        scans[4].toISOString(),
+    ]);
+
+    assertEquals(countMissed(scans, seen), { missed: 3, dropouts: 1 });
+});
+
+Deno.test("countMissed: zwei getrennte Blöcke sind zwei Dropouts", () => {
+    const scans = [
+        new Date("2026-11-01T08:00:00Z"),
+        new Date("2026-11-01T08:01:00Z"),
+        new Date("2026-11-01T08:02:00Z"),
+        new Date("2026-11-01T08:03:00Z"),
+        new Date("2026-11-01T08:04:00Z"),
+        new Date("2026-11-01T08:05:00Z"),
+    ];
+    const seen = new Set([
+        scans[0].toISOString(),
+        scans[3].toISOString(),
+    ]);
+
+    assertEquals(countMissed(scans, seen), { missed: 4, dropouts: 2 });
+});
+
+// ---------------------------------------------------------------------
+// Anwesenheitsbild im Examen (Datenbank)
+// ---------------------------------------------------------------------
+
+Deno.test("examPresence: ohne Exam-Zustand gibt es nichts zu melden", () => {
+    assertEquals(examPresence(999999, "10.0.0.1", null), {
+        dropouts: 0,
+        missed_minutes: 0,
+        ip_change: false,
+    });
+});
+
+Deno.test("examPresence: durchgehende Anwesenheit ergibt keine Dropouts", async () => {
     const suffix = crypto.randomUUID().slice(0, 8);
-    const email = `resubmit-present-${suffix}@example.com`;
-    const ip = `10.0.0.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
-    const t1 = new Date(subTime.getTime() + 30_000);
-    const t2 = new Date(subTime.getTime() + 60_000);
+    const email = `presence-clean-${suffix}@example.com`;
+    const ip = uniqueIp(0, suffix);
+    const examStart = at(new Date(), -300);
+    const t1 = at(examStart, 30);
+    const t2 = at(examStart, 90);
+    const t3 = at(examStart, 150);
+    resetScanAxis(examStart);
 
     try {
-        const user = await upsertFixtureUser({ email, name: "Resubmit Present", klasse: "5AHITM" });
-
-        abgabenRepo.create(user.id, ip, "test_v1.zip", subTime);
-
+        const user = await upsertFixtureUser({
+            email,
+            name: "Presence Clean",
+            klasse: "5AHITM",
+        });
+        await cookiepresentsRepo.create(ip, user.id, t1);
         ipfactRepo.registerSeen(ip, t1);
         ipfactRepo.registerSeen(ip, t2);
+        ipfactRepo.registerSeen(ip, t3);
         seedScan(t1);
         seedScan(t2);
+        seedScan(t3);
 
-        const result = canResubmit(user.id, ip, examStartBefore(subTime));
-        assertEquals(result, true, "should allow resubmit when IP present in all scans");
+        assertEquals(examPresence(user.id, ip, examStart), {
+            dropouts: 0,
+            missed_minutes: 0,
+            ip_change: false,
+        });
     } finally {
-        await clearForensicsByIp(ip);
+        clearForensicsByIp(ip);
         await clearForensicsByUserEmail(email);
-        clearScans(t1, t2);
+        clearScans(t1, t2, t3);
     }
 });
 
-Deno.test("canResubmit - student missing from a scan since last submission returns false", async () => {
-    const subTime = recentSubmission();
-    resetScanAxis(subTime);
+Deno.test("examPresence: fehlende Scans werden zu Minuten und Dropouts", async () => {
     const suffix = crypto.randomUUID().slice(0, 8);
-    const email = `resubmit-missed-${suffix}@example.com`;
-    const ip = `10.0.0.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
-    const otherIp = `10.0.1.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
-    const t1 = new Date(subTime.getTime() + 30_000);
-    const t2 = new Date(subTime.getTime() + 60_000);
+    const email = `presence-gap-${suffix}@example.com`;
+    const ip = uniqueIp(1, suffix);
+    const examStart = at(new Date(), -300);
+    const t1 = at(examStart, 30);
+    const t2 = at(examStart, 90); // fehlt
+    const t3 = at(examStart, 150);
+    const t4 = at(examStart, 210); // fehlt
+    const t5 = at(examStart, 270); // fehlt
+    resetScanAxis(examStart);
 
     try {
-        const user = await upsertFixtureUser({ email, name: "Resubmit Missed", klasse: "5AHITM" });
-
-        abgabenRepo.create(user.id, ip, "test_v1.zip", subTime);
-
+        const user = await upsertFixtureUser({
+            email,
+            name: "Presence Gap",
+            klasse: "5AHITM",
+        });
         ipfactRepo.registerSeen(ip, t1);
-        ipfactRepo.registerSeen(otherIp, t2);
-        seedScan(t1);
-        seedScan(t2);
+        ipfactRepo.registerSeen(ip, t3);
+        for (const scan of [t1, t2, t3, t4, t5]) {
+            seedScan(scan);
+        }
 
-        const result = canResubmit(user.id, ip, examStartBefore(subTime));
-        assertEquals(result, false, "should deny resubmit when IP was absent from a scan");
+        assertEquals(examPresence(user.id, ip, examStart), {
+            dropouts: 2,
+            missed_minutes: 3,
+            ip_change: false,
+        });
     } finally {
-        await clearForensicsByIp(ip);
-        await clearForensicsByIp(otherIp);
+        clearForensicsByIp(ip);
         await clearForensicsByUserEmail(email);
-        clearScans(t1, t2);
+        clearScans(t1, t2, t3, t4, t5);
     }
 });
 
-Deno.test("canResubmit - empty scan since last submission counts as absence", async () => {
-    const subTime = recentSubmission();
-    resetScanAxis(subTime);
+Deno.test("examPresence: Scans vor der ersten Sichtung zählen nicht", async () => {
+    // Spätankömmling: zwei Scans vor dem ersten Erscheinen sind kein
+    // Dropout, auch wenn die IP dort naturgemäß fehlt.
     const suffix = crypto.randomUUID().slice(0, 8);
-    const email = `resubmit-empty-${suffix}@example.com`;
-    const ip = `10.0.0.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
-    const t1 = new Date(subTime.getTime() + 30_000);
+    const email = `presence-late-${suffix}@example.com`;
+    const ip = uniqueIp(2, suffix);
+    const examStart = at(new Date(), -300);
+    const t1 = at(examStart, 30);
+    const t2 = at(examStart, 90);
+    const t3 = at(examStart, 150);
+    const t4 = at(examStart, 210);
+    resetScanAxis(examStart);
 
     try {
-        const user = await upsertFixtureUser({ email, name: "Resubmit Empty", klasse: "5AHITM" });
+        const user = await upsertFixtureUser({
+            email,
+            name: "Presence Late",
+            klasse: "5AHITM",
+        });
+        ipfactRepo.registerSeen(ip, t3);
+        for (const scan of [t1, t2, t3, t4]) {
+            seedScan(scan);
+        }
 
-        abgabenRepo.create(user.id, ip, "test_v1.zip", subTime);
-
-        // Abruf ohne einen einzigen sichtbaren Client: die IP fehlt im Scan.
-        seedScan(t1);
-
-        const result = canResubmit(user.id, ip, examStartBefore(subTime));
-        assertEquals(result, false, "should deny resubmit when a scan saw no clients");
+        assertEquals(examPresence(user.id, ip, examStart), {
+            dropouts: 1,
+            missed_minutes: 1,
+            ip_change: false,
+        });
     } finally {
-        await clearForensicsByIp(ip);
+        clearForensicsByIp(ip);
         await clearForensicsByUserEmail(email);
-        clearScans(t1);
+        clearScans(t1, t2, t3, t4);
     }
 });
 
-Deno.test("canResubmit - no scans since last submission returns true", async () => {
-    const subTime = recentSubmission();
-    resetScanAxis(subTime);
+Deno.test("examPresence: Rückkehr mit neuer IP markiert den Wechsel und zählt weiter", async () => {
+    // Weg auf IP A, zurück auf IP B: die Lücke liegt auf der Achse von A,
+    // die Abgabe kommt von B. Beides muss sichtbar sein.
     const suffix = crypto.randomUUID().slice(0, 8);
-    const email = `resubmit-noscan-${suffix}@example.com`;
-    const ip = `10.0.0.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const email = `presence-ipchange-${suffix}@example.com`;
+    const ipA = uniqueIp(3, suffix);
+    const ipB = uniqueIp(4, suffix);
+    const examStart = at(new Date(), -300);
+    const t1 = at(examStart, 30);
+    const t2 = at(examStart, 90);
+    const t3 = at(examStart, 150); // fehlt auf A, noch nicht auf B
+    const t4 = at(examStart, 210);
+    resetScanAxis(examStart);
 
     try {
-        const user = await upsertFixtureUser({ email, name: "Resubmit No Scan", klasse: "5AHITM" });
+        const user = await upsertFixtureUser({
+            email,
+            name: "Presence Change",
+            klasse: "5AHITM",
+        });
+        await cookiepresentsRepo.create(ipA, user.id, t1);
+        await cookiepresentsRepo.create(ipB, user.id, t4);
+        ipfactRepo.registerSeen(ipA, t1);
+        ipfactRepo.registerSeen(ipA, t2);
+        ipfactRepo.registerSeen(ipB, t4);
+        for (const scan of [t1, t2, t3, t4]) {
+            seedScan(scan);
+        }
 
-        abgabenRepo.create(user.id, ip, "test_v1.zip", subTime);
-
-        const result = canResubmit(user.id, ip, examStartBefore(subTime));
-        assertEquals(result, true, "should allow resubmit when no scans exist since submission");
+        assertEquals(examPresence(user.id, ipB, examStart), {
+            dropouts: 1,
+            missed_minutes: 1,
+            ip_change: true,
+        });
     } finally {
-        await clearForensicsByIp(ip);
+        clearForensicsByIp(ipA);
+        clearForensicsByIp(ipB);
         await clearForensicsByUserEmail(email);
+        clearScans(t1, t2, t3, t4);
     }
 });
 
-Deno.test("canResubmit - Abgabe vor dem Exam-Start sperrt nicht (#164)", async () => {
-    // Der Fall aus dem laufenden Examen: die letzte Abgabe liegt Monate
-    // zurück, seitdem wurde die IP in keinem Scan gesehen. Im laufenden
-    // Examen fehlt nichts — die Prüfung beginnt erst ab dem Exam-Start.
-    const subTime = new Date(Date.now() - 24 * 3_600_000);
-    resetScanAxis(subTime);
+Deno.test("examPresence: ohne Scan-Daten bleibt der IP-Wechsel sichtbar", async () => {
     const suffix = crypto.randomUUID().slice(0, 8);
-    const email = `resubmit-old-${suffix}@example.com`;
-    const ip = `10.0.0.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
-    const t1 = new Date(subTime.getTime() + 60_000);
-    const examStart = new Date(Date.now() - 60_000);
+    const email = `presence-noscan-${suffix}@example.com`;
+    const ipA = uniqueIp(5, suffix);
+    const ipB = uniqueIp(6, suffix);
+    const examStart = at(new Date(), -120);
+    resetScanAxis(examStart);
 
     try {
-        const user = await upsertFixtureUser({ email, name: "Resubmit Old", klasse: "5AHITM" });
+        const user = await upsertFixtureUser({
+            email,
+            name: "Presence No Scan",
+            klasse: "5AHITM",
+        });
+        abgabenRepo.create(user.id, ipA, "vorher.zip", at(examStart, 10));
 
-        abgabenRepo.create(user.id, ip, "test_v1.zip", subTime);
-        // Scan ohne diese IP, liegt aber vor dem Exam-Start.
-        seedScan(t1);
-
-        const result = canResubmit(user.id, ip, examStart);
-        assertEquals(
-            result,
-            true,
-            "eine Abgabe von vor dem Exam-Start darf das laufende Examen nicht sperren",
-        );
+        assertEquals(examPresence(user.id, ipB, examStart), {
+            dropouts: 0,
+            missed_minutes: 0,
+            ip_change: true,
+        });
     } finally {
-        await clearForensicsByIp(ip);
+        clearForensicsByIp(ipA);
+        clearForensicsByIp(ipB);
         await clearForensicsByUserEmail(email);
-        clearScans(t1);
-    }
-});
-
-Deno.test("canResubmit - Spätankömmling ohne Abgabe im laufenden Examen ist frei (#164)", async () => {
-    const suffix = crypto.randomUUID().slice(0, 8);
-    const email = `resubmit-late-${suffix}@example.com`;
-    const ip = `10.0.0.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
-    const examStart = new Date(Date.now() - 60_000);
-
-    try {
-        const user = await upsertFixtureUser({ email, name: "Resubmit Late", klasse: "5AHITM" });
-
-        assertEquals(canResubmit(user.id, ip, examStart), true);
-    } finally {
-        await clearForensicsByIp(ip);
-        await clearForensicsByUserEmail(email);
-    }
-});
-
-Deno.test("canResubmit - ohne Exam-Zustand entscheidet die Sperre nicht (#164)", async () => {
-    // Der Upload ist ohnehin am Exam-Fenster gegated; ohne laufendes
-    // Examen gibt es nichts zu schützen.
-    const subTime = recentSubmission();
-    resetScanAxis(subTime);
-    const suffix = crypto.randomUUID().slice(0, 8);
-    const email = `resubmit-idle-${suffix}@example.com`;
-    const ip = `10.0.0.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
-    const t1 = new Date(subTime.getTime() + 30_000);
-
-    try {
-        const user = await upsertFixtureUser({ email, name: "Resubmit Idle", klasse: "5AHITM" });
-
-        abgabenRepo.create(user.id, ip, "test_v1.zip", subTime);
-        // Ein Scan ohne diese IP würde mit Exam-Zustand sperren.
-        seedScan(t1);
-
-        assertEquals(canResubmit(user.id, ip, null), true);
-    } finally {
-        await clearForensicsByIp(ip);
-        await clearForensicsByUserEmail(email);
-        clearScans(t1);
     }
 });

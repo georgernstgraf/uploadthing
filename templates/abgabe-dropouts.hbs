@@ -1,0 +1,13 @@
+{{! Warnband zu WLAN-Unterbrechungen im Examen (#166).
+    Eigenes Fragment: ein Scan-Push tauscht nur dieses Element, damit
+    die im Formular gewählte Datei erhalten bleibt. Die Hülle steht
+    immer im Panel, damit htmx sie auch dann findet, wenn das Band erst
+    später erscheint. }}
+<div id="abgabe-dropouts">
+    {{#if dropout_notice}}
+        <div class="alert alert-warning" role="alert">
+            <p class="fw-bold mb-1">WLAN-Unterbrechung im Examen</p>
+            <p class="mb-0">{{dropout_notice}}</p>
+        </div>
+    {{/if}}
+</div>

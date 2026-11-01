@@ -47,43 +47,115 @@ export function getUserSubmissionsInRange(
 }
 
 /**
- * Check whether a user is eligible to resubmit.
+ * Prüf-Ergebnis für eine Abgabe im laufenden Examen (#166): die WLAN-
+ * Unterbrechungen, die im Dateinamen und im Warnband landen.
  *
- * Die WLAN-Regel schützt nur das **laufende** Examen (#164): geprüft wird
- * erst ab der letzten Abgabe, und nur wenn diese im laufenden Examen
- * liegt. Eine Abgabe von vor dem Exam-Start sagt nichts über das jetzige
- * Netz — sonst sperrt die Prüfung eine Schülerin, die seit Mai nicht mehr
- * anwesend war, obwohl im laufenden Examen nichts fehlt. Ohne
- * Exam-Zustand (`examStartedAt === null`) gibt es nichts zu schützen; der
- * Upload selbst ist ohnehin am Exam-Fenster gegated.
+ * Bewusst keine Sperre mehr: wer das WLAN verlassen hat, darf trotzdem
+ * abgeben. Die Abgabe ist nur am Exam-Fenster gegated.
  */
-export function canResubmit(
+export type ExamPresence = {
+    /** Zusammenhängende Blöcke fehlender Scans seit der ersten Sichtung. */
+    dropouts: number;
+    /** Fehlende Scans × 1 Minute (Poll-Intervall des MikroTik). */
+    missed_minutes: number;
+    /** Kam der Schüler im Examen unter mehr als einer IP? */
+    ip_change: boolean;
+};
+
+/** Nichts zu melden — außerhalb eines Examens oder ohne Scan-Daten. */
+export const NO_EXAM_PRESENCE: ExamPresence = {
+    dropouts: 0,
+    missed_minutes: 0,
+    ip_change: false,
+};
+
+/**
+ * Reiner Zählkern über die Scan-Achse (#166).
+ *
+ * `scans` aufsteigend, `seen` die ISO-Zeitstempel, in denen der Schüler
+ * sichtbar war. Jeder fehlende Scan ist eine Minute ohne WLAN; ein
+ * zusammenhängender Block fehlender Scans ist **ein** Dropout.
+ */
+export function countMissed(
+    scans: Date[],
+    seen: Set<string>,
+): { missed: number; dropouts: number } {
+    let missed = 0;
+    let dropouts = 0;
+    let inDropout = false;
+
+    for (const scan of scans) {
+        if (seen.has(scan.toISOString())) {
+            inDropout = false;
+            continue;
+        }
+        missed += 1;
+        if (!inDropout) {
+            dropouts += 1;
+            inDropout = true;
+        }
+    }
+
+    return { missed, dropouts };
+}
+
+/**
+ * Anwesenheitsbild eines Schülers im laufenden Examen (#166).
+ *
+ * Grundlage sind die IPs, unter denen der Schüler seit dem Exam-Start
+ * aufgetreten ist (Präsenzzeilen, Registrierungen und eigene Abgaben) —
+ * nicht nur die aktuelle IP. Ein DHCP-Wechsel nach einem Dropout zählt
+ * dadurch weiter; `ip_change` macht ihn im Dateinamen sichtbar.
+ *
+ * Gezählt wird ab der **ersten Sichtung** im Examensfenster: die Zeit
+ * vor dem ersten Erscheinen im Netz ist kein Dropout (Spätankömmling).
+ * Ohne Exam-Zustand oder ohne Scan-Daten gibt es nichts zu melden.
+ */
+export function examPresence(
     userId: number,
     currentIp: string,
     examStartedAt: Date | null,
-): boolean {
-    const submissions = repo.abgaben.getByUserId(userId);
-    if (submissions.length === 0) return true;
-    if (examStartedAt === null) return true;
+    now: Date = new Date(),
+): ExamPresence {
+    if (examStartedAt === null) {
+        return NO_EXAM_PRESENCE;
+    }
 
-    const since = submissions[0].at;
-    // Die letzte Abgabe liegt vor dem laufenden Examen: im Examen ist
-    // noch nichts passiert, also gibt es keine Lücke zu prüfen.
-    if (since.getTime() < examStartedAt.getTime()) return true;
+    const ips = new Set<string>([currentIp]);
+    for (const submission of repo.abgaben.getByUserIdAndDateRange(userId, examStartedAt, now)) {
+        ips.add(submission.ip);
+    }
+    for (const presence of repo.cookiepresents.byUserInRange(userId, examStartedAt, now)) {
+        ips.add(presence.ip);
+    }
+    for (const registration of repo.registrations.byUserInRange(userId, examStartedAt, now)) {
+        ips.add(registration.ip);
+    }
 
-    const now = new Date();
-    // Scan-Achse aus `tikscan` (#163): leere Scans zählen mit, sonst wäre
-    // ein Abruf ohne sichtbaren Client unsichtbar.
-    const allScans = repo.ipfact.scansInRange(since, now);
-    if (allScans.length === 0) return true;
+    const seen = new Set<string>();
+    let firstSeen: Date | null = null;
+    for (const ip of ips) {
+        for (const at of repo.ipfact.getHistoryForIPInRangeDesc(ip, examStartedAt, now)) {
+            seen.add(at.toISOString());
+            if (firstSeen === null || at.getTime() < firstSeen.getTime()) {
+                firstSeen = at;
+            }
+        }
+    }
 
-    const ipSeens = repo.ipfact.getHistoryForIPInRangeDesc(currentIp, since, now);
-    const ipSeenTimestamps = new Set(ipSeens.map((d) => d.toISOString()));
+    const ip_change = ips.size > 1;
+    if (firstSeen === null) {
+        // Der Schüler war im Examen noch in keinem Scan sichtbar — etwa
+        // direkt nach dem Start. Es gibt keine Lücke zu zählen.
+        return { dropouts: 0, missed_minutes: 0, ip_change };
+    }
 
-    const missedAnyScan = allScans.some((ts) =>
-        !ipSeenTimestamps.has(ts.toISOString())
+    const scans = repo.ipfact.scansInRange(examStartedAt, now).filter(
+        (scan) => scan.getTime() >= firstSeen.getTime(),
     );
-    return !missedAnyScan;
+    const { missed, dropouts } = countMissed(scans, seen);
+
+    return { dropouts, missed_minutes: missed, ip_change };
 }
 
 /**

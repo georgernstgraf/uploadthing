@@ -18,6 +18,24 @@ mit `ipv6.msftconnecttest.com` verklebt — getrennt. Verifiziert bei
 erreichbar. Config-Backup `appliance/backups/config-2026-11-01.xml.gpg`
 liegt vor.
 
+**#166 — WLAN-Dropouts sperren die Abgabe nicht mehr — implementiert
+(2026-11-01), Deploy und Sichtprüfung offen.**
+Die Sperre (`canResubmit()`) ist entfernt: Wer im Examen das WLAN
+verlässt, darf trotzdem abgeben. Sichtbar wird die Unterbrechung stattdessen
+über den Dateinamen (`-DROPOUTS-n`, `-IP-CHANGE`) und ein Warnband im
+Abgabe-Panel (Minuten, Dropouts, IP-Wechsel).
+
+- **`examPresence()`** (`service/abgaben.ts`) zählt ab der ersten Sichtung
+  im Examensfenster über alle IPs des Schülers seit dem Exam-Start;
+  `countMissed(scans, seen)` ist der reine Zählkern (fehlende Scans =
+  Minuten, zusammenhängende Blöcke = Dropouts).
+- **`DROPOUTS_CHANNEL`** + `event: dropouts` auf `/events/exam`, Fragment
+  `GET /abgabe-dropouts`; `static/events.js` tauscht nur `#abgabe-dropouts`
+  (`outerHTML`), nur bei offenem Examen. Die gewählte Datei im Formular
+  bleibt erhalten.
+- Verifikation: `check`/`lint` grün, **471 Deno-Tests** (vorher 462).
+  Deploy und Sichtprüfung stehen noch aus.
+
 **#164 — Forensikkarte, WLAN-Sperre, Unterlagen-Push — deployt am
 2026-11-01 (11:40:18), Issue geschlossen, Sichtprüfung offen.**
 Vier Fehlerbilder aus dem laufenden Examen, alle datengetrieben statt per
@@ -30,9 +48,10 @@ Zeit-Heuristik gelöst:
   eine Presence-Zeile — sonst rendert das Panel sich selbst), ebenso die
   Presence-Zeile von `POST /upload` (die Abgabe meldet sich über
   `card-<slug>`).
-- **WLAN-Sperre nur im laufenden Examen.** `canResubmit()` bekommt den
-  Exam-Start; eine Abgabe von vorher (etwa Mai) sperrt nichts mehr. Ohne
-  Exam-Zustand entscheidet die Sperre gar nicht.
+- **WLAN-Sperre nur im laufenden Examen.** `canResubmit()` bekam den
+  Exam-Start; eine Abgabe von vorher (etwa Mai) sperrte nichts mehr. Ohne
+  Exam-Zustand entschied die Sperre gar nicht. *(Seit #166 ganz entfernt —
+  siehe oben.)*
 - **Unterlagen-Push.** `UNTERLAGEN_CHANNEL`, `event: unterlagen` auf der
   bestehenden `/events/exam`-Verbindung, neues Fragment
   `GET /angaben-panel` und `templates/angaben.hbs`; `static/events.js`
@@ -128,7 +147,8 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **Scan-Achse `tikscan` (`ccd3468`).** Migration `0003_tikscan` legt die
   Tabelle an und füllt sie aus `DISTINCT ipfact.seen`; der Poller schreibt
   ab jetzt jeden abgeschlossenen Abruf, auch einen leeren. `is_stale`,
-  `missed_count` und `canResubmit()` lesen die Scan-Achse;
+  `missed_count` und der Scan-Delta lesen die Scan-Achse (die frühere
+  Abgabe-Sperre `canResubmit()` tat es bis #166 ebenfalls);
   `service/ipadmin.for_range` und `for_ip` bauen die Karte über denselben
   Aggregationskern, `repo.ipfact` liefert `scansInRange`, `latestScan`,
   `previousScan`, `ipsAt` und `ipsBetween`. `ADMIN_STALE_MINUTES`

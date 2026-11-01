@@ -12,6 +12,13 @@ const byRangeStmt = db.prepare(
     FROM cookiepresents
     WHERE at BETWEEN ? AND ?`,
 );
+const byUserInRangeStmt = db.prepare(
+    `SELECT id, ip, userId, at
+    FROM cookiepresents
+    WHERE userId = ?
+        AND at BETWEEN ? AND ?
+    ORDER BY at DESC`,
+);
 const createStmt = db.prepare(
     "INSERT INTO cookiepresents (ip, userId, at) VALUES (?, ?, ?)",
 );
@@ -78,6 +85,28 @@ export function create(ip: string, userId: number, at: Date): void {
 export function deleteOlderThan(cutoff: Date): number {
     deleteOlderThanStmt.run(cutoff.toISOString());
     return db.changes;
+}
+
+/**
+ * Präsenzzeilen eines Nutzers im Zeitraum (#166). Grundlage der
+ * IP-Menge, unter der ein Schüler während des Examens aufgetreten ist.
+ */
+export function byUserInRange(
+    userId: number,
+    start: Date,
+    end: Date,
+): RepoCookiePresentRecord[] {
+    const rows = byUserInRangeStmt.all(
+        userId,
+        start.toISOString(),
+        end.toISOString(),
+    ) as { id: number; ip: string; userId: number; at: string }[];
+    return rows.map((row) => ({
+        id: row.id,
+        ip: row.ip,
+        userId: row.userId,
+        at: new Date(row.at),
+    }));
 }
 
 export function getLatestUserIdForIP(ip: string): number | null {

@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { buildExamHazards } from "./render.ts";
+import { buildExamHazards, formatDropoutNotice } from "./render.ts";
 
 /**
  * Die Gefahrenliste bestimmt den roten Balken im Examen-Panel (#161).
@@ -69,4 +69,67 @@ Deno.test("buildExamHazards: beide Ursachen stehen nebeneinander", () => {
         false,
         "Ohne Zeitpunkt darf kein leerer „Seit“-Satz entstehen",
     );
+});
+
+/**
+ * Das Warnband der Abgabe nennt die WLAN-Minuten und bleibt trotzdem
+ * beim „du kannst abgeben" (#166).
+ */
+
+Deno.test("formatDropoutNotice: ohne Dropout und ohne IP-Wechsel bleibt es leer", () => {
+    assertEquals(
+        formatDropoutNotice({
+            dropouts: 0,
+            missed_minutes: 0,
+            ip_change: false,
+        }),
+        undefined,
+    );
+});
+
+Deno.test("formatDropoutNotice: Minuten und Dropouts im Plural", () => {
+    const notice = formatDropoutNotice({
+        dropouts: 2,
+        missed_minutes: 4,
+        ip_change: false,
+    });
+    assertEquals(notice?.includes("4 Minuten"), true);
+    assertEquals(notice?.includes("2 Dropouts"), true);
+    assertEquals(
+        notice?.includes("Du kannst trotzdem abgeben"),
+        true,
+        "Das Band darf keine Sperre andeuten",
+    );
+});
+
+Deno.test("formatDropoutNotice: Einzahl wird korrekt gebeugt", () => {
+    const notice = formatDropoutNotice({
+        dropouts: 1,
+        missed_minutes: 1,
+        ip_change: false,
+    });
+    assertEquals(notice?.includes("1 Minute "), true);
+    assertEquals(notice?.includes("1 Dropout)"), true);
+});
+
+Deno.test("formatDropoutNotice: IP-Wechsel allein nennt keinen Dropout", () => {
+    const notice = formatDropoutNotice({
+        dropouts: 0,
+        missed_minutes: 0,
+        ip_change: true,
+    });
+    assertEquals(notice?.includes("IP-Adresse"), true);
+    assertEquals(notice?.includes("nicht im WLAN"), false);
+    assertEquals(notice?.includes("Du kannst trotzdem abgeben"), true);
+});
+
+Deno.test("formatDropoutNotice: beide Ursachen stehen nebeneinander", () => {
+    const notice = formatDropoutNotice({
+        dropouts: 3,
+        missed_minutes: 5,
+        ip_change: true,
+    });
+    assertEquals(notice?.includes("5 Minuten"), true);
+    assertEquals(notice?.includes("3 Dropouts"), true);
+    assertEquals(notice?.includes("IP-Adresse"), true);
 });
