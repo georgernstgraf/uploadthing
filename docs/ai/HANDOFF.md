@@ -9,7 +9,7 @@ Sub-Issues, formal verlinkt, Label `ready-for-agent`:
 
 | Issue | Thema | Severity |
 |---|---|---|
-| #168 | OPNsense-**Root**-API-Key im Arbeitsbaum (`.env`, 644) — rotieren, Datei weg | high |
+| #168 | OPNsense-**Root**-API-Key im Arbeitsbaum (`.env`, 644) — **Dateien entfernt 2026-11-01**, Rotation offen | high |
 | #169 | Lehrer-Anmeldung von der MAC lösen; keine E-Mail mehr aus `/ldap`, Rate-Limit | high |
 | #170 | Sitzungen an das Examen binden (Epoch, Ablauf, Logout), Marker fälschungssicher | high |
 | #171 | Upload-Größe **vor** dem Parsen prüfen, Content-Sniffing härten (`file-type` 16.5.4) | high |

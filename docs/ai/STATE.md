@@ -10,7 +10,10 @@ Architektur/tiefe Module), Tier *Small* (18,2k LOC, 65 Module), Werkzeuge
 dependency-cruiser/madge/jscpd/gitleaks/osv-scanner/semgrep plus
 Live-Prüfung gegen die laufende Instanz und ein echtes Examen.
 
-- **Sechs high:** #168 Root-API-Key der Sense weltlesbar in `.env` (644);
+- **Sechs high:** #168 Root-API-Key der Sense weltlesbar in `.env` (644) —
+  die Datei, `.env.local`, die `.bak`-Sicherung und die Debug-Logs sind
+  entfernt, `deno task test` liest aus `~/.config/uploadthing/test.env`
+  (600); die **Rotation auf der Sense steht noch aus**;
   #169 Admin-Übernahme über MAC-Spoofing, weil `/ldap` anonym E-Mail und
   Klasse liefert (live: 31 Treffer je 3-Zeichen-Präfix, 20/20 Anfragen
   ohne Rate-Limit); #170 Identität frei wählbar, Sitzungen serverseitig

@@ -1,7 +1,29 @@
 #!/bin/bash
 
 set -veuo pipefail
-source .env
+
+# Betriebs-/Testwerte kommen NIE aus dem Repo-Verzeichnis (#168): die
+# `.env` im Arbeitsbaum enthielt den OPNsense-Root-Key und die gültigen
+# Dienstpasswörter und war zudem 644. Reihenfolge:
+#   1. `$UPLOADTHING_TEST_ENV`, wenn gesetzt
+#   2. eine lokale `.env` im Repo-Verzeichnis (fremde Checkouts, CI)
+#   3. `~/.config/uploadthing/test.env` (600, dell)
+# `set +v` um das Sourcing: `-v` protokolliert sonst jede Zuweisung der
+# gesourcten Datei — so landeten Schlüssel in /tmp/146-*.log.
+ENV_FILE="${UPLOADTHING_TEST_ENV:-}"
+if [[ -z "$ENV_FILE" ]]; then
+	if [[ -f .env ]]; then ENV_FILE=.env; else ENV_FILE="$HOME/.config/uploadthing/test.env"; fi
+fi
+if [[ ! -f "$ENV_FILE" ]]; then
+	echo "Keine Env-Datei gefunden (weder \$UPLOADTHING_TEST_ENV, .env noch ~/.config/uploadthing/test.env)." >&2
+	exit 1
+fi
+set +v
+set -a
+source "$ENV_FILE"
+set +a
+set -v
+echo "Env-Datei: $ENV_FILE"
 
 # Kein MikroTik-Polling im Testlauf: der Dienst schreibt sonst echte
 # WLAN-Clients in die Test-Datenbank und die Tests werden nicht mehr

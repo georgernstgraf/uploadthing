@@ -15,6 +15,18 @@ only in the operator's head; it is now recorded here (see #132).
   Dev-`.env` im Repo). Nach einer Änderung an der Unit-Datei im Repo:
   `cp systemd/uploadthing.service ~/.config/systemd/user/ &&
   systemctl --user daemon-reload && systemctl --user restart uploadthing`.
+- **Es gibt keine `.env` mehr im Repo-Verzeichnis (#168).** Die alte Datei
+  war 644, enthielt den **OPNsense-Root-API-Key** (`page-all`) und die
+  gültigen Dienstpasswörter (`SERVICE_PW`, `TIK_PASSWORD`) — laufende
+  Geheimnisse in einem Verzeichnis, das jeder Backup, jede Kopie und jeder
+  `git add -f` mitnimmt. `deno task test` liest seine Werte jetzt aus
+  `~/.config/uploadthing/test.env` (Modus 600, Reihenfolge:
+  `$UPLOADTHING_TEST_ENV` → lokale `.env` → `test.env`). Diese Datei
+  enthält **keinen** OPNsense-Key und kein `TIK_PASSWORD`; der Testlauf
+  startet ohne Firewall- und MikroTik-Zugriff (das Skript setzt die
+  Variablen zusätzlich leer). Wer `deno task dev/start` ohne das Skript
+  startet, exportiert die Werte vorher:
+  `set -a; source ~/.config/uploadthing/test.env; set +a`.
 - **Port 443 ohne root:** User-Units können kein `AmbientCapabilities`
   setzen (der User-Manager hat keine Rechte). Stattdessen
   `/etc/sysctl.d/99-uploadthing-ports.conf` mit
