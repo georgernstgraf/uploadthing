@@ -4,6 +4,37 @@ Current status as of 2026-11-01.
 
 ## Current Focus
 
+**#164 — Forensikkarte, WLAN-Sperre, Unterlagen-Push — implementiert am
+2026-11-01, Issue offen (Deploy + Sichtprüfung ausstehend).**
+Vier Fehlerbilder aus dem laufenden Examen, alle datengetrieben statt per
+Zeit-Heuristik gelöst:
+
+- **Präsenz ist das Ereignis.** Jede neue Schüler-Präsenz publiziert
+  `cards` (nicht mehr nur der Identitätswechsel) — ein „Unbekannt"-Kärtchen
+  wird zum Namenskärtchen, auch wenn die IP gestern schon dieselbe Person
+  trug. Lehrpersonen sind ausgenommen (ihr eigener Panel-Request schreibt
+  eine Presence-Zeile — sonst rendert das Panel sich selbst), ebenso die
+  Presence-Zeile von `POST /upload` (die Abgabe meldet sich über
+  `card-<slug>`).
+- **WLAN-Sperre nur im laufenden Examen.** `canResubmit()` bekommt den
+  Exam-Start; eine Abgabe von vorher (etwa Mai) sperrt nichts mehr. Ohne
+  Exam-Zustand entscheidet die Sperre gar nicht.
+- **Unterlagen-Push.** `UNTERLAGEN_CHANNEL`, `event: unterlagen` auf der
+  bestehenden `/events/exam`-Verbindung, neues Fragment
+  `GET /angaben-panel` und `templates/angaben.hbs`; `static/events.js`
+  tauscht nur die Karte (`outerHTML`), mit In-Flight-Schutz und einem
+  Nachholen nach Reconnect.
+- **Knopf „Seit Exam-Start"** im Zeitfilter von `/admin/students`:
+  serverseitig mit `started_at` gerendert, `disabled` ohne laufendes oder
+  pausiertes Examen. Das Einrasten auf `spg_times` bleibt unverändert —
+  es gibt weder `ADMIN_DEFAULT_WINDOW_MS` noch eine Lücken-Heuristik.
+- Verifikation: `check`/`lint` grün, **462 Deno-Tests, 24 E2E-Tests**.
+- **Offen:** Deploy (nur außerhalb eines laufenden Examens — der Start
+  setzt `examstate` auf `stopped` und die Anmelde-Freigabe zurück) und die
+  Live-Sichtprüfung: Kärtchen mit Namen nach dem ersten Schüleraufruf,
+  Abgabe nach einer alten Abgabe, Unterlage hochladen → Angaben beim
+  Schüler ohne Reload.
+
 **#163 — Admin-Kärtchen als Push-Komponenten — deployt am 2026-11-01
 (03:28:43), Issue geschlossen, Sichtprüfung offen.**
 Fünf Commits (`ccd3468`, `f04b56f`, `4fd95b0`, `b37ca4d`, `61c5b09`): Scan-Achse
@@ -35,8 +66,9 @@ ohne Sitzung 401. `/admin/events` ist für Schüler 403; seit #163 sendet er
 für Lehrpersonen `stand` plus benannte Komponenten-Frames und `: ping` nach
 20 s (seit dem #163-Deploy ist `stand` im Betrieb bestätigt; `cards`,
 `card-<slug>` und `tik` brauchen eine echte Aktivität). Eine
-Lehrpersonen-Sitzung löst keinen Panel-Render aus (seit #163 strukturell:
-ihre Präsenz verschiebt keine Identität). Offen bleibt nur
+Lehrpersonen-Sitzung löst keinen Panel-Render aus (seit #164 per Rolle:
+die Präsenz einer Lehrperson ist nie eine Zeile des Schüler-Panels).
+Offen bleibt nur
 die **Sichtprüfung der Phase 1** im Panel (Checkliste in `HANDOFF.md`).
 
 **#162 — Namenssuche-Robustheit — erledigt am 2026-10-31.**
@@ -119,9 +151,9 @@ Das System läuft so, wie es das Epic beschrieben hat:
   höchstens eine Zeile pro (IP, User) je 30 s und meldet per Rückgabewert,
   ob es ein echter Insert war; `/static/*` schreibt gar keine Presence mehr
   (rund acht Asset-Requests pro Seite), und Lehrpersonen lösen kein
-  Ereignis aus (seit #163 strukturell: ihre eigene Präsenz verschiebt keine
-  Identität). Ohne diese drei Riegel löst der Admin-Render den
-  nächsten aus.
+  Ereignis aus (seit #164 per Rolle: ihre eigene Präsenz ist nie eine Zeile
+  des Schüler-Panels, und ihr Panel-Request schreibt selbst eine Zeile).
+  Ohne diese drei Riegel löst der Admin-Render den nächsten aus.
 - **SSE-Grundlage (#161).** `lib/event_hub.ts` (Kanäle, Seq, Listener, kein
   Event-Log), `lib/sse.ts` (eigener `Response` statt `streamSSE`, weil
   `Connection`/`Transfer-Encoding` über HTTP/2 verboten sind; Heartbeat

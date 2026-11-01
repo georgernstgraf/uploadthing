@@ -1,6 +1,34 @@
-Last updated: 2026-11-01 (#163 deployt und geschlossen; Sichtprüfung offen).
+Last updated: 2026-11-01 (#164 implementiert und grün; Deploy und Sichtprüfung offen).
 
 ## Sofort weiter mit
+
+**#164 ist implementiert, aber noch nicht deployt.** `check`/`lint` grün,
+**462 Deno-Tests, 24 E2E-Tests**. Kein `ADMIN_DEFAULT_WINDOW_MS`, keine
+Lücken-Heuristik: jede neue Schüler-Präsenz publiziert `cards`
+(Lehrpersonen und `POST /upload` ausgenommen), die WLAN-Sperre gilt nur im
+laufenden Examen, und Unterlagen-Änderungen laufen als `event: unterlagen`
+über `/events/exam`. Dazu der Knopf „Seit Exam-Start" im Zeitfilter von
+`/admin/students` (serverseitig mit `started_at`, deaktiviert ohne Examen).
+
+1. **Deploy außerhalb eines laufenden Examens** (`systemctl --user restart
+   uploadthing`): der Start setzt `examstate` auf `stopped` und die
+   Anmelde-Freigabe zurück. Danach `systemctl --user status uploadthing`
+   und `journalctl --user -u uploadthing -n 20` prüfen (kein
+   `stop-sigterm`).
+2. **Sichtprüfung mit frischem Examen:**
+   - Panel offen lassen, Schülerin ruft ihre Seite erstmals am Tag auf →
+     Kärtchen erscheint mit Namen, ohne Reload.
+   - Abgabe nach einer alten (Mai-)Abgabe → Erfolg + „Abgabe"-Badge ≤ 1 s,
+     **kein** Panel-Vollrender.
+   - Lehrperson lädt eine Unterlage hoch → Angaben-Karte beim Schüler
+     ohne Reload; Löschen tut dasselbe.
+   - Knopf „Seit Exam-Start": während des Examens aktiv, sonst deaktiviert;
+     ein Klick setzt Startzeit und URL (`starttime=…`) und rendert das
+     Panel.
+3. Doku ist nachgezogen (`DECISIONS.md` drei Einträge vom 2026-11-01,
+   `PITFALLS`, `DOMAIN`, `CONVENTIONS`, `ARCHITECTURE`, `STATE`).
+
+## Aus #163 (weiterhin offen)
 
 **#163 ist deployt (2026-11-01, 03:28:43).** Der Neustart brauchte unter 1 s
 (kein `stop-sigterm`), das Journal zeigt keinen Watchdog- oder
@@ -132,6 +160,25 @@ Klick, Badge ohne Reload, offenes Detail friert ein).
 
 ## Was in dieser Session passiert ist
 
+- **#164: Forensikkarte ohne Heuristik, WLAN-Sperre im Examen,
+  Unterlagen-Push, „Seit Exam-Start".** `middleware/session.ts` publiziert
+  `cards` bei `presence.inserted && !is_admin` (Ausnahme `POST /upload`);
+  `service/user.ts` ebenso bei jeder neuen Anmelde-Präsenz.
+  `service/abgaben.canResubmit()` bekam `examStartedAt` und prüft nur
+  Abgaben im laufenden Examen; `routes/upload.ts` liefert
+  `service.exam.getState()?.started_at`. Neuer `UNTERLAGEN_CHANNEL`,
+  `publishUnterlagenChanged()`/`subscribeUnterlagen()`, Publikation in
+  `service/unterlagen.ts`; `routes/events.ts` schreibt `event: unterlagen`
+  auf dem bestehenden Exam-Stream. Neues `templates/angaben.hbs` (Partial
+  in `home.hbs`, Wurzel `#angaben-panel`), `GET /angaben-panel`, und
+  `static/events.js` tauscht nur die Karte (`outerHTML`, In-Flight-Schutz,
+  ein Nachholen nach Reconnect). `templates/admin.hbs` bekam den Knopf
+  `#admin-exam-start` samt Alpine-Methode `useExamStart()`; die
+  Startwerte rendert `routes/admin.ts` aus `started_at`. Tests: 10 neue
+  Deno-Tests (Middleware-Präsenz ×3, `canResubmit` ×3, Unterlagen-Kanal
+  ×2, `register`, `/angaben-panel`, `event: unterlagen`, Knopf,
+  Upload-Regression) und 2 E2E-Tests. Verifikation: `check`/`lint` grün,
+  **462 Deno-Tests, 24 E2E-Tests**.
 - **#163: Admin-Kärtchen als Push-Komponenten (vier Commits).**
   `ccd3468` Scan-Achse `tikscan` (Migration `0003`, Backfill aus
   `DISTINCT ipfact.seen`), `is_stale`/`missed_count`/`canResubmit()` aus

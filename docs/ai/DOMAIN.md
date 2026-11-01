@@ -8,7 +8,7 @@ This application supports supervised exam workflows where students identify them
 
 - `users`: known identities, synchronized from LDAP and stored locally.
 - `registrations`: explicit registration actions (identity → machine IP); the audit trail of "I logged in here".
-- `cookiepresents`: every identity statement from an IP — a request with a valid session cookie **and** the registration itself (`service/user.register()` writes both rows with the same `at`, #163). At most one row per (IP, user) per 30 s, none for `/static/*`. This is the sole attribution source for the card, role grouping and sorting.
+- `cookiepresents`: every identity statement from an IP — a request with a valid session cookie **and** the registration itself (`service/user.register()` writes both rows with the same `at`, #163). At most one row per (IP, user) per 30 s, none for `/static/*`. This is the sole attribution source for the card, role grouping and sorting. Every **new** row of a student is an admin-panel event (#164): a card that read "unknown" becomes a named card even without an identity change. Teacher rows and the row written by `POST /upload` stay silent (feedback loop / "one submission, one card").
 - `tikscan`: the scan axis (#163): one row per completed MikroTik poll, including polls without a single visible client. `ipfact` holds the sightings per scan.
 - `ipfact`: sightings of active IP addresses and their MAC address during an exam window (polled from the MikroTik; the MAC column is the basis for later MAC-based admin approval).
 - `abgaben`: submitted files and their metadata.
@@ -24,7 +24,7 @@ This application supports supervised exam workflows where students identify them
 5. While an exam window is open, non-teachers cannot log in — the name on the submission must not change mid-exam. Teachers are exempt and can switch the login permission on for everybody else (a switch, not a time window, #161); the switch resets on exam start and exam end.
 6. The authenticated user can access `unterlagen` and upload an exam file; the form stays in place and the success message appears as a toast.
 7. Teachers use `/admin/students` to correlate sightings, scans, cookie presence, anomalies, and submissions, and `/admin/application` for runtime administration settings.
-8. Exam state and admin activity reach the browser as server push (SSE): the submission panel and countdown follow the `exam` channel, the admin page follows the `activity` channel (#161). Since #163 that channel carries **components** (`cards`, `card-<slug>`, `tik`) instead of reasons, plus a plain-text `stand` frame; the browser binds them with the vendored `htmx-ext-sse`. The database stays the truth; the push only says *which component* changed.
+8. Exam state, admin activity and material changes reach the browser as server push (SSE): the submission panel and countdown follow the `exam` channel, the admin page follows the `activity` channel (#161), and the material card follows `unterlagen` (#164). Since #163 the activity channel carries **components** (`cards`, `card-<slug>`, `tik`) instead of reasons, plus a plain-text `stand` frame; the browser binds them with the vendored `htmx-ext-sse`. The database stays the truth; the push only says *which component* changed — `unterlagen` carries no payload, the page fetches `GET /angaben-panel`.
 
 ## Presence, Scans And The "Nicht anwesend" Badge
 
@@ -38,6 +38,8 @@ This application supports supervised exam workflows where students identify them
 - These are independent timelines; poll timestamps and submission timestamps should not be assumed to align.
 - The ipfact table records per-poll IP/MAC sightings; `tikscan` records the poll itself, so a poll without a single visible client is still a scan (#163).
 - A student's IP must appear in `ipfact` at every scan of `tikscan` since their last submission for a resubmission to be allowed (`canResubmit()`); an empty scan counts against them.
+- Since #164 that check only applies to submissions made **inside the running exam**. A submission from before the exam start protects nothing — otherwise a student whose last upload was months ago (and who was rightly absent since) could not submit in the current exam. Without an exam state the guard does not decide at all; the upload itself is gated by the exam window.
+- Push and events do not replace the data: a new presence row is the event, not a time-window heuristic. A card showing "unknown" only changes when a row exists for that IP in the requested range.
 - The Tik credentials are read-only and live only in `.env`; there is no HTTP endpoint, no IP whitelist and no write path to the Tik.
 - The admin forensics page distinguishes "Tik not reachable" from "Tik reachable but no clients connected", so a silent polling outage cannot look like an empty WLAN.
 

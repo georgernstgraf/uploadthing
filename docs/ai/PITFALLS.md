@@ -216,13 +216,22 @@
   Login-Pfad „aufräumt" und die Presence dort der neuen Identität
   zuschreibt, attributiert den Wechsel doppelt und verliert den alten
   Stand.
-- **Nur `identityChanged` ist ein Ereignis.** `recordPresence()` liefert
-  `{inserted, identityChanged}`; die 30-s-Dedupe setzt beides auf `false`,
-  ein Insert desselben Users ist `inserted: true` mit
-  `identityChanged: false`. Publiziert wird nur `cards` beim Identitätswechsel.
-  Eine Ausnahme für Lehrpersonen braucht es nicht mehr: deren eigene Präsenz
-  ändert die neueste Identität nicht, die Rückkopplung ist strukturell
-  ausgeschlossen.
+- **Jede neue Präsenz eines Schülers ist ein Ereignis (#164).**
+  `recordPresence()` liefert `{inserted, identityChanged}`; die 30-s-Dedupe
+  setzt beides auf `false`. Publiziert wird `cards` bei `inserted` —
+  **außer** für Lehrpersonen (deren eigener Panel-Request schreibt selbst
+  eine Zeile; sonst rendert das Panel sich im 30-s-Takt selbst neu) und
+  **außer** für die Presence-Zeile von `POST /upload` (die Abgabe meldet
+  sich über `card-<slug>`). Wer wieder auf `identityChanged` zurückgeht,
+  baut den Fehler aus #164 zurück: eine Schülerin, die am Vortag schon auf
+  derselben IP war, erscheint dann auf dem offenen Panel weiter als
+  „Unbekannt".
+- **Die WLAN-Sperre gilt nur im laufenden Examen (#164).** `canResubmit()`
+  bekommt den Exam-Start und prüft nur Abgaben, die **nach** ihm liegen.
+  Der Aufrufer ist `routes/upload.ts` mit
+  `service.exam.getState()?.started_at ?? null`; wer ohne dritten Parameter
+  aufruft, prüft gegen die Vorgeschichte und sperrt zu Recht unschuldige
+  Spätankömmlinge.
 - Current attribution for the admin forensics page comes from `cookiepresents`, while `registrations` remains a history of explicit registration actions.
 - Runtime code should no longer depend on `forensic_registrations`; the table no longer exists in the schema, and `cookiepresents` carries the presence.
 - Do not show known-IP card counts from total `ipfact` rows for an IP; the card count must come from the selected time window, currently `seen_at_desc.length`.
@@ -533,15 +542,20 @@
   nur frisch. Der Bus transportiert nur Ticks.
 - **Admin-Aktivität nur über `noteAdminActivity(component)`** melden
   (1-s-Fenster, deduplizierte Komponenten; `cards` schluckt `card-*`
-  desselben Fensters, #163). Presence schreibt nur, was die neueste
-  Identität einer IP verschiebt: `recordPresence()` liefert
-  `{inserted, identityChanged}`, die 30-s-Dedupe setzt beides auf `false`,
-  und ein Insert desselben Users ist `inserted: true` mit
-  `identityChanged: false`. Nur `identityChanged` publiziert (`cards`,
-  seit #163; vorher `cookie`). Eine Ausnahme für Lehrpersonen braucht es
-  nicht mehr: die eigene Präsenz ändert die neueste Identität nicht, die
-  Rückkopplung ist strukturell ausgeschlossen. `/static/*` schreibt keine
-  Presence. Ohne diese Riegel löst der Admin-Render den nächsten aus.
+  desselben Fensters, #163). Presence publiziert bei jedem Insert, aber
+  **rollenabhängig** (#164): `recordPresence()` liefert
+  `{inserted, identityChanged}`, die 30-s-Dedupe setzt beides auf `false`.
+  Die Session-Middleware meldet `cards` bei `inserted && !is_admin`; ohne
+  die Rollen-Grenze rendert das Panel sich selbst neu (der Panel-Request
+  schreibt eine Presence-Zeile), ohne die Pfad-Ausnahme für `POST /upload`
+  wird „Eine Abgabe, ein Kärtchen" zum Vollrender. `/static/*` schreibt
+  keine Presence.
+- **Die Angaben-Karte ist ein eigenes Fragment (#164).** `GET
+  /angaben-panel` liefert nur `#angaben-panel` (`templates/angaben.hbs`),
+  und `static/events.js` tauscht bei `event: unterlagen` genau diese Karte
+  per `outerHTML`. Ein Vollrender von `GET /` würde die gewählte Datei im
+  Abgabe-Formular verlieren; der Endpunkt ist absichtlich auch ohne
+  Sitzung erreichbar (die Karte steht auf der anonymen Startseite).
 - **Ein Kärtchen-Fragment braucht `hx-disinherit` auf dem Grid-Wrapper**
   (#163). Die innere Karte trägt ihr eigenes `hx-get`/`hx-target`/
   `hx-trigger` für das IP-Detail-Modal und würde sonst `hx-select`,

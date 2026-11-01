@@ -196,8 +196,24 @@
   den nächsten Tick aus.
 - **Importrichtung `events → exam`, nie umgekehrt.** `service/exam.ts`
   publiziert deshalb direkt über `lib/event_hub.ts`; die Kanalnamen
-  (`EXAM_CHANNEL`, `ACTIVITY_CHANNEL`) liegen im Bus und werden von
-  `service/events.ts` nur re-exportiert.
+  (`EXAM_CHANNEL`, `ACTIVITY_CHANNEL`, `UNTERLAGEN_CHANNEL`) liegen im Bus
+  und werden von `service/events.ts` nur re-exportiert.
+- **Presence-Ereignisse entscheidet die Rolle, nicht ein Zeitfenster
+  (#164).** Die Session-Middleware publiziert `cards` bei **jedem** neuen
+  Insert eines Schülers (`presence.inserted && !is_admin`). Lehrpersonen
+  sind ausgenommen, weil ihr eigener Panel-Request selbst eine
+  Presence-Zeile schreibt — sonst rendert das Panel sich im 30-s-Takt
+  selbst. `POST /upload` ist ebenfalls ausgenommen: die Abgabe meldet sich
+  über `card-<slug>`. Wer eine Lücken-Heuristik („lange Abwesenheit")
+  einführt, baut eine zweite Wahrheit neben den Daten ein; die Insert-Zeile
+  ist das Ereignis.
+- **Die Angaben-Karte ist ein eigenes Fragment (#164).**
+  `GET /angaben-panel` liefert nur `#angaben-panel`; `event: unterlagen`
+  läuft auf der bestehenden `/events/exam`-Verbindung und wird in
+  `static/events.js` zu einem `htmx.ajax("GET", "/angaben-panel", …)` mit
+  `swap: "outerHTML"`, In-Flight-Schutz und genau **einem** Nachholen nach
+  einem Reconnect (der erste `open` eines neuen Streams holt nichts). Kein
+  Initialframe: den Stand kennt die Seite aus ihrem Rendering.
 - **Erst abonnieren, dann den ersten Frame schreiben.** Sonst geht ein Tick
   zwischen beiden Schritten verloren; die Schreibkette in `lib/sse.ts` hält
   die Reihenfolge trotzdem.

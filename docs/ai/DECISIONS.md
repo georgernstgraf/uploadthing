@@ -1,5 +1,68 @@
 # DECISIONS
 
+## 2026-11-01: Präsenz ist das Ereignis, keine Zeitfenster-Heuristik (#164)
+
+- **Entscheidung:** Jede **neue** Präsenzzeile eines Schülers publiziert
+  `cards` — nicht mehr nur ein Identitätswechsel. `PresenceResult` bleibt
+  bei `{inserted, identityChanged}`; die Middleware entscheidet über
+  `inserted`. Zwei Fälle bleiben absichtlich still:
+  1. die Präsenz einer **Lehrperson** (`is_admin`), 2. die Presence-Zeile,
+     die `POST /upload` schreibt.
+- **Warum keine `longAbsence`-Heuristik („Lücke > N Minuten"):** Die Daten
+  sagen bereits, wann jemand auftaucht — die Insert-Zeile selbst. Ein
+  Schwellwert hätte nur den Ereignisstrom gedämpft, aber eine zweite
+  Wahrheit eingeführt (Fensterkonstante, Grenzfälle, Invariantentest).
+- **Warum die Lehrperson ausgenommen ist:** Jeder Admin-Request schreibt
+  selbst eine Presence-Zeile (Session-Middleware). Würde sie publizieren,
+  rendert das offene Panel sich im 30-s-Takt selbst neu — die Rückkopplung,
+  die #163 strukturell ausgeschlossen hat. Die Grenze ist deshalb die
+  **Rolle** (eine Lehrperson ist nie eine Zeile des Schüler-Panels), nicht
+  ein Zeitabstand.
+- **Warum die Abgabe-Zeile still bleibt:** `recordSubmission` meldet
+  `card-<slug>`; ein zusätzliches `cards` würde „Eine Abgabe, ein
+  Kärtchen" brechen. Die Presence-Zeile der Abgabe wird weiterhin
+  geschrieben (Präsenz ist Präsenz), nur nicht als Ereignis gemeldet.
+- **`spg_times`-Einrasten bleibt.** Der Default-Zeitraum von
+  `/admin/students` rastet weiter auf die üblichen Schulstunden ein; für
+  die Forensik eines laufenden Examens gibt es stattdessen den Knopf
+  **„Seit Exam-Start"** im Zeitfilter (serverseitig mit `started_at`
+  gerendert, `disabled` ohne laufendes/pausiertes Examen). Damit braucht
+  es weder `ADMIN_DEFAULT_WINDOW_MS` noch eine Änderung an
+  `parseAdminRange`. Bekannte Grenze: der Knopfzustand stammt vom
+  Seitenaufbau; wer das Panel vor dem Exam-Start öffnet, sieht ihn erst
+  nach dem nächsten vollen Render aktiv.
+
+## 2026-11-01: Die WLAN-Sperre gilt nur im laufenden Examen (#164)
+
+- **Entscheidung:** `canResubmit(userId, currentIp, examStartedAt)` prüft
+  nur, wenn die letzte Abgabe **im laufenden Examen** liegt
+  (`abgabe.at >= examStartedAt`). Ohne Exam-Zustand (`null`), ohne Abgabe
+  oder bei einer Abgabe von vor dem Exam-Start ist die Abgabe frei.
+- **Warum:** Die alte Regel prüfte ab der letzten Abgabe **überhaupt** —
+  im Betrieb sperrte sie eine Schülerin, deren letzte Abgabe im Mai lag
+  und die seitdem (richtig) in keinem Scan auftauchte, obwohl im laufenden
+  Examen nichts fehlte. Die Regel schützt den laufenden Versuch, nicht die
+  Vorgeschichte.
+- **Bewusst nicht gewählt:** `max(letzte Abgabe, Exam-Start)` als
+  Prüfbeginn (erzeugt Fehlalarm für Spätankömmlinge), MAC-basierte Prüfung
+  (bleibt Option), separate 30-Minuten-Konstante.
+
+## 2026-11-01: Unterlagen-Änderungen sind ein eigener Push-Kanal (#164)
+
+- **Entscheidung:** `UNTERLAGEN_CHANNEL` im Bus; `service/unterlagen.ts`
+  publiziert nach erfolgreichem `upload`, `remove` und `removeAll`
+  (nur wenn `removed > 0`). Der Frame `event: unterlagen` läuft über die
+  **bestehende** `/events/exam`-Verbindung (kein zweiter Stream pro
+  Schüler); `static/events.js` holt dann `GET /angaben-panel` und tauscht
+  nur `#angaben-panel` (`outerHTML`), mit In-Flight-Schutz und einmaligem
+  Nachholen nach einem **Reconnect** (nicht beim Erstverbinden).
+- **Warum ein eigenes Fragment:** `buildStartContent` liest Unterlagen,
+  Abgabe-Panel und Seite; ein Vollrender würde eine gewählte Datei im
+  Abgabe-Formular verlieren. Die Karte ist ein eigenes Partial
+  (`templates/angaben.hbs`) mit Wurzel `#angaben-panel`.
+- **Kein Initialframe:** den Stand kennt die Seite aus ihrem Rendering;
+  der Kanal transportiert wie `exam` nur Ticks.
+
 ## 2026-11-01: Der Admin-Kanal transportiert Komponenten (#163)
 
 - **Entscheidung:** Der `activity`-Kanal überträgt keine „Gründe" mehr,
