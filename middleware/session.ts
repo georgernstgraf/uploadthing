@@ -213,27 +213,6 @@ export const remoteIPMiddleware = createMiddleware<
                 session.refreshTimestamp();
             }
 
-            if (!isStaticAsset) {
-                const presence = await service.cookiepresents.recordByEmail(
-                    session.email,
-                    remoteip,
-                );
-
-                // Nur ein Identitätswechsel ist ein Ereignis (#163): die
-                // Presence-Zeile desselben Users verlängert nur dessen
-                // Anwesenheit, die Karte dieser IP bleibt unverändert.
-                //
-                // Eine Ausnahme für Lehrpersonen braucht es nicht mehr.
-                // Früher löste jeder Presence-Insert eines Admins den
-                // nächsten Admin-Render und damit den nächsten Insert aus;
-                // heute schreibt die eigene Präsenz keine neue Identität
-                // und publiziert deshalb nichts — die Rückkopplung ist
-                // strukturell ausgeschlossen, nicht per Rolle.
-                if (presence.identityChanged) {
-                    events.noteAdminActivity("cards");
-                }
-            }
-
             // Admin-Rechte hängen allein an der LDAP-Klasse. Die
             // Gerätefreigabe per MAC (#147) greift beim Login
             // (routes/auth.ts); sie ist eine Zusatzbedingung für
@@ -242,6 +221,37 @@ export const remoteIPMiddleware = createMiddleware<
             // ausgefallenes Tik-Polling darf eine laufende Admin-Sitzung
             // nicht stillschweigend entziehen.
             is_admin = service.user.isTeacher(remoteuser);
+
+            if (!isStaticAsset) {
+                const presence = await service.cookiepresents.recordByEmail(
+                    session.email,
+                    remoteip,
+                );
+
+                // Jede **neue** Präsenz eines Schülers ist ein Ereignis
+                // (#164): sie kann ein „Unbekannt"-Kärtchen in ein
+                // Namenskärtchen verwandeln, auch wenn sich die Identität
+                // der IP nicht ändert. Die Daten entscheiden, keine
+                // Zeitdifferenz-Heuristik; das 30-s-Dedup in
+                // `recordByEmail` begrenzt die Menge.
+                //
+                // Zwei Fälle bleiben absichtlich still:
+                // 1. Die Präsenz einer Lehrperson ist nie eine Zeile des
+                //    Panels — und jeder Panel-Request schreibt selbst eine
+                //    Presence-Zeile. Würde sie publizieren, rendert das
+                //    Panel sich alle 30 s selbst neu (die Rückkopplung aus
+                //    #163), deshalb die Rollen-Grenze statt eines
+                //    Schwellwerts.
+                // 2. Die Zeile, die der Abgabe-POST schreibt: die Abgabe
+                //    meldet sich selbst über `card-<slug>` (#163); ein
+                //    zusätzliches `cards` würde „Eine Abgabe, ein
+                //    Kärtchen" brechen.
+                const isUploadPost = c.req.method === "POST" &&
+                    c.req.path === "/upload";
+                if (presence.inserted && !is_admin && !isUploadPost) {
+                    events.noteAdminActivity("cards");
+                }
+            }
         }
     }
 

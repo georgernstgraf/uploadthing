@@ -27,8 +27,15 @@ eventsRouter.get("/events/exam", (c) => {
             // Erst abonnieren, dann den ersten Frame bauen: ein Tick
             // zwischen beiden Schritten kann so nicht verloren gehen
             // (der erste Frame entsteht nach ihm und ist damit frisch).
-            const unsubscribe = events.subscribeExam(() => {
+            const unsubscribeExam = events.subscribeExam(() => {
                 stream.write(formatEvent("exam", events.snapshotExam()));
+            });
+
+            // Zweites Abo auf derselben Verbindung (#164): die
+            // Angaben-Karte wird nur von der Lehrperson geändert, die
+            // Schüler-Seite holt sich ihr Fragment beim Ereignis.
+            const unsubscribeUnterlagen = events.subscribeUnterlagen(() => {
+                stream.write(formatEvent("unterlagen", null));
             });
 
             // Beim Verbinden sofort der vollständige Zustand. Der
@@ -37,9 +44,15 @@ eventsRouter.get("/events/exam", (c) => {
             // unter einem laufenden Read schließt. Die Schreibkette in
             // `lib/sse.ts` hält die Reihenfolge, auch wenn mehrere Ticks
             // schnell hintereinander kommen.
+            //
+            // Die Unterlagen brauchen keinen Startframe: den Stand kennt
+            // die Seite aus ihrem eigenen Rendering.
             stream.write(formatEvent("exam", events.snapshotExam()));
 
-            return unsubscribe;
+            return () => {
+                unsubscribeExam();
+                unsubscribeUnterlagen();
+            };
         },
     });
 });

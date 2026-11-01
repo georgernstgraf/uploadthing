@@ -24,6 +24,12 @@
 export const EXAM_CHANNEL = "exam";
 /** Kanal für die Admin-Aktivität (nur Lehrpersonen). */
 export const ACTIVITY_CHANNEL = "activity";
+/**
+ * Kanal für die Angaben-Karte auf der Startseite (#164). Die Unterlagen
+ * werden von der Lehrperson verwaltet, die Schüler-Seite zieht nach —
+ * ohne Reload und ohne eigenes Abo pro Schüler.
+ */
+export const UNTERLAGEN_CHANNEL = "unterlagen";
 
 export type HubEvent<T = unknown> = {
     channel: string;

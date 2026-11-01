@@ -174,6 +174,15 @@ adminRouter.get("/students", async (c) => {
     ) < time_cutoff_ms;
     const endtimeInFuture = endDateTime.getTime() > new Date().getTime();
 
+    // Startzeit des Examens für den „Seit Exam-Start"-Knopf (#164):
+    // dieselbe Quelle, aus der `/upload` die Abgabe-Sperre ableitet.
+    // Aktiv ist er nur, solange ein Examen läuft oder pausiert ist.
+    const examState = service.exam.getState();
+    const examStartedAt = examState?.started_at ?? null;
+    const examActive = examStartedAt !== null &&
+        (examState?.status === "running" || examState?.status === "paused");
+    const examStart = examActive ? examStartedAt : null;
+
     const { registered, unregistered, teacher_ips, anomalies, range_first_seen, range_last_seen } = await service.ipadmin.for_range(
         startDateTime,
         endDateTime,
@@ -186,6 +195,9 @@ adminRouter.get("/students", async (c) => {
         endtime,
         enddate,
         spg_times: config.spg_times,
+        exam_active: examActive,
+        exam_startdate: examStart ? localDateString(examStart) : "",
+        exam_starttime: examStart ? localTimeString(examStart) : "",
         // Kärtchen-Kontext serverseitig (#163): eine Wahrheit für Liste
         // und Fragment-Endpunkt.
         ips_with_name: registered.map((card) => buildStudentCard(card, range)),

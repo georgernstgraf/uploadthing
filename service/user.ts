@@ -47,10 +47,11 @@ export async function register(userData: UserType, ip: string) {
         at,
     );
 
-    // Neue Registrierung ist eine reine Präsenzaussage (#163): sie
-    // verschiebt höchstens die Identität dieser IP, nicht das Panel.
-    // Erst der Identitätswechsel braucht einen Render der Karten.
-    if (presence.identityChanged) {
+    // Eine neue Präsenzzeile der Anmeldung ist ein Karten-Ereignis (#164):
+    // sie kann die Identität dieser IP verschieben oder ein „Unbekannt"-
+    // Kärtchen mit einem Namen füllen. Innerhalb des 30-s-Fensters schreibt
+    // `recordPresence` keine Zeile — dann gibt es auch nichts zu melden.
+    if (presence.inserted) {
         noteAdminActivity("cards");
     }
 }

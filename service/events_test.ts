@@ -326,6 +326,37 @@ Deno.test("jeder Tik-Poll meldet 'tik' — Erfolg und Ausfall (#161)", async () 
     }
 });
 
+Deno.test("publishUnterlagenChanged tickt auf dem Unterlagen-Kanal (#164)", () => {
+    hub.resetHub();
+    try {
+        let ticks = 0;
+        const payloads: unknown[] = [];
+        const unsubscribe = events.subscribeUnterlagen(() => ticks++);
+        const unsubscribeHub = hub.subscribe(
+            events.UNTERLAGEN_CHANNEL,
+            (event) => payloads.push(event.payload),
+        );
+
+        assertEquals(events.UNTERLAGEN_CHANNEL, "unterlagen");
+
+        events.publishUnterlagenChanged();
+        assertEquals(ticks, 1);
+        assertEquals(payloads, [null]);
+
+        // Die Kanäle sind getrennt: ein Exam-Tick weckt die Angaben-Karte
+        // nicht und umgekehrt.
+        events.publishExamChanged();
+        assertEquals(ticks, 1);
+
+        unsubscribe();
+        unsubscribeHub();
+        events.publishUnterlagenChanged();
+        assertEquals(ticks, 1);
+    } finally {
+        hub.resetHub();
+    }
+});
+
 Deno.test("publishExamChanged schickt einen Tick ohne Payload", () => {
     hub.resetHub();
     try {

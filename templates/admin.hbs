@@ -33,6 +33,16 @@
                     </div>
                 </div>
                 <div class="col-12 col-sm-auto">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary w-100 text-nowrap"
+                            id="admin-exam-start"
+                            data-startdate="{{exam_startdate}}"
+                            data-starttime="{{exam_starttime}}"
+                            title="Startzeit auf den Examens-Start setzen — nur während eines Examens möglich."
+                            @click="useExamStart($event)"
+                            {{#unless exam_active}}disabled{{/unless}}>Seit Exam-Start</button>
+                </div>
+                <div class="col-12 col-sm-auto">
                     <div class="form-check form-switch d-flex align-items-center gap-2 mb-0 py-1">
                         <input class="form-check-input m-0"
                                type="checkbox"
@@ -113,6 +123,35 @@
 
                     if (!endtimeValue && !enddateValue) {
                         this.disableEndFields();
+                    }
+                },
+
+                // „Seit Exam-Start" (#164): die Startfelder kommen
+                // serverseitig gerendert am Knopf mit — ein eigener
+                // Zeit-Berechnungsweg im Browser entfällt. Der Submit läuft
+                // über htmx am Formular, wie beim Klick auf „Suchen".
+                useExamStart(event) {
+                    const button = event && event.currentTarget;
+                    const form = button && button.closest
+                        ? button.closest('form')
+                        : null;
+                    if (!button || !form || button.disabled) {
+                        return;
+                    }
+
+                    const startdate = form.querySelector('[name="startdate"]');
+                    const starttime = form.querySelector('[name="starttime"]');
+                    if (starttime) {
+                        starttime.value = button.dataset.starttime || "";
+                    }
+                    if (startdate) {
+                        startdate.value = button.dataset.startdate || "";
+                    }
+
+                    if (typeof window.htmx !== "undefined") {
+                        window.htmx.trigger(form, "submit");
+                    } else {
+                        form.requestSubmit();
                     }
                 },
 

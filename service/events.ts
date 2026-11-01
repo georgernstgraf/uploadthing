@@ -11,13 +11,17 @@
  */
 
 import * as hub from "../lib/event_hub.ts";
-import { ACTIVITY_CHANNEL, EXAM_CHANNEL } from "../lib/event_hub.ts";
+import {
+    ACTIVITY_CHANNEL,
+    EXAM_CHANNEL,
+    UNTERLAGEN_CHANNEL,
+} from "../lib/event_hub.ts";
 import * as exam from "./exam.ts";
 import type { ExamStatus } from "./exam.ts";
 
 // Die Kanalnamen gehören dem Bus (Zyklusfreiheit, siehe
 // `lib/event_hub.ts`) und werden hier nur weitergereicht.
-export { ACTIVITY_CHANNEL, EXAM_CHANNEL };
+export { ACTIVITY_CHANNEL, EXAM_CHANNEL, UNTERLAGEN_CHANNEL };
 
 /**
  * Mindestabstand zwischen zwei Admin-Events. Bewusst keine
@@ -164,6 +168,24 @@ export function noteAdminActivity(component: ActivityComponent): void {
 /** Hört auf Exam-Änderungen; die Rückgabe meldet ab. */
 export function subscribeExam(listener: () => void): () => void {
     return hub.subscribe<null>(EXAM_CHANNEL, () => listener());
+}
+
+/**
+ * Meldet, dass sich die Unterlagen (Angaben) geändert haben (#164).
+ *
+ * Wie beim Exam-Kanal nur ein Tick ohne Payload: der Empfänger holt die
+ * Wahrheit selbst (seinen Fragment-Endpunkt `GET /angaben-panel`). Die
+ * Aufrufer sind `service/unterlagen.ts` (Upload, Löschen einzeln, Löschen
+ * aller) — nicht der HTTP-Router, damit auch ein späterer Aufrufer ohne
+ * Umweg über die Admin-Seite meldet.
+ */
+export function publishUnterlagenChanged(): void {
+    hub.publish(UNTERLAGEN_CHANNEL, null);
+}
+
+/** Hört auf Unterlagen-Änderungen; die Rückgabe meldet ab. */
+export function subscribeUnterlagen(listener: () => void): () => void {
+    return hub.subscribe<null>(UNTERLAGEN_CHANNEL, () => listener());
 }
 
 /** Hört auf Admin-Aktivität; die Rückgabe meldet ab. */

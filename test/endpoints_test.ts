@@ -8,7 +8,7 @@ import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
 import * as usersRepo from "../repo/users.ts";
-import { dateString, timeString } from "../lib/timefunc.ts";
+import { dateString, localDateString, timeString } from "../lib/timefunc.ts";
 import {
     LOCAL_TEST_IP,
     clearExamState,
@@ -18,6 +18,7 @@ import {
     seedExamState,
     seedNoAnomaliesScenario,
     seedScan,
+    seedSubmission,
     upsertFixtureUser,
 } from "./helpers/forensics_fixture.ts";
 
@@ -73,6 +74,24 @@ Deno.test("GET / - Security-Header", async () => {
         res.headers.get("content-security-policy"),
         "upgrade-insecure-requests",
     );
+});
+
+Deno.test("GET /angaben-panel: nur die Angaben-Karte (#164)", async () => {
+    const res = await fetch(`${BASE_URL}/angaben-panel`);
+    assertEquals(res.status, 200);
+    assertEquals(res.headers.get("content-type")?.includes("text/html"), true);
+    const html = await res.text();
+
+    // Eigenes Fragment: die Karte, aber weder Abgabe-Panel noch Shell.
+    assertEquals(html.includes('id="angaben-panel"'), true);
+    assertEquals(html.includes('id="angaben-list"'), true);
+    assertEquals(html.includes('id="abgabe-panel"'), false);
+    assertEquals(html.includes("<html"), false);
+
+    // Dieselbe Karte steht als Partial auf der Startseite.
+    const home = await (await fetch(`${BASE_URL}/`)).text();
+    assertEquals(home.includes('id="angaben-panel"'), true);
+    assertEquals(home.includes('id="angaben-list"'), true);
 });
 
 Deno.test("GET /admin/logs - Admin logs", async () => {
@@ -446,6 +465,86 @@ Deno.test("GET /events/exam: 401 ohne Sitzung, 200 mit sofortigem Snapshot (#161
     }
 });
 
+Deno.test("GET /events/exam: Unterlagen-Änderung kommt als eigener Frame (#164)", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const teacherEmail = `unterlagen-events-${suffix}@example.com`;
+    const filename = `events-angaben-${suffix}.md`;
+    const target = `${config.UNTERLAGEN_DIR}/${filename}`;
+    await upsertFixtureUser({
+        email: teacherEmail,
+        name: "Unterlagen Events",
+        klasse: "LehrendeR",
+    });
+
+    try {
+        const cookie = await registerAndGetCookie(teacherEmail);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10_000);
+        Deno.unrefTimer(timeout);
+        let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+        try {
+            const res = await fetch(`${BASE_URL}/events/exam`, {
+                headers: { Cookie: cookie },
+                signal: controller.signal,
+            });
+            assertEquals(res.status, 200);
+            if (!res.body) {
+                throw new Error("Antwort ohne Body");
+            }
+
+            reader = res.body.getReader();
+            let text = "";
+
+            // Der Startframe ist der Exam-Zustand; die Unterlagen kommen
+            // erst bei einer echten Änderung.
+            text = await readSseUntil(reader, text, (t) => t.includes("\n\n"));
+            assert(
+                text.startsWith("event: exam\ndata: "),
+                `Exam-Frame erwartet, war: ${JSON.stringify(text)}`,
+            );
+            assertEquals(text.includes("event: unterlagen\n"), false);
+
+            // Die Lehrperson lädt eine Unterlage hoch — der Frame kommt
+            // auf derselben Verbindung, ohne eigenes Abo.
+            const form = new FormData();
+            form.append(
+                "file",
+                new Blob(["# Angabe\n"], { type: "text/markdown" }),
+                filename,
+            );
+            const uploadRes = await fetch(`${BASE_URL}/admin/unterlagen`, {
+                method: "POST",
+                headers: { Cookie: cookie },
+                body: form,
+            });
+            assertEquals(uploadRes.status, 200);
+            await uploadRes.text();
+
+            text = await readSseUntil(reader, text, (t) =>
+                t.includes("\nevent: unterlagen\n"));
+            assert(
+                text.includes("event: unterlagen\n"),
+                `Unterlagen-Frame erwartet, war: ${JSON.stringify(text)}`,
+            );
+            // Die Schüler-Seite braucht keinen Payload: sie holt ihr
+            // Fragment (`GET /angaben-panel`) selbst.
+            assert(
+                text.includes("event: unterlagen\ndata: null\n\n"),
+                `Unterlagen-Frame ohne Payload erwartet, war: ${JSON.stringify(text)}`,
+            );
+        } finally {
+            clearTimeout(timeout);
+            controller.abort();
+            await reader?.cancel().catch(() => {});
+        }
+    } finally {
+        await Deno.remove(target).catch(() => {});
+        clearExamState();
+        clearForensicsByIp(LOCAL_TEST_IP);
+        await clearForensicsByUserEmail(teacherEmail);
+    }
+});
+
 Deno.test("GET /admin/events: stand-Frame und benannte Komponenten (#163)", async () => {
     const suffix = crypto.randomUUID().slice(0, 8);
     const studentEmail = `admin-events-student-${suffix}@example.com`;
@@ -792,6 +891,63 @@ Deno.test("GET /admin/students: Kärtchen tragen Slug, Trigger und hx-disinherit
         clearForensicsByIp(studentIp);
         clearForensicsByIp(unknownIp);
         await clearForensicsByUserEmail(userEmail);
+    }
+});
+
+/** Der „Seit Exam-Start"-Knopf als Tag — gezielt, nicht als Textsuche. */
+function examStartButton(html: string): string | null {
+    const match = /<button[^>]*id="admin-exam-start"[^>]*>/.exec(html);
+    return match ? match[0] : null;
+}
+
+Deno.test("GET /admin/students: 'Seit Exam-Start' ist nur im Examen aktiv (#164)", async () => {
+    clearExamState();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const teacherEmail = `exam-start-button-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email: teacherEmail,
+        name: "Exam Start Button",
+        klasse: "LehrendeR",
+    });
+
+    try {
+        const cookie = await registerAndGetCookie(teacherEmail);
+
+        const idleHtml = await (await fetch(`${BASE_URL}/admin/students`, {
+            headers: { Cookie: cookie },
+        })).text();
+        const idleButton = examStartButton(idleHtml);
+        assertExists(idleButton, "Der Knopf muss im Zeitfilter stehen");
+        assertEquals(
+            idleButton.includes("disabled"),
+            true,
+            "Ohne Examen muss der Knopf deaktiviert sein",
+        );
+
+        seedExamState("running");
+        const html = await (await fetch(`${BASE_URL}/admin/students`, {
+            headers: { Cookie: cookie },
+        })).text();
+        const button = examStartButton(html);
+        assertExists(button, "Der Knopf muss im Zeitfilter stehen");
+        assertEquals(
+            button.includes("disabled"),
+            false,
+            "Während des Examens muss der Knopf aktiv sein",
+        );
+
+        // Die Startwerte kommen serverseitig gerendert mit: Datum heute,
+        // Uhrzeit des Exam-Start (seedExamState legt ihn eine Minute
+        // zurück) — kein zweiter Zeit-Berechnungsweg im Browser.
+        assertEquals(
+            /data-startdate="(\d{4}-\d{2}-\d{2})"/.exec(button)?.[1],
+            localDateString(new Date()),
+        );
+        const starttime = /data-starttime="(\d{2}:\d{2})"/.exec(button)?.[1];
+        assertExists(starttime, "data-starttime muss HH:MM tragen");
+    } finally {
+        clearExamState();
+        await clearForensicsByUserEmail(teacherEmail);
     }
 });
 
@@ -1386,6 +1542,96 @@ Deno.test("POST /upload - Authenticated upload with MD5 verification", async () 
         } else {
             config.PERMITTED_FILETYPES = originalTypes;
         }
+    }
+});
+
+Deno.test("POST /upload: Abgabe von vor dem Exam-Start sperrt nicht (#164)", async () => {
+    // Der Fall aus dem laufenden Examen: die letzte Abgabe liegt einen Tag
+    // zurück, seitdem hat ein Scan die IP nicht gesehen. Die WLAN-Sperre
+    // prüft nur, was **im laufenden Examen** passiert ist.
+    const testEmail = "grafg@spengergasse.at";
+    const originalTypes = [...config.PERMITTED_FILETYPES];
+    const oldSubmissionAt = new Date(Date.now() - 24 * 3_600_000);
+    const scanAt = new Date(Date.now() - 30_000);
+    let cookie: string | null = null;
+    let uploadedFilename: string | null = null;
+
+    clearExamState();
+    try {
+        const user = await usersRepo.upsert({
+            email: testEmail,
+            name: "Georg Graf",
+            klasse: "LehrendeR",
+        });
+        db.exec(`DELETE FROM abgaben WHERE userId = ${user.id}`);
+        seedSubmission({
+            userId: user.id,
+            filename: "alte-abgabe.zip",
+            at: oldSubmissionAt,
+        });
+        // Scan ohne diese IP — allein wäre er ein Sperrgrund, liegt aber
+        // vor dem Exam-Start.
+        seedScan(scanAt);
+
+        seedExamState("running");
+
+        cookie = await registerAndGetCookie(testEmail);
+        const setTypesRes = await fetch(`${BASE_URL}/admin/application`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie,
+            },
+            body: "permitted_filetypes=zip,%20md",
+        });
+        assertEquals(setTypesRes.status, 200);
+        await setTypesRes.text();
+
+        const formData = new FormData();
+        formData.append(
+            "file",
+            new Blob([uploadZipBytes], { type: "application/zip" }),
+            `nach-alter-abgabe-${crypto.randomUUID().slice(0, 6)}.zip`,
+        );
+
+        const uploadRes = await fetch(`${BASE_URL}/upload`, {
+            method: "POST",
+            headers: { "Cookie": cookie },
+            body: formData,
+        });
+        assertEquals(
+            uploadRes.status,
+            200,
+            "Eine Abgabe von vor dem Exam-Start darf die Abgabe nicht sperren",
+        );
+        await uploadRes.text();
+
+        const row = db.prepare(
+            "SELECT filename FROM abgaben WHERE userId = ? ORDER BY id DESC LIMIT 1",
+        ).get(user.id) as { filename: string } | undefined;
+        uploadedFilename = row?.filename ?? null;
+    } finally {
+        clearExamState();
+        clearScans(scanAt);
+        db.exec(`DELETE FROM abgaben WHERE userId = (SELECT id FROM users WHERE email = '${testEmail}')`);
+        if (uploadedFilename) {
+            await Deno.remove(`${config.ABGABEN_DIR}/${uploadedFilename}`)
+                .catch(() => {});
+        }
+        if (cookie) {
+            const restoreRes = await fetch(`${BASE_URL}/admin/application`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cookie": cookie,
+                },
+                body: `permitted_filetypes=${
+                    encodeURIComponent(originalTypes.join(", "))
+                }`,
+            });
+            await restoreRes.text();
+        }
+        clearForensicsByIp(LOCAL_TEST_IP);
     }
 });
 

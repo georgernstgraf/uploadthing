@@ -16,6 +16,11 @@ type StartPageTemplateData = {
     panel_html: string;
 };
 
+/** Angaben-Karte als eigenes Fragment (#164) — nur die Dateiliste. */
+type AngabenTemplateData = {
+    files: string[];
+};
+
 type AbgabeTemplateData = {
     accept_attr?: string;
     types_label?: string;
@@ -109,6 +114,10 @@ type AdminTemplateData = TikPanelTemplateData & {
     withinTimeCutoff: boolean;
     endtimeInFuture: boolean;
     endtimeProvided: boolean;
+    /** Examens-Forensik (#164): Startzeit-Übernahme nur bei aktivem Examen. */
+    exam_active: boolean;
+    exam_startdate: string;
+    exam_starttime: string;
 };
 
 type AdminFileTypesTemplateData = {
@@ -229,6 +238,10 @@ Handlebars.registerPartial(
     Deno.readTextFileSync("templates/main.hbs"),
 );
 Handlebars.registerPartial(
+    "angaben",
+    Deno.readTextFileSync("templates/angaben.hbs"),
+);
+Handlebars.registerPartial(
     "admin-report",
     Deno.readTextFileSync("templates/admin-report.hbs"),
 );
@@ -255,6 +268,9 @@ export const mainTemplate = Handlebars.compile<MainTemplateData>(
 );
 export const startPageTemplate = Handlebars.compile<StartPageTemplateData>(
     Deno.readTextFileSync("templates/home.hbs"),
+);
+export const angabenTemplate = Handlebars.compile<AngabenTemplateData>(
+    Deno.readTextFileSync("templates/angaben.hbs"),
 );
 export const abgabeTemplate = Handlebars.compile<AbgabeTemplateData>(
     Deno.readTextFileSync("templates/abgabe.hbs"),

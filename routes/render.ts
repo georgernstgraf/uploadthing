@@ -174,6 +174,17 @@ export async function buildStartContent(
 }
 
 /**
+ * Nur die Angaben-Karte (#164).
+ *
+ * `GET /angaben-panel` tauscht sie aus, wenn die Lehrperson eine Unterlage
+ * hochlädt oder löscht. Bewusst nur die Dateiliste lesen: das Abgabe-Panel
+ * daneben bleibt unberührt (eine gewählte Datei darf nicht verloren gehen).
+ */
+export async function buildAngabenPanel(): Promise<string> {
+    return hbs.angabenTemplate({ files: await get_unterlagen() });
+}
+
+/**
  * Antwort für die Anmeldung: HTMX tauscht `#app-main` (ganzes `<main>`,
  * damit die Navigation für Lehrpersonen erscheint), ein klassischer
  * Formular-POST bekommt die volle Seite.

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { HonoContextVars } from "../lib/types.ts";
 import config from "../lib/config.ts";
 import * as hbs from "../lib/handlebars.ts";
-import { buildPanel, buildStartContent } from "./render.ts";
+import { buildAngabenPanel, buildPanel, buildStartContent } from "./render.ts";
 
 const homeRouter = new Hono<{ Variables: HonoContextVars }>();
 
@@ -39,6 +39,19 @@ homeRouter.get("/", async (c) => {
  */
 homeRouter.get("/abgabe-panel", async (c) => {
     return c.html(await buildPanel(c));
+});
+
+/**
+ * Nur die Angaben-Karte (#164).
+ *
+ * Die Lehrperson verwaltet die Unterlagen; eine offene Schüler-Seite
+ * zieht die Karte über `event: unterlagen` nach, ohne Reload. Der
+ * Endpunkt liest wie `/abgabe-panel` nur, was er braucht (die Dateiliste),
+ * und ist ohne Sitzung erreichbar — die Karte steht auch auf der
+ * anonymen Startseite.
+ */
+homeRouter.get("/angaben-panel", async (c) => {
+    return c.html(await buildAngabenPanel());
 });
 
 export default homeRouter;

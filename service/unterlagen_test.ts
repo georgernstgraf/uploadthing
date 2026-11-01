@@ -1,6 +1,8 @@
 import { assert, assertEquals, assertRejects } from "@std/assert";
 import config from "../lib/config.ts";
+import * as hub from "../lib/event_hub.ts";
 import { AppError } from "../lib/errors.ts";
+import * as events from "./events.ts";
 import { list, remove, removeAll, upload } from "./unterlagen.ts";
 
 /**
@@ -186,5 +188,35 @@ Deno.test("unterlagen - nicht sichtbare Namen werden beim Upload abgelehnt", asy
             "ist nicht zulässig",
         );
         assertEquals(await list(), []);
+    });
+});
+
+Deno.test("unterlagen - jede Änderung meldet sich als Unterlagen-Ereignis (#164)", async () => {
+    await withUnterlagenDir(async () => {
+        hub.resetHub();
+        let changed = 0;
+        const unsubscribe = events.subscribeUnterlagen(() => changed++);
+
+        try {
+            // Upload, Löschen einzeln: je genau ein Ereignis.
+            await upload(mdFile("angabe.md"));
+            assertEquals(changed, 1);
+
+            assertEquals(await remove("angabe.md"), "angabe.md");
+            assertEquals(changed, 2);
+
+            // Ein leerer Lauf ist keine Änderung.
+            assertEquals(await removeAll(), 0);
+            assertEquals(changed, 2);
+
+            await upload(mdFile("loesung.md"));
+            assertEquals(changed, 3);
+
+            assertEquals(await removeAll(), 1);
+            assertEquals(changed, 4);
+        } finally {
+            unsubscribe();
+            hub.resetHub();
+        }
     });
 });

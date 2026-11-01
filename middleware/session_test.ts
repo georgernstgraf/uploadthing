@@ -189,14 +189,16 @@ Deno.test("Session class - getData returns same object reference", () => {
 });
 
 // ----------------------------------------------------------------------
-// Presence-Ereignisse der Session-Middleware (#163)
+// Presence-Ereignisse der Session-Middleware (#164)
 // ----------------------------------------------------------------------
 
 /**
- * Nur ein **Identitätswechsel** einer IP darf den Admin-Kanal wecken. Die
- * Presence-Zeile desselben Users verlängert nur die Anwesenheit; deshalb
- * braucht es keine Ausnahme für Lehrpersonen mehr — die eigene Präsenz
- * ändert die neueste Identität nicht und löst strukturell nichts aus.
+ * Seit #164 ist **jede neue** Präsenz eines Schülers ein Ereignis: sie kann
+ * ein „Unbekannt"-Kärtchen in ein Namenskärtchen verwandeln, auch wenn sich
+ * die Identität der IP nicht verschiebt. Die Lehrperson ist ausgenommen —
+ * ihr eigener Panel-Request schreibt selbst eine Presence-Zeile, das wäre
+ * eine Rückkopplung. Die Zeile, die eine Abgabe schreibt, bleibt still,
+ * weil sich die Abgabe über `card-<slug>` selbst meldet (#163).
  */
 
 /** Scheduler-Stub: sammelt Timer und lässt sie von Hand laufen. */
@@ -250,6 +252,9 @@ function buildApp() {
     app.use("*", sessionMiddleware);
     app.use("*", remoteIPMiddleware);
     app.get("/probe", (c) => c.text("ok"));
+    // Nur der Pfad zählt (#164): die Middleware unterscheidet am Pfad,
+    // ob eine Presence-Zeile ein Panel-Ereignis auslösen darf.
+    app.post("/upload", (c) => c.text("ok"));
     return app;
 }
 
@@ -261,7 +266,7 @@ function testEnv(ip: string): Bindings {
     } as unknown as Bindings;
 }
 
-Deno.test("Schüler-Cookie meldet nur den Identitätswechsel (#163)", async () => {
+Deno.test("Schüler-Präsenz publiziert auch ohne Identitätswechsel (#164)", async () => {
     hub.resetHub();
     events.resetActivity();
     const suffix = crypto.randomUUID().slice(0, 8);
@@ -281,6 +286,11 @@ Deno.test("Schüler-Cookie meldet nur den Identitätswechsel (#163)", async () =
             name: "Presence Schüler",
             klasse: "5AHITM",
         });
+        // Vorzustand außerhalb des 30-s-Dedups: der Aufruf schreibt eine
+        // echte Zeile, ohne die neueste Identität der IP zu verschieben —
+        // genau der Fall Sophia aus #164.
+        cookiepresentsRepo.create(ip, user.id, new Date(Date.now() - 60_000));
+
         const cookie = await sessionCookie(email);
         const app = buildApp();
 
@@ -291,18 +301,9 @@ Deno.test("Schüler-Cookie meldet nur den Identitätswechsel (#163)", async () =
         );
         assertEquals(first.status, 200);
         assertEquals(
-            cookiepresentsRepo.recentByIPAndUser(
-                ip,
-                user.id,
-                new Date(Date.now() - 60_000),
-            ),
-            true,
-            "Die Presence-Zeile muss geschrieben werden",
-        );
-        assertEquals(
             cookiepresentsRepo.getLatestUserIdForIP(ip),
             user.id,
-            "Der Schüler ist die neueste Identität dieser IP",
+            "Die Identität der IP bleibt dieselbe",
         );
         assertEquals(scheduler.delays.length, 1);
 
@@ -310,7 +311,7 @@ Deno.test("Schüler-Cookie meldet nur den Identitätswechsel (#163)", async () =
         assertEquals(batches, [["cards"]]);
 
         // Innerhalb von 30 s dedupliziert `recordByEmail`: kein zweiter
-        // Insert, kein Identitätswechsel, also kein zweites Ereignis.
+        // Insert, also auch kein zweites Ereignis.
         const second = await app.request(
             "/probe",
             { headers: { Cookie: cookie } },
@@ -328,7 +329,7 @@ Deno.test("Schüler-Cookie meldet nur den Identitätswechsel (#163)", async () =
     }
 });
 
-Deno.test("Lehrpersonen-Cookie schreibt Presence, publiziert aber nur den Identitätswechsel (#163)", async () => {
+Deno.test("Lehrpersonen-Präsenz schreibt, publiziert aber nie (#164)", async () => {
     hub.resetHub();
     events.resetActivity();
     const suffix = crypto.randomUUID().slice(0, 8);
@@ -348,10 +349,15 @@ Deno.test("Lehrpersonen-Cookie schreibt Presence, publiziert aber nur den Identi
             name: "Presence Lehrperson",
             klasse: "LehrendeR",
         });
+        // Auch ein Insert außerhalb des Dedup-Fensters bleibt still: die
+        // eigene Präsenz ist nie eine Zeile des Panels, und jeder
+        // Panel-Request schreibt selbst eine — sonst rendert das Panel
+        // sich im 30-s-Takt selbst neu.
+        cookiepresentsRepo.create(ip, user.id, new Date(Date.now() - 60_000));
+
         const cookie = await sessionCookie(email);
         const app = buildApp();
 
-        // Erste Anmeldung dieser IP: neue Identität, ein Ereignis.
         const first = await app.request(
             "/probe",
             { headers: { Cookie: cookie } },
@@ -359,27 +365,69 @@ Deno.test("Lehrpersonen-Cookie schreibt Presence, publiziert aber nur den Identi
         );
         assertEquals(first.status, 200);
         assertEquals(
-            cookiepresentsRepo.recentByIPAndUser(
+            cookiepresentsRepo.byIPInRange(
                 ip,
-                user.id,
-                new Date(Date.now() - 60_000),
-            ),
-            true,
+                new Date(Date.now() - 120_000),
+                new Date(Date.now() + 60_000),
+            ).length,
+            2,
             "Auch Lehrpersonen werden als Presence erfasst",
         );
-        scheduler.flush();
-        assertEquals(batches, [["cards"]]);
+        assertEquals(scheduler.delays.length, 0);
+        assertEquals(batches, []);
+    } finally {
+        unsubscribe();
+        clearForensicsByIp(ip);
+        await clearForensicsByUserEmail(email);
+        events.resetActivity();
+        hub.resetHub();
+    }
+});
 
-        // Die Rückkopplung ist strukturell ausgeschlossen, nicht per Rolle:
-        // die eigene Präsenz ändert die neueste Identität nicht mehr.
-        const second = await app.request(
-            "/probe",
-            { headers: { Cookie: cookie } },
+Deno.test("POST /upload schreibt Präsenz, publiziert aber kein Panel-Ereignis (#164)", async () => {
+    hub.resetHub();
+    events.resetActivity();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const email = `session-cookie-upload-${suffix}@example.com`;
+    const ip = uniqueIp();
+    const scheduler = fakeScheduler();
+    events.setActivityHooks(scheduler.hooks);
+
+    const batches: string[][] = [];
+    const unsubscribe = events.subscribeActivity((reasons) =>
+        batches.push(reasons)
+    );
+
+    try {
+        const user = await upsertFixtureUser({
+            email,
+            name: "Presence Upload",
+            klasse: "5AHITM",
+        });
+        cookiepresentsRepo.create(ip, user.id, new Date(Date.now() - 60_000));
+
+        const cookie = await sessionCookie(email);
+        const app = buildApp();
+
+        const res = await app.request(
+            "/upload",
+            { method: "POST", headers: { Cookie: cookie } },
             testEnv(ip),
         );
-        assertEquals(second.status, 200);
-        assertEquals(scheduler.delays.length, 1);
-        assertEquals(batches, [["cards"]]);
+        assertEquals(res.status, 200);
+        assertEquals(
+            cookiepresentsRepo.byIPInRange(
+                ip,
+                new Date(Date.now() - 120_000),
+                new Date(Date.now() + 60_000),
+            ).length,
+            2,
+            "Die Presence-Zeile der Abgabe wird geschrieben",
+        );
+        // Die Abgabe meldet sich selbst über `card-<slug>`; ein
+        // zusätzliches `cards` würde „Eine Abgabe, ein Kärtchen" brechen.
+        assertEquals(scheduler.delays.length, 0);
+        assertEquals(batches, []);
     } finally {
         unsubscribe();
         clearForensicsByIp(ip);

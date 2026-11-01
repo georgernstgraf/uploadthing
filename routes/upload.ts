@@ -80,7 +80,15 @@ uploadRouter.post("/", async (c) => {
     }
 
     if (remote_user.id) {
-        if (!service.abgaben.canResubmit(remote_user.id, remote_ip)) {
+        // Nur das laufende Examen schützt vor einer zweiten Abgabe (#164).
+        const examStartedAt = service.exam.getState()?.started_at ?? null;
+        if (
+            !service.abgaben.canResubmit(
+                remote_user.id,
+                remote_ip,
+                examStartedAt,
+            )
+        ) {
             throw new AppError(
                 "Du hast das WLAN verlassen. Eine erneute Abgabe ist nicht möglich.",
                 403,

@@ -122,7 +122,7 @@ Deno.test("register erzeugt innerhalb des Fensters keine zweite Präsenzzeile (#
     }
 });
 
-Deno.test("register meldet den Identitätswechsel einer IP als Karten-Ereignis (#163)", async () => {
+Deno.test("register meldet jede neue Präsenz als Karten-Ereignis (#164)", async () => {
     hub.resetHub();
     events.resetActivity();
     const ip = uniqueIp();
@@ -155,8 +155,8 @@ Deno.test("register meldet den Identitätswechsel einer IP als Karten-Ereignis (
             ip,
         );
         window.flush();
-        // Die Registrierung selbst ist nur Präsenz; erst der
-        // Identitätswechsel ist ein Karten-Ereignis (#163).
+        // Die erste Präsenzzeile dieser IP ist die Anmeldung selbst und
+        // damit ein Karten-Ereignis (#164).
         assertEquals(batches, [["cards"]]);
 
         // Zweiter User auf derselben IP: Presence-Zeile plus Karten-Ereignis.

@@ -36,9 +36,10 @@ export async function byIPInRange(
  * Ergebnis eines Presence-Schreibversuchs (#163).
  *
  * `inserted` sagt, ob eine Zeile entstanden ist; `identityChanged` sagt,
- * ob dieser Insert die **neueste Identität der IP** verschiebt. Nur der
- * Identitätswechsel ist ein Ereignis — eine Presence-Zeile desselben
- * Users verlängert nur die Anwesenheit.
+ * ob dieser Insert die **neueste Identität der IP** verschiebt. Für das
+ * Admin-Panel ist seit #164 schon `inserted` das Ereignis: eine neue
+ * Präsenz kann ein „Unbekannt"-Kärtchen mit einem Namen füllen.
+ * `identityChanged` bleibt als Aussage über die Identität bestehen.
  */
 export type PresenceResult = { inserted: boolean; identityChanged: boolean };
 

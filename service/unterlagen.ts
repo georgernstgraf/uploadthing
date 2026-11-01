@@ -7,6 +7,7 @@ import {
     writeAll,
 } from "../lib/pathfuncs.ts";
 import { validateUploadedFileType } from "../lib/upload_filetype.ts";
+import { publishUnterlagenChanged } from "./events.ts";
 
 /**
  * Verwaltung der Prüfungsunterlagen direkt aus der Weboberfläche (#134).
@@ -185,6 +186,9 @@ export async function upload(
     }
 
     await writeFile(file, target);
+    // Angaben-Karte der Schüler-Seite (#164): die Datei ist geschrieben,
+    // die offene Seite holt ihr Fragment ohne Reload.
+    publishUnterlagenChanged();
     return filename;
 }
 
@@ -201,6 +205,7 @@ export async function remove(rawName: string): Promise<string> {
             500,
         );
     }
+    publishUnterlagenChanged();
     return name;
 }
 
@@ -226,6 +231,11 @@ export async function removeAll(): Promise<number> {
             }`,
             500,
         );
+    }
+    // Ein leerer Lauf ist keine Änderung — und darf die Schüler-Seiten
+    // nicht ohne Grund neu rendern lassen.
+    if (removed > 0) {
+        publishUnterlagenChanged();
     }
     return removed;
 }

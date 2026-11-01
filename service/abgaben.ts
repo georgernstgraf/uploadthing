@@ -48,14 +48,29 @@ export function getUserSubmissionsInRange(
 
 /**
  * Check whether a user is eligible to resubmit.
- * A resubmission is allowed only if the student's IP was present
- * in every network scan since their most recent submission.
+ *
+ * Die WLAN-Regel schützt nur das **laufende** Examen (#164): geprüft wird
+ * erst ab der letzten Abgabe, und nur wenn diese im laufenden Examen
+ * liegt. Eine Abgabe von vor dem Exam-Start sagt nichts über das jetzige
+ * Netz — sonst sperrt die Prüfung eine Schülerin, die seit Mai nicht mehr
+ * anwesend war, obwohl im laufenden Examen nichts fehlt. Ohne
+ * Exam-Zustand (`examStartedAt === null`) gibt es nichts zu schützen; der
+ * Upload selbst ist ohnehin am Exam-Fenster gegated.
  */
-export function canResubmit(userId: number, currentIp: string): boolean {
+export function canResubmit(
+    userId: number,
+    currentIp: string,
+    examStartedAt: Date | null,
+): boolean {
     const submissions = repo.abgaben.getByUserId(userId);
     if (submissions.length === 0) return true;
+    if (examStartedAt === null) return true;
 
     const since = submissions[0].at;
+    // Die letzte Abgabe liegt vor dem laufenden Examen: im Examen ist
+    // noch nichts passiert, also gibt es keine Lücke zu prüfen.
+    if (since.getTime() < examStartedAt.getTime()) return true;
+
     const now = new Date();
     // Scan-Achse aus `tikscan` (#163): leere Scans zählen mit, sonst wäre
     // ein Abruf ohne sichtbaren Client unsichtbar.

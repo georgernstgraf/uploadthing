@@ -15,6 +15,8 @@
  * 4. Den Freeze der Admin-Forensik zählen und nachholen (#163) — die
  *    Verbindung selbst gehört der SSE-Extension (`sse-connect`), jedes
  *    Kärtchen hängt an seinem eigenen Ereignis.
+ * 5. Die Angaben-Karte nachziehen, wenn die Lehrperson Unterlagen ändert
+ *    (#164) — ein Fragment, keine ganze Seite.
  *
  * Verbunden wird nur auf Seiten mit `data-exam-events` am `<main>`, also
  * nur für angemeldete Personen. Ohne Sitzung antwortet der Endpunkt mit
@@ -281,6 +283,41 @@
                 swapToClosed();
             }
         }, 0);
+    }
+
+    // ------------------------------------------------------------------
+    // Angaben-Karte (#164)
+    // ------------------------------------------------------------------
+
+    /** Ein Fragment-Request gleichzeitig; ein zweiter wäre nur Arbeit. */
+    let unterlagenRequestInFlight = false;
+
+    /**
+     * Hat dieser Stream sich schon einmal geöffnet? Dann ist der nächste
+     * `open` ein Reconnect — Ereignisse können verloren gegangen sein.
+     */
+    let unterlagenReconnected = false;
+
+    /**
+     * Holt die Angaben-Karte neu. Seiten ohne `#angaben-panel` (etwa
+     * `/whoami` oder die Admin-Seiten) ignorieren das Ereignis.
+     */
+    function requestAngabenPanel() {
+        if (!document.getElementById("angaben-panel")) {
+            return;
+        }
+        if (typeof window.htmx === "undefined" || unterlagenRequestInFlight) {
+            return;
+        }
+        unterlagenRequestInFlight = true;
+        window.htmx.ajax("GET", "/angaben-panel", {
+            target: "#angaben-panel",
+            swap: "outerHTML",
+        }).catch(function () {
+            // Netzfehler: der nächste Reconnect holt nach.
+        }).finally(function () {
+            unterlagenRequestInFlight = false;
+        });
     }
 
     // ------------------------------------------------------------------
@@ -589,6 +626,9 @@
         }
 
         errorCount = 0;
+        // Ein neuer Stream hat keine Vorgeschichte: sein erster `open`
+        // ist kein Reconnect und holt nichts nach.
+        unterlagenReconnected = false;
         const source = new EventSource("/events/exam");
         window.__uploadthingExamEvents = source;
 
@@ -603,8 +643,18 @@
             handleFrame(frame);
         });
 
+        source.addEventListener("unterlagen", function () {
+            requestAngabenPanel();
+        });
+
         source.addEventListener("open", function () {
             errorCount = 0;
+            // Nach einem Reconnect kann ein `unterlagen`-Ereignis
+            // verloren gegangen sein: einmal nachholen.
+            if (unterlagenReconnected) {
+                requestAngabenPanel();
+            }
+            unterlagenReconnected = true;
         });
 
         source.addEventListener("error", function () {

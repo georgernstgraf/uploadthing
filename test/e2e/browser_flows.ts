@@ -442,6 +442,129 @@ Deno.test({
 });
 
 Deno.test({
+    name: "E2E: Unterlagen-Upload zieht die Angaben-Karte beim Schüler nach (#164)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        const filename = `angaben-e2e-${crypto.randomUUID().slice(0, 8)}.md`;
+
+        await withBrowser(async (browser) => {
+            const teacher = await openPage(browser, TEACHER.email);
+            const student = await openPage(browser, STUDENT.email);
+            try {
+                // Schüler-Seite offen: die Angaben-Karte zeigt den
+                // gerenderten Stand, die neue Datei fehlt noch.
+                await student.page.goto("/");
+                await student.page.waitForSelector("#angaben-panel");
+                const before =
+                    (await student.page.textContent("#angaben-panel")) ?? "";
+                assert(
+                    !before.includes(filename),
+                    "Die neue Unterlage darf vor dem Upload nicht in der Karte stehen",
+                );
+
+                // Lehrperson lädt eine Unterlage hoch (Rückfrage bestätigen).
+                await teacher.page.goto("/admin/application");
+                await teacher.page.waitForSelector("#unterlagen_file");
+                const dialogs = trackDialogs(teacher.page, "accept");
+                await teacher.page.setInputFiles("#unterlagen_file", {
+                    name: filename,
+                    mimeType: "text/markdown",
+                    buffer: Buffer.from("# Angabe\n", "utf8"),
+                });
+                await teacher.page.locator(
+                    'form[hx-post="/admin/unterlagen"] button[type="submit"]',
+                ).click();
+                await waitForDialogCount(dialogs.messages, 1);
+
+                // Ohne Reload der Schüler-Seite: der Push holt das
+                // Fragment, die Karte trägt den neuen Namen.
+                await student.page.waitForFunction((name) => {
+                    const list = document.getElementById("angaben-list");
+                    return Boolean(list?.textContent?.includes(name));
+                }, filename, { timeout: 15_000 });
+            } finally {
+                const dir = Deno.env.get("UNTERLAGEN_DIR");
+                if (dir) {
+                    await Deno.remove(`${dir}/${filename}`).catch(() => {});
+                }
+                await student.context.close();
+                await teacher.context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: 'Seit Exam-Start' übernimmt die Examens-Startzeit (#164)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        await withBrowser(async (browser) => {
+            const { context, page } = await openPage(browser, TEACHER.email);
+            try {
+                // Ohne Examen ist der Knopf sichtbar, aber deaktiviert.
+                await page.goto("/admin/students");
+                await page.waitForSelector("#admin-exam-start");
+                assertEquals(
+                    await page.locator("#admin-exam-start").isDisabled(),
+                    true,
+                    "Ohne Examen darf der Knopf nicht bedienbar sein",
+                );
+
+                await startExam();
+                await page.reload();
+                await page.waitForSelector("#admin-exam-start");
+                assertEquals(
+                    await page.locator("#admin-exam-start").isDisabled(),
+                    false,
+                    "Während des Examens muss der Knopf bedienbar sein",
+                );
+
+                // Der erwartete Wert kommt serverseitig am Knopf mit — der
+                // Browser rechnet keine zweite Zeit.
+                const expected =
+                    (await page.getAttribute("#admin-exam-start", "data-starttime")) ??
+                    "";
+                assert(
+                    /^\d{2}:\d{2}$/.test(expected),
+                    `Examens-Startzeit erwartet, war: "${expected}"`,
+                );
+
+                const requested = page.waitForResponse((response) => {
+                    const url = new URL(response.url());
+                    return url.pathname === "/admin/students" &&
+                        url.searchParams.get("starttime") === expected;
+                });
+                await page.click("#admin-exam-start");
+                const response = await requested;
+                assertEquals(response.status(), 200);
+                await response.finished().catch(() => {});
+
+                // Das Formular trägt jetzt die Examens-Startzeit, und die
+                // Adresse ist nachgezogen (hx-push-url).
+                await page.waitForFunction((value) => {
+                    const input = document.getElementById(
+                        "admin-start-time",
+                    ) as HTMLInputElement | null;
+                    return input?.value === value;
+                }, expected);
+                assert(
+                    new URL(page.url()).searchParams.get("starttime") ===
+                        expected,
+                    `Startzeit muss in der Adresse stehen, war: ${page.url()}`,
+                );
+            } finally {
+                await stopExam();
+                await context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
     name: "E2E: Admin-Aktion tauscht das Examen-Panel aus",
     sanitizeOps: false,
     sanitizeResources: false,
