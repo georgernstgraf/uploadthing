@@ -14,6 +14,18 @@
   lokalen `DATABASE_URL`-Ziel: `deno task db:migrate` ausführen (nicht die
   Tabelle von Hand anlegen). Normalerweise passiert das nicht, weil der
   App-Start die Migrationen mitzieht.
+- **Port-Mismatch:** `scripts/test-with-server.sh` startet den Testserver
+  auf `LISTEN_PORT` aus `.env`, die Endpoint-Tests lesen ihre Basis-URL
+  aber aus `test/endpoints.json` (`http://localhost:8000`). Weicht der
+  Port ab (auf `think` ist `LISTEN_PORT=8001`), scheitern ~48
+  Endpoint-Tests in 0–1 ms. Abhilfe ohne `.env`-Änderung:
+  `TEST_BASE_URL=http://127.0.0.1:8001 deno task test`.
+- Auf `think` bleibt zusätzlich „GET /admin/events: stand-Frame und
+  benannte Komponenten (#163)" rot (SSE, zeitabhängig) — unabhängig von
+  der Port-Frage, reproduzierbar auch ohne lokale Änderungen (461 statt
+  462 grün). Auf dem Dell-Checkout nicht geprüft, weil
+  `scripts/test-with-server.sh` den laufenden Dienst auf dem Port
+  abschießt.
 
 ## Fail-Strict Configuration
 

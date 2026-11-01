@@ -31,6 +31,9 @@ type RuleRow = {
     uuid: string;
     enabled: "0" | "1";
     "@attributes"?: { uuid: string };
+    /** Nur zur Nachbildung der echten Antwort; der Code liest sie nie. */
+    sequence?: string;
+    description?: string;
 };
 
 function searchResponse(rows: RuleRow[]): string {
@@ -229,6 +232,52 @@ Deno.test("opnsense - setRuleEnabled nutzt die UUID der Firewall, nicht die Konf
     const toggle = calls.find((call) => call.url.includes("toggleRule"));
     assertExists(toggle);
     assertEquals(toggle.url, `https://firewall.test:8443/api/firewall/filter/toggleRule/${RULE_UUID}`);
+});
+
+/**
+ * Antwortform der Sense 26.7.8_1 (am 2026-11-01 live abgegriffen): 26
+ * Regeln, die Sperrregel steht mit `sequence 550` mitten im Regelset,
+ * liefert eine gestrichelte UUID und **kein** `@attributes`. Die
+ * Reihenfolge der Regeln darf für den Toggle keine Rolle spielen (#165).
+ */
+function liveRuleSetForm(ruleEnabled: "0" | "1"): RuleRow[] {
+    const filler = (index: number, prefix: string): RuleRow => ({
+        uuid: `${prefix}${String(index).padStart(8, "0")}-0000-4000-8000-000000000000`,
+        enabled: "1",
+        sequence: String(200 + index * 100),
+        description: `${prefix}-${index}`,
+    });
+
+    return [
+        filler(1, "aaaa"),
+        filler(2, "bbbb"),
+        filler(3, "cccc"),
+        { uuid: RULE_UUID, enabled: ruleEnabled, sequence: "550", description: "doku" },
+        ...Array.from({ length: 22 }, (_, i) => filler(i, "dddd")),
+    ];
+}
+
+Deno.test("opnsense - findet die Sperrregel mitten im Regelset (26.7, sequence 550)", async () => {
+    const rules = liveRuleSetForm("1");
+    const { runner, calls } = fakeFirewall({ rules });
+
+    assertEquals(findRuleRow({ rows: rules }, RULE_UUID), {
+        uuid: RULE_UUID,
+        enabled: true,
+    });
+
+    await withOpnsenseConfig(TEST_CONFIG, async () => {
+        const result = await setRuleEnabled(false, runner);
+        assertEquals(result.ok, true);
+        assertEquals(result.stdout, "Sperre deaktiviert");
+    });
+
+    const toggle = calls.find((call) => call.url.includes("toggleRule"));
+    assertExists(toggle);
+    assertEquals(
+        toggle.url,
+        `https://firewall.test:8443/api/firewall/filter/toggleRule/${RULE_UUID}`,
+    );
 });
 
 Deno.test("opnsense - setRuleEnabled ist idempotent ohne Schreibzugriff", async () => {
