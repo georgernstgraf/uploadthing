@@ -130,12 +130,17 @@
 
 ## Badge Color Logic for Missed Count
 
-- On student IP cards, the missed count badge uses conditional Bootstrap classes based on priority:
-  1. `text-bg-warning` (yellow/orange) when `missed_count >= 1` (student was absent at least once)
-  2. `text-bg-danger` (red) when `missed_count == 0` AND `is_stale == true` (student is currently offline)
-  3. `text-bg-light` (neutral) when neither condition applies
+- On student IP cards, the badges are independent of each other:
+  1. `Abgabe` (`text-bg-success`) when the IP has a submission.
+  2. `nicht anwesend` (`text-bg-danger`) when `is_stale` — seen earlier in
+     the range but absent from the newest scan, and not submitted after.
+  3. `Fehlte X mal` with `text-bg-warning` when `missed_count >= 1`,
+     otherwise `text-bg-light`.
 - The badge text format is "Fehlte X mal" (with space, not hyphen).
-- Submission badge ("Abgabe") appears above the missed count badge.
+- The old rule "red when `missed_count == 0` and stale" is gone (#163):
+  absence now has its own badge instead of repainting the missed count.
+- Submission badge, absence badge and missed count all sit in the same
+  right-hand column of the card header, in that order.
 
 ## Scroll Container Layout
 
@@ -196,10 +201,27 @@
 - **Erst abonnieren, dann den ersten Frame schreiben.** Sonst geht ein Tick
   zwischen beiden Schritten verloren; die Schreibkette in `lib/sse.ts` hält
   die Reihenfolge trotzdem.
-- **Admin-Aktivität nur über `noteAdminActivity(reason)` melden**, nie
-  direkt auf den Bus: nur dort greift die 1-s-Koaleszierung. Ein neuer
-  Grund ist ein neues Wort (`submission`, `tik`, `cookie`,
-  `registration`), keine Meldung pro Datensatz.
+- **Admin-Aktivität nur über `noteAdminActivity(component)` melden**, nie
+  direkt auf den Bus: nur dort greift die 1-s-Koaleszierung. Der Kanal
+  transportiert **Komponenten**, keine Gründe (#163): `cards` (Panel neu
+  rendern), `card-<slug>` (genau dieses Kärtchen), `tik` (nur der
+  MikroTik-Streifen). `cards` schluckt `card-*` desselben Fensters — ein
+  Panel-Render erledigt alle Kärtchen. Wer eine neue Änderung meldet,
+  fragt zuerst, welche Komponente sie betrifft, statt ein neues Wort zu
+  erfinden.
+- **Der Admin-Stream schreibt benannte Frames**, je eine Komponente:
+  `event: cards`, `event: card-192-168-21-5`, `event: tik`. Dazu
+  `event: stand` mit reinem Text `Stand: HH:MM:SS` — beim Verbinden und
+  vor jedem ausgelieferten Batch. Die Komponenten-Frames tragen keinen
+  Payload; der HTMX-Trigger hängt am Ereignisnamen. `id`, Ereignisname
+  und `hx-trigger` eines Kärtchens kommen aus `lib/slug.ts` (`ipSlug`),
+  nicht aus drei getrennten Stellen.
+- **Forensik-Fragmente sind eigene Endpunkte, keine `hx-include`-Tricks:**
+  `GET /admin/student-card?ip=…&startdate=…` (ein Kärtchen, `204` wenn es
+  im Zeitraum keine Zeile gibt — ein 404 würde den globalen Fehler-Toast
+  auslösen) und `GET /admin/tik-panel` (nur der Streifen). Die Karten-URL
+  trägt den aufgelösten Zeitraum; das Kärtchen rendert die Wahrheit seines
+  eigenen Zeitraums.
 - **Nicht verwerfen, was nicht getauscht werden darf:** Panel-Freeze
   (offene `<details>`, Accordion, Modal) zählt in ein Badge und holt nach;
   siehe `static/events.js`.

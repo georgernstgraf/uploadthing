@@ -5,7 +5,9 @@
  * `service/exam.ts` lesen, `service/exam.ts` aber nie dieses Modul.
  * Änderungen am Examen melden sich deshalb als zustandsloser Tick über
  * `lib/event_hub.ts`; den vollständigen Snapshot baut der Stream beim
- * Senden. Es gibt kein Event-Log — die DB ist die Wahrheit.
+ * Senden. Der Admin-Kanal transportiert dagegen die **Komponenten**, die
+ * sich geändert haben (#163). Es gibt kein Event-Log — die DB ist die
+ * Wahrheit.
  */
 
 import * as hub from "../lib/event_hub.ts";
@@ -76,26 +78,32 @@ export function snapshotExam(
     };
 }
 
-export type ActivitySnapshot = {
-    seq: number;
-    type: "activity";
-    /** Gründe des zuletzt ausgelieferten Fensters, dedupliziert. */
-    reasons: string[];
-    /** Auslieferungszeitpunkt des Fensters (ISO). */
-    at: string;
-    server_now_ms: number;
-};
+/**
+ * Komponentenname auf dem Admin-Kanal (#163).
+ *
+ * Der Kanal transportiert **was** sich ändert, nicht warum:
+ * `cards` = das ganze Forensik-Panel neu rendern (ein Panel-Render
+ * erledigt alle Kärtchen), `card-<slug>` = genau dieses eine Kärtchen,
+ * `tik` = nur der MikroTik-Streifen. Die Serverzeit läuft als eigener
+ * `stand`-Frame, damit der Client nach jedem Batch einen frischen Stand
+ * hat.
+ */
+export type ActivityComponent = "cards" | `card-${string}` | "tik";
+
+/** Gehört der Name zu einem einzelnen Kärtchen? */
+export function isCardComponent(
+    component: ActivityComponent,
+): component is `card-${string}` {
+    return component.startsWith("card-");
+}
 
 export type ActivityHooks = {
-    /** Uhr für `at` und `server_now_ms`. */
-    now: () => Date;
     /** Plant die Auslieferung auf der Nachlaufkante. */
     schedule: (callback: () => void, delayMs: number) => unknown;
     cancel: (handle: unknown) => void;
 };
 
 const defaultHooks: ActivityHooks = {
-    now: () => new Date(),
     // Der Timer darf den Prozess nicht am Leben halten.
     schedule: (callback, delayMs) => {
         const handle = setTimeout(callback, delayMs);
@@ -106,52 +114,51 @@ const defaultHooks: ActivityHooks = {
 };
 
 let hooks: ActivityHooks = defaultHooks;
-let pendingReasons = new Set<string>();
+let pendingComponents = new Set<ActivityComponent>();
 let pendingTimer: unknown = null;
-let lastBatch: { reasons: string[]; at: string } | null = null;
 
 /**
- * Meldet eine Admin-relevante Änderung (z. B. `submission`, `tik`).
+ * Meldet eine Admin-relevante Änderung (#163).
  *
- * Serverseitige Koaleszierung: der erste Grund eines Fensters startet
+ * Serverseitige Koaleszierung: der erste Name eines Fensters startet
  * einen Timer von `ADMIN_PUSH_MIN_MS`; alles, was bis dahin dazukommt,
- * geht als **ein** Event mit deduplizierten Gründen raus (Nachlaufkante,
- * höchstens ein Event pro Sekunde). Mehrere Gründe desselben Fensters
- * werden nur einmal gezählt.
+ * geht als **ein** Batch mit deduplizierten Namen raus (Nachlaufkante,
+ * höchstens ein Batch pro Sekunde). `cards` schluckt `card-*` desselben
+ * Fensters: ein Panel-Render erledigt alle Kärtchen, die Einzelmeldungen
+ * wären danach doppelte Arbeit — in beide Richtungen, denn auch ein
+ * bereits vorgemerktes `cards` macht ein späteres `card-*` überflüssig.
  */
-export function noteAdminActivity(reason: string): void {
-    pendingReasons.add(reason);
+export function noteAdminActivity(component: ActivityComponent): void {
+    if (component === "cards") {
+        for (const pending of [...pendingComponents]) {
+            if (isCardComponent(pending)) {
+                pendingComponents.delete(pending);
+            }
+        }
+        pendingComponents.add(component);
+    } else if (
+        // Ein vorgemerktes `cards` rendert das Kärtchen gleich mit; nur
+        // `tik` bleibt daneben eigenständig.
+        !(isCardComponent(component) && pendingComponents.has("cards"))
+    ) {
+        pendingComponents.add(component);
+    }
+
     if (pendingTimer !== null) {
         return;
     }
 
     pendingTimer = hooks.schedule(() => {
         pendingTimer = null;
-        const reasons = [...pendingReasons];
-        pendingReasons = new Set();
+        const components = [...pendingComponents];
+        pendingComponents = new Set();
 
-        if (reasons.length === 0) {
+        if (components.length === 0) {
             return;
         }
 
-        lastBatch = { reasons, at: hooks.now().toISOString() };
-        hub.publish(ACTIVITY_CHANNEL, reasons);
+        hub.publish(ACTIVITY_CHANNEL, components);
     }, ADMIN_PUSH_MIN_MS);
-}
-
-/** Zustand für einen Activity-Frame; ohne Fenster sind die Gründe leer. */
-export function snapshotActivity(
-    now: () => Date = () => hooks.now(),
-): ActivitySnapshot {
-    const at = now();
-
-    return {
-        seq: hub.currentSeq(ACTIVITY_CHANNEL),
-        type: "activity",
-        reasons: lastBatch ? [...lastBatch.reasons] : [],
-        at: lastBatch?.at ?? at.toISOString(),
-        server_now_ms: at.getTime(),
-    };
 }
 
 /** Hört auf Exam-Änderungen; die Rückgabe meldet ab. */
@@ -161,7 +168,7 @@ export function subscribeExam(listener: () => void): () => void {
 
 /** Hört auf Admin-Aktivität; die Rückgabe meldet ab. */
 export function subscribeActivity(
-    listener: (reasons: string[]) => void,
+    listener: (components: string[]) => void,
 ): () => void {
     return hub.subscribe<string[]>(ACTIVITY_CHANNEL, (event) =>
         listener(event.payload));
@@ -176,15 +183,13 @@ export function setActivityHooks(next: Partial<ActivityHooks> = {}): void {
 }
 
 /**
- * Test-Hook: Koaleszierungszustand, offenes Fenster und der zuletzt
- * ausgelieferte Batch werden verworfen.
+ * Test-Hook: Koaleszierungszustand und offenes Fenster werden verworfen.
  */
 export function resetActivity(): void {
     if (pendingTimer !== null) {
         hooks.cancel(pendingTimer);
     }
     pendingTimer = null;
-    pendingReasons = new Set();
-    lastBatch = null;
+    pendingComponents = new Set();
     hooks = defaultHooks;
 }

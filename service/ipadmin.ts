@@ -1,7 +1,9 @@
 import * as repo from "../repo/repo.ts";
 import { UserType } from "../lib/types.ts";
-import { localAdminIpString } from "../lib/timefunc.ts";
+import { ipSlug } from "../lib/slug.ts";
+import { localAdminIpString, localDayStart } from "../lib/timefunc.ts";
 import { parseDisplayName, userRecordToUserType } from "../lib/user_mapper.ts";
+import type { ActivityComponent } from "./events.ts";
 
 export type ServiceIpAdmin = {
     ip: string;
@@ -495,4 +497,58 @@ export async function getIPDetail(
         missed_count: 0,
         has_submission: submissions.length > 0,
     };
+}
+
+/**
+ * Was ein abgeschlossener Scan am Forensik-Panel ändert (#163).
+ *
+ * Bezug ist der vorige Scan `P` aus `tikscan`; das Tagesfenster beginnt
+ * um Mitternacht (Europe/Vienna). Nur **Übergänge** werden ein Ereignis:
+ *
+ * - bei diesem Scan da, bei `P` nicht → `card-<ip>`; zusätzlich `cards`,
+ *   wenn die IP seit Tagesbeginn noch nie gesehen wurde — dann gibt es
+ *   noch kein Kärtchen, das man einzeln tauschen könnte.
+ * - bei `P` da, bei diesem Scan nicht → `card-<ip>` („nicht anwesend").
+ * - bei beiden abwesend → nichts. Ein Kärtchen, das schon vorher weg war,
+ *   ist kein neues Ereignis.
+ *
+ * Ein fehlgeschlagener Abruf schreibt keinen Scan und ruft diese Funktion
+ * deshalb gar nicht erst auf.
+ */
+export function scanDelta(at: Date): ActivityComponent[] {
+    const present = repo.ipfact.ipsAt(at);
+    const presentSet = new Set(present);
+    const previous = repo.ipfact.previousScan(at);
+    const before = previous ? repo.ipfact.ipsAt(previous) : [];
+    const beforeSet = new Set(before);
+    // Sichtungen vor diesem Scan, aber im laufenden Tag: diese IPs haben
+    // bereits ein Kärtchen.
+    const seenToday = new Set(repo.ipfact.ipsBetween(localDayStart(at), at));
+
+    const changed = new Set<string>();
+    let needsCards = false;
+
+    for (const ip of present) {
+        if (beforeSet.has(ip)) {
+            continue;
+        }
+        changed.add(ip);
+        if (!seenToday.has(ip)) {
+            needsCards = true;
+        }
+    }
+
+    for (const ip of before) {
+        if (!presentSet.has(ip)) {
+            changed.add(ip);
+        }
+    }
+
+    const cards = [...changed]
+        .sort()
+        .map((ip) => `card-${ipSlug(ip)}` as const);
+
+    // `cards` zuerst, dann die Einzelkärtchen alphabetisch: derselbe
+    // Batch ist damit reproduzierbar und in Tests vergleichbar.
+    return needsCards ? ["cards", ...cards] : cards;
 }

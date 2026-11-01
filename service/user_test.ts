@@ -35,7 +35,6 @@ function fakeWindow() {
     const delays: number[] = [];
 
     const hooks: events.ActivityHooks = {
-        now: () => new Date(),
         schedule: (callback, delayMs) => {
             delays.push(delayMs);
             pending = callback;
@@ -134,8 +133,8 @@ Deno.test("register meldet den Identitätswechsel einer IP als Karten-Ereignis (
     events.setActivityHooks(window.hooks);
 
     const batches: string[][] = [];
-    const unsubscribe = events.subscribeActivity((reasons) =>
-        batches.push(reasons)
+    const unsubscribe = events.subscribeActivity((components) =>
+        batches.push(components)
     );
 
     try {
@@ -156,7 +155,9 @@ Deno.test("register meldet den Identitätswechsel einer IP als Karten-Ereignis (
             ip,
         );
         window.flush();
-        assertEquals(batches, [["registration", "cards"]]);
+        // Die Registrierung selbst ist nur Präsenz; erst der
+        // Identitätswechsel ist ein Karten-Ereignis (#163).
+        assertEquals(batches, [["cards"]]);
 
         // Zweiter User auf derselben IP: Presence-Zeile plus Karten-Ereignis.
         await userService.register(
@@ -169,10 +170,7 @@ Deno.test("register meldet den Identitätswechsel einer IP als Karten-Ereignis (
             "Die neueste Identität der IP muss gewechselt haben",
         );
         window.flush();
-        assertEquals(batches, [
-            ["registration", "cards"],
-            ["registration", "cards"],
-        ]);
+        assertEquals(batches, [["cards"], ["cards"]]);
     } finally {
         unsubscribe();
         clearForensicsByIp(ip);

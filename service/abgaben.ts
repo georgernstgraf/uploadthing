@@ -1,5 +1,6 @@
 import { RepoAbgabeRecord } from "../repo/abgaben.ts";
 import { localAdminIpString } from "../lib/timefunc.ts";
+import { ipSlug } from "../lib/slug.ts";
 import * as repo from "../repo/repo.ts";
 import { noteAdminActivity } from "./events.ts";
 
@@ -12,8 +13,9 @@ export function recordSubmission(
     filename: string,
 ): RepoAbgabeRecord {
     const record = repo.abgaben.create(userId, ip, filename, new Date());
-    // Die „Abgabe"-Badge der Forensik hängt an dieser Zeile.
-    noteAdminActivity("submission");
+    // Die „Abgabe"-Badge der Forensik hängt an dieser Zeile — nur das
+    // Kärtchen dieser IP ändert sich, nicht das ganze Panel (#163).
+    noteAdminActivity(`card-${ipSlug(ip)}`);
     return record;
 }
 

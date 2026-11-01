@@ -502,9 +502,10 @@
 - **Ein Snapshot ist seiteneffektfrei und wird beim Senden gebaut.** Kein
   Event-Log, kein `id:`; nach einem Reconnect kommt derselbe Snapshot,
   nur frisch. Der Bus transportiert nur Ticks.
-- **Admin-Aktivität nur über `noteAdminActivity()`** melden (1-s-Fenster,
-  deduplizierte Gründe). Presence schreibt nur, was die neueste Identität
-  einer IP verschiebt: `recordPresence()` liefert
+- **Admin-Aktivität nur über `noteAdminActivity(component)`** melden
+  (1-s-Fenster, deduplizierte Komponenten; `cards` schluckt `card-*`
+  desselben Fensters, #163). Presence schreibt nur, was die neueste
+  Identität einer IP verschiebt: `recordPresence()` liefert
   `{inserted, identityChanged}`, die 30-s-Dedupe setzt beides auf `false`,
   und ein Insert desselben Users ist `inserted: true` mit
   `identityChanged: false`. Nur `identityChanged` publiziert (`cards`,
@@ -512,6 +513,19 @@
   nicht mehr: die eigene Präsenz ändert die neueste Identität nicht, die
   Rückkopplung ist strukturell ausgeschlossen. `/static/*` schreibt keine
   Presence. Ohne diese Riegel löst der Admin-Render den nächsten aus.
+- **Ein Kärtchen-Fragment braucht `hx-disinherit` auf dem Grid-Wrapper**
+  (#163). Die innere Karte trägt ihr eigenes `hx-get`/`hx-target`/
+  `hx-trigger` für das IP-Detail-Modal und würde sonst `hx-select`,
+  `hx-swap` und `hx-include` des Panels erben; die Attribute auf der
+  inneren Karte bleiben unverändert, `hx-disinherit` steht eine Ebene
+  darüber auf dem `<div class="col">`. Der Wrapper ist auch die Wurzel des
+  Fragments, damit `hx-swap="outerHTML"` die Bootstrap-Spalte intakt lässt.
+- **Der Scan-Delta liest über den Composite-Index.** `ipsAt()` und
+  `ipsBetween()` (`repo/ipfact.ts`, #163) planen als
+  `SEARCH ipfact USING COVERING INDEX ipfact_seen_ip_idx` (nur
+  `ipsBetween` braucht einen temporären B-tree für `DISTINCT`) — geprüft
+  mit `EXPLAIN QUERY PLAN` auf `uploadthing.db`. Wer die Abfragen ändert,
+  prüft den Plan erneut.
 - **Der Client gibt nach drei Verbindungsfehlern ohne Frame auf.** Ein
   dauerhaftes 401/403 würde sonst alle drei Sekunden neu klopfen; der
   Reconnect selbst ist Sache von `EventSource`, ein eigener Timer dafür

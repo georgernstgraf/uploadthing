@@ -9,6 +9,7 @@ import {
     seedExamState,
     upsertFixtureUser,
 } from "../test/helpers/forensics_fixture.ts";
+import { ipSlug } from "../lib/slug.ts";
 import * as abgaben from "./abgaben.ts";
 import * as events from "./events.ts";
 import {
@@ -19,17 +20,14 @@ import {
 import { pollOnce, resetStatus } from "./tik.ts";
 
 /**
- * Fenster mit injizierbarer Uhr und Scheduler: `flush()` löst genau den
- * Timer aus, den `noteAdminActivity()` auf der Nachlaufkante gestellt
- * hat.
+ * Fenster mit injizierbarem Scheduler: `flush()` löst genau den Timer
+ * aus, den `noteAdminActivity()` auf der Nachlaufkante gestellt hat.
  */
-function fakeWindow(startIso: string) {
-    let current = new Date(startIso);
+function fakeWindow() {
     let pending: (() => void) | null = null;
     const delays: number[] = [];
 
     const hooks: events.ActivityHooks = {
-        now: () => current,
         schedule: (callback, delayMs) => {
             delays.push(delayMs);
             pending = callback;
@@ -43,9 +41,6 @@ function fakeWindow(startIso: string) {
     return {
         hooks,
         delays,
-        advance: (ms: number) => {
-            current = new Date(current.getTime() + ms);
-        },
         flush: () => {
             const callback = pending;
             pending = null;
@@ -57,20 +52,20 @@ function fakeWindow(startIso: string) {
     };
 }
 
-Deno.test("drei Gründe in einem Fenster ergeben ein dedupliziertes Event", () => {
+Deno.test("Komponenten eines Fensters ergeben ein dedupliziertes Event (#163)", () => {
     hub.resetHub();
     events.resetActivity();
     try {
-        const window = fakeWindow("2026-10-31T10:00:00.000Z");
+        const window = fakeWindow();
         events.setActivityHooks(window.hooks);
 
         const batches: string[][] = [];
-        const unsubscribe = events.subscribeActivity((reasons) =>
-            batches.push(reasons)
+        const unsubscribe = events.subscribeActivity((components) =>
+            batches.push(components)
         );
 
-        events.noteAdminActivity("submission");
-        events.noteAdminActivity("submission");
+        events.noteAdminActivity("card-10-0-0-1");
+        events.noteAdminActivity("card-10-0-0-1");
         events.noteAdminActivity("tik");
 
         // Nachlaufkante: innerhalb des Fensters geht nichts raus, und es
@@ -79,17 +74,46 @@ Deno.test("drei Gründe in einem Fenster ergeben ein dedupliziertes Event", () =
         assertEquals(window.delays, [events.ADMIN_PUSH_MIN_MS]);
         assertEquals(events.ADMIN_PUSH_MIN_MS, 1000);
 
-        window.advance(events.ADMIN_PUSH_MIN_MS);
         window.flush();
 
-        assertEquals(batches, [["submission", "tik"]]);
-        assertEquals(events.snapshotActivity(), {
-            seq: 1,
-            type: "activity",
-            reasons: ["submission", "tik"],
-            at: "2026-10-31T10:00:01.000Z",
-            server_now_ms: Date.parse("2026-10-31T10:00:01.000Z"),
-        });
+        // Dieselbe Komponente zweimal ist ein Name; die Reihenfolge des
+        // ersten Vorkommens bleibt erhalten.
+        assertEquals(batches, [["card-10-0-0-1", "tik"]]);
+
+        unsubscribe();
+    } finally {
+        events.resetActivity();
+        hub.resetHub();
+    }
+});
+
+Deno.test("cards schluckt card-* desselben Fensters (#163)", () => {
+    hub.resetHub();
+    events.resetActivity();
+    try {
+        const window = fakeWindow();
+        events.setActivityHooks(window.hooks);
+
+        const batches: string[][] = [];
+        const unsubscribe = events.subscribeActivity((components) =>
+            batches.push(components)
+        );
+
+        // Ein Panel-Render erledigt alle Kärtchen: die Einzelmeldungen
+        // davor und danach sind erledigt.
+        events.noteAdminActivity("card-10-0-0-1");
+        events.noteAdminActivity("cards");
+        events.noteAdminActivity("card-10-0-0-2");
+        events.noteAdminActivity("tik");
+        window.flush();
+        assertEquals(batches, [["cards", "tik"]]);
+
+        // Auch ein bereits vorgemerktes `cards` schluckt ein späteres
+        // Kärtchen.
+        events.noteAdminActivity("cards");
+        events.noteAdminActivity("card-10-0-0-3");
+        window.flush();
+        assertEquals(batches, [["cards", "tik"], ["cards"]]);
 
         unsubscribe();
     } finally {
@@ -102,27 +126,27 @@ Deno.test("nach Ablauf des Fensters beginnt ein neues Event", () => {
     hub.resetHub();
     events.resetActivity();
     try {
-        const window = fakeWindow("2026-10-31T10:00:00.000Z");
+        const window = fakeWindow();
         events.setActivityHooks(window.hooks);
 
         const batches: string[][] = [];
-        events.subscribeActivity((reasons) => batches.push(reasons));
+        const unsubscribe = events.subscribeActivity((components) =>
+            batches.push(components)
+        );
 
-        events.noteAdminActivity("submission");
-        window.advance(events.ADMIN_PUSH_MIN_MS);
+        events.noteAdminActivity("cards");
         window.flush();
-        assertEquals(batches, [["submission"]]);
+        assertEquals(batches, [["cards"]]);
 
-        events.noteAdminActivity("cookie");
+        events.noteAdminActivity("tik");
         // Erst der zweite Timer, und erst nach dem Fenster kommt es raus.
         assertEquals(window.delays.length, 2);
         assertEquals(batches.length, 1);
 
-        window.advance(events.ADMIN_PUSH_MIN_MS);
         window.flush();
-        assertEquals(batches, [["submission"], ["cookie"]]);
-        assertEquals(events.snapshotActivity().seq, 2);
-        assertEquals(events.snapshotActivity().reasons, ["cookie"]);
+        assertEquals(batches, [["cards"], ["tik"]]);
+
+        unsubscribe();
     } finally {
         events.resetActivity();
         hub.resetHub();
@@ -211,7 +235,7 @@ Deno.test("snapshotExam beendet ein abgelaufenes Examen nicht selbst", () => {
     }
 });
 
-Deno.test("recordSubmission meldet 'submission' am Admin-Kanal (#161)", async () => {
+Deno.test("recordSubmission meldet nur das Kärtchen dieser IP (#163)", async () => {
     hub.resetHub();
     events.resetActivity();
     const suffix = crypto.randomUUID().slice(0, 8);
@@ -219,11 +243,11 @@ Deno.test("recordSubmission meldet 'submission' am Admin-Kanal (#161)", async ()
     const ip = `10.98.${Number.parseInt(suffix.slice(0, 2), 16) % 200}.7`;
 
     try {
-        const window = fakeWindow("2026-10-31T10:00:00.000Z");
+        const window = fakeWindow();
         events.setActivityHooks(window.hooks);
 
         const batches: string[][] = [];
-        events.subscribeActivity((reasons) => batches.push(reasons));
+        events.subscribeActivity((components) => batches.push(components));
 
         const user = await upsertFixtureUser({
             email,
@@ -238,7 +262,7 @@ Deno.test("recordSubmission meldet 'submission' am Admin-Kanal (#161)", async ()
         assertEquals(batches, []);
 
         window.flush();
-        assertEquals(batches, [["submission"]]);
+        assertEquals(batches, [[`card-${ipSlug(ip)}`]]);
     } finally {
         clearForensicsByIp(ip);
         await clearForensicsByUserEmail(email);
@@ -255,26 +279,32 @@ Deno.test("jeder Tik-Poll meldet 'tik' — Erfolg und Ausfall (#161)", async () 
     resetStatus();
 
     try {
-        const window = fakeWindow("2026-10-31T10:00:00.000Z");
+        const window = fakeWindow();
         events.setActivityHooks(window.hooks);
 
         const batches: string[][] = [];
-        events.subscribeActivity((reasons) => batches.push(reasons));
+        events.subscribeActivity((components) => batches.push(components));
+
+        // Der Scan-Delta ist hier nicht das Thema und würde gegen die
+        // echte `tikscan`-Tabelle rechnen.
+        const publishScanComponents = () => {};
 
         const success = await pollOnce({
             fetcher: () => Promise.resolve(new Response("[]")),
             register: () => {},
+            publishScanComponents,
             now: () => new Date("2026-10-31T10:00:00.000Z"),
         });
         assertEquals(success.ok, true);
 
         const failure = await pollOnce({
             fetcher: () => Promise.reject(new Error("Tik nicht erreichbar")),
+            publishScanComponents,
             now: () => new Date("2026-10-31T10:00:30.000Z"),
         });
         assertEquals(failure.ok, false);
 
-        // Beide Polls liegen im selben Fenster: ein Event, ein Grund.
+        // Beide Polls liegen im selben Fenster: ein Event, eine Komponente.
         assertEquals(batches, []);
         window.flush();
         assertEquals(batches, [["tik"]]);
@@ -282,6 +312,7 @@ Deno.test("jeder Tik-Poll meldet 'tik' — Erfolg und Ausfall (#161)", async () 
         // Der nächste Ausfall nach dem Fenster ist ein eigenes Ereignis.
         await pollOnce({
             fetcher: () => Promise.resolve(new Response("[]", { status: 500 })),
+            publishScanComponents,
             now: () => new Date("2026-10-31T10:00:31.000Z"),
         });
         assertEquals(batches.length, 1);

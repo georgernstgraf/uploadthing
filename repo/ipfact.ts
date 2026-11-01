@@ -127,6 +127,22 @@ const existsBeforeStmt = db.prepare(
     LIMIT 1`,
 );
 /*
+Distinct IPs je Scan (#163): beide Abfragen laufen über den Composite-Index
+`ipfact_seen_ip_idx` (seen, ip) — `seen` ist die führende Spalte, `ip`
+kommt aus dem Index selbst (Covering Index). `ipsBetween` ist das halboffene
+Fenster `[start, end)`; ein Scan gehört damit genau zu einem Fenster.
+*/
+const ipsAtStmt = db.prepare(
+    `SELECT DISTINCT ip FROM ipfact
+    WHERE seen = ?
+    ORDER BY ip`,
+);
+const ipsBetweenStmt = db.prepare(
+    `SELECT DISTINCT ip FROM ipfact
+    WHERE seen >= ? AND seen < ?
+    ORDER BY ip`,
+);
+/*
 Jüngste MAC einer IP seit `since` (#147, #153): läuft rückwärts über den
 Index `ipfact_ip_seen_key` (ip, seen) und liefert die MAC der jüngsten
 Sichtung im Fenster — auch wenn diese Sichtung keine MAC hat. Genau dann
@@ -224,4 +240,28 @@ export function existsBefore(ip: string, scan: Date, since: Date): boolean {
 export function deleteScansOlderThan(cutoff: Date): number {
     deleteScansOlderThanStmt.run(cutoff.toISOString());
     return db.changes;
+}
+
+/**
+ * Alle IPs, die **genau bei diesem Scan** gesehen wurden, distinct und
+ * alphabetisch (#163). Grundlage des Scan-Deltas: nur was sich zwischen
+ * zwei Scans ändert, wird ein Ereignis.
+ */
+export function ipsAt(scan: Date): string[] {
+    const rows = ipsAtStmt.all(scan.toISOString()) as { ip: string }[];
+    return rows.map((row) => row.ip);
+}
+
+/**
+ * Alle IPs, die im halboffenen Fenster `start <= seen < end` gesehen
+ * wurden, distinct und alphabetisch (#163). `end` gehört nicht dazu,
+ * damit `ipsBetween(dayStart, scan)` genau die Sichtungen **vor** dem
+ * laufenden Scan liefert.
+ */
+export function ipsBetween(start: Date, end: Date): string[] {
+    const rows = ipsBetweenStmt.all(
+        start.toISOString(),
+        end.toISOString(),
+    ) as { ip: string }[];
+    return rows.map((row) => row.ip);
 }

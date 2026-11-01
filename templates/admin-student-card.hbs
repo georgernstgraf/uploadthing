@@ -1,0 +1,59 @@
+{{!--
+    Ein Kärtchen einer bekannten IP (#163) — Liste und Fragment-Endpunkt
+    rendern dieselbe Wahrheit.
+
+    Die Wurzel ist der Grid-Wrapper, damit `outerHTML` die Bootstrap-Spalte
+    intakt lässt. `hx-disinherit` ist Pflicht: die innere Karte trägt ihr
+    eigenes `hx-get`/`hx-target`/`hx-trigger` für das IP-Detail-Modal und
+    darf weder `hx-select` noch `hx-swap`/`hx-include` des Panels erben.
+    Ohne geladene SSE-Extension ist `hx-trigger="sse:card-…"` ein No-Op.
+--}}
+<div class="col"
+     id="student-card-{{slug}}"
+     data-ip="{{ip}}"
+     data-tone="{{tone}}"
+     hx-get="{{{card_url}}}"
+     hx-trigger="sse:card-{{slug}}"
+     hx-target="this"
+     hx-swap="outerHTML"
+     hx-disinherit="hx-swap hx-target hx-select hx-include">
+    <div class="card shadow-sm h-100"
+         style="cursor: pointer;"
+         hx-get="/admin/ip-detail?ip={{ip}}"
+         hx-include="#admin-time-filter form"
+         hx-target="#ip-detail-modal-content"
+         hx-trigger="click">
+        <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
+            <div class="d-flex align-items-center justify-content-between w-100">
+                <div class="d-flex align-items-center gap-1 overflow-hidden">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold {{#if (eq tone "lehrend")}}text-warning-emphasis bg-warning-subtle{{else}}text-primary-emphasis bg-primary-subtle{{/if}}"
+                         style="width: 26px; height: 26px; font-size: 0.875rem;">
+                        {{#if this.cookie_presents.[0].user}}
+                            {{givenNameInitial this.cookie_presents.[0].user.name}}
+                        {{else}} ? {{/if}}
+                    </div>
+                    <div class="overflow-hidden">
+                        <span class="d-block text-truncate"
+                              title="{{this.cookie_presents.[0].user.name}}">
+                            {{#if this.cookie_presents.[0].user}}
+                                {{this.cookie_presents.[0].user.name}}
+                            {{else}} Unbekannt {{/if}}
+                        </span>
+                        <span class="fw-normal d-block text-truncate small">{{ip}}</span>
+                    </div>
+                </div>
+                <div class="d-flex flex-column align-items-end gap-1 ms-1 flex-shrink-0">
+                    {{#if this.has_submission}}
+                        <span class="badge text-bg-success text-wrap text-end"
+                              title="{{submissionTooltip this.submissions}}"> Abgabe </span>
+                    {{/if}}
+                    {{#if this.is_stale}}
+                        <span class="badge text-bg-danger text-wrap text-end">nicht anwesend</span>
+                    {{/if}}
+                    <span class="badge {{#if this.missed_count}}text-bg-warning{{else}}text-bg-light{{/if}} text-wrap text-end">
+                        Fehlte {{this.missed_count}} mal </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

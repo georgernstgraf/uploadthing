@@ -3,6 +3,7 @@ import type { TikConfig } from "../lib/config.ts";
 import * as repo from "../repo/repo.ts";
 import { localAdminIpString } from "../lib/timefunc.ts";
 import { noteAdminActivity } from "./events.ts";
+import { scanDelta } from "./ipadmin.ts";
 
 /**
  * Polling der WLAN-Registrierungstabelle des MikroTik (#145).
@@ -76,6 +77,18 @@ const defaultRegister: RegisterEntries = (entries, seen) => {
     // hält nur die Sichtungen; die Zeitachse führt `tikscan` (#163).
     repo.ipfact.insertScan(seen);
     repo.ipfact.registerSeenMany(entries, seen);
+};
+
+/**
+ * Standardweg nach einem **erfolgreichen** Abruf (#163): der Scan-Delta
+ * gegen den vorigen Scan sagt, welche Kärtchen sich geändert haben.
+ * Publiziert wird über `noteAdminActivity`, damit die Koaleszierung
+ * greift.
+ */
+const defaultPublishScanComponents = (at: Date): void => {
+    for (const component of scanDelta(at)) {
+        noteAdminActivity(component);
+    }
 };
 
 function emptyStatus(): TikStatus {
@@ -194,6 +207,8 @@ function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
+export type PublishScanComponents = (at: Date) => void;
+
 /**
  * Ein einzelner Abruf inklusive Normalisierung, Persistenz und
  * Zustandsbuchung. Netzwerkfehler, Timeouts, HTTP-Fehler und kaputte
@@ -206,6 +221,8 @@ export async function pollOnce(
         signal?: AbortSignal;
         now?: () => Date;
         register?: RegisterEntries;
+        /** Nach einem erfolgreichen Abruf; Tests ersetzen den Scan-Delta. */
+        publishScanComponents?: PublishScanComponents;
     } = {},
 ): Promise<TikPollOutcome> {
     const tik = config.TIK;
@@ -219,6 +236,8 @@ export async function pollOnce(
 
     const fetcher = options.fetcher ?? defaultFetcher;
     const register = options.register ?? defaultRegister;
+    const publishScanComponents = options.publishScanComponents ??
+        defaultPublishScanComponents;
     const now = options.now ?? (() => new Date());
     const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
     const signal = options.signal
@@ -250,12 +269,16 @@ export async function pollOnce(
             status.last_success_at = at;
             status.last_count = outcome.entries.length;
             status.last_error = null;
+            // Erst nach der Persistenz: der Delta vergleicht den neuen
+            // Scan mit dem vorigen. Ein gescheiterter, abgebrochener oder
+            // nicht speicherbarer Abruf stößt keine Kärtchen an.
+            publishScanComponents(at);
         } else {
             status.last_error = outcome.error;
         }
 
         // Jeder abgeschlossene Abruf meldet sich: neue Clients genauso
-        // wie ein Ausfall, sonst bliebe das Panel bis zum nächsten
+        // wie ein Ausfall, sonst bliebe der Streifen bis zum nächsten
         // Zeitintervall auf einem veralteten Bild stehen. `is_stale` und
         // „zuletzt gesehen" hängen an der Wanduhr.
         noteAdminActivity("tik");
@@ -334,6 +357,7 @@ export function startPolling(
         intervalMs?: number;
         fetcher?: TikFetcher;
         register?: RegisterEntries;
+        publishScanComponents?: PublishScanComponents;
     } = {},
 ): TikPoller | null {
     if (!config.TIK) {
@@ -352,6 +376,7 @@ export function startPolling(
         const outcome = await pollOnce({
             fetcher: options.fetcher,
             register: options.register,
+            publishScanComponents: options.publishScanComponents,
             signal: controller.signal,
         });
 

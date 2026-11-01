@@ -2,8 +2,10 @@ import type { Context } from "hono";
 import config from "../lib/config.ts";
 import * as hbs from "../lib/handlebars.ts";
 import { get_unterlagen } from "../lib/pathfuncs.ts";
+import { ipSlug } from "../lib/slug.ts";
 import { localTimeString } from "../lib/timefunc.ts";
 import type { HonoContextVars } from "../lib/types.ts";
+import type { ServiceIpAdmin } from "../service/ipadmin.ts";
 import * as service from "../service/service.ts";
 
 /**
@@ -204,4 +206,74 @@ export async function respondWithStartPage(
         theme_asset_version: config.THEME_ASSET_VERSION,
         content,
     }));
+}
+
+/** Der aufgelöste Zeitraum, auf den sich ein Kärtchen bezieht (#163). */
+export type AdminCardRange = {
+    startdate: string;
+    starttime: string;
+    enddate: string;
+    endtime: string;
+};
+
+/**
+ * Farbe eines Kärtchens aus den Daten ableiten.
+ *
+ * Dieselbe Einteilung, nach der `for_range` gruppiert: ohne jede
+ * Cookie-Präsenz ist die IP unbekannt (eigener Zweig), mit Lehrpersonen-
+ * Identität gehört sie zu den Lehrenden, sonst zu den Schülern. Damit
+ * rendert der Fragment-Endpunkt ein Kärtchen genau so, wie es in der
+ * Liste stand — ohne dass die Gruppe in der URL mitgeschickt wird.
+ */
+function studentCardTone(card: ServiceIpAdmin): hbs.AdminStudentCardTone {
+    if (card.cookie_presents.length === 0) {
+        return "unbekannt";
+    }
+    const primaryUser = card.cookie_presents[0]?.user ?? null;
+    return primaryUser?.klasse === service.user.TEACHER_CLASS
+        ? "lehrend"
+        : "schueler";
+}
+
+/**
+ * Kontext eines Kärtchens (#163): Karten-Daten plus `slug`, `tone` und
+ * `card_url`. `card_url` trägt `ip` **und** den aufgelösten Zeitraum —
+ * die Karte verlässt sich nicht auf `hx-include` und rendert die Wahrheit
+ * ihres eigenen Zeitraums.
+ *
+ * Die URL ist über `URLSearchParams` kodiert und wird deshalb im Template
+ * unescaped ausgegeben (`{{{card_url}}}`): HTML-Escaping würde die
+ * `=`-Trenner zu `&#x3D;` machen und die Adresse unlesbar, aber nicht
+ * unsicher — in die URL gelangen nur kodierte Werte.
+ */
+export function buildStudentCard(
+    card: ServiceIpAdmin,
+    range: AdminCardRange,
+): hbs.AdminStudentCardTemplateData {
+    const query = new URLSearchParams({
+        ip: card.ip,
+        startdate: range.startdate,
+        starttime: range.starttime,
+        enddate: range.enddate,
+        endtime: range.endtime,
+    });
+
+    return {
+        ...card,
+        slug: ipSlug(card.ip),
+        tone: studentCardTone(card),
+        card_url: `/admin/student-card?${query.toString()}`,
+    };
+}
+
+/** Daten des MikroTik-Streifens — für die Seite und für `/admin/tik-panel`. */
+export function buildTikPanelData(): hbs.TikPanelTemplateData {
+    const panel = service.tik.getPanel();
+    return {
+        tik_state: panel.state,
+        tik_last_attempt: panel.last_attempt,
+        tik_last_success: panel.last_success,
+        tik_last_count: panel.count,
+        tik_error: panel.error,
+    };
 }

@@ -126,6 +126,18 @@ export function adminIpString(
 }
 
 /**
+ * Lokaler Tagesbeginn (Mitternacht Europe/Vienna) zum Zeitpunkt `date`.
+ *
+ * Der Zeitpunkt bleibt ein `Date` (UTC-Instant), damit Repositories ihn
+ * unverändert vergleichen können. Für den Scan-Delta (#163) ist er das
+ * Fenster, in dem ein Kärtchen schon einmal gesehen wurde.
+ */
+export function localDayStart(date: Date): Date {
+    const zoned = parseISOString(date.toISOString()).startOfDay();
+    return new Date(zoned.epochMilliseconds);
+}
+
+/**
  * Formatiert eine Dauer in Sekunden als Restzeit-Anzeige (H:MM:SS,
  * unterhalb einer Stunde MM:SS). Negative Werte werden auf 0 geklemmt.
  */
@@ -150,6 +162,19 @@ export async function sleep_seconds(s: number) {
 export function localTimeString(date?: Date): string {
     const mydate = date ? date : new Date();
     return timeString(mydate.toISOString());
+}
+
+/**
+ * Uhrzeit mit Sekunden (HH:MM:SS) in Wien.
+ *
+ * Der Admin-Kanal schickt seinen Serverstand als Text (`Stand: HH:MM:SS`,
+ * #163); die Minuten-Auflösung von `localTimeString()` wäre für einen
+ * Push-Stand zu grob.
+ */
+export function localTimeStringSeconds(date: Date = new Date()): string {
+    const zoned = parseISOString(date.toISOString());
+    const pad = (value: number) => String(value).padStart(2, "0");
+    return `${pad(zoned.hour)}:${pad(zoned.minute)}:${pad(zoned.second)}`;
 }
 
 /** @deprecated Use dateTimeString() with Temporal instead */

@@ -4,7 +4,9 @@ import {
     localAutoString,
     localDateString,
     localDateTimeString,
+    localDayStart,
     localTimeString,
+    localTimeStringSeconds,
 } from "./timefunc.ts";
 
 Deno.test("localTimeString - formats time correctly", () => {
@@ -82,4 +84,44 @@ Deno.test("localAdminIpString - uses 15 hour cutoff", () => {
 
     assertMatch(recentResult, /^\d{2}:\d{2}$/);
     assertMatch(olderResult, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+});
+
+Deno.test("localDayStart - Mitternacht in Sommerzeit (CEST, UTC+2)", () => {
+    // 12:00 UTC ist 14:00 in Wien; der Tag begann um 22:00 UTC am Vortag.
+    assertEquals(
+        localDayStart(new Date("2026-07-01T12:00:00.000Z")).toISOString(),
+        "2026-06-30T22:00:00.000Z",
+    );
+});
+
+Deno.test("localDayStart - Mitternacht in Winterzeit (CET, UTC+1)", () => {
+    assertEquals(
+        localDayStart(new Date("2026-12-01T12:00:00.000Z")).toISOString(),
+        "2026-11-30T23:00:00.000Z",
+    );
+});
+
+Deno.test("localDayStart - früher UTC-Morgen gehört schon zum lokalen Tag", () => {
+    // 23:00 UTC am 30.06. ist 01:00 am 01.07. in Wien: derselbe Tagesbeginn.
+    assertEquals(
+        localDayStart(new Date("2026-06-30T23:00:00.000Z")).toISOString(),
+        "2026-06-30T22:00:00.000Z",
+    );
+});
+
+Deno.test("localDayStart - Mitternacht selbst bleibt Mitternacht", () => {
+    const midnight = new Date("2026-03-27T23:00:00.000Z");
+    assertEquals(localDayStart(midnight).toISOString(), midnight.toISOString());
+});
+
+Deno.test("localTimeStringSeconds - format HH:MM:SS in Wiener Zeit", () => {
+    // 10:41:07 UTC ist im Winter 11:41:07 in Wien.
+    assertEquals(
+        localTimeStringSeconds(new Date("2026-12-01T10:41:07.000Z")),
+        "11:41:07",
+    );
+    assertEquals(
+        localTimeStringSeconds(new Date("2026-07-01T10:41:07.000Z")),
+        "12:41:07",
+    );
 });

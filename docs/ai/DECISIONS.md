@@ -1,5 +1,41 @@
 # DECISIONS
 
+## 2026-11-01: Der Admin-Kanal transportiert Komponenten (#163)
+
+- **Entscheidung:** Der `activity`-Kanal überträgt keine „Gründe" mehr,
+  sondern **Komponentennamen**: `cards` (Forensik-Panel neu rendern),
+  `card-<slug>` (genau dieses Kärtchen, `slug` = IP mit Bindestrichen aus
+  `lib/slug.ts`) und `tik` (nur der MikroTik-Streifen). Die Serverzeit
+  fährt als eigener `stand`-Frame (reiner Text `Stand: HH:MM:SS`) beim
+  Verbinden und vor jedem Batch. `snapshotActivity()`, `ActivitySnapshot`
+  und `reasons` entfallen ersatzlos; `noteAdminActivity(component)`,
+  `subscribeActivity(components)`, `resetActivity()` und
+  `setActivityHooks()` bleiben.
+- **Warum:** Ein Grund (`submission`) sagt dem Client nicht, *was* er neu
+  holen soll — er zwang zu einem Vollrender des ganzen Panels. Mit
+  Komponentennamen ist der Push auf ein Kärtchen oder einen Streifen
+  begrenzbar, und der Name ist gleichzeitig der HTMX-Trigger
+  (`hx-trigger="sse:card-…"`).
+- **`cards` schluckt `card-*` desselben Fensters** (in beide
+  Richtungen): ein Panel-Render erledigt alle Kärtchen, die Einzelmeldung
+  wäre doppelte Arbeit. Koaleszierung bleibt sonst unverändert
+  (`ADMIN_PUSH_MIN_MS = 1000`, Nachlaufkante, dedupliziert).
+- **Der Scan-Delta publiziert nur Übergänge** (`service/ipadmin.scanDelta`):
+  `bei T, nicht bei P` → `card-<ip>`, dazu `cards`, wenn die IP seit
+  lokalem Tagesbeginn noch nie gesehen wurde; `bei P, nicht bei T` →
+  `card-<ip>`; bei beiden abwesend → nichts. Ein fehlgeschlagener oder
+  abgebrochener Abruf schreibt keinen Scan und publiziert nichts. Bezug
+  ist der vorige Scan aus `tikscan`, nicht das Anzeigefenster der Seite.
+- **Kärtchen ohne Zeile im Zeitraum antworten `204`,** nicht `404`: der
+  globale HTMX-Fehler-Handler würde sonst bei jedem stillen Kärtchen einen
+  Toast zeigen. `GET /admin/student-card` und `GET /admin/tik-panel` sind
+  die Fragmente; `parseAdminRange` ist die eine Zeitraum-Wahrheit für
+  Liste, Detail und Kärtchen (inklusive Einrasten auf `spg_times`, das
+  `/admin/ip-detail` vorher nicht hatte).
+- **Nicht in dieser Welle:** Client-Verdrahtung (`static/events.js`,
+  htmx-SSE-Extension) — ohne Extension ist `hx-trigger="sse:…"` ein
+  No-Op, der Panel-Trigger bleibt `admin-refresh` (Welle 4).
+
 ## 2026-10-31: Server-Push statt Polling (SSE) (#161)
 
 Ersetzt zwei frühere Einträge: „On-Demand statt Polling" (#160, unten —
@@ -25,7 +61,8 @@ stehen, gelten aber nicht mehr.
   (`lib/event_hub.ts`) kennt nur Kanäle, einen monotonen Zähler und
   Listener. Ein Zustandswechsel publiziert einen **zustandslosen Tick**
   (`null`), der Empfänger baut den vollständigen Snapshot beim Senden aus
-  der DB (`service/events.snapshotExam()`/`snapshotActivity()`). Deshalb
+  der DB (`service/events.snapshotExam()`; der Activity-Kanal überträgt
+  seit #163 stattdessen Komponentennamen, siehe oben). Deshalb
   gibt es kein `id:`-Feld und keine `Last-Event-ID`: nach einem Reconnect
   kommt derselbe Snapshot wie beim ersten Verbinden, nur frischer.
 - **Der Snapshot ist seiteneffektfrei.** `snapshotExam()` liest über
@@ -57,9 +94,9 @@ stehen, gelten aber nicht mehr.
   meldet per Rückgabewert, ob es ein echter Insert war; (2) `/static/*`
   schreibt gar keine Presence (eine Seite erzeugt ~8 Asset-Requests);
   (3) Lehrpersonen erzeugen kein `cookie`-Ereignis. Zusätzlich fasst
-  `service/events.noteAdminActivity()` alle Gründe eines
+  `service/events.noteAdminActivity()` alle Komponenten eines
   `ADMIN_PUSH_MIN_MS = 1000`-Fensters zu **einem** Event mit
-  deduplizierten Gründen zusammen (Nachlaufkante). Die Konstante ist
+  deduplizierten Namen zusammen (Nachlaufkante). Die Konstante ist
   bewusst keine Env-Variable: Koaleszierung ist eine Eigenschaft des
   Kanals, kein Betriebsparameter.
 - **Freeze-Badge statt stillem Verwerfen.** Die Forensik darf nicht

@@ -47,9 +47,9 @@ export async function register(userData: UserType, ip: string) {
         at,
     );
 
-    // Neue Registrierung ist eine sichtbare Änderung für die Forensik.
-    noteAdminActivity("registration");
-    // Erst der Identitätswechsel verschiebt die Karte dieser IP.
+    // Neue Registrierung ist eine reine Präsenzaussage (#163): sie
+    // verschiebt höchstens die Identität dieser IP, nicht das Panel.
+    // Erst der Identitätswechsel braucht einen Render der Karten.
     if (presence.identityChanged) {
         noteAdminActivity("cards");
     }

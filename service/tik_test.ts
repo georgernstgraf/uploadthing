@@ -12,7 +12,11 @@ import {
 } from "./tik.ts";
 import type { TikFetcher } from "./tik.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
-import { clearScans } from "../test/helpers/forensics_fixture.ts";
+import {
+    clearForensicsByIp,
+    clearScans,
+} from "../test/helpers/forensics_fixture.ts";
+import * as events from "./events.ts";
 
 const TEST_TIK: TikConfig = {
     url: "http://tik.test",
@@ -66,11 +70,17 @@ async function withTikConfig<T>(
     const original = config.TIK;
     config.TIK = tik;
     resetStatus();
+    // Admin-Aktivität bleibt in diesem Modul folgenlos: der Timer läuft
+    // nicht, sonst könnte ein Batch aus einem Tik-Test eine Sekunde
+    // später in einem fremden Test auftauchen (#163). Tests, die den
+    // Kanal beobachten, setzen eigene Hooks.
+    events.setActivityHooks({ schedule: () => 0, cancel: () => {} });
     try {
         return await fn();
     } finally {
         config.TIK = original;
         resetStatus();
+        events.resetActivity();
     }
 }
 
@@ -492,5 +502,132 @@ Deno.test("tik - Poller startet ohne Konfiguration nicht", async () => {
         assertEquals(poller, null);
         await sleep(30);
         assertEquals(called, false);
+    });
+});
+
+/** Fenster-Stub: der Batch läuft erst auf `flush()`. */
+function manualWindow() {
+    let pending: (() => void) | null = null;
+    return {
+        hooks: {
+            schedule: (callback: () => void) => {
+                pending = callback;
+                return 1;
+            },
+            cancel: () => {
+                pending = null;
+            },
+        } satisfies events.ActivityHooks,
+        flush: () => {
+            const callback = pending;
+            pending = null;
+            callback?.();
+        },
+    };
+}
+
+Deno.test("tik - Erfolg meldet die Scan-Komponenten, Fehler nicht (#163)", async () => {
+    await withTikConfig(TEST_TIK, async () => {
+        const published: string[] = [];
+        const publishScanComponents = (at: Date) =>
+            published.push(at.toISOString());
+
+        const success = await pollOnce({
+            fetcher: fakeFetch([]).fetcher,
+            now: () => NOW,
+            register: () => {},
+            publishScanComponents,
+        });
+        assertEquals(success.ok, true);
+        assertEquals(published, [NOW.toISOString()]);
+
+        // Ausfall, HTTP-Fehler, kaputtes Format und gescheitertes
+        // Speichern dürfen keine Kärtchen anstoßen.
+        await pollOnce({
+            fetcher: failingFetch(new TypeError("weg")).fetcher,
+            now: () => NOW,
+            publishScanComponents,
+        });
+        await pollOnce({
+            fetcher: fakeFetch([], { status: 500 }).fetcher,
+            now: () => NOW,
+            publishScanComponents,
+        });
+        await pollOnce({
+            fetcher: fakeFetch({}).fetcher,
+            now: () => NOW,
+            publishScanComponents,
+        });
+        await pollOnce({
+            fetcher: fakeFetch([]).fetcher,
+            now: () => NOW,
+            register: () => {
+                throw new Error("Datenbank zu");
+            },
+            publishScanComponents,
+        });
+
+        assertEquals(published, [NOW.toISOString()]);
+    });
+});
+
+Deno.test("tik - Abbruch meldet keine Scan-Komponenten (#163)", async () => {
+    await withTikConfig(TEST_TIK, async () => {
+        let published = 0;
+        const controller = new AbortController();
+        controller.abort();
+
+        const outcome = await pollOnce({
+            fetcher: fakeFetch([]).fetcher,
+            now: () => NOW,
+            signal: controller.signal,
+            publishScanComponents: () => {
+                published++;
+            },
+        });
+
+        assertEquals(outcome.ok, false);
+        assertEquals(published, 0);
+    });
+});
+
+Deno.test("tik - der Standardpfad veröffentlicht das Scan-Delta (#163)", async () => {
+    await withTikConfig(TEST_TIK, async () => {
+        const window = manualWindow();
+        events.resetActivity();
+        events.setActivityHooks(window.hooks);
+
+        // Eigener Zeitpunkt weit außerhalb der übrigen Testdaten: der
+        // Scan-Delta rechnet gegen die echte `tikscan`-Tabelle.
+        const scanAt = new Date("2031-06-02T10:00:00Z");
+        const testIp = `198.18.${Number.parseInt(crypto.randomUUID().slice(0, 2), 16)}.203`;
+
+        const batches: string[][] = [];
+        const unsubscribe = events.subscribeActivity((components) =>
+            batches.push(components)
+        );
+
+        try {
+            const outcome = await pollOnce({
+                fetcher: fakeFetch([{ "last-ip": testIp }]).fetcher,
+                now: () => scanAt,
+            });
+            assertEquals(outcome.ok, true);
+
+            // Vor der Nachlaufkante ist der Kanal still.
+            assertEquals(batches, []);
+            window.flush();
+            // Neuer Scan, neue IP am ersten Tag: `cards` schluckt das
+            // Einzelkärtchen desselben Fensters, dazu der Streifen (jeder
+            // abgeschlossene Abruf meldet `tik`).
+            assertEquals(batches, [["cards", "tik"]]);
+        } finally {
+            unsubscribe();
+            events.resetActivity();
+            clearScans(scanAt);
+            // Sichtung wieder entfernen, damit spätere Tests sie nicht
+            // als „vorher gesehen" sehen.
+            clearForensicsByIp(testIp);
+        }
     });
 });

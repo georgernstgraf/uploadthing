@@ -209,3 +209,49 @@ Deno.test("registerSeen speichert die MAC einer einzelnen Sichtung", () => {
         db.exec(`DELETE FROM ipfact WHERE ip = '${testIp}'`);
     }
 });
+
+Deno.test("ipsAt liefert die IPs genau eines Scans, distinct", () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const ipA = `10.0.30.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
+    const ipB = `10.0.31.${Number.parseInt(suffix.slice(2, 4), 16) % 250 + 1}`;
+    const at = scanAt(960_000);
+    const later = scanAt(1_020_000);
+
+    try {
+        // ipA ist nur in diesem Scan sichtbar, ipB zusätzlich später —
+        // jede IP steht genau einmal in der Liste.
+        ipfactRepo.registerSeen(ipA, at);
+        ipfactRepo.registerSeen(ipB, at);
+        ipfactRepo.registerSeen(ipB, later);
+
+        assertEquals(ipfactRepo.ipsAt(at), [ipA, ipB].sort());
+        assertEquals(ipfactRepo.ipsAt(later), [ipB]);
+        assertEquals(ipfactRepo.ipsAt(scanAt(1_080_000)), []);
+    } finally {
+        db.exec(`DELETE FROM ipfact WHERE ip IN ('${ipA}', '${ipB}')`);
+    }
+});
+
+Deno.test("ipsBetween arbeitet halboffen: start zählt, end nicht", () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const ipA = `10.0.32.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
+    const ipB = `10.0.33.${Number.parseInt(suffix.slice(2, 4), 16) % 250 + 1}`;
+    const start = scanAt(1_140_000);
+    const end = scanAt(1_260_000);
+
+    try {
+        // ipA genau an der Startgrenze (zählt), ipB genau an der
+        // Endgrenze (zählt nicht mehr zu diesem Fenster).
+        ipfactRepo.registerSeen(ipA, start);
+        ipfactRepo.registerSeen(ipB, end);
+
+        assertEquals(ipfactRepo.ipsBetween(start, end), [ipA]);
+        assertEquals(ipfactRepo.ipsBetween(start, new Date(end.getTime() + 1)), [
+            ipA,
+            ipB,
+        ]);
+        assertEquals(ipfactRepo.ipsBetween(end, end), []);
+    } finally {
+        db.exec(`DELETE FROM ipfact WHERE ip IN ('${ipA}', '${ipB}')`);
+    }
+});

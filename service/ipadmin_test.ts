@@ -1,7 +1,8 @@
 import { assertEquals, assertExists } from "@std/assert";
-import { for_ip, for_range } from "./ipadmin.ts";
+import { for_ip, for_range, scanDelta } from "./ipadmin.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
+import { db } from "../repo/db.ts";
 import {
     clearForensicsByIp,
     clearForensicsByUserEmail,
@@ -1062,4 +1063,125 @@ Deno.test("ipadmin for_ip liefert null für eine im Zeitraum unbekannte IP", asy
 
     const result = await for_ip(unknownIp, staleAt(80), staleAt(81));
     assertEquals(result, null);
+});
+
+// --- Scan-Delta (#163) ---------------------------------------------------
+//
+// `previousScan` und `ipsAt` rechnen gegen die echte `tikscan`-Tabelle,
+// deshalb bekommt jeder Test ein eigenes, weit entferntes Zeitfenster und
+// räumt Sichtungen und Scans wieder ab.
+
+function uniqueDeltaIp(): string {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const a = Number.parseInt(suffix.slice(0, 2), 16);
+    const b = Number.parseInt(suffix.slice(2, 4), 16);
+    return `198.19.${a}.${b}`;
+}
+
+/** IPs genau für diesen Test ohne Punkte, für den Vergleich mit `card-*`. */
+function cardName(ip: string): string {
+    return `card-${ip.replaceAll(".", "-")}`;
+}
+
+Deno.test("scanDelta meldet nur Übergänge: neu, wieder da, verschwunden (#163)", () => {
+    const goneIp = uniqueDeltaIp();
+    const backIp = uniqueDeltaIp();
+    const newIp = uniqueDeltaIp();
+    const awayIp = uniqueDeltaIp();
+
+    // Lokal 12:00 (CEST) am 2031-07-01: Tagesbeginn ist 22:00 UTC am
+    // Vortag.
+    const previous = new Date("2031-07-01T10:00:00Z");
+    const current = new Date("2031-07-01T10:01:00Z");
+    const earlierToday = new Date("2031-07-01T08:00:00Z");
+
+    try {
+        seedScan(previous);
+        seedScan(current);
+
+        // Bei P da, bei T weg.
+        ipfactRepo.registerSeen(goneIp, previous);
+        // Heute schon gesehen, bei P weg, bei T wieder da: nur Kärtchen,
+        // kein Panel-Render — die Karte existiert bereits.
+        ipfactRepo.registerSeen(backIp, earlierToday);
+        ipfactRepo.registerSeen(backIp, current);
+        // Heute zum ersten Mal: Karte und Panel.
+        ipfactRepo.registerSeen(newIp, current);
+        // Bei beiden Scans weg: kein Ereignis.
+        ipfactRepo.registerSeen(awayIp, earlierToday);
+
+        assertEquals(scanDelta(current), [
+            "cards",
+            ...[cardName(backIp), cardName(goneIp), cardName(newIp)].sort(),
+        ]);
+    } finally {
+        clearForensicsByIp(goneIp);
+        clearForensicsByIp(backIp);
+        clearForensicsByIp(newIp);
+        clearForensicsByIp(awayIp);
+        clearScans(previous, current);
+    }
+});
+
+Deno.test("scanDelta schweigt bei Dauerabwesenheit (#163)", () => {
+    const awayIp = uniqueDeltaIp();
+    const previous = new Date("2031-07-02T10:00:00Z");
+    const current = new Date("2031-07-02T10:01:00Z");
+    const earlierToday = new Date("2031-07-02T08:00:00Z");
+
+    try {
+        seedScan(previous);
+        seedScan(current);
+        ipfactRepo.registerSeen(awayIp, earlierToday);
+
+        // Das Kärtchen war schon vorher weg — kein zweites Ereignis.
+        assertEquals(scanDelta(current), []);
+    } finally {
+        clearForensicsByIp(awayIp);
+        clearScans(previous, current);
+    }
+});
+
+Deno.test("scanDelta beim ersten Scan überhaupt: alles ist neu (#163)", () => {
+    const firstIp = uniqueDeltaIp();
+    // Kein älterer Scan in der Datenbank: dieser Test legt den frühesten
+    // an. `previousScan` liefert dann `null`.
+    const earliest = db.prepare("SELECT MIN(at) AS at FROM tikscan").get() as
+        | { at: string | null }
+        | undefined;
+    const current = earliest?.at
+        ? new Date(new Date(earliest.at).getTime() - 60_000)
+        : new Date("2031-07-03T10:00:00Z");
+
+    try {
+        seedScan(current);
+        ipfactRepo.registerSeen(firstIp, current);
+
+        assertEquals(scanDelta(current), ["cards", cardName(firstIp)]);
+    } finally {
+        clearForensicsByIp(firstIp);
+        clearScans(current);
+    }
+});
+
+Deno.test("scanDelta: cards nur, wenn die IP im Tagesfenster nie gesehen wurde (#163)", () => {
+    const yesterdayIp = uniqueDeltaIp();
+    const previous = new Date("2031-07-04T10:00:00Z");
+    const current = new Date("2031-07-04T10:01:00Z");
+    // Vor dem lokalen Tagesbeginn (2031-07-03T22:00Z).
+    const yesterday = new Date("2031-07-03T20:00:00Z");
+
+    try {
+        seedScan(previous);
+        seedScan(current);
+        ipfactRepo.registerSeen(yesterdayIp, yesterday);
+        ipfactRepo.registerSeen(yesterdayIp, current);
+
+        // Wieder da, aber seit Tagesbeginn nicht mehr gesehen: die Karte
+        // muss neu entstehen, also das ganze Panel.
+        assertEquals(scanDelta(current), ["cards", cardName(yesterdayIp)]);
+    } finally {
+        clearForensicsByIp(yesterdayIp);
+        clearScans(previous, current);
+    }
 });

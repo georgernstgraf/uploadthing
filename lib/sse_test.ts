@@ -3,6 +3,7 @@ import {
     closeAllStreams,
     type EventStreamWriter,
     formatEvent,
+    formatTextEvent,
     openEventStream,
     openStreams,
 } from "./sse.ts";
@@ -154,4 +155,29 @@ Deno.test("closeAllStreams beendet den Reader, finished löst sofort auf", async
         await finished.catch(() => {});
         await reader?.cancel().catch(() => {});
     }
+});
+
+Deno.test("formatTextEvent schreibt genau ein data-Feld", () => {
+    assertEquals(
+        formatTextEvent("stand", "Stand: 09:41:07"),
+        "event: stand\ndata: Stand: 09:41:07\n\n",
+    );
+});
+
+Deno.test("formatTextEvent ersetzt Zeilenumbrüche statt sie zu splitten", () => {
+    // Ein roher Umbruch würde aus einem Frame zwei machen und den
+    // `data:`-Vertrag brechen.
+    assertEquals(
+        formatTextEvent("stand", "Stand: 09:41\n07"),
+        "event: stand\ndata: Stand: 09:41 07\n\n",
+    );
+    assertEquals(
+        formatTextEvent("stand", "a\r\nb\rc"),
+        "event: stand\ndata: a b c\n\n",
+    );
+});
+
+Deno.test("formatTextEvent bleibt zeilenorientiert abbaubar", () => {
+    const frame = formatTextEvent("cards", "");
+    assertEquals(frame.split("\n"), ["event: cards", "data: ", "", ""]);
 });

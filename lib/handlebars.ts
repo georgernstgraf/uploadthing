@@ -1,5 +1,6 @@
 import Handlebars from "handlebars";
 import { UserType, TopType } from "./types.ts";
+import { ipSlug } from "./slug.ts";
 import type {
     ServiceAdminAnomalies,
     ServiceIPDetail,
@@ -64,27 +65,50 @@ type LdapTemplateData = {
     has_more?: boolean;
 };
 
-type AdminTemplateData = {
+/**
+ * Farbe eines Kärtchens — dieselbe Einteilung, nach der die Liste
+ * gruppiert: `schueler` (blau), `lehrend` (gelb), `unbekannt` (grau,
+ * eigener Zweig ohne Namen).
+ */
+export type AdminStudentCardTone = "schueler" | "lehrend" | "unbekannt";
+
+/**
+ * Kontext eines Kärtchens (#163). `slug` ist die eine Quelle für `id`,
+ * SSE-Eventname und Trigger; `card_url` enthält `ip` **und** den
+ * aufgelösten Zeitraum, damit das Kärtchen ohne `hx-include` die Wahrheit
+ * seines eigenen Zeitraums rendert.
+ */
+export type AdminStudentCardTemplateData = ServiceIpAdmin & {
+    slug: string;
+    tone: AdminStudentCardTone;
+    card_url: string;
+};
+
+/** Der MikroTik-Streifen; eigenes Fragment für `event: tik`. */
+export type TikPanelTemplateData = {
+    tik_state: TikPanelState;
+    tik_last_attempt: string;
+    tik_last_success: string;
+    tik_last_count: number;
+    tik_error: string;
+};
+
+type AdminTemplateData = TikPanelTemplateData & {
     remote_user: UserType;
     spg_times: string[];
     starttime: string;
     endtime: string;
     startdate: string;
     enddate: string;
-    ips_with_name: ServiceIpAdmin[];
-    ips_without_name: ServiceIpAdmin[];
-    teacher_ips: ServiceIpAdmin[];
+    ips_with_name: AdminStudentCardTemplateData[];
+    ips_without_name: AdminStudentCardTemplateData[];
+    teacher_ips: AdminStudentCardTemplateData[];
     anomalies: ServiceAdminAnomalies;
     range_first_seen: string;
     range_last_seen: string;
     withinTimeCutoff: boolean;
     endtimeInFuture: boolean;
     endtimeProvided: boolean;
-    tik_state: TikPanelState;
-    tik_last_attempt: string;
-    tik_last_success: string;
-    tik_last_count: number;
-    tik_error: string;
 };
 
 type AdminFileTypesTemplateData = {
@@ -177,6 +201,11 @@ Handlebars.registerHelper(
     },
 );
 
+Handlebars.registerHelper("ipSlug", function (ip: string) {
+    if (!ip || typeof ip !== "string") return "";
+    return ipSlug(ip);
+});
+
 // deno-lint-ignore no-explicit-any
 Handlebars.registerHelper("let", function (this: any, value, options) {
     return options.fn(this, {
@@ -202,6 +231,18 @@ Handlebars.registerPartial(
 Handlebars.registerPartial(
     "admin-report",
     Deno.readTextFileSync("templates/admin-report.hbs"),
+);
+Handlebars.registerPartial(
+    "admin-tik-panel",
+    Deno.readTextFileSync("templates/admin-tik-panel.hbs"),
+);
+Handlebars.registerPartial(
+    "admin-student-card",
+    Deno.readTextFileSync("templates/admin-student-card.hbs"),
+);
+Handlebars.registerPartial(
+    "admin-student-card-unknown",
+    Deno.readTextFileSync("templates/admin-student-card-unknown.hbs"),
 );
 
 // --- 5. Handlebars Compiled Templates (Exports) ---
@@ -247,4 +288,17 @@ export const userbadgeTemplate = Handlebars.compile<UserbadgeTemplateData>(
 );
 export const adminIPDetailTemplate = Handlebars.compile<AdminIPDetailTemplateData>(
     Deno.readTextFileSync("templates/admin-ip-detail.hbs"),
+);
+export const adminTikPanelTemplate = Handlebars.compile<TikPanelTemplateData>(
+    Deno.readTextFileSync("templates/admin-tik-panel.hbs"),
+);
+export const adminStudentCardTemplate = Handlebars.compile<
+    AdminStudentCardTemplateData
+>(
+    Deno.readTextFileSync("templates/admin-student-card.hbs"),
+);
+export const adminStudentCardUnknownTemplate = Handlebars.compile<
+    AdminStudentCardTemplateData
+>(
+    Deno.readTextFileSync("templates/admin-student-card-unknown.hbs"),
 );

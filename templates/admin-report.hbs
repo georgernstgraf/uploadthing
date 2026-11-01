@@ -6,33 +6,7 @@
          hx-swap="innerHTML"
          hx-select="#admin-report-panel > *"
          hx-include="#admin-time-filter form">
-    <section id="admin-tik-panel"
-             class="card shadow-sm border-0 mb-2 mx-auto w-100">
-        <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-center gap-2 text-center">
-            {{#if (eq tik_state "nicht-konfiguriert")}}
-                <span id="admin-tik-badge"
-                      class="badge text-bg-secondary rounded-pill px-3 py-2">MikroTik nicht konfiguriert</span>
-                <span class="small">TIK_URL, TIK_USER und TIK_PASSWORD sind nicht gesetzt. Es werden keine IP-Adressen und MAC-Adressen erfasst.</span>
-            {{else if (eq tik_state "unbekannt")}}
-                <span id="admin-tik-badge"
-                      class="badge text-bg-secondary rounded-pill px-3 py-2">MikroTik-Zustand unbekannt</span>
-                <span class="small">Es ist noch kein Abruf abgeschlossen.</span>
-            {{else if (eq tik_state "ok")}}
-                <span id="admin-tik-badge"
-                      class="badge text-bg-success rounded-pill px-3 py-2">MikroTik erreichbar</span>
-                <span class="small">Letzter Abruf: {{tik_last_attempt}} · {{tik_last_count}} aktive Clients erfasst.</span>
-            {{else if (eq tik_state "leer")}}
-                <span id="admin-tik-badge"
-                      class="badge text-bg-info rounded-pill px-3 py-2">MikroTik erreichbar · keine Clients verbunden</span>
-                <span class="small">Letzter Abruf: {{tik_last_attempt}} · Die Registrierungstabelle ist leer.</span>
-            {{else}}
-                <span id="admin-tik-badge"
-                      class="badge text-bg-danger rounded-pill px-3 py-2">MikroTik nicht erreichbar</span>
-                <span class="small">{{#if tik_last_success}}Keine IP-Daten seit: {{tik_last_success}}.{{else}}Noch kein erfolgreicher Abruf seit dem Start.{{/if}}</span>
-                {{#if tik_error}}<span class="small text-danger">{{tik_error}}</span>{{/if}}
-            {{/if}}
-        </div>
-    </section>
+    {{> admin-tik-panel}}
     <h2 class="text-center mb-0 fs-4">SchülerInnen und IP Adressen</h2>
     <h6 class="text-center mb-2 small"> Zeitraum: {{#unless withinTimeCutoff}}
             {{startdate}}
@@ -55,45 +29,7 @@
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1"
          hx-disinherit="hx-select">
         {{#each ips_with_name}}
-            <div class="col">
-                <div class="card shadow-sm h-100"
-                     style="cursor: pointer;"
-                     hx-get="/admin/ip-detail?ip={{this.ip}}"
-                     hx-include="#admin-time-filter form"
-                     hx-target="#ip-detail-modal-content"
-                     hx-trigger="click">
-                    <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
-                        <div class="d-flex align-items-center justify-content-between w-100">
-                            <div class="d-flex align-items-center gap-1 overflow-hidden">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-primary-emphasis bg-primary-subtle"
-                                     style="width: 26px; height: 26px; font-size: 0.875rem;">
-                                    {{#if this.cookie_presents.[0].user}}
-                                        {{givenNameInitial this.cookie_presents.[0].user.name}}
-                                    {{else}} ? {{/if}}
-                                </div>
-                                <div class="overflow-hidden">
-                                    <span class="d-block text-truncate"
-                                          title="{{this.cookie_presents.[0].user.name}}">
-                                        {{#if this.cookie_presents.[0].user}}
-                                            {{this.cookie_presents.[0].user.name}}
-                                        {{else}} Unbekannt {{/if}}
-                                    </span>
-                                    <span class="fw-normal d-block text-truncate small">{{this.ip}}</span>
-                                </div>
-                            </div>
-                            <div class="d-flex flex-column align-items-end gap-1 ms-1 flex-shrink-0">
-                                {{#if this.has_submission}}
-                                    <span class="badge text-bg-success text-wrap text-end"
-                                          title="{{submissionTooltip this.submissions}}"> Abgabe </span>
-                                {{/if}}
-                                     <span
-                                           class="badge {{#if this.missed_count}}text-bg-warning{{else if this.is_stale}}text-bg-danger{{else}}text-bg-light{{/if}} text-wrap text-end">
-                                     Fehlte {{this.missed_count}} mal </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {{> admin-student-card}}
         {{else}}
             <div class="col-12 text-center fst-italic py-2">Keine registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
         {{/each}}
@@ -108,45 +44,7 @@
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1"
          hx-disinherit="hx-select">
         {{#each teacher_ips}}
-            <div class="col">
-                <div class="card shadow-sm h-100"
-                     style="cursor: pointer;"
-                     hx-get="/admin/ip-detail?ip={{this.ip}}"
-                     hx-include="#admin-time-filter form"
-                     hx-target="#ip-detail-modal-content"
-                     hx-trigger="click">
-                    <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
-                        <div class="d-flex align-items-center justify-content-between w-100">
-                            <div class="d-flex align-items-center gap-1 overflow-hidden">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-warning-emphasis bg-warning-subtle"
-                                     style="width: 26px; height: 26px; font-size: 0.875rem;">
-                                    {{#if this.cookie_presents.[0].user}}
-                                        {{givenNameInitial this.cookie_presents.[0].user.name}}
-                                    {{else}} ? {{/if}}
-                                </div>
-                                <div class="overflow-hidden">
-                                    <span class="d-block text-truncate"
-                                          title="{{this.cookie_presents.[0].user.name}}">
-                                        {{#if this.cookie_presents.[0].user}}
-                                            {{this.cookie_presents.[0].user.name}}
-                                        {{else}} Unbekannt {{/if}}
-                                    </span>
-                                    <span class="fw-normal d-block text-truncate small">{{this.ip}}</span>
-                                </div>
-                            </div>
-                            <div class="d-flex flex-column align-items-end gap-1 ms-1 flex-shrink-0">
-                                {{#if this.has_submission}}
-                                    <span class="badge text-bg-success text-wrap text-end"
-                                          title="{{submissionTooltip this.submissions}}"> Abgabe </span>
-                                {{/if}}
-                                     <span
-                                           class="badge {{#if this.missed_count}}text-bg-warning{{else if this.is_stale}}text-bg-danger{{else}}text-bg-light{{/if}} text-wrap text-end">
-                                     Fehlte {{this.missed_count}} mal </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {{> admin-student-card}}
         {{else}}
             <div class="col-12 text-center fst-italic py-2">Keine Lehrenden-IPs in diesem Zeitraum gefunden.</div>
         {{/each}}
@@ -156,32 +54,7 @@
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-1 mt-1"
          hx-disinherit="hx-select">
         {{#each ips_without_name}}
-            <div class="col">
-                <div class="card shadow-sm h-100"
-                     style="cursor: pointer;"
-                     hx-get="/admin/ip-detail?ip={{this.ip}}"
-                     hx-include="#admin-time-filter form"
-                     hx-target="#ip-detail-modal-content"
-                     hx-trigger="click">
-                    <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
-                        <div class="d-flex align-items-center justify-content-between w-100">
-                            <div class="d-flex align-items-center gap-1 overflow-hidden">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-secondary-emphasis bg-secondary-subtle"
-                                     style="width: 26px; height: 26px; font-size: 0.875rem;"> ? </div>
-                                <div class="overflow-hidden">
-                                    <span class="d-block text-truncate">{{this.ip}}</span>
-                                    <span class="fw-normal small">Unbekannt</span>
-                                </div>
-                            </div>
-                            <div class="badge bg-light text-dark border ms-1 flex-shrink-0">
-                                {{this.report_count}}x
-                            </div>
-                        </div>
-                        <div class="fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {{> admin-student-card-unknown}}
         {{else}}
             <div class="col-12 text-center fst-italic py-2">Keine nicht registrierten IP-Adressen in diesem Zeitraum gefunden.</div>
         {{/each}}

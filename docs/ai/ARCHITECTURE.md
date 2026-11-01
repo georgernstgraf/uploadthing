@@ -63,22 +63,24 @@ Prisma-Engines, keine Runtime-Abhängigkeit auf Prisma).
 - **Wer publiziert**: `service/exam.ts` bei jedem Zustandswechsel
   (`start`, `pause`, `resume`, `stop`, `addExtra`, Abschluss,
   Anmelde-Schalter) und der `exam_watchdog` über denselben Abschluss-Pfad;
-  auf dem Activity-Kanal `service/tik.ts` (jeder abgeschlossene Abruf),
-  `service/user.register` (Registrierung), `service/abgaben.recordSubmission`
-  (Abgabe), `middleware/session.ts` (Cookie-Presence, nur echter Insert und
-  nur für Nicht-Lehrpersonen) — alle über `noteAdminActivity()`, damit die
-  1-s-Koaleszierung greift.
+  auf dem Activity-Kanal `service/tik.ts` (jeder abgeschlossene Abruf →
+  `tik`, nach Erfolg zusätzlich der Scan-Delta als `cards`/`card-*`),
+  `service/abgaben.recordSubmission` (`card-<ip>`),
+  `service/user.register` und `middleware/session.ts` (Cookie-Presence,
+  nur beim Identitätswechsel → `cards`) — alle über
+  `noteAdminActivity()`, damit die 1-s-Koaleszierung greift.
 - **Wer konsumiert**: `static/events.js` im Browser. Der `exam`-Stream
   tickt den Countdown (`data-ends-at-ms` plus Serveruhr-Offset aus
   `server_now_ms`), tauscht `#abgabe-panel` bei `open`-Wechsel und holt das
   Admin-Panel (`GET /api/exammode`) bei Status- oder
-  Freigabe-Änderungen. Der `activity`-Stream stößt den Forensik-Refresh an
-  (`admin-refresh`-Event auf `#admin-report-panel`) oder zählt in
-  `#admin-refresh-pending`, solange Details offen sind (`#admin-refresh-stand`
-  zeigt die Serverzeit des letzten Frames).
+  Freigabe-Änderungen. Der `activity`-Stream transportiert benannte
+  Komponenten (#163) und den Serverstand als `stand`-Frame; die
+  Verdrahtung auf `hx-trigger="sse:…"` folgt in Welle 4, bis dahin bleibt
+  `admin-refresh` am `#admin-report-panel`.
 - **Der Zustand wird beim Senden aus der DB gebaut.**
-  `service/events.snapshotExam()`/`snapshotActivity()` lesen den aktuellen
-  Stand (passiv, ohne lazy Abschluss); der Bus transportiert nur Ticks.
+  `service/events.snapshotExam()` liest den aktuellen Stand (passiv, ohne
+  lazy Abschluss); der Admin-Kanal versendet dagegen die Komponentennamen
+  selbst, es gibt keinen Activity-Snapshot mehr.
 - **Exam-Sperre**: App → `https://sense.internal/api/firewall/filter/…`
   (`toggleRule` + `apply`, gelesen über `searchRule`), TLS gegen die interne
   CA (`DENO_CERT`). Kein Polling des Firewall-Zustands: er wird beim

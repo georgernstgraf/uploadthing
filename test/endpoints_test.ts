@@ -14,8 +14,10 @@ import {
     clearExamState,
     clearForensicsByIp,
     clearForensicsByUserEmail,
+    clearScans,
     seedExamState,
     seedNoAnomaliesScenario,
+    seedScan,
     upsertFixtureUser,
 } from "./helpers/forensics_fixture.ts";
 
@@ -444,11 +446,12 @@ Deno.test("GET /events/exam: 401 ohne Sitzung, 200 mit sofortigem Snapshot (#161
     }
 });
 
-Deno.test("GET /admin/events: 403 für Schüler, erster Activity-Frame für Admins (#161)", async () => {
+Deno.test("GET /admin/events: stand-Frame und benannte Komponenten (#163)", async () => {
     const suffix = crypto.randomUUID().slice(0, 8);
     const studentEmail = `admin-events-student-${suffix}@example.com`;
     const teacherEmail = `admin-events-teacher-${suffix}@example.com`;
-    await upsertFixtureUser({
+    const switchEmail = `admin-events-switch-${suffix}@example.com`;
+    const student = await upsertFixtureUser({
         email: studentEmail,
         name: "Activity Schüler",
         klasse: "5AHITM",
@@ -458,6 +461,15 @@ Deno.test("GET /admin/events: 403 für Schüler, erster Activity-Frame für Admi
         name: "Activity Lehrer",
         klasse: "LehrendeR",
     });
+    // Ein zweiter Schüler: erst dessen Anmeldung verschiebt die Identität
+    // der IP und löst den Panel-Render aus (der erste ist schon präsent).
+    await upsertFixtureUser({
+        email: switchEmail,
+        name: "Activity Wechsel",
+        klasse: "5AHITM",
+    });
+    let uploadedFilename: string | null = null;
+    clearExamState();
 
     try {
         // Schüler und Anonyme bekommen kein Abo auf den Admin-Kanal.
@@ -474,7 +486,7 @@ Deno.test("GET /admin/events: 403 für Schüler, erster Activity-Frame für Admi
 
         const adminCookie = await registerAndGetCookie(teacherEmail);
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
+        const timeout = setTimeout(() => controller.abort(), 10_000);
         Deno.unrefTimer(timeout);
         let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
         try {
@@ -492,41 +504,276 @@ Deno.test("GET /admin/events: 403 für Schüler, erster Activity-Frame für Admi
                 throw new Error("Antwort ohne Body");
             }
 
-            // Erster Frame kommt beim Verbinden, ohne dass Aktivität
-            // nötig wäre.
             reader = res.body.getReader();
-            const decoder = new TextDecoder();
             let text = "";
-            while (!text.includes("\n\n")) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                text += decoder.decode(value, { stream: true });
-            }
 
+            // Erster Frame ist der Serverstand — reiner Text, kein JSON.
+            text = await readSseUntil(reader, text, (t) => t.includes("\n\n"));
             assert(
-                text.startsWith("event: activity\ndata: "),
-                `SSE-Frame erwartet, war: ${JSON.stringify(text)}`,
+                text.startsWith("event: stand\ndata: Stand: "),
+                `Stand-Frame erwartet, war: ${JSON.stringify(text)}`,
             );
-            const dataLine = text.split("\n").find((line) =>
-                line.startsWith("data: ")
+            assert(
+                /^event: stand\ndata: Stand: \d{2}:\d{2}:\d{2}\n\n/.test(text),
+                `Stand-Format erwartet, war: ${JSON.stringify(text)}`,
             );
-            assertExists(dataLine);
-            const frame = JSON.parse(dataLine.slice("data: ".length));
-            assertEquals(frame.type, "activity");
-            assertEquals(Array.isArray(frame.reasons), true);
-            assertEquals(typeof frame.at, "string");
-            assertEquals(typeof frame.server_now_ms, "number");
             // Kein Event-Log, also kein `id:`-Feld.
             assertEquals(text.includes("id:"), false);
+
+            // Ein Identitätswechsel an dieser IP ist ein Panel-Render.
+            const switchRes = await fetch(`${BASE_URL}/register`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `email=${encodeURIComponent(switchEmail)}`,
+            });
+            await switchRes.text();
+
+            text = await readSseUntil(reader, text, (t) =>
+                t.includes("\n\nevent: cards\n"));
+            assert(
+                text.includes("event: cards\n"),
+                `cards-Frame erwartet, war: ${JSON.stringify(text)}`,
+            );
+            // Vor dem Batch steht immer der frische Serverstand.
+            assert(
+                /event: stand\ndata: Stand: \d{2}:\d{2}:\d{2}\n\nevent: cards\n/
+                    .test(text),
+                `stand vor cards erwartet, war: ${JSON.stringify(text)}`,
+            );
+
+            // Eine Abgabe betrifft nur das Kärtchen dieser IP.
+            seedExamState("running");
+            const uploadForm = new FormData();
+            uploadForm.append(
+                "file",
+                new Blob([uploadZipBytes], { type: "application/zip" }),
+                `events-${suffix}.zip`,
+            );
+            const uploadRes = await fetch(`${BASE_URL}/upload`, {
+                method: "POST",
+                headers: { Cookie: studentCookie },
+                body: uploadForm,
+            });
+            assertEquals(uploadRes.status, 200);
+            await uploadRes.text();
+
+            text = await readSseUntil(reader, text, (t) =>
+                t.includes("\nevent: card-127-0-0-1\n"));
+            assert(
+                text.includes("event: card-127-0-0-1\n"),
+                `Kärtchen-Frame erwartet, war: ${JSON.stringify(text)}`,
+            );
+
+            const submission = db.prepare(
+                "SELECT filename FROM abgaben WHERE userId = ? ORDER BY id DESC LIMIT 1",
+            ).get(student.id) as { filename: string } | undefined;
+            uploadedFilename = submission?.filename ?? null;
         } finally {
             clearTimeout(timeout);
             controller.abort();
             await reader?.cancel().catch(() => {});
         }
     } finally {
+        clearExamState();
+        db.exec(`DELETE FROM abgaben WHERE userId = ${student.id}`);
+        if (uploadedFilename) {
+            await Deno.remove(`${config.ABGABEN_DIR}/${uploadedFilename}`)
+                .catch(() => {});
+        }
+        clearForensicsByIp(LOCAL_TEST_IP);
         await clearForensicsByUserEmail(studentEmail);
         await clearForensicsByUserEmail(teacherEmail);
+        await clearForensicsByUserEmail(switchEmail);
     }
+});
+
+Deno.test("GET /admin/student-card: ein Kärtchen, 204 ohne Zeile, 400 ohne IP (#163)", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `student-card-${suffix}@example.com`;
+    // Eigene IP: 127.0.0.1 trägt im Testlauf auch die Präsenz der
+    // Lehrperson, die den Endpunkt aufruft — die Karte wäre dann „lehrend".
+    const cardIp = `198.51.100.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 2}`;
+    const cardSlug = cardIp.replaceAll(".", "-");
+    const unknownIp = `203.0.113.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 110}`;
+    const seenAt = new Date();
+    const secondScan = new Date(seenAt.getTime() + 60_000);
+    // Fenster explizit: ohne Angabe rastet die Route auf `spg_times` ein.
+    const rangeStart = new Date(seenAt.getTime() - 5 * 60_000);
+    const rangeEnd = new Date(seenAt.getTime() + 5 * 60_000);
+    const range = {
+        startdate: dateString(rangeStart.toISOString()),
+        starttime: timeString(rangeStart.toISOString()),
+        enddate: dateString(rangeEnd.toISOString()),
+        endtime: timeString(rangeEnd.toISOString()),
+    };
+    const query = (ip: string) =>
+        new URLSearchParams({ ip, ...range }).toString();
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: cardIp,
+            email: userEmail,
+            name: "Karten Test",
+            klasse: "5AHITM",
+            at: seenAt,
+        });
+        // Zweiter Scan ohne die IP: `is_stale` wird wahr, `missed_count` 1.
+        seedScan(seenAt);
+        seedScan(secondScan);
+
+        const cookie = await registerAndGetCookie("grafg@spengergasse.at");
+
+        const res = await fetch(
+            `${BASE_URL}/admin/student-card?${query(cardIp)}`,
+            { headers: { Cookie: cookie } },
+        );
+        assertEquals(res.status, 200);
+        const html = await res.text();
+
+        // Genau ein Kärtchen: die Wurzel ist der Grid-Wrapper mit dem
+        // Slug aus `ipSlug` — id, Trigger und die Daten der Karte.
+        assertEquals(
+            html.match(new RegExp(`id="student-card-${cardSlug}"`, "g"))
+                ?.length,
+            1,
+        );
+        assertEquals(html.includes(`data-ip="${cardIp}"`), true);
+        assertEquals(html.includes('data-tone="schueler"'), true);
+        assertEquals(
+            html.includes(`hx-trigger="sse:card-${cardSlug}"`),
+            true,
+        );
+        assertEquals(
+            html.includes(
+                'hx-disinherit="hx-swap hx-target hx-select hx-include"',
+            ),
+            true,
+        );
+        // Der Zeitraum steckt im Fragment-Link, nicht im Formular.
+        assertEquals(html.includes("hx-get=\"/admin/student-card?"), true);
+        assertEquals(html.includes("startdate="), true);
+        assertEquals(html.includes("enddate="), true);
+        // Badges: „nicht anwesend" bei stale, „Fehlte 1 mal" in Warnfarbe.
+        assertEquals(html.includes("nicht anwesend"), true);
+        assertEquals(html.includes("text-bg-danger"), true);
+        assertEquals(html.includes("Fehlte 1 mal"), true);
+        assertEquals(html.includes("text-bg-warning"), true);
+        // Kein Panel, nur das Kärtchen.
+        assertEquals(html.includes('id="admin-report-panel"'), false);
+
+        // Ohne Zeile im Zeitraum: 204, damit kein Fehler-Toast aufgeht.
+        const emptyRes = await fetch(
+            `${BASE_URL}/admin/student-card?${query(unknownIp)}`,
+            { headers: { Cookie: cookie } },
+        );
+        assertEquals(emptyRes.status, 204);
+        assertEquals(await emptyRes.text(), "");
+
+        // Fehlender Parameter ist ein Fehler des Aufrufs (400, deutsch).
+        const missingRes = await fetch(
+            `${BASE_URL}/admin/student-card?${new URLSearchParams(range).toString()}`,
+            { headers: { Cookie: cookie } },
+        );
+        assertEquals(missingRes.status, 400);
+        assertEquals(
+            await missingRes.text(),
+            "Bitte eine IP-Adresse angeben.",
+        );
+    } finally {
+        clearForensicsByIp(cardIp);
+        clearScans(seenAt, secondScan);
+        await clearForensicsByUserEmail(userEmail);
+    }
+});
+
+Deno.test("GET /admin/students: Kärtchen tragen Slug, Trigger und hx-disinherit (#163)", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `students-cards-${suffix}@example.com`;
+    // Eigene IPs: 127.0.0.1 gehört im Testlauf der aufrufenden Lehrperson.
+    const studentIp = `198.51.100.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 2}`;
+    const studentSlug = studentIp.replaceAll(".", "-");
+    const unknownIp = `203.0.113.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 10}`;
+    const seenAt = new Date();
+    const rangeStart = new Date(seenAt.getTime() - 5 * 60_000);
+    const rangeEnd = new Date(seenAt.getTime() + 5 * 60_000);
+    const rangeQuery = new URLSearchParams({
+        startdate: dateString(rangeStart.toISOString()),
+        starttime: timeString(rangeStart.toISOString()),
+        enddate: dateString(rangeEnd.toISOString()),
+        endtime: timeString(rangeEnd.toISOString()),
+    }).toString();
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: studentIp,
+            email: userEmail,
+            name: "Karten Liste",
+            klasse: "5AHITM",
+            at: seenAt,
+        });
+        // Zweite IP ohne Identität erscheint im Unbekannt-Raster.
+        ipfactRepo.registerSeen(unknownIp, seenAt);
+
+        const cookie = await registerAndGetCookie("grafg@spengergasse.at");
+        const res = await fetch(`${BASE_URL}/admin/students?${rangeQuery}`, {
+            headers: { Cookie: cookie },
+        });
+        assertEquals(res.status, 200);
+        const html = await res.text();
+
+        // Bekanntes Kärtchen (Schüler) und unbekanntes Kärtchen.
+        assertEquals(
+            html.includes(`id="student-card-${studentSlug}"`),
+            true,
+        );
+        assertEquals(
+            html.includes(`hx-trigger="sse:card-${studentSlug}"`),
+            true,
+        );
+        assertEquals(html.includes('data-tone="schueler"'), true);
+        const unknownSlug = unknownIp.replaceAll(".", "-");
+        assertEquals(html.includes(`id="student-card-${unknownSlug}"`), true);
+        assertEquals(
+            html.includes(`hx-trigger="sse:card-${unknownSlug}"`),
+            true,
+        );
+        assertEquals(
+            html.includes(
+                'hx-disinherit="hx-swap hx-target hx-select hx-include"',
+            ),
+            true,
+        );
+        // Der Panel-Trigger bleibt in dieser Welle `admin-refresh`.
+        assertEquals(html.includes('hx-trigger="admin-refresh"'), true);
+        // Der MikroTik-Streifen ist ein eigenes Fragment.
+        assertEquals(html.includes('id="admin-tik-panel"'), true);
+        assertEquals(html.includes('hx-trigger="sse:tik"'), true);
+    } finally {
+        clearForensicsByIp(studentIp);
+        clearForensicsByIp(unknownIp);
+        await clearForensicsByUserEmail(userEmail);
+    }
+});
+
+Deno.test("GET /admin/tik-panel: nur der Streifen mit eigenem Trigger (#163)", async () => {
+    const cookie = await registerAndGetCookie("grafg@spengergasse.at");
+
+    const res = await fetch(`${BASE_URL}/admin/tik-panel`, {
+        headers: { Cookie: cookie },
+    });
+    assertEquals(res.status, 200);
+    const html = await res.text();
+
+    assertEquals(html.includes('id="admin-tik-panel"'), true);
+    assertEquals(html.includes('hx-get="/admin/tik-panel"'), true);
+    assertEquals(html.includes('hx-trigger="sse:tik"'), true);
+    // Im Testlauf ist TIK_* leer: der Streifen sagt das auch.
+    assertEquals(html.includes("MikroTik nicht konfiguriert"), true);
+    // Kein Panel, keine Zeitachse — nur der Streifen.
+    assertEquals(html.includes('id="admin-report-panel"'), false);
+    assertEquals(html.includes("Schüler IP-Adressen"), false);
 });
 
 Deno.test("static/toast.js baut den Dialog ohne innerHTML (#152)", async () => {
@@ -1822,6 +2069,41 @@ Deno.test("Admin-Unterlagen: alles löschen braucht eine Bestätigung (#134)", a
     }
 });
 
+/**
+ * Liest den SSE-Stream, bis `predicate` den bereits gelesenen Text
+ * akzeptiert, und gibt den neuen Text zurück. Ein ausbleibender Frame
+ * scheitert nach `timeoutMs` mit dem bisher Gelesenen — sonst bliebe nur
+ * ein nichtssagender Abort.
+ */
+async function readSseUntil(
+    reader: ReadableStreamDefaultReader<Uint8Array>,
+    text: string,
+    predicate: (text: string) => boolean,
+    timeoutMs = 5000,
+): Promise<string> {
+    const decoder = new TextDecoder();
+    while (!predicate(text)) {
+        const timeout = new Promise<never>((_, reject) => {
+            const handle = setTimeout(
+                () =>
+                    reject(
+                        new Error(
+                            `SSE-Frame fehlt, bisher gelesen: ${
+                                JSON.stringify(text)
+                            }`,
+                        ),
+                    ),
+                timeoutMs,
+            );
+            Deno.unrefTimer(handle);
+        });
+        const { value, done } = await Promise.race([reader.read(), timeout]);
+        if (done) break;
+        text += decoder.decode(value, { stream: true });
+    }
+    return text;
+}
+
 async function registerAndGetCookie(email: string): Promise<string> {
     const registerRes = await fetch(`${BASE_URL}/register`, {
         method: "POST",
@@ -1878,6 +2160,8 @@ Deno.test("requireAdmin: alle /admin-Routen liefern ohne Admin 403", async () =>
         ["/admin/application", "GET"],
         ["/admin/application", "POST"],
         ["/admin/ip-detail?ip=127.0.0.1", "GET"],
+        ["/admin/student-card?ip=127.0.0.1", "GET"],
+        ["/admin/tik-panel", "GET"],
         ["/admin/theme", "POST"],
         ["/admin/adminmac", "POST"],
         ["/admin/adminmac/delete", "POST"],

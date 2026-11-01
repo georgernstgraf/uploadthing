@@ -205,7 +205,6 @@ function fakeScheduler() {
     const delays: number[] = [];
 
     const hooks: events.ActivityHooks = {
-        now: () => new Date(),
         schedule: (callback, delayMs) => {
             delays.push(delayMs);
             pending.push(callback);

@@ -1,0 +1,39 @@
+{{!--
+    Kärtchen einer IP ohne angemeldete Identität (#163). Gleiche Wurzel wie
+    `admin-student-card`, damit der Fragment-Endpunkt die Spalte tauschen
+    kann; `tone` ist hier immer `unbekannt` (grauer Kreis, „Unbekannt").
+--}}
+<div class="col"
+     id="student-card-{{slug}}"
+     data-ip="{{ip}}"
+     data-tone="{{tone}}"
+     hx-get="{{{card_url}}}"
+     hx-trigger="sse:card-{{slug}}"
+     hx-target="this"
+     hx-swap="outerHTML"
+     hx-disinherit="hx-swap hx-target hx-select hx-include">
+    <div class="card shadow-sm h-100"
+         style="cursor: pointer;"
+         hx-get="/admin/ip-detail?ip={{ip}}"
+         hx-include="#admin-time-filter form"
+         hx-target="#ip-detail-modal-content"
+         hx-trigger="click">
+        <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
+            <div class="d-flex align-items-center justify-content-between w-100">
+                <div class="d-flex align-items-center gap-1 overflow-hidden">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-secondary-emphasis bg-secondary-subtle"
+                         style="width: 26px; height: 26px; font-size: 0.875rem;"> ? </div>
+                    <div class="overflow-hidden">
+                        <span class="d-block text-truncate">{{ip}}</span>
+                        <span class="fw-normal small">Unbekannt</span>
+                    </div>
+                </div>
+                <div class="badge bg-light text-dark border ms-1 flex-shrink-0">
+                    {{this.report_count}}x
+                </div>
+            </div>
+            <div class="fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}
+            </div>
+        </div>
+    </div>
+</div>

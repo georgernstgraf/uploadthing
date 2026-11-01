@@ -49,6 +49,19 @@ export function formatEvent(type: string, data: unknown): string {
     return `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
+/**
+ * Baut einen SSE-Frame mit reinem Text als `data`.
+ *
+ * Ein `data:`-Feld endet am Zeilenumbruch; mehrzeiliger Text müsste in
+ * mehrere Felder zerlegt werden. Diese Frames tragen eine Zeile
+ * (Serverstand), deshalb werden Umbrüche ersetzt statt aufgeteilt —
+ * so bleibt der Frame-Zähler der Tests eindeutig.
+ */
+export function formatTextEvent(type: string, text: string): string {
+    const singleLine = text.replace(/\r\n|\r|\n/g, " ");
+    return `event: ${type}\ndata: ${singleLine}\n\n`;
+}
+
 const open = new Set<EventStreamWriter>();
 
 /** Anzahl offener Streams — für Tests und Diagnose. */

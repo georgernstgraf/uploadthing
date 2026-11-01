@@ -1,14 +1,24 @@
 import { Context, Hono } from "hono";
-import { HonoContextVars } from "../lib/types.ts";
-import { localDateString, localTimeString, dateTimeString } from "../lib/timefunc.ts";
+import type { HonoContextVars } from "../lib/types.ts";
+import {
+    dateTimeString,
+    localDateString,
+    localTimeString,
+    localTimeStringSeconds,
+} from "../lib/timefunc.ts";
 import * as hbs from "../lib/handlebars.ts";
-import { formatEvent, openEventStream } from "../lib/sse.ts";
+import { formatEvent, formatTextEvent, openEventStream } from "../lib/sse.ts";
 import * as service from "../service/service.ts";
 import * as events from "../service/events.ts";
 import config, { parsePermittedFileTypes } from "../lib/config.ts";
 import { normalizeMac } from "../lib/mac.ts";
 import { requireAdmin } from "../middleware/admin.ts";
-import { buildExamPanelData } from "./render.ts";
+import {
+    buildExamPanelData,
+    buildStudentCard,
+    buildTikPanelData,
+} from "./render.ts";
+import type { AdminCardRange } from "./render.ts";
 import {
     AdminCleanupDatabaseSchema,
     AdminFileTypesSchema,
@@ -29,6 +39,59 @@ adminRouter.use("*", requireAdmin);
 const start_ms_earlier = 3.6 * 1.5e6;
 const one_day_ms = 24 * 3.6e6;
 const time_cutoff_ms = config.TODAY_HOURS_CUTOFF * 3.6e6;
+
+/** Der aufgelöste, geprüfte Zeitraum einer Admin-Forensik-Anfrage (#163). */
+type AdminRange = AdminCardRange & {
+    startDateTime: Date;
+    endDateTime: Date;
+};
+
+/**
+ * Löst den Zeitraum einer Admin-Anfrage auf — eine Wahrheit für
+ * `/admin/students`, `/admin/ip-detail` und `/admin/student-card` (#163).
+ *
+ * Ohne Angabe gilt `start_ms_earlier`; die Startzeit rastet auf eine
+ * Schulstunde aus `spg_times` ein. Ein verdrehter Bereich wird getauscht.
+ * Was der Aufrufer daraus ableitet (Cutoff, „endet in der Zukunft"),
+ * bleibt seine Sache: dieselbe Spanne bedeutet auf den Panels
+ * unterschiedliche Beschriftung.
+ */
+function parseAdminRange(c: Context<{ Variables: HonoContextVars }>): AdminRange {
+    let startdate = c.req.query("startdate") ||
+        localDateString(new Date(Date.now() - start_ms_earlier));
+    let starttime = c.req.query("starttime");
+    if (!starttime) {
+        starttime = localTimeString(new Date(Date.now() - start_ms_earlier));
+        const times = [...config.spg_times, starttime];
+        times.sort();
+        const index = times.indexOf(starttime);
+        times.splice(index, 1);
+        starttime = times.at(index < times.length ? index : -1)!;
+    }
+    const requestedEndDate = c.req.query("enddate");
+    const requestedEndTime = c.req.query("endtime");
+
+    let enddate = requestedEndDate ||
+        localDateString(new Date(Date.now() + one_day_ms));
+    let endtime = requestedEndTime || starttime;
+    let startDateTime = new Date(`${startdate} ${starttime}`);
+    let endDateTime = new Date(`${enddate} ${endtime}`);
+
+    if (endDateTime.getTime() < startDateTime.getTime()) {
+        [startdate, enddate] = [enddate, startdate];
+        [starttime, endtime] = [endtime, starttime];
+        [startDateTime, endDateTime] = [endDateTime, startDateTime];
+    }
+
+    return {
+        startdate,
+        starttime,
+        enddate,
+        endtime,
+        startDateTime,
+        endDateTime,
+    };
+}
 
 /**
  * Rendert die Admin-Seite im Erfolgsfall. Fehler laufen **nicht** über
@@ -99,32 +162,12 @@ adminRouter.get("/students", async (c) => {
         return c.text("Ungültiges Datums- oder Zeitformat. Bitte verwende YYYY-MM-DD und HH:MM.", 400);
     }
 
-    let startdate = c.req.query("startdate") ||
-        localDateString(new Date(Date.now() - start_ms_earlier));
-    let starttime = c.req.query("starttime");
-    if (!starttime) {
-        starttime = localTimeString(new Date(Date.now() - start_ms_earlier));
-        const times = [...config.spg_times, starttime];
-        times.sort();
-        const index = times.indexOf(starttime);
-        times.splice(index, 1);
-        starttime = times.at(index < times.length ? index : -1)!;
-    }
-    const requestedEndDate = c.req.query("enddate");
-    const requestedEndTime = c.req.query("endtime");
-
-    const endtimeProvided = Boolean(requestedEndDate || requestedEndTime);
-    let enddate = requestedEndDate ||
-        localDateString(new Date(Date.now() + one_day_ms));
-    let endtime = requestedEndTime || starttime;
-    let startDateTime = new Date(`${startdate} ${starttime}`);
-    let endDateTime = new Date(`${enddate} ${endtime}`);
-
-    if (endDateTime.getTime() < startDateTime.getTime()) {
-        [startdate, enddate] = [enddate, startdate];
-        [starttime, endtime] = [endtime, starttime];
-        [startDateTime, endDateTime] = [endDateTime, startDateTime];
-    }
+    const range = parseAdminRange(c);
+    const { startdate, starttime, enddate, endtime, startDateTime, endDateTime } =
+        range;
+    const endtimeProvided = Boolean(
+        c.req.query("enddate") || c.req.query("endtime"),
+    );
 
     const withinTimeCutoff = Math.abs(
         new Date().getTime() - startDateTime.getTime(),
@@ -135,7 +178,6 @@ adminRouter.get("/students", async (c) => {
         startDateTime,
         endDateTime,
     );
-    const tik = service.tik.getPanel();
 
     const content = hbs.adminTemplate({
         remote_user,
@@ -144,20 +186,20 @@ adminRouter.get("/students", async (c) => {
         endtime,
         enddate,
         spg_times: config.spg_times,
-        ips_with_name: registered,
-        ips_without_name: unregistered,
-        teacher_ips,
+        // Kärtchen-Kontext serverseitig (#163): eine Wahrheit für Liste
+        // und Fragment-Endpunkt.
+        ips_with_name: registered.map((card) => buildStudentCard(card, range)),
+        ips_without_name: unregistered.map((card) =>
+            buildStudentCard(card, range)
+        ),
+        teacher_ips: teacher_ips.map((card) => buildStudentCard(card, range)),
         anomalies,
         range_first_seen,
         range_last_seen,
         withinTimeCutoff,
         endtimeInFuture,
         endtimeProvided,
-        tik_state: tik.state,
-        tik_last_attempt: tik.last_attempt,
-        tik_last_success: tik.last_success,
-        tik_last_count: tik.count,
-        tik_error: tik.error,
+        ...buildTikPanelData(),
     });
 
     if (c.req.header("HX-Request") === "true") {
@@ -176,33 +218,89 @@ adminRouter.get("/students", async (c) => {
 });
 
 /**
- * Admin-Aktivität als Push (#161).
+ * Admin-Aktivität als Push (#163).
  *
  * Nur für Lehrpersonen: `requireAdmin` läuft auf `*`, Schüler bekommen
- * 403 und verbinden gar nicht. Der Kanal hat kein Event-Log — beim
- * Verbinden geht der zuletzt ausgelieferte Stand raus, danach ein Frame
- * je koalesziertem Bus-Ereignis. Die Route sendet nur, was der Bus
- * liefert; die Zusammenfassung entsteht in `service/events.ts`.
+ * 403 und verbinden gar nicht. Der Kanal transportiert **benannte**
+ * Komponenten — `event: cards`, `event: card-192-168-21-5`, `event: tik`;
+ * die `hx-trigger="sse:…"` der Kärtchen und des Streifens hängen an
+ * genau diesen Namen (verdrahtet in Welle 4). Es gibt kein Event-Log;
+ * die Koaleszierung entsteht in `service/events.ts`.
+ *
+ * `stand` trägt reinen Text (Serverzeit). Der Frame kommt beim
+ * Verbinden und vor jedem Batch: der Client zeigt damit den Stand, zu dem
+ * die Ereignisse gehören, und nicht den des letzten Frames.
  */
 adminRouter.get("/events", (c) => {
     return openEventStream(c.req.raw, {
         onOpen: (stream) => {
-            // Erst abonnieren, dann den ersten Frame bauen: ein Event
-            // zwischen beiden Schritten kann so nicht verloren gehen.
-            const unsubscribe = events.subscribeActivity((reasons) => {
+            const writeStand = () => {
                 stream.write(
-                    formatEvent("activity", {
-                        ...events.snapshotActivity(),
-                        reasons,
-                    }),
+                    formatTextEvent(
+                        "stand",
+                        `Stand: ${localTimeStringSeconds()}`,
+                    ),
                 );
+            };
+
+            // Erst abonnieren, dann den ersten Frame schreiben: ein
+            // Batch zwischen beiden Schritten kann so nicht verloren
+            // gehen.
+            const unsubscribe = events.subscribeActivity((components) => {
+                writeStand();
+                for (const component of components) {
+                    // Kein Payload: der Trigger hängt am Ereignisnamen.
+                    stream.write(formatEvent(component, null));
+                }
             });
 
-            stream.write(formatEvent("activity", events.snapshotActivity()));
+            writeStand();
 
             return unsubscribe;
         },
     });
+});
+
+/**
+ * Ein einzelnes Kärtchen als Fragment (#163).
+ *
+ * `null` aus dem Service heißt: die IP hat im Zeitraum weder Sichtung
+ * noch Cookie, Registrierung oder Abgabe. Antwort ist dann **204** und
+ * nicht 404 — der globale HTMX-Fehler-Toast in `templates/index.hbs`
+ * würde sonst bei jedem stillen Kärtchen aufpoppen.
+ */
+adminRouter.get("/student-card", async (c) => {
+    const ip = (c.req.query("ip") ?? "").trim();
+    if (!ip) {
+        return c.text("Bitte eine IP-Adresse angeben.", 400);
+    }
+
+    const validation = AdminQuerySchema.safeParse(c.req.query());
+    if (!validation.success) {
+        return c.text("Ungültiges Datums- oder Zeitformat. Bitte verwende YYYY-MM-DD und HH:MM.", 400);
+    }
+
+    const range = parseAdminRange(c);
+    const card = await service.ipadmin.for_ip(
+        ip,
+        range.startDateTime,
+        range.endDateTime,
+    );
+    if (!card) {
+        return c.body(null, 204);
+    }
+
+    const data = buildStudentCard(card, range);
+    return c.html(
+        data.tone === "unbekannt"
+            ? hbs.adminStudentCardUnknownTemplate(data)
+            : hbs.adminStudentCardTemplate(data),
+    );
+});
+
+/** Nur der MikroTik-Streifen als Fragment (#163). */
+adminRouter.get("/tik-panel", (c) => {
+    return c.html(hbs.adminTikPanelTemplate(buildTikPanelData()));
 });
 
 adminRouter.get("/ip-detail", async (c) => {
@@ -217,31 +315,17 @@ adminRouter.get("/ip-detail", async (c) => {
         return c.text("Ungültiges Datums- oder Zeitformat.", 400);
     }
 
-    const startdate = c.req.query("startdate") ||
-        localDateString(new Date(Date.now() - start_ms_earlier));
-    let starttime = c.req.query("starttime");
-    if (!starttime) {
-        starttime = localTimeString(new Date(Date.now() - start_ms_earlier));
-        const times = [...config.spg_times, starttime];
-        times.sort();
-        const index = times.indexOf(starttime);
-        times.splice(index, 1);
-        starttime = times.at(index < times.length ? index : -1)!;
-    }
-    const requestedEndDate = c.req.query("enddate");
-    const requestedEndTime = c.req.query("endtime");
-    const enddate = requestedEndDate ||
-        localDateString(new Date(Date.now() + one_day_ms));
-    const endtime = requestedEndTime || starttime;
-    let startDateTime = new Date(`${startdate} ${starttime}`);
-    let endDateTime = new Date(`${enddate} ${endtime}`);
-
-    if (endDateTime.getTime() < startDateTime.getTime()) {
-        [startDateTime, endDateTime] = [endDateTime, startDateTime];
-    }
+    // Derselbe Zeitraum wie die Liste (#163): inklusive Einrasten auf
+    // `spg_times`. Vorher fehlte das hier — das Detail zeigte einen
+    // anderen Ausschnitt als die Karte, aus der es geöffnet wurde.
+    const range = parseAdminRange(c);
 
     try {
-        const detail = await service.ipadmin.getIPDetail(ip, startDateTime, endDateTime);
+        const detail = await service.ipadmin.getIPDetail(
+            ip,
+            range.startDateTime,
+            range.endDateTime,
+        );
         return c.html(hbs.adminIPDetailTemplate(detail));
     } catch (error) {
         console.error("ip-detail error:", error);
