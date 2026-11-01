@@ -2,140 +2,170 @@ import { assertEquals } from "@std/assert";
 import * as ipfactRepo from "./ipfact.ts";
 import { db } from "./db.ts";
 
-Deno.test("getUniqueScanTimestamps returns empty array for empty range", () => {
-    const suffix = crypto.randomUUID().slice(0, 8);
-    const testIp = `10.0.0.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
-    const now = new Date();
-    const start = new Date(now.getTime() + 100000);
-    const end = new Date(now.getTime() + 200000);
+function clearScans(...ats: Date[]): void {
+    const stmt = db.prepare("DELETE FROM tikscan WHERE at = ?");
+    for (const at of ats) {
+        stmt.run(at.toISOString());
+    }
+}
+
+const SCAN_BASE = new Date("2029-12-30T09:00:00Z");
+
+function scanAt(offsetMs: number): Date {
+    return new Date(SCAN_BASE.getTime() + offsetMs);
+}
+
+Deno.test("insertScan speichert jeden Scan genau einmal", () => {
+    const t1 = scanAt(0);
 
     try {
-        // No records in this range
-        const result = ipfactRepo.getUniqueScanTimestamps(start, end);
-        assertEquals(result, []);
+        ipfactRepo.insertScan(t1);
+        // Zweiter Abruf desselben Zeitpunkts ist kein zweiter Scan.
+        ipfactRepo.insertScan(t1);
+
+        assertEquals(
+            ipfactRepo.scansInRange(t1, t1).map((d) => d.toISOString()),
+            [t1.toISOString()],
+        );
+    } finally {
+        clearScans(t1);
+    }
+});
+
+Deno.test("scansInRange liefert die Scans aufsteigend und begrenzt", () => {
+    const t1 = scanAt(60_000);
+    const t2 = scanAt(120_000);
+    const t3 = scanAt(180_000);
+
+    try {
+        ipfactRepo.insertScan(t3);
+        ipfactRepo.insertScan(t1);
+        ipfactRepo.insertScan(t2);
+
+        const all = ipfactRepo.scansInRange(scanAt(0), scanAt(240_000));
+        assertEquals(all.map((d) => d.toISOString()), [
+            t1.toISOString(),
+            t2.toISOString(),
+            t3.toISOString(),
+        ]);
+
+        // Startgrenze schließt t1 aus.
+        const later = ipfactRepo.scansInRange(t2, scanAt(240_000));
+        assertEquals(later.map((d) => d.toISOString()), [
+            t2.toISOString(),
+            t3.toISOString(),
+        ]);
+    } finally {
+        clearScans(t1, t2, t3);
+    }
+});
+
+Deno.test("latestScan liefert den jüngsten Scan im Zeitraum", () => {
+    const t1 = scanAt(300_000);
+    const t2 = scanAt(360_000);
+
+    try {
+        ipfactRepo.insertScan(t1);
+        ipfactRepo.insertScan(t2);
+
+        assertEquals(
+            ipfactRepo.latestScan(scanAt(0), scanAt(420_000))?.toISOString(),
+            t2.toISOString(),
+        );
+        // Nur t1 liegt im Fenster.
+        assertEquals(
+            ipfactRepo.latestScan(scanAt(0), scanAt(330_000))?.toISOString(),
+            t1.toISOString(),
+        );
+        // Leeres Fenster.
+        assertEquals(ipfactRepo.latestScan(scanAt(0), scanAt(1)), null);
+    } finally {
+        clearScans(t1, t2);
+    }
+});
+
+Deno.test("previousScan liefert den nächstälteren Scan", () => {
+    const t1 = scanAt(480_000);
+    const t2 = scanAt(540_000);
+
+    try {
+        ipfactRepo.insertScan(t1);
+        ipfactRepo.insertScan(t2);
+
+        assertEquals(
+            ipfactRepo.previousScan(t2)?.toISOString(),
+            t1.toISOString(),
+        );
+    } finally {
+        clearScans(t1, t2);
+    }
+});
+
+Deno.test("existsAt prüft genau diesen Scan", () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const testIp = `10.0.20.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
+    const t1 = scanAt(600_000);
+    const t2 = scanAt(660_000);
+
+    try {
+        ipfactRepo.registerSeen(testIp, t1);
+
+        assertEquals(ipfactRepo.existsAt(testIp, t1), true);
+        assertEquals(ipfactRepo.existsAt(testIp, t2), false);
+        assertEquals(ipfactRepo.existsAt("10.0.99.99", t1), false);
     } finally {
         db.exec(`DELETE FROM ipfact WHERE ip = '${testIp}'`);
     }
 });
 
-Deno.test("getUniqueScanTimestamps returns unique timestamps only", () => {
+Deno.test("existsBefore findet Sichtungen nur im Fenster", () => {
     const suffix = crypto.randomUUID().slice(0, 8);
-    const testIp1 = `10.0.1.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
-    const testIp2 = `10.0.2.${Number.parseInt(suffix.slice(2, 4), 16) % 250 + 1}`;
-    const baseTime = new Date("2026-03-27T10:00:00Z");
-    const scanTime = new Date(baseTime);
-    const start = new Date(baseTime.getTime() - 60000);
-    const end = new Date(baseTime.getTime() + 60000);
+    const testIp = `10.0.21.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
+    const t1 = scanAt(720_000);
+    const t2 = scanAt(780_000);
+    const t3 = scanAt(840_000);
 
     try {
-        // Register both IPs at the same timestamp (same scan)
-        ipfactRepo.registerSeen(testIp1, scanTime);
-        ipfactRepo.registerSeen(testIp2, scanTime);
-
-        const result = ipfactRepo.getUniqueScanTimestamps(start, end);
-
-        // Should return only one unique timestamp
-        assertEquals(result.length, 1);
-        assertEquals(result[0].toISOString(), scanTime.toISOString());
-    } finally {
-        db.exec(`DELETE FROM ipfact WHERE ip IN ('${testIp1}', '${testIp2}')`);
-    }
-});
-
-Deno.test("getUniqueScanTimestamps sorts timestamps ascending", () => {
-    const suffix = crypto.randomUUID().slice(0, 8);
-    const testIp = `10.0.3.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
-    const baseTime = new Date("2026-03-27T10:00:00Z");
-    const t1 = new Date(baseTime.getTime() + 60000);
-    const t2 = new Date(baseTime.getTime() + 120000);
-    const t3 = new Date(baseTime.getTime() + 180000);
-    const start = new Date(baseTime);
-    const end = new Date(baseTime.getTime() + 240000);
-
-    try {
-        // Register scans out of order (t3, t1, t2)
+        ipfactRepo.registerSeen(testIp, t1);
         ipfactRepo.registerSeen(testIp, t3);
-        ipfactRepo.registerSeen(testIp, t1);
-        ipfactRepo.registerSeen(testIp, t2);
 
-        const result = ipfactRepo.getUniqueScanTimestamps(start, end);
-
-        assertEquals(result.length, 3);
-        // Should be in ascending order
-        assertEquals(result[0].toISOString(), t1.toISOString());
-        assertEquals(result[1].toISOString(), t2.toISOString());
-        assertEquals(result[2].toISOString(), t3.toISOString());
+        // Vor t3 und ab Fensterbeginn gesehen.
+        assertEquals(ipfactRepo.existsBefore(testIp, t3, scanAt(0)), true);
+        // Erste Sichtung selbst zählt nicht als "vorher".
+        assertEquals(ipfactRepo.existsBefore(testIp, t1, scanAt(0)), false);
+        // t1 liegt vor dem Fensterbeginn t2.
+        assertEquals(ipfactRepo.existsBefore(testIp, t3, t2), false);
     } finally {
         db.exec(`DELETE FROM ipfact WHERE ip = '${testIp}'`);
     }
 });
 
-Deno.test("getUniqueScanTimestamps honors start boundary", () => {
-    const suffix = crypto.randomUUID().slice(0, 8);
-    const testIp = `10.0.4.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
-    const baseTime = new Date("2026-03-27T10:00:00Z");
-    const t1 = new Date(baseTime.getTime() - 60000); // before start
-    const t2 = new Date(baseTime.getTime() + 60000); // after start
-    const start = new Date(baseTime);
-    const end = new Date(baseTime.getTime() + 120000);
+Deno.test("deleteScansOlderThan löscht nur ältere Scans", () => {
+    const oldScan = new Date("2019-06-01T10:00:00.000Z");
+    const freshScan = scanAt(900_000);
 
     try {
-        ipfactRepo.registerSeen(testIp, t1);
-        ipfactRepo.registerSeen(testIp, t2);
+        ipfactRepo.insertScan(oldScan);
+        ipfactRepo.insertScan(freshScan);
 
-        const result = ipfactRepo.getUniqueScanTimestamps(start, end);
+        const deleted = ipfactRepo.deleteScansOlderThan(
+            new Date("2020-01-01T00:00:00.000Z"),
+        );
 
-        assertEquals(result.length, 1);
-        assertEquals(result[0].toISOString(), t2.toISOString());
+        assertEquals(deleted >= 1, true);
+        assertEquals(
+            ipfactRepo.scansInRange(oldScan, oldScan),
+            [],
+        );
+        assertEquals(
+            ipfactRepo.scansInRange(freshScan, freshScan).length,
+            1,
+        );
     } finally {
-        db.exec(`DELETE FROM ipfact WHERE ip = '${testIp}'`);
+        clearScans(oldScan, freshScan);
     }
 });
 
-Deno.test("getUniqueScanTimestamps honors end boundary", () => {
-    const suffix = crypto.randomUUID().slice(0, 8);
-    const testIp = `10.0.5.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
-    const baseTime = new Date("2026-03-27T10:00:00Z");
-    const t1 = new Date(baseTime.getTime() + 60000); // within range
-    const t2 = new Date(baseTime.getTime() + 180000); // after end
-    const start = new Date(baseTime);
-    const end = new Date(baseTime.getTime() + 120000);
-
-    try {
-        ipfactRepo.registerSeen(testIp, t1);
-        ipfactRepo.registerSeen(testIp, t2);
-
-        const result = ipfactRepo.getUniqueScanTimestamps(start, end);
-
-        assertEquals(result.length, 1);
-        assertEquals(result[0].toISOString(), t1.toISOString());
-    } finally {
-        db.exec(`DELETE FROM ipfact WHERE ip = '${testIp}'`);
-    }
-});
-
-Deno.test("getUniqueScanTimestamps returns multiple distinct timestamps from different IPs", () => {
-    const suffix = crypto.randomUUID().slice(0, 8);
-    const testIp1 = `10.0.6.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;
-    const testIp2 = `10.0.7.${Number.parseInt(suffix.slice(2, 4), 16) % 250 + 1}`;
-    const baseTime = new Date("2026-03-27T11:00:00Z");
-    const t1 = new Date(baseTime);
-    const t2 = new Date(baseTime.getTime() + 60000);
-    const start = new Date(baseTime.getTime() - 60000);
-    const end = new Date(baseTime.getTime() + 120000);
-
-    try {
-        // IP1 at t1, IP2 at t2
-        ipfactRepo.registerSeen(testIp1, t1);
-        ipfactRepo.registerSeen(testIp2, t2);
-
-        const result = ipfactRepo.getUniqueScanTimestamps(start, end);
-
-        assertEquals(result.length, 2);
-    } finally {
-        db.exec(`DELETE FROM ipfact WHERE ip IN ('${testIp1}', '${testIp2}')`);
-    }
-});
 Deno.test("registerSeenMany speichert die MAC je Sichtung", () => {
     const suffix = crypto.randomUUID().slice(0, 8);
     const testIp1 = `10.0.8.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 1}`;

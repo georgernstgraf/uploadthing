@@ -95,10 +95,36 @@ export function getHistoryForIPInRangeDesc(
     return rows.map((row) => new Date(row.seen));
 }
 
-const getUniqueScanTimestampsStmt = db.prepare(
-    `SELECT DISTINCT seen FROM ipfact
-    WHERE seen BETWEEN ? AND ?
-    ORDER BY seen ASC`,
+const insertScanStmt = db.prepare(
+    "INSERT OR IGNORE INTO tikscan (at) VALUES (?)",
+);
+const scansInRangeStmt = db.prepare(
+    `SELECT at FROM tikscan
+    WHERE at BETWEEN ? AND ?
+    ORDER BY at ASC`,
+);
+const latestScanStmt = db.prepare(
+    `SELECT at FROM tikscan
+    WHERE at BETWEEN ? AND ?
+    ORDER BY at DESC
+    LIMIT 1`,
+);
+const previousScanStmt = db.prepare(
+    `SELECT at FROM tikscan
+    WHERE at < ?
+    ORDER BY at DESC
+    LIMIT 1`,
+);
+const deleteScansOlderThanStmt = db.prepare(
+    "DELETE FROM tikscan WHERE at < ?",
+);
+const existsAtStmt = db.prepare(
+    "SELECT 1 FROM ipfact WHERE ip = ? AND seen = ? LIMIT 1",
+);
+const existsBeforeStmt = db.prepare(
+    `SELECT 1 FROM ipfact
+    WHERE ip = ? AND seen >= ? AND seen < ?
+    LIMIT 1`,
 );
 /*
 Jüngste MAC einer IP seit `since` (#147, #153): läuft rückwärts über den
@@ -130,15 +156,72 @@ export function getLatestMacForIP(ip: string, since: Date): string | null {
 }
 
 /**
- * Get all unique scan timestamps within a time range.
- * Each timestamp represents one network scan that recorded active IPs.
- * @param start - Range start (inclusive).
- * @param end - Range end (inclusive).
- * @returns Array of unique scan timestamps in ascending order.
+ * Einen abgeschlossenen Netz-Scan auf der Zeitachse festhalten (#163).
+ *
+ * Idempotent über den Unique-Index `tikscan_at_key`: derselbe Zeitpunkt
+ * erzeugt keinen zweiten Eintrag. Ein leerer Abruf ist ein gültiger Scan.
  */
-export function getUniqueScanTimestamps(start: Date, end: Date): Date[] {
-    const rows = getUniqueScanTimestampsStmt.all(start.toISOString(), end.toISOString()) as {
-        seen: string;
-    }[];
-    return rows.map((row) => new Date(row.seen));
+export function insertScan(at: Date): void {
+    insertScanStmt.run(at.toISOString());
+}
+
+/**
+ * Alle Scans im Zeitraum, aufsteigend. Enthält auch Scans ohne einen
+ * einzigen sichtbaren Client.
+ */
+export function scansInRange(start: Date, end: Date): Date[] {
+    const rows = scansInRangeStmt.all(
+        start.toISOString(),
+        end.toISOString(),
+    ) as { at: string }[];
+    return rows.map((row) => new Date(row.at));
+}
+
+/**
+ * Jüngster Scan im Zeitraum (einschließlich Grenzen), `null` wenn keiner
+ * vorliegt.
+ */
+export function latestScan(start: Date, end: Date): Date | null {
+    const row = latestScanStmt.get(
+        start.toISOString(),
+        end.toISOString(),
+    ) as { at: string } | undefined;
+    return row ? new Date(row.at) : null;
+}
+
+/**
+ * Nächstälterer Scan vor `before`, unabhängig von einem Fenster.
+ */
+export function previousScan(before: Date): Date | null {
+    const row = previousScanStmt.get(before.toISOString()) as
+        | { at: string }
+        | undefined;
+    return row ? new Date(row.at) : null;
+}
+
+/**
+ * Wurde die IP in genau diesem Scan gesehen?
+ */
+export function existsAt(ip: string, scan: Date): boolean {
+    return existsAtStmt.get(ip, scan.toISOString()) !== undefined;
+}
+
+/**
+ * Wurde die IP im Fenster `[since, scan)` gesehen — also vor diesem Scan,
+ * aber innerhalb des betrachteten Zeitraums?
+ */
+export function existsBefore(ip: string, scan: Date, since: Date): boolean {
+    return existsBeforeStmt.get(
+        ip,
+        since.toISOString(),
+        scan.toISOString(),
+    ) !== undefined;
+}
+
+/**
+ * Scans vor dem Stichtag löschen (Datenbankbereinigung).
+ */
+export function deleteScansOlderThan(cutoff: Date): number {
+    deleteScansOlderThanStmt.run(cutoff.toISOString());
+    return db.changes;
 }

@@ -204,6 +204,24 @@ export async function seedSharedIpAnomalyScenario(params: {
     });
 }
 
+/**
+ * Scan-Zeitachse (#163): einen Netz-Scan festhalten.
+ *
+ * `tikscan` kennt keine IP, deshalb gehören Scans nicht zu
+ * `clearForensicsByIp` — Tests, die Scans schreiben, räumen sie mit
+ * `clearScans` über die Zeitstempel wieder ab.
+ */
+export function seedScan(at: Date): void {
+    ipfactRepo.insertScan(at);
+}
+
+export function clearScans(...ats: Date[]): void {
+    const stmt = db.prepare("DELETE FROM tikscan WHERE at = ?");
+    for (const at of ats) {
+        stmt.run(at.toISOString());
+    }
+}
+
 export function seedSubmission(params: {
     userId: number;
     ip?: string;

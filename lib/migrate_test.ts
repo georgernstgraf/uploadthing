@@ -50,6 +50,7 @@ const EXPECTED_TABLES = [
     "examstate",
     "ipfact",
     "registrations",
+    "tikscan",
     "users",
 ];
 
@@ -64,15 +65,17 @@ const EXPECTED_INDEXES = [
     "ipfact_seen_ip_idx",
     "registrations_ip_at_idx",
     "registrations_userId_idx",
+    "tikscan_at_key",
     "users_email_key",
 ];
 
 Deno.test("migrate - loadMigrations liefert alle Migrationen aus dem Journal", () => {
     const migrations = loadMigrations(MIGRATIONS_DIR);
-    assertEquals(migrations.length, 3);
+    assertEquals(migrations.length, 4);
     assertEquals(migrations[0].tag, "0000_baseline");
     assertEquals(migrations[1].tag, "0001_ipfact_mac");
     assertEquals(migrations[2].tag, "0002_adminmac");
+    assertEquals(migrations[3].tag, "0003_tikscan");
     assertEquals(
         migrations[0].hash,
         createHash("sha256")
@@ -90,6 +93,7 @@ Deno.test("migrate - leere Datenbank wird vollständig aufgebaut", async () => {
             "0000_baseline",
             "0001_ipfact_mac",
             "0002_adminmac",
+            "0003_tikscan",
         ]);
         assertEquals(outcome.marked, []);
         assertEquals(objectNames(db, "table"), EXPECTED_TABLES);
@@ -127,8 +131,9 @@ Deno.test("migrate - zweiter Lauf ist idempotent", async () => {
             "0000_baseline",
             "0001_ipfact_mac",
             "0002_adminmac",
+            "0003_tikscan",
         ]);
-        assertEquals(appliedRows(db).length, 3);
+        assertEquals(appliedRows(db).length, 4);
     });
 });
 
@@ -140,20 +145,54 @@ Deno.test("migrate - Baseline auf bestehender Datenbank wird markiert, nicht aus
         // nicht, die MAC-Allowlist existiert noch nicht.
         db.exec("ALTER TABLE ipfact DROP COLUMN mac");
         db.exec("DROP TABLE adminmac");
+        db.exec("DROP TABLE tikscan");
         db.exec(
             "INSERT INTO users (email, name, updatedat) VALUES ('a@b.at', 'Test', 1)",
         );
 
         const outcome = runMigrations(db, { log: quiet });
 
-        assertEquals(outcome.applied, ["0001_ipfact_mac", "0002_adminmac"]);
+        assertEquals(outcome.applied, [
+            "0001_ipfact_mac",
+            "0002_adminmac",
+            "0003_tikscan",
+        ]);
         assertEquals(outcome.marked, ["0000_baseline"]);
-        assertEquals(appliedRows(db).length, 3);
+        assertEquals(appliedRows(db).length, 4);
 
         const users = db.prepare("SELECT email FROM users").all() as {
             email: string;
         }[];
         assertEquals(users.length, 1);
+    });
+});
+
+Deno.test("migrate - Backfill füllt tikscan faktengleich aus ipfact", async () => {
+    await withTempDb((db) => {
+        runMigrations(db, { log: quiet });
+        const tikscanMigration = loadMigrations(MIGRATIONS_DIR)[3];
+        // Stand vor #163: keine Scan-Zeitachse, aber Sichtungen in `ipfact`.
+        db.exec("DROP TABLE tikscan");
+        db.prepare(
+            `DELETE FROM "${MIGRATIONS_TABLE}" WHERE hash = ?`,
+        ).run(tikscanMigration.hash);
+        db.exec(
+            `INSERT INTO ipfact (ip, seen) VALUES
+            ('10.0.0.1', '2026-03-27T10:00:00.000Z'),
+            ('10.0.0.2', '2026-03-27T10:00:00.000Z'),
+            ('10.0.0.1', '2026-03-27T10:01:00.000Z')`,
+        );
+
+        const outcome = runMigrations(db, { log: quiet });
+
+        assertEquals(outcome.applied, ["0003_tikscan"]);
+        const scans = db
+            .prepare("SELECT at FROM tikscan ORDER BY at ASC")
+            .all() as { at: string }[];
+        assertEquals(scans, [
+            { at: "2026-03-27T10:00:00.000Z" },
+            { at: "2026-03-27T10:01:00.000Z" },
+        ]);
     });
 });
 
@@ -167,6 +206,7 @@ Deno.test("migrate - ältere Datenbank wird auf den Ist-Zustand gebracht", async
         db.exec("CREATE INDEX cookiepresents_ip_idx ON cookiepresents (ip)");
         db.exec("ALTER TABLE ipfact DROP COLUMN mac");
         db.exec("DROP TABLE adminmac");
+        db.exec("DROP TABLE tikscan");
 
         const outcome = runMigrations(db, { log: quiet });
 
@@ -174,6 +214,7 @@ Deno.test("migrate - ältere Datenbank wird auf den Ist-Zustand gebracht", async
             "0000_baseline",
             "0001_ipfact_mac",
             "0002_adminmac",
+            "0003_tikscan",
         ]);
         assertEquals(outcome.marked, []);
         assertEquals(objectNames(db, "index"), EXPECTED_INDEXES);
@@ -183,7 +224,7 @@ Deno.test("migrate - ältere Datenbank wird auf den Ist-Zustand gebracht", async
             name: string;
         }[];
         assertEquals(columns.some((column) => column.name === "mac"), true);
-        assertEquals(appliedRows(db).length, 3);
+        assertEquals(appliedRows(db).length, 4);
     });
 });
 

@@ -4,7 +4,7 @@
  * Es bildet exakt den Ist-Zustand von `prisma/schema.prisma` (Stand vor dem
  * Umstieg) ab, damit die Baseline-Migration keine Schemaänderung ist:
  *
- * - Tabellen: `users`, `ipfact`, `cookiepresents`, `registrations`,
+ * - Tabellen: `users`, `ipfact`, `tikscan`, `cookiepresents`, `registrations`,
  *   `abgaben`, `examstate`, `adminmac`
  * - Alle Indizes und Unique-Constraints mit den historisch gewachsenen
  *   Namen — die Forensik-Hot-Queries hängen an
@@ -66,6 +66,25 @@ export const ipfact = sqliteTable(
         uniqueIndex("ipfact_ip_seen_key").on(table.ip, table.seen),
         index("ipfact_seen_ip_idx").on(table.seen, table.ip),
     ],
+);
+
+/**
+ * Zeitachse der Netz-Scans (#163).
+ *
+ * Bis dahin wurde die Scan-Achse aus `DISTINCT ipfact.seen` abgeleitet. Ein
+ * Abruf ohne einen einzigen sichtbaren Client existierte in `ipfact` nicht und
+ * war damit als Scan unsichtbar. Hier steht jeder abgeschlossene Abruf, auch
+ * ein leerer; `ipfact` bleibt die Sichtachse (welche IP war in welchem Scan
+ * da). `at` ist eindeutig, damit derselbe Zeitpunkt keinen zweiten Scan
+ * erzeugt — der Poller schreibt per `INSERT OR IGNORE`.
+ */
+export const tikscan = sqliteTable(
+    "tikscan",
+    {
+        id: integer("id").primaryKey({ autoIncrement: true }),
+        at: datetime("at").notNull(),
+    },
+    (table) => [uniqueIndex("tikscan_at_key").on(table.at)],
 );
 
 export const registrations = sqliteTable(

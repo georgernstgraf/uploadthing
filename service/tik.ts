@@ -72,6 +72,9 @@ export const DEFAULT_POLL_INTERVAL_MS = 60_000;
 const defaultFetcher: TikFetcher = (input, init) => fetch(input, init);
 
 const defaultRegister: RegisterEntries = (entries, seen) => {
+    // Jeder abgeschlossene Abruf ist ein Scan — auch ein leerer. `ipfact`
+    // hält nur die Sichtungen; die Zeitachse führt `tikscan` (#163).
+    repo.ipfact.insertScan(seen);
     repo.ipfact.registerSeenMany(entries, seen);
 };
 

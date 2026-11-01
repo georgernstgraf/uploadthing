@@ -25,7 +25,7 @@ import * as registrationsRepo from "../repo/registrations.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as abgabenRepo from "../repo/abgaben.ts";
 import * as examRepo from "../repo/exam.ts";
-import { clearExamState } from "../test/helpers/forensics_fixture.ts";
+import { clearExamState, clearScans, seedScan } from "../test/helpers/forensics_fixture.ts";
 
 Deno.test("setInternetActive sperrt über die API, wenn das Internet freigegeben werden soll", async () => {
     const { runner, calls } = fakeFirewall({ enabled: false });
@@ -421,6 +421,8 @@ Deno.test("cleanupDatabaseOlderThanOneYear deletes only old time-based records",
         registrationsRepo.create(ip, user.id, freshDate);
         ipfactRepo.registerSeen(ip, oldDate);
         ipfactRepo.registerSeen(ip, freshDate);
+        seedScan(oldDate);
+        seedScan(freshDate);
         abgabenRepo.create(user.id, ip, `old-${suffix}.pdf`, oldDate);
         abgabenRepo.create(user.id, ip, `fresh-${suffix}.pdf`, freshDate);
 
@@ -429,11 +431,13 @@ Deno.test("cleanupDatabaseOlderThanOneYear deletes only old time-based records",
         assert(result.deleted_cookiepresents >= 1);
         assert(result.deleted_registrations >= 1);
         assert(result.deleted_ipfacts >= 1);
+        assert(result.deleted_tikscans >= 1);
         assert(result.deleted_submissions >= 1);
         assertEquals(
             result.total_deleted,
             result.deleted_cookiepresents + result.deleted_registrations +
-                result.deleted_ipfacts + result.deleted_submissions,
+                result.deleted_ipfacts + result.deleted_tikscans +
+                result.deleted_submissions,
         );
 
         const cookieCount = Number((db.prepare(
@@ -448,12 +452,20 @@ Deno.test("cleanupDatabaseOlderThanOneYear deletes only old time-based records",
         const abgabenCount = Number((db.prepare(
             "SELECT COUNT(*) AS count FROM abgaben WHERE ip = ?",
         ).get(ip) as { count: number }).count);
+        const tikscanCount = Number((db.prepare(
+            "SELECT COUNT(*) AS count FROM tikscan WHERE at IN (?, ?)",
+        ).get(oldDate.toISOString(), freshDate.toISOString()) as {
+            count: number;
+        }).count);
 
         assertEquals(cookieCount, 1);
         assertEquals(registrationCount, 1);
         assertEquals(ipfactCount, 1);
         assertEquals(abgabenCount, 1);
+        // Der alte Scan ist bereinigt, der frische bleibt.
+        assertEquals(tikscanCount, 1);
     } finally {
+        clearScans(oldDate, freshDate);
         db.exec(`DELETE FROM cookiepresents WHERE ip = '${ip}'`);
         db.exec(`DELETE FROM registrations WHERE ip = '${ip}'`);
         db.exec(`DELETE FROM ipfact WHERE ip = '${ip}'`);

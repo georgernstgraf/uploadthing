@@ -309,9 +309,6 @@ const config = {
     SEARCH_BASE: requireEnv("SEARCH_BASE"),
     logdir: Deno.env.get("LOGDIR") || "/var/log/exampy",
     TODAY_HOURS_CUTOFF: Number(Deno.env.get("TODAY_HOURS_CUTOFF") || "12"),
-    admin_stale_minutes: Number(
-        Deno.env.get("ADMIN_STALE_MINUTES") || "3",
-    ),
     spg_times: [
         "08:00",
         "08:50",

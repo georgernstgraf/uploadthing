@@ -55,7 +55,9 @@ export function canResubmit(userId: number, currentIp: string): boolean {
 
     const since = submissions[0].at;
     const now = new Date();
-    const allScans = repo.ipfact.getUniqueScanTimestamps(since, now);
+    // Scan-Achse aus `tikscan` (#163): leere Scans zählen mit, sonst wäre
+    // ein Abruf ohne sichtbaren Client unsichtbar.
+    const allScans = repo.ipfact.scansInRange(since, now);
     if (allScans.length === 0) return true;
 
     const ipSeens = repo.ipfact.getHistoryForIPInRangeDesc(currentIp, since, now);

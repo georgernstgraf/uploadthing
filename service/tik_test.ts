@@ -11,6 +11,8 @@ import {
     startPolling,
 } from "./tik.ts";
 import type { TikFetcher } from "./tik.ts";
+import * as ipfactRepo from "../repo/ipfact.ts";
+import { clearScans } from "../test/helpers/forensics_fixture.ts";
 
 const TEST_TIK: TikConfig = {
     url: "http://tik.test",
@@ -178,6 +180,28 @@ Deno.test("tik - leere Tabelle ist kein Fehler", async () => {
     });
 });
 
+Deno.test("tik - leerer Abruf schreibt trotzdem einen Scan in die Zeitachse", async () => {
+    await withTikConfig(TEST_TIK, async () => {
+        const { fetcher } = fakeFetch([]);
+        // Eigenes Zeitfenster, damit die Zeile eindeutig zuzuordnen ist.
+        const scanAt = new Date("2029-11-05T07:30:15Z");
+
+        try {
+            // Ohne `register` läuft der echte Schreibpfad (tikscan + ipfact).
+            const outcome = await pollOnce({ fetcher, now: () => scanAt });
+            assertEquals(outcome.ok, true);
+
+            assertEquals(
+                ipfactRepo.scansInRange(scanAt, scanAt)
+                    .map((d) => d.toISOString()),
+                [scanAt.toISOString()],
+            );
+        } finally {
+            clearScans(scanAt);
+        }
+    });
+});
+
 Deno.test("tik - HTTP-Fehler wird als Fehlerzustand gemeldet", async () => {
     await withTikConfig(TEST_TIK, async () => {
         const { fetcher } = fakeFetch({ error: "Unauthorized" }, { status: 401 });
@@ -319,7 +343,13 @@ Deno.test("tik - Poller ruft sofort und danach im Intervall ab", async () => {
             return Promise.resolve(jsonResponse([]));
         };
 
-        const poller = startPolling({ intervalMs: 10, fetcher });
+        // Persistenz ist hier nicht das Thema: ohne eigenen `register`
+        // schreibt der echte Pfad Scans und Sichtungen in die Test-DB.
+        const poller = startPolling({
+            intervalMs: 10,
+            fetcher,
+            register: () => {},
+        });
         assertExists(poller);
 
         try {
@@ -430,7 +460,13 @@ Deno.test("tik - Abrufe überlappen nicht", async () => {
             }
         };
 
-        const poller = startPolling({ intervalMs: 5, fetcher });
+        // Ohne eigenen `register` schreibt der echte Pfad bei jedem Abruf
+        // einen Scan; hier zählt nur die Überlappung.
+        const poller = startPolling({
+            intervalMs: 5,
+            fetcher,
+            register: () => {},
+        });
         assertExists(poller);
 
         try {

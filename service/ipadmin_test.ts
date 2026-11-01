@@ -1,12 +1,14 @@
 import { assertEquals, assertExists } from "@std/assert";
-import { for_range } from "./ipadmin.ts";
+import { for_ip, for_range } from "./ipadmin.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
 import {
     clearForensicsByIp,
     clearForensicsByUserEmail,
+    clearScans,
     seedNoAnomaliesScenario,
     seedRegistration,
+    seedScan,
     seedSharedIpAnomalyScenario,
     seedSubmission,
     seedUserAnomalyScenario,
@@ -39,8 +41,11 @@ Deno.test("ipadmin missed_count is zero when IP present at all scans", async () 
         ipfactRepo.registerSeen(testIp, t1);
         ipfactRepo.registerSeen(testIp, t2);
         ipfactRepo.registerSeen(testIp, t3);
+        seedScan(t1);
+        seedScan(t2);
+        seedScan(t3);
 
-        const result = await for_range(start, end, false);
+        const result = await for_range(start, end);
         const found = result.registered.find((entry) => entry.ip === testIp);
 
         assertExists(found);
@@ -48,6 +53,7 @@ Deno.test("ipadmin missed_count is zero when IP present at all scans", async () 
     } finally {
         await clearForensicsByIp(testIp);
         await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2, t3);
     }
 });
 
@@ -81,8 +87,12 @@ Deno.test("ipadmin missed_count correct when IP absent for some scans", async ()
         // t3 - testIp absent
         ipfactRepo.registerSeen(otherIp, t3); // other IP to create the scan
         ipfactRepo.registerSeen(testIp, t4);
+        seedScan(t1);
+        seedScan(t2);
+        seedScan(t3);
+        seedScan(t4);
 
-        const result = await for_range(start, end, false);
+        const result = await for_range(start, end);
         const found = result.registered.find((entry) => entry.ip === testIp);
 
         assertExists(found);
@@ -96,6 +106,7 @@ Deno.test("ipadmin missed_count correct when IP absent for some scans", async ()
         await clearForensicsByIp(testIp);
         await clearForensicsByIp(otherIp);
         await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2, t3, t4);
     }
 });
 
@@ -134,8 +145,13 @@ Deno.test("ipadmin missed_count counts only between first and last appearance", 
         ipfactRepo.registerSeen(otherIp, t4);
         // Scan at t5: testIp absent (left early)
         ipfactRepo.registerSeen(otherIp, t5);
+        seedScan(t1);
+        seedScan(t2);
+        seedScan(t3);
+        seedScan(t4);
+        seedScan(t5);
 
-        const result = await for_range(start, end, false);
+        const result = await for_range(start, end);
         const found = result.registered.find((entry) => entry.ip === testIp);
 
         assertExists(found);
@@ -153,6 +169,7 @@ Deno.test("ipadmin missed_count counts only between first and last appearance", 
         await clearForensicsByIp(testIp);
         await clearForensicsByIp(otherIp);
         await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2, t3, t4, t5);
     }
 });
 
@@ -183,8 +200,11 @@ Deno.test("ipadmin missed_count zero when present throughout active period", asy
         ipfactRepo.registerSeen(testIp, t1);
         ipfactRepo.registerSeen(testIp, t2);
         ipfactRepo.registerSeen(testIp, t3);
+        seedScan(t1);
+        seedScan(t2);
+        seedScan(t3);
 
-        const result = await for_range(start, end, false);
+        const result = await for_range(start, end);
         const found = result.registered.find((entry) => entry.ip === testIp);
 
         assertExists(found);
@@ -193,6 +213,7 @@ Deno.test("ipadmin missed_count zero when present throughout active period", asy
     } finally {
         await clearForensicsByIp(testIp);
         await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2, t3);
     }
 });
 
@@ -221,8 +242,10 @@ Deno.test("ipadmin missed_count zero for IP never seen", async () => {
         // Only otherIp has scans
         ipfactRepo.registerSeen(otherIp, t1);
         ipfactRepo.registerSeen(otherIp, t2);
+        seedScan(t1);
+        seedScan(t2);
 
-        const result = await for_range(start, end, false);
+        const result = await for_range(start, end);
         const found = result.registered.find((entry) => entry.ip === testIp);
 
         assertExists(found);
@@ -238,6 +261,7 @@ Deno.test("ipadmin missed_count zero for IP never seen", async () => {
         await clearForensicsByIp(testIp);
         await clearForensicsByIp(otherIp);
         await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2);
     }
 });
 
@@ -275,8 +299,14 @@ Deno.test("ipadmin missed_count includes ongoing absence after last appearance",
         ipfactRepo.registerSeen(otherIp, t4);
         ipfactRepo.registerSeen(otherIp, t5);
         ipfactRepo.registerSeen(otherIp, t6);
+        seedScan(t1);
+        seedScan(t2);
+        seedScan(t3);
+        seedScan(t4);
+        seedScan(t5);
+        seedScan(t6);
 
-        const result = await for_range(start, end, false);
+        const result = await for_range(start, end);
         const found = result.registered.find((entry) => entry.ip === testIp);
 
         assertExists(found);
@@ -289,6 +319,7 @@ Deno.test("ipadmin missed_count includes ongoing absence after last appearance",
         await clearForensicsByIp(testIp);
         await clearForensicsByIp(otherIp);
         await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2, t3, t4, t5, t6);
     }
 });
 
@@ -318,7 +349,9 @@ Deno.test("ipadmin classifies IPs by cookie presence and keeps registrations", a
             at: seenAt,
         });
 
-        const result = await for_range(start, end, false);
+        seedScan(seenAt);
+
+        const result = await for_range(start, end);
 
         const known = result.registered.find((entry) => entry.ip === knownIp);
         const unknown = result.unregistered.find((entry) => entry.ip === unknownIp);
@@ -341,6 +374,7 @@ Deno.test("ipadmin classifies IPs by cookie presence and keeps registrations", a
         await clearForensicsByIp(knownIp);
         await clearForensicsByIp(unknownIp);
         await clearForensicsByUserEmail(userEmail);
+        clearScans(seenAt);
     }
 });
 
@@ -371,7 +405,9 @@ Deno.test("ipadmin detects IP-based and user-based anomalies", async () => {
             },
         });
 
-        const result = await for_range(start, end, false);
+        seedScan(seenAt);
+
+        const result = await for_range(start, end);
 
         assertEquals(result.anomalies.by_ip.length, 1);
         assertEquals(result.anomalies.by_ip[0].ip, sharedIp);
@@ -388,6 +424,7 @@ Deno.test("ipadmin detects IP-based and user-based anomalies", async () => {
         await clearForensicsByIp(secondIp);
         await clearForensicsByUserEmail(userOneEmail);
         await clearForensicsByUserEmail(userTwoEmail);
+        clearScans(seenAt);
     }
 });
 
@@ -410,7 +447,7 @@ Deno.test("ipadmin includes cookie-only IPs as known reported addresses", async 
             withCookiePresent: true,
         });
 
-        const result = await for_range(start, end, false);
+        const result = await for_range(start, end);
 
         const known = result.registered.find((entry) => entry.ip === cookieOnlyIp);
 
@@ -446,7 +483,9 @@ Deno.test("ipadmin detects user anomalies from registrations without cookie pres
             secondIp,
         });
 
-        const result = await for_range(start, end, false);
+        seedScan(seenAt);
+
+        const result = await for_range(start, end);
 
         assertEquals(result.anomalies.by_ip.length, 0);
         assertEquals(result.anomalies.by_user.length, 1);
@@ -456,6 +495,7 @@ Deno.test("ipadmin detects user anomalies from registrations without cookie pres
         await clearForensicsByIp(firstIp);
         await clearForensicsByIp(secondIp);
         await clearForensicsByUserEmail(userEmail);
+        clearScans(seenAt);
     }
 });
 
@@ -487,7 +527,9 @@ Deno.test("ipadmin separates teacher IPs from student IPs", async () => {
             withCookiePresent: true,
         });
 
-        const result = await for_range(start, end, false);
+        seedScan(seenAt);
+
+        const result = await for_range(start, end);
 
         const inTeacher = result.teacher_ips.find((entry) => entry.ip === teacherIp);
         const inRegistered = result.registered.find((entry) => entry.ip === teacherIp);
@@ -503,6 +545,7 @@ Deno.test("ipadmin separates teacher IPs from student IPs", async () => {
         await clearForensicsByIp(studentIp);
         await clearForensicsByUserEmail(teacherEmail);
         await clearForensicsByUserEmail(studentEmail);
+        clearScans(seenAt);
     }
 });
 
@@ -544,7 +587,9 @@ Deno.test("ipadmin sorts student IPs by lastname then firstname", async () => {
             });
         }
 
-        const result = await for_range(start, end, false);
+        seedScan(seenAt);
+
+        const result = await for_range(start, end);
 
         assertEquals(result.registered.length, 3);
         const actualOrder = result.registered.map((entry) =>
@@ -554,6 +599,7 @@ Deno.test("ipadmin sorts student IPs by lastname then firstname", async () => {
     } finally {
         for (const ip of ips) await clearForensicsByIp(ip);
         for (const u of users) await clearForensicsByUserEmail(u.email);
+        clearScans(seenAt);
     }
 });
 
@@ -584,7 +630,7 @@ Deno.test("ipadmin most recent cookie decides teacher vs student", async () => {
         });
         cookiepresentsRepo.create(sharedIp, teacherUser.id, lateTime);
 
-        const result = await for_range(start, end, false);
+        const result = await for_range(start, end);
 
         const inTeacher = result.teacher_ips.find((entry) => entry.ip === sharedIp);
         const inRegistered = result.registered.find((entry) => entry.ip === sharedIp);
@@ -631,6 +677,11 @@ Deno.test("ipadmin missed_count stops after most recent submission", async () =>
         // Scans at t5, t6: testIp absent after submission (should NOT count)
         ipfactRepo.registerSeen(otherIp, t5);
         ipfactRepo.registerSeen(otherIp, t6);
+        seedScan(t1);
+        seedScan(t2);
+        seedScan(t3);
+        seedScan(t5);
+        seedScan(t6);
 
         // Submission at t4 (not a scan, just the cutoff)
         seedSubmission({
@@ -640,7 +691,7 @@ Deno.test("ipadmin missed_count stops after most recent submission", async () =>
             at: t4,
         });
 
-        const result = await for_range(start, end, false);
+        const result = await for_range(start, end);
         const found = result.registered.find((entry) => entry.ip === testIp);
 
         assertExists(found);
@@ -654,5 +705,361 @@ Deno.test("ipadmin missed_count stops after most recent submission", async () =>
         await clearForensicsByIp(testIp);
         await clearForensicsByIp(otherIp);
         await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2, t3, t5, t6);
     }
+});
+
+/*
+Scan-Achse und stale (#163): `is_stale` bezieht sich auf den letzten Scan
+des betrachteten Zeitraums, nicht auf die Wanduhr. `missed_count` zählt
+Scans aus `tikscan` — auch leere.
+*/
+const STALE_BASE = new Date("2026-04-15T08:00:00Z");
+
+function staleAt(minute: number, seconds = 0): Date {
+    return new Date(STALE_BASE.getTime() + minute * 60_000 + seconds * 1000);
+}
+
+Deno.test("ipadmin is_stale false, wenn die IP im letzten Scan sichtbar ist", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `stale-present-${suffix}@example.com`;
+    const testIp = `203.0.130.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const t1 = staleAt(1);
+    const t2 = staleAt(2);
+    const start = staleAt(0);
+    const end = staleAt(3);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Stale Present",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        ipfactRepo.registerSeen(testIp, t1);
+        ipfactRepo.registerSeen(testIp, t2);
+        seedScan(t1);
+        seedScan(t2);
+
+        const result = await for_range(start, end);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        assertEquals(found.is_stale, false);
+        assertEquals(found.missed_count, 0);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2);
+    }
+});
+
+Deno.test("ipadmin is_stale true, wenn die IP im letzten Scan fehlt", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `stale-gone-${suffix}@example.com`;
+    const testIp = `203.0.131.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const t1 = staleAt(11);
+    const t2 = staleAt(12);
+    const t3 = staleAt(13);
+    const start = staleAt(10);
+    const end = staleAt(14);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Stale Gone",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        // Vorher gesehen, im letzten Scan des Zeitraums nicht mehr.
+        ipfactRepo.registerSeen(testIp, t1);
+        seedScan(t1);
+        seedScan(t2);
+        seedScan(t3);
+
+        const result = await for_range(start, end);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        assertEquals(found.is_stale, true);
+        assertEquals(found.missed_count, 2);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2, t3);
+    }
+});
+
+Deno.test("ipadmin is_stale false, wenn die IP im letzten Scan wieder da ist", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `stale-back-${suffix}@example.com`;
+    const testIp = `203.0.132.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const t1 = staleAt(21);
+    const t2 = staleAt(22);
+    const t3 = staleAt(23);
+    const start = staleAt(20);
+    const end = staleAt(24);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Stale Back",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        ipfactRepo.registerSeen(testIp, t1);
+        ipfactRepo.registerSeen(testIp, t3);
+        seedScan(t1);
+        seedScan(t2);
+        seedScan(t3);
+
+        const result = await for_range(start, end);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        assertEquals(found.is_stale, false);
+        assertEquals(found.missed_count, 1);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2, t3);
+    }
+});
+
+Deno.test("ipadmin is_stale false, wenn die erste Sichtung im letzten Scan liegt", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `stale-first-${suffix}@example.com`;
+    const testIp = `203.0.133.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const t1 = staleAt(31);
+    const t2 = staleAt(32);
+    const start = staleAt(30);
+    const end = staleAt(33);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Stale First Scan",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        // Erste Sichtung ist genau der letzte Scan — niemand war vorher da.
+        ipfactRepo.registerSeen(testIp, t2);
+        seedScan(t1);
+        seedScan(t2);
+
+        const result = await for_range(start, end);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        assertEquals(found.is_stale, false);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2);
+    }
+});
+
+Deno.test("ipadmin leerer Scan macht früher gesehene IPs stale und zählt als Fehlzeit", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `stale-empty-${suffix}@example.com`;
+    const testIp = `203.0.134.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const t1 = staleAt(41);
+    const t2 = staleAt(42);
+    const start = staleAt(40);
+    const end = staleAt(43);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Stale Empty Scan",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        ipfactRepo.registerSeen(testIp, t1);
+        seedScan(t1);
+        // Leerer Abruf: kein Client sichtbar, aber ein Scan.
+        seedScan(t2);
+
+        const result = await for_range(start, end);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        assertEquals(found.is_stale, true);
+        assertEquals(found.missed_count, 1);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2);
+    }
+});
+
+Deno.test("ipadmin is_stale false, wenn die Abgabe vor dem letzten Scan liegt", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `stale-submitted-${suffix}@example.com`;
+    const testIp = `203.0.135.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const t1 = staleAt(51);
+    const submissionAt = staleAt(51, 30);
+    const t2 = staleAt(52);
+    const start = staleAt(50);
+    const end = staleAt(53);
+
+    try {
+        const { userId } = await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Stale Submitted",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        ipfactRepo.registerSeen(testIp, t1);
+        seedScan(t1);
+        seedScan(t2);
+        // Wer abgegeben hat und dann geht, ist fertig, nicht fehlend.
+        seedSubmission({
+            userId,
+            ip: testIp,
+            filename: `stale-${suffix}.md`,
+            at: submissionAt,
+        });
+
+        const result = await for_range(start, end);
+        const found = result.registered.find((entry) => entry.ip === testIp);
+
+        assertExists(found);
+        assertEquals(found.is_stale, false);
+        assertEquals(found.missed_count, 0);
+        assertEquals(found.has_submission, true);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2);
+    }
+});
+
+Deno.test("ipadmin nutzt im historischen Zeitraum dessen letzten Scan", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `stale-history-${suffix}@example.com`;
+    const testIp = `203.0.136.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const t1 = staleAt(61);
+    const t2 = staleAt(62);
+    const t3 = staleAt(63);
+    const t4 = staleAt(64);
+    const start = staleAt(60);
+
+    try {
+        await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "Stale History",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        ipfactRepo.registerSeen(testIp, t1);
+        ipfactRepo.registerSeen(testIp, t2);
+        seedScan(t1);
+        seedScan(t2);
+        seedScan(t3);
+        seedScan(t4);
+
+        // Bis t2 war die IP da: letzter Scan dieses Fensters ist t2.
+        const early = await for_range(start, t2);
+        const earlyFound = early.registered.find((entry) => entry.ip === testIp);
+        assertExists(earlyFound);
+        assertEquals(earlyFound.is_stale, false);
+
+        // Dasselbe Fenster bis t4: letzter Scan ist t4, die IP fehlt dort.
+        const late = await for_range(start, t4);
+        const lateFound = late.registered.find((entry) => entry.ip === testIp);
+        assertExists(lateFound);
+        assertEquals(lateFound.is_stale, true);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2, t3, t4);
+    }
+});
+
+Deno.test("ipadmin for_ip liefert denselben Eintrag wie for_range", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const userEmail = `for-ip-same-${suffix}@example.com`;
+    const testIp = `203.0.137.${Number.parseInt(suffix.slice(0, 2), 16) % 100 + 10}`;
+    const t1 = staleAt(71);
+    const t2 = staleAt(72);
+    const t3 = staleAt(73);
+    const start = staleAt(70);
+    const end = staleAt(74);
+
+    try {
+        const { userId } = await seedNoAnomaliesScenario({
+            ip: testIp,
+            email: userEmail,
+            name: "For Ip Same",
+            klasse: "5AHITM",
+            at: t1,
+            withSeen: false,
+            withCookiePresent: true,
+        });
+
+        ipfactRepo.registerSeen(testIp, t1);
+        ipfactRepo.registerSeen(testIp, t3);
+        seedScan(t1);
+        seedScan(t2);
+        seedScan(t3);
+        seedSubmission({
+            userId,
+            ip: testIp,
+            filename: `for-ip-${suffix}.md`,
+            at: t3,
+        });
+
+        const result = await for_range(start, end);
+        const fromRange = result.registered.find((entry) => entry.ip === testIp);
+        assertExists(fromRange);
+
+        const direct = await for_ip(testIp, start, end);
+        assertEquals(direct, fromRange);
+        assertEquals(direct?.is_stale, false);
+        assertEquals(direct?.missed_count, 1);
+    } finally {
+        await clearForensicsByIp(testIp);
+        await clearForensicsByUserEmail(userEmail);
+        clearScans(t1, t2, t3);
+    }
+});
+
+Deno.test("ipadmin for_ip liefert null für eine im Zeitraum unbekannte IP", async () => {
+    const unknownIp = `198.18.${
+        Number.parseInt(crypto.randomUUID().slice(0, 2), 16) % 200 + 1
+    }.${
+        Number.parseInt(crypto.randomUUID().slice(2, 4), 16) % 200 + 1
+    }`;
+
+    const result = await for_ip(unknownIp, staleAt(80), staleAt(81));
+    assertEquals(result, null);
 });

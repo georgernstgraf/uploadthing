@@ -49,6 +49,7 @@ export type DatabaseCleanupResult = {
     deleted_cookiepresents: number;
     deleted_registrations: number;
     deleted_ipfacts: number;
+    deleted_tikscans: number;
     deleted_submissions: number;
     total_deleted: number;
 };
@@ -370,6 +371,7 @@ export function cleanupDatabaseOlderThanOneYear(
     const deleted_cookiepresents = repo.cookiepresents.deleteOlderThan(cutoff);
     const deleted_registrations = repo.registrations.deleteOlderThan(cutoff);
     const deleted_ipfacts = repo.ipfact.deleteOlderThan(cutoff);
+    const deleted_tikscans = repo.ipfact.deleteScansOlderThan(cutoff);
     const deleted_submissions = repo.abgaben.deleteOlderThan(cutoff);
 
     return {
@@ -377,8 +379,9 @@ export function cleanupDatabaseOlderThanOneYear(
         deleted_cookiepresents,
         deleted_registrations,
         deleted_ipfacts,
+        deleted_tikscans,
         deleted_submissions,
         total_deleted: deleted_cookiepresents + deleted_registrations +
-            deleted_ipfacts + deleted_submissions,
+            deleted_ipfacts + deleted_tikscans + deleted_submissions,
     };
 }

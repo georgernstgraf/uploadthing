@@ -134,7 +134,6 @@ adminRouter.get("/students", async (c) => {
     const { registered, unregistered, teacher_ips, anomalies, range_first_seen, range_last_seen } = await service.ipadmin.for_range(
         startDateTime,
         endDateTime,
-        !endtimeProvided,
     );
     const tik = service.tik.getPanel();
 
@@ -466,7 +465,7 @@ adminRouter.post("/cleanup-database", async (c) => {
 
     try {
         const result = service.admin.cleanupDatabaseOlderThanOneYear();
-        const html = `<div id="cleanup-result" class="alert alert-success fs-lg mt-2 mx-auto" style="max-width: 720px;">Datenbank bereinigt. Entfernt: ${result.deleted_cookiepresents} Cookies, ${result.deleted_registrations} Registrierungen, ${result.deleted_ipfacts} IP-Logs, ${result.deleted_submissions} Abgaben (gesamt ${result.total_deleted}).</div>`;
+        const html = `<div id="cleanup-result" class="alert alert-success fs-lg mt-2 mx-auto" style="max-width: 720px;">Datenbank bereinigt. Entfernt: ${result.deleted_cookiepresents} Cookies, ${result.deleted_registrations} Registrierungen, ${result.deleted_ipfacts} IP-Logs, ${result.deleted_tikscans} Scans, ${result.deleted_submissions} Abgaben (gesamt ${result.total_deleted}).</div>`;
         return renderApplicationPage(c, undefined, html);
     } catch (error) {
         console.error("Error cleaning up database:", error);

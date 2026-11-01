@@ -1,7 +1,6 @@
 import * as repo from "../repo/repo.ts";
 import { UserType } from "../lib/types.ts";
 import { localAdminIpString } from "../lib/timefunc.ts";
-import config from "../lib/config.ts";
 import { parseDisplayName, userRecordToUserType } from "../lib/user_mapper.ts";
 
 export type ServiceIpAdmin = {
@@ -53,6 +52,27 @@ export type ServiceAdminResult = {
     anomalies: ServiceAdminAnomalies;
     range_first_seen: string; // earliest scan time across all IPs
     range_last_seen: string; // latest scan time across all IPs
+};
+
+/**
+ * Zeilen einer einzelnen IP im betrachteten Zeitraum — die Eingabe des
+ * gemeinsamen Aggregationskerns.
+ */
+type IpRows = {
+    ip: string;
+    seenAtDesc: Date[];
+    cookieRows: { at: Date; userId: number }[];
+    registrationRows: { at: Date; userId: number }[];
+    submissionRows: { at: Date; filename: string }[];
+};
+
+/**
+ * Scan-Zeitachse des betrachteten Zeitraums (`tikscan`, #163).
+ * `scans` aufsteigend, `latest` der jüngste Scan im Zeitraum.
+ */
+type ScanAxis = {
+    scans: Date[];
+    latest: Date | null;
 };
 
 function detectAnomalies(
@@ -109,20 +129,138 @@ function detectAnomalies(
 }
 
 /**
+ * Gemeinsamer Aggregationskern pro IP: `for_range` und `for_ip` bauen den
+ * Karten-Eintrag ausschließlich hier, damit es keine zweite Wahrheit gibt.
+ *
+ * Async, weil die Nutzer zu den Cookie-/Registrierungszeilen geladen werden.
+ * `usersById` ist ein Cache über den ganzen Aufruf — `for_range` füllt ihn
+ * vorab für alle IPs, `for_ip` lädt nur die fehlenden.
+ *
+ * `missed_count` zählt Scans aus `tikscan` (auch leere) zwischen erster
+ * Sichtung und jüngster Abgabe, in denen die IP fehlte. `is_stale` bezieht
+ * sich auf den **letzten Scan des Zeitraums**, nicht auf die Wanduhr: vorher
+ * gesehen, dort nicht mehr da, und nicht nach der Abgabe gegangen.
+ */
+async function aggregateIp(
+    rows: IpRows,
+    usersById: Map<number, UserType>,
+    start: Date,
+    axis: ScanAxis,
+): Promise<ServiceIpAdmin> {
+    const missingUserIds = new Set<number>();
+    for (const row of [...rows.cookieRows, ...rows.registrationRows]) {
+        if (!usersById.has(row.userId)) {
+            missingUserIds.add(row.userId);
+        }
+    }
+    if (missingUserIds.size > 0) {
+        const users = await repo.users.getByIds([...missingUserIds]);
+        for (const user of users) {
+            usersById.set(user.id, userRecordToUserType(user));
+        }
+    }
+
+    const seenAtDesc = [...rows.seenAtDesc].sort(
+        (a, b) => b.valueOf() - a.valueOf(),
+    );
+    const cookieAtDesc = [...rows.cookieRows].sort(
+        (a, b) => b.at.valueOf() - a.at.valueOf(),
+    );
+    const registrationAtDesc = [...rows.registrationRows].sort(
+        (a, b) => b.at.valueOf() - a.at.valueOf(),
+    );
+    const submissionAtDesc = [...rows.submissionRows].sort(
+        (a, b) => b.at.valueOf() - a.at.valueOf(),
+    );
+
+    const cookiePresents = cookieAtDesc.map((record) => ({
+        at: localAdminIpString(record.at),
+        user: usersById.get(record.userId) ?? null,
+    }));
+    const registrations = registrationAtDesc.map((record) => ({
+        at: localAdminIpString(record.at),
+        user: usersById.get(record.userId) ?? null,
+    }));
+    const submissions = submissionAtDesc.map((submission) => ({
+        at: localAdminIpString(submission.at),
+        filename: submission.filename,
+    }));
+
+    // missed_count: Scans, in denen die IP zwischen erster Sichtung und der
+    // jüngsten Abgabe fehlte. Leere Scans stehen in `tikscan` und zählen mit.
+    let missed_count = 0;
+    let first_seen = "";
+    let last_seen = "";
+
+    if (seenAtDesc.length > 0) {
+        // seenAtDesc ist absteigend sortiert.
+        const newestSeen = seenAtDesc[0];
+        const oldestSeen = seenAtDesc[seenAtDesc.length - 1];
+
+        first_seen = localAdminIpString(oldestSeen);
+        last_seen = localAdminIpString(newestSeen);
+
+        // Nach der letzten Abgabe zählt nichts mehr: wer abgegeben hat und
+        // dann geht, ist fertig, nicht fehlend.
+        const cutoffTime = submissionAtDesc[0]?.at ?? null;
+        const seenTimesSet = new Set(
+            seenAtDesc.map((date) => date.toISOString()),
+        );
+
+        missed_count = axis.scans.filter((scan) => {
+            if (scan.valueOf() < oldestSeen.valueOf()) return false;
+            if (cutoffTime && scan.valueOf() > cutoffTime.valueOf()) {
+                return false;
+            }
+            return !seenTimesSet.has(scan.toISOString());
+        }).length;
+    }
+
+    const latest = axis.latest;
+    const presentAtLatest = latest ? repo.ipfact.existsAt(rows.ip, latest) : false;
+    const seenBefore = latest
+        ? repo.ipfact.existsBefore(rows.ip, latest, start)
+        : false;
+    const lastSubmission = submissionAtDesc[0]?.at ?? null;
+    const submittedThenLeft = latest != null && lastSubmission != null &&
+        latest > lastSubmission;
+    const is_stale = Boolean(
+        latest && seenBefore && !presentAtLatest && !submittedThenLeft,
+    );
+
+    return {
+        ip: rows.ip,
+        seen_count: seenAtDesc.length,
+        report_count: seenAtDesc.length + cookiePresents.length,
+        missed_count,
+        first_seen,
+        last_seen,
+        seen_at_desc: seenAtDesc.map((date) => localAdminIpString(date)),
+        cookie_presents: cookiePresents,
+        registrations,
+        is_stale,
+        submissions,
+        has_submission: submissions.length > 0,
+    };
+}
+
+/**
  * Aggregate admin data for all IPs seen in a time range.
  */
 export async function for_range(
     start: Date,
     end: Date,
-    calculate_stale: boolean,
 ): Promise<ServiceAdminResult> {
     const seenRows = repo.ipfact.getInRange(start, end);
     const cookieRows = repo.cookiepresents.byRange(start, end);
     const registrationRows = repo.registrations.byRange(start, end);
     const submissionRows = repo.abgaben.getByDateRange(start, end);
 
-    // Get all unique scan timestamps in the range (for missed_count calculation)
-    const allScans = repo.ipfact.getUniqueScanTimestamps(start, end);
+    // Scan-Zeitachse des Zeitraums (auch leere Scans).
+    const axis: ScanAxis = {
+        scans: repo.ipfact.scansInRange(start, end),
+        latest: repo.ipfact.latestScan(start, end),
+    };
 
     const seenByIp = new Map<string, Date[]>();
     const cookieByIp = new Map<string, { at: Date; userId: number }[]>();
@@ -168,22 +306,7 @@ export async function for_range(
         }
     }
 
-    for (const seenAtDesc of seenByIp.values()) {
-        seenAtDesc.sort((a, b) => b.valueOf() - a.valueOf());
-    }
-
-    for (const records of cookieByIp.values()) {
-        records.sort((a, b) => b.at.valueOf() - a.at.valueOf());
-    }
-
-    for (const records of registrationByIp.values()) {
-        records.sort((a, b) => b.at.valueOf() - a.at.valueOf());
-    }
-
-    for (const submissions of submissionsByIp.values()) {
-        submissions.sort((a, b) => b.at.valueOf() - a.at.valueOf());
-    }
-
+    // Nutzer einmal für alle IPs laden; der Kern findet sie im Cache.
     const users = await repo.users.getByIds([...userIds]);
     const usersById = new Map<number, UserType>();
     for (const user of users) {
@@ -199,75 +322,13 @@ export async function for_range(
     const rv: ServiceIpAdmin[] = [];
 
     for (const ip of ips) {
-        const seenAtDesc = seenByIp.get(ip) ?? [];
-        const cookiePresents = (cookieByIp.get(ip) ?? []).map((record) => ({
-            at: localAdminIpString(record.at),
-            user: usersById.get(record.userId) ?? null,
-        }));
-        const registrations = (registrationByIp.get(ip) ?? []).map((record) => ({
-            at: localAdminIpString(record.at),
-            user: usersById.get(record.userId) ?? null,
-        }));
-        const submissions = (submissionsByIp.get(ip) ?? []).map((submission) => ({
-            at: localAdminIpString(submission.at),
-            filename: submission.filename,
-        }));
-
-        // Calculate missed_count: scans where IP was absent BETWEEN first and last appearance
-        let missed_count = 0;
-        let first_seen = "";
-        let last_seen = "";
-
-        if (seenAtDesc.length > 0 && allScans.length > 0) {
-            // seenAtDesc is sorted descending (most recent first)
-            // First element = last_seen (most recent), Last element = first_seen (earliest)
-            const seenTimesAsc = [...seenAtDesc].sort((a, b) => a.valueOf() - b.valueOf());
-            const firstSeenTime = seenTimesAsc[0];
-            const lastSeenTime = seenTimesAsc[seenTimesAsc.length - 1];
-
-            first_seen = localAdminIpString(firstSeenTime);
-            last_seen = localAdminIpString(lastSeenTime);
-
-            // If the student has submitted work, stop counting missed scans after that point.
-            // (A student who leaves after submitting is considered done, not missing.)
-            const rawSubmissions = submissionsByIp.get(ip) ?? [];
-            const cutoffTime = rawSubmissions.length > 0
-                ? rawSubmissions[0].at  // most recent submission (sorted desc)
-                : null;
-
-            const scansFromFirstSeen = allScans.filter(
-                (scan) => {
-                    if (scan.valueOf() < firstSeenTime.valueOf()) return false;
-                    if (cutoffTime && scan.valueOf() > cutoffTime.valueOf()) return false;
-                    return true;
-                }
-            );
-            const seenTimesSet = new Set(seenAtDesc.map((d) => d.toISOString()));
-            missed_count = scansFromFirstSeen.filter((scan) => !seenTimesSet.has(scan.toISOString())).length;
-        }
-
-        const ip_admin: ServiceIpAdmin = {
+        rv.push(await aggregateIp({
             ip,
-            seen_count: seenAtDesc.length,
-            report_count: seenAtDesc.length + cookiePresents.length,
-            missed_count,
-            first_seen,
-            last_seen,
-            seen_at_desc: seenAtDesc.map((dt) => localAdminIpString(dt)),
-            cookie_presents: cookiePresents,
-            registrations,
-            is_stale: false,
-            submissions,
-            has_submission: submissions.length > 0,
-        };
-
-        if (calculate_stale && seenAtDesc.length > 0) {
-            ip_admin.is_stale = seenAtDesc[0].valueOf() < new Date(
-                Date.now() - config.admin_stale_minutes * 60 * 1000,
-            ).valueOf();
-        }
-
-        rv.push(ip_admin);
+            seenAtDesc: seenByIp.get(ip) ?? [],
+            cookieRows: cookieByIp.get(ip) ?? [],
+            registrationRows: registrationByIp.get(ip) ?? [],
+            submissionRows: submissionsByIp.get(ip) ?? [],
+        }, usersById, start, axis));
     }
     // Classify by role: last cookie decides
     const studentIps: ServiceIpAdmin[] = [];
@@ -296,14 +357,52 @@ export async function for_range(
     const anomalies = detectAnomalies(rv);
 
     // Calculate overall range from all scans
-    const range_first_seen = allScans.length > 0
-        ? localAdminIpString(allScans[0]) // allScans is sorted ascending
+    const range_first_seen = axis.scans.length > 0
+        ? localAdminIpString(axis.scans[0]) // axis.scans is sorted ascending
         : "";
-    const range_last_seen = allScans.length > 0
-        ? localAdminIpString(allScans[allScans.length - 1])
+    const range_last_seen = axis.scans.length > 0
+        ? localAdminIpString(axis.scans[axis.scans.length - 1])
         : "";
 
     return { registered, unregistered, teacher_ips: teacherIps, anomalies, range_first_seen, range_last_seen };
+}
+
+/**
+ * Karten-Eintrag für genau eine IP im Zeitraum (#163).
+ *
+ * Gleicher Kern wie `for_range`, aber ohne Klassifikation, Sortierung und
+ * Anomalien. `null`, wenn die IP im Zeitraum weder gesehen wurde noch
+ * Cookie-Präsenz, Registrierung oder Abgabe hat.
+ */
+export async function for_ip(
+    ip: string,
+    start: Date,
+    end: Date,
+): Promise<ServiceIpAdmin | null> {
+    const seenAtDesc = repo.ipfact.getHistoryForIPInRangeDesc(ip, start, end);
+    const cookieRows = repo.cookiepresents.byIPInRange(ip, start, end);
+    const registrationRows = repo.registrations.byIPInRange(ip, start, end);
+    const submissionRows = repo.abgaben.getByIPAndDateRange(ip, start, end);
+
+    if (
+        seenAtDesc.length === 0 && cookieRows.length === 0 &&
+        registrationRows.length === 0 && submissionRows.length === 0
+    ) {
+        return null;
+    }
+
+    const axis: ScanAxis = {
+        scans: repo.ipfact.scansInRange(start, end),
+        latest: repo.ipfact.latestScan(start, end),
+    };
+
+    return await aggregateIp({
+        ip,
+        seenAtDesc,
+        cookieRows,
+        registrationRows,
+        submissionRows,
+    }, new Map<number, UserType>(), start, axis);
 }
 
 export async function getIPDetail(
