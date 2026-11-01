@@ -4,6 +4,7 @@ import { ipSlug } from "../lib/slug.ts";
 import { localAdminIpString, localDayStart } from "../lib/timefunc.ts";
 import { parseDisplayName, userRecordToUserType } from "../lib/user_mapper.ts";
 import type { ActivityComponent } from "./events.ts";
+import { TEACHER_CLASS } from "./user.ts";
 
 export type ServiceIpAdmin = {
     ip: string;
@@ -337,7 +338,7 @@ export async function for_range(
     const teacherIps: ServiceIpAdmin[] = [];
     for (const ip of rv) {
         const primaryUser = ip.cookie_presents[0]?.user ?? null;
-        if (primaryUser?.klasse === "LehrendeR") {
+        if (primaryUser?.klasse === TEACHER_CLASS) {
             teacherIps.push(ip);
         } else {
             studentIps.push(ip);

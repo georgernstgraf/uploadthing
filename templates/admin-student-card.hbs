@@ -3,22 +3,22 @@
     rendern dieselbe Wahrheit.
 
     Die Wurzel ist der Grid-Wrapper, damit `outerHTML` die Bootstrap-Spalte
-    intakt lässt. `hx-disinherit` ist Pflicht: die innere Karte trägt ihr
-    eigenes `hx-get`/`hx-target`/`hx-trigger` für das IP-Detail-Modal und
-    darf weder `hx-select` noch `hx-swap`/`hx-include` des Panels erben.
-    Ohne geladene SSE-Extension ist `hx-trigger="sse:card-…"` ein No-Op.
+    intakt lässt. Der Wrapper deklariert `hx-get`/`hx-target`/`hx-trigger`
+    selbst; `hx-disinherit` steht zusätzlich am Panel (htmx prüft es nur an
+    Vorfahren), damit das Kärtchen weder `hx-select` noch
+    `hx-swap`/`hx-include` des Panels erbt. Ohne geladene SSE-Extension ist
+    `hx-trigger="sse:card-…"` ein No-Op.
 --}}
 <div class="col"
-     id="student-card-{{slug}}"
+     id="student-card-{{ipSlug ip}}"
      data-ip="{{ip}}"
      data-tone="{{tone}}"
      hx-get="{{{card_url}}}"
-     hx-trigger="sse:card-{{slug}}"
+     hx-trigger="sse:card-{{ipSlug ip}}"
      hx-target="this"
      hx-swap="outerHTML"
      hx-disinherit="hx-swap hx-target hx-select hx-include">
-    <div class="card shadow-sm h-100"
-         style="cursor: pointer;"
+    <div class="card shadow-sm h-100 cursor-pointer"
          hx-get="/admin/ip-detail?ip={{ip}}"
          hx-include="#admin-time-filter form"
          hx-target="#ip-detail-modal-content"
@@ -26,8 +26,7 @@
         <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
             <div class="d-flex align-items-center justify-content-between w-100">
                 <div class="d-flex align-items-center gap-1 overflow-hidden">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold {{#if (eq tone "lehrend")}}text-warning-emphasis bg-warning-subtle{{else}}text-primary-emphasis bg-primary-subtle{{/if}}"
-                         style="width: 26px; height: 26px; font-size: 0.875rem;">
+                    <div class="card-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold {{#if (eq tone "lehrend")}}text-warning-emphasis bg-warning-subtle{{else}}text-primary-emphasis bg-primary-subtle{{/if}}">
                         {{#if this.cookie_presents.[0].user}}
                             {{givenNameInitial this.cookie_presents.[0].user.name}}
                         {{else}} ? {{/if}}

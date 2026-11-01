@@ -73,13 +73,13 @@ type LdapTemplateData = {
 export type AdminStudentCardTone = "schueler" | "lehrend" | "unbekannt";
 
 /**
- * Kontext eines Kärtchens (#163). `slug` ist die eine Quelle für `id`,
- * SSE-Eventname und Trigger; `card_url` enthält `ip` **und** den
- * aufgelösten Zeitraum, damit das Kärtchen ohne `hx-include` die Wahrheit
- * seines eigenen Zeitraums rendert.
+ * Kontext eines Kärtchens (#163). `id`, SSE-Eventname und Trigger leitet
+ * das Template über den `ipSlug`-Helper aus `ip` ab — eine Quelle, kein
+ * zweites Feld daneben. `card_url` enthält `ip` **und** den aufgelösten
+ * Zeitraum, damit das Kärtchen ohne `hx-include` die Wahrheit seines
+ * eigenen Zeitraums rendert.
  */
 export type AdminStudentCardTemplateData = ServiceIpAdmin & {
-    slug: string;
     tone: AdminStudentCardTone;
     card_url: string;
 };

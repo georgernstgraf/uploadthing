@@ -218,13 +218,21 @@
   nicht aus drei getrennten Stellen. `sse-swap` ist nur für Text-Frames
   gedacht (`stand`); Komponenten-Frames tragen keine Nutzdaten
   (`data: null`) und werden über `hx-trigger="sse:<name>"` gefeuert.
-- **`hx-disinherit` ist Pflicht am Kärtchen-Wrapper (#163).** Die innere
-  Karte trägt ihr eigenes `hx-get`/`hx-target`/`hx-trigger` für das
-  IP-Detail-Modal; ohne `hx-disinherit="hx-swap hx-target hx-select hx-include"`
-  auf dem umschließenden `<div class="col">` erbt sie `hx-select`,
-  `hx-swap` und `hx-include` des Panels, und das Detail-Modal bleibt leer.
-  Der Wrapper ist zugleich die Fragment-Wurzel, damit `hx-swap="outerHTML"`
-  die Bootstrap-Spalte intakt lässt.
+- **`hx-disinherit` steht am Panel, nicht am Fragment (#163).** htmx prüft
+  `hx-disinherit` nur an **Vorfahren** des anfragenden Elements, nie an ihm
+  selbst (siehe `PITFALLS.md`) — die wirksame Sperre ist deshalb
+  `hx-disinherit="hx-select hx-swap hx-target hx-include"` an
+  `#admin-report-panel`. Der MikroTik-Streifen erbte vorher dessen
+  `hx-select`, der Selektor traf in der Antwort von `/admin/tik-panel` ins
+  Leere und der `outerHTML`-Swap löschte den Streifen beim ersten
+  `sse:tik`. Kärtchen und Streifen tragen dieselbe Zeile zusätzlich, damit
+  das Fragment allein zeigt, was es braucht — verlassen darf man sich nur
+  auf die am Vorfahren.
+- Kärtchen-Wrapper: die innere Karte trägt ihr eigenes
+  `hx-get`/`hx-target`/`hx-trigger` für das IP-Detail-Modal, der Wrapper
+  `hx-get`/`hx-trigger` für den Push und ist zugleich die
+  Fragment-Wurzel, damit `hx-swap="outerHTML"` die Bootstrap-Spalte
+  intakt lässt.
 - **Forensik-Fragmente sind eigene Endpunkte, keine `hx-include`-Tricks:**
   `GET /admin/student-card?ip=…&startdate=…` (ein Kärtchen, `204` wenn es
   im Zeitraum keine Zeile gibt — ein 404 würde den globalen Fehler-Toast

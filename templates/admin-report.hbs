@@ -1,3 +1,10 @@
+{{!--
+    `hx-disinherit` hier ist die wirksame Sperre (#163): htmx prüft
+    `hx-disinherit` nur an Vorfahren, nie am anfragenden Element selbst.
+    Ohne diese Zeile erbte der MikroTik-Streifen das `hx-select` des
+    Panels, der Selektor griff in seiner eigenen Antwort ins Leere und
+    sein `outerHTML`-Swap löschte ihn beim ersten `sse:tik`.
+--}}
 <section class="container"
          id="admin-report-panel"
          hx-get="/admin/students"
@@ -5,7 +12,8 @@
          hx-target="#admin-report-panel"
          hx-swap="innerHTML"
          hx-select="#admin-report-panel > *"
-         hx-include="#admin-time-filter form">
+         hx-include="#admin-time-filter form"
+         hx-disinherit="hx-select hx-swap hx-target hx-include">
     {{> admin-tik-panel}}
     <h2 class="text-center mb-0 fs-4">SchülerInnen und IP Adressen</h2>
     <h6 class="text-center mb-2 small"> Zeitraum: {{#unless withinTimeCutoff}}

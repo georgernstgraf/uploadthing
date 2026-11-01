@@ -137,6 +137,15 @@ details > summary {
     cursor: pointer;
 }
 
+/* Avatarkreis der Admin-Kärtchen (#163): feste Kantenlänge, aber
+   text-relative Schriftgröße — die Kärtchen stehen in einem Raster, in
+   dem eine mitwachsende Kreisgröße die Zeile verschiebt. */
+.card-avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 0.875rem;
+}
+
 details > summary::-webkit-details-marker {
     display: none;
 }

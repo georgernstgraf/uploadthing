@@ -1,9 +1,26 @@
+{{!--
+    Der MikroTik-Streifen (#163) — Liste und eigenes Fragment für
+    `event: tik`.
+
+    Er deklariert `hx-get`/`hx-trigger`/`hx-target`/`hx-swap` selbst und
+    darf nichts von `#admin-report-panel` erben: das Panel trägt
+    `hx-select="#admin-report-panel > *"` und `hx-include` für seinen
+    eigenen Render. Ein geerbtes `hx-select` zeigt in dieser Antwort ins
+    Leere (sie enthält kein Panel), und der `outerHTML`-Swap löschte den
+    Streifen bei seinem ersten `sse:tik`.
+
+    htmx prüft `hx-disinherit` nur an **Vorfahren** (siehe PITFALLS), die
+    wirksame Sperre steht deshalb am Panel in `admin-report.hbs`. Hier
+    steht sie zusätzlich, damit das Fragment allein zeigt, was es
+    braucht — und damit ein Test die Antwort prüfen kann.
+--}}
 <section id="admin-tik-panel"
          class="card shadow-sm border-0 mb-2 mx-auto w-100"
          hx-get="/admin/tik-panel"
          hx-trigger="sse:tik"
          hx-target="this"
-         hx-swap="outerHTML">
+         hx-swap="outerHTML"
+         hx-disinherit="hx-select hx-swap hx-target hx-include">
     <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-center gap-2 text-center">
         {{#if (eq tik_state "nicht-konfiguriert")}}
             <span id="admin-tik-badge"

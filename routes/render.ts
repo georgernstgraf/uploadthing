@@ -2,7 +2,6 @@ import type { Context } from "hono";
 import config from "../lib/config.ts";
 import * as hbs from "../lib/handlebars.ts";
 import { get_unterlagen } from "../lib/pathfuncs.ts";
-import { ipSlug } from "../lib/slug.ts";
 import { localTimeString } from "../lib/timefunc.ts";
 import type { HonoContextVars } from "../lib/types.ts";
 import type { ServiceIpAdmin } from "../service/ipadmin.ts";
@@ -236,10 +235,11 @@ function studentCardTone(card: ServiceIpAdmin): hbs.AdminStudentCardTone {
 }
 
 /**
- * Kontext eines Kärtchens (#163): Karten-Daten plus `slug`, `tone` und
- * `card_url`. `card_url` trägt `ip` **und** den aufgelösten Zeitraum —
- * die Karte verlässt sich nicht auf `hx-include` und rendert die Wahrheit
- * ihres eigenen Zeitraums.
+ * Kontext eines Kärtchens (#163): Karten-Daten plus `tone` und
+ * `card_url`. Der Slug für `id` und SSE-Trigger entsteht im Template aus
+ * `ip` (`ipSlug`-Helper). `card_url` trägt `ip` **und** den aufgelösten
+ * Zeitraum — die Karte verlässt sich nicht auf `hx-include` und rendert
+ * die Wahrheit ihres eigenen Zeitraums.
  *
  * Die URL ist über `URLSearchParams` kodiert und wird deshalb im Template
  * unescaped ausgegeben (`{{{card_url}}}`): HTML-Escaping würde die
@@ -260,7 +260,6 @@ export function buildStudentCard(
 
     return {
         ...card,
-        slug: ipSlug(card.ip),
         tone: studentCardTone(card),
         card_url: `/admin/student-card?${query.toString()}`,
     };

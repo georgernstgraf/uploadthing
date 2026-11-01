@@ -64,6 +64,14 @@ export type TikPanel = {
 
 export type RegisterEntries = (entries: TikEntry[], seen: Date) => void;
 
+/**
+ * Schreibt die Scan-Zeile in die Zeitachse (`tikscan`, #163). Eigene Naht,
+ * weil `pollOnce` sie **vor** `register` aufruft: der Scan-Delta braucht
+ * die neue Zeile, und Tests, die `register` injizieren, sollen nicht
+ * nebenbei in die Datenbank schreiben.
+ */
+export type RecordScan = (at: Date) => void;
+
 const REGISTRATION_TABLE_PATH =
     "/rest/interface/wireless/registration-table";
 const PROPLIST = "last-ip,mac-address,uptime,interface";
@@ -72,10 +80,11 @@ export const DEFAULT_POLL_INTERVAL_MS = 60_000;
 
 const defaultFetcher: TikFetcher = (input, init) => fetch(input, init);
 
+const defaultRecordScan: RecordScan = (at) => {
+    repo.ipfact.insertScan(at);
+};
+
 const defaultRegister: RegisterEntries = (entries, seen) => {
-    // Jeder abgeschlossene Abruf ist ein Scan — auch ein leerer. `ipfact`
-    // hält nur die Sichtungen; die Zeitachse führt `tikscan` (#163).
-    repo.ipfact.insertScan(seen);
     repo.ipfact.registerSeenMany(entries, seen);
 };
 
@@ -223,6 +232,8 @@ export async function pollOnce(
         register?: RegisterEntries;
         /** Nach einem erfolgreichen Abruf; Tests ersetzen den Scan-Delta. */
         publishScanComponents?: PublishScanComponents;
+        /** Scan-Zeile der Zeitachse; Tests ersetzen den Schreibpfad. */
+        recordScan?: RecordScan;
     } = {},
 ): Promise<TikPollOutcome> {
     const tik = config.TIK;
@@ -236,6 +247,7 @@ export async function pollOnce(
 
     const fetcher = options.fetcher ?? defaultFetcher;
     const register = options.register ?? defaultRegister;
+    const recordScan = options.recordScan ?? defaultRecordScan;
     const publishScanComponents = options.publishScanComponents ??
         defaultPublishScanComponents;
     const now = options.now ?? (() => new Date());
@@ -256,6 +268,10 @@ export async function pollOnce(
         }
         if (outcome.ok) {
             try {
+                // Jeder abgeschlossene Abruf ist ein Scan — auch ein
+                // leerer. Die Zeile gehört vor `register`: der Scan-Delta
+                // vergleicht danach gegen genau diesen Scan (#163).
+                recordScan(at);
                 register(outcome.entries, at);
             } catch (error) {
                 const message = error instanceof Error
@@ -358,6 +374,7 @@ export function startPolling(
         fetcher?: TikFetcher;
         register?: RegisterEntries;
         publishScanComponents?: PublishScanComponents;
+        recordScan?: RecordScan;
     } = {},
 ): TikPoller | null {
     if (!config.TIK) {
@@ -377,6 +394,7 @@ export function startPolling(
             fetcher: options.fetcher,
             register: options.register,
             publishScanComponents: options.publishScanComponents,
+            recordScan: options.recordScan,
             signal: controller.signal,
         });
 

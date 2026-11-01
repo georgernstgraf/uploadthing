@@ -2,34 +2,42 @@
     Kärtchen einer IP ohne angemeldete Identität (#163). Gleiche Wurzel wie
     `admin-student-card`, damit der Fragment-Endpunkt die Spalte tauschen
     kann; `tone` ist hier immer `unbekannt` (grauer Kreis, „Unbekannt").
+
+    Auch dieses Kärtchen zeigt „nicht anwesend": `for_ip`/`for_range`
+    berechnen `is_stale` für jede IP, nicht nur für benannte. Einen
+    Fehlzähler gibt es hier bewusst nicht — das Kärtchen hatte noch nie
+    einen.
 --}}
 <div class="col"
-     id="student-card-{{slug}}"
-     data-ip="{{ip}}"
-     data-tone="{{tone}}"
-     hx-get="{{{card_url}}}"
-     hx-trigger="sse:card-{{slug}}"
+     id="student-card-{{ipSlug this.ip}}"
+     data-ip="{{this.ip}}"
+     data-tone="{{this.tone}}"
+     hx-get="{{{this.card_url}}}"
+     hx-trigger="sse:card-{{ipSlug this.ip}}"
      hx-target="this"
      hx-swap="outerHTML"
      hx-disinherit="hx-swap hx-target hx-select hx-include">
-    <div class="card shadow-sm h-100"
-         style="cursor: pointer;"
-         hx-get="/admin/ip-detail?ip={{ip}}"
+    <div class="card shadow-sm h-100 cursor-pointer"
+         hx-get="/admin/ip-detail?ip={{this.ip}}"
          hx-include="#admin-time-filter form"
          hx-target="#ip-detail-modal-content"
          hx-trigger="click">
         <div class="card-header bg-transparent border-0 fw-bold py-2 px-2">
             <div class="d-flex align-items-center justify-content-between w-100">
                 <div class="d-flex align-items-center gap-1 overflow-hidden">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-secondary-emphasis bg-secondary-subtle"
-                         style="width: 26px; height: 26px; font-size: 0.875rem;"> ? </div>
+                    <div class="card-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold text-secondary-emphasis bg-secondary-subtle"> ? </div>
                     <div class="overflow-hidden">
-                        <span class="d-block text-truncate">{{ip}}</span>
+                        <span class="d-block text-truncate">{{this.ip}}</span>
                         <span class="fw-normal small">Unbekannt</span>
                     </div>
                 </div>
-                <div class="badge bg-light text-dark border ms-1 flex-shrink-0">
-                    {{this.report_count}}x
+                <div class="d-flex flex-column align-items-end gap-1 ms-1 flex-shrink-0">
+                    {{#if this.is_stale}}
+                        <span class="badge text-bg-danger text-wrap text-end">nicht anwesend</span>
+                    {{/if}}
+                    <span class="badge bg-light text-dark border text-wrap text-end">
+                        {{this.report_count}}x
+                    </span>
                 </div>
             </div>
             <div class="fw-normal mt-0 text-end small"> zuletzt: {{this.seen_at_desc.[0]}}

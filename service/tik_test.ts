@@ -135,6 +135,9 @@ Deno.test("tik - erfolgreicher Abruf normalisiert IPs und MACs", async () => {
                 registered = entries;
                 registeredAt = seen;
             },
+            // Die Zeitachse ist hier nicht das Thema; ohne diese Naht
+            // schriebe der Test eine Scan-Zeile in die Test-DB.
+            recordScan: () => {},
         });
 
         assertEquals(outcome.ok, true);
@@ -177,6 +180,7 @@ Deno.test("tik - leere Tabelle ist kein Fehler", async () => {
             register: () => {
                 registerCalled = true;
             },
+            recordScan: () => {},
         });
 
         assertEquals(outcome.ok, true);
@@ -223,6 +227,7 @@ Deno.test("tik - HTTP-Fehler wird als Fehlerzustand gemeldet", async () => {
             register: () => {
                 registerCalled = true;
             },
+            recordScan: () => {},
         });
 
         assertEquals(outcome.ok, false);
@@ -353,12 +358,13 @@ Deno.test("tik - Poller ruft sofort und danach im Intervall ab", async () => {
             return Promise.resolve(jsonResponse([]));
         };
 
-        // Persistenz ist hier nicht das Thema: ohne eigenen `register`
-        // schreibt der echte Pfad Scans und Sichtungen in die Test-DB.
+        // Persistenz ist hier nicht das Thema: ohne eigene Schreibnähte
+        // schriebe der Poller Scans und Sichtungen in die Test-DB.
         const poller = startPolling({
             intervalMs: 10,
             fetcher,
             register: () => {},
+            recordScan: () => {},
         });
         assertExists(poller);
 
@@ -470,12 +476,13 @@ Deno.test("tik - Abrufe überlappen nicht", async () => {
             }
         };
 
-        // Ohne eigenen `register` schreibt der echte Pfad bei jedem Abruf
+        // Ohne eigene Schreibnähte schriebe der Poller bei jedem Abruf
         // einen Scan; hier zählt nur die Überlappung.
         const poller = startPolling({
             intervalMs: 5,
             fetcher,
             register: () => {},
+            recordScan: () => {},
         });
         assertExists(poller);
 
@@ -536,6 +543,7 @@ Deno.test("tik - Erfolg meldet die Scan-Komponenten, Fehler nicht (#163)", async
             fetcher: fakeFetch([]).fetcher,
             now: () => NOW,
             register: () => {},
+            recordScan: () => {},
             publishScanComponents,
         });
         assertEquals(success.ok, true);
@@ -568,6 +576,65 @@ Deno.test("tik - Erfolg meldet die Scan-Komponenten, Fehler nicht (#163)", async
         });
 
         assertEquals(published, [NOW.toISOString()]);
+    });
+});
+
+Deno.test("tik - die Scan-Zeile schreibt pollOnce, nicht der injizierte register (#163)", async () => {
+    await withTikConfig(TEST_TIK, async () => {
+        const sequence: string[] = [];
+        const recorded: Date[] = [];
+
+        const success = await pollOnce({
+            fetcher: fakeFetch([]).fetcher,
+            now: () => NOW,
+            // Genau die Naht, an der der Fehler saß: wer `register`
+            // ersetzt, muss trotzdem eine Scan-Zeile bekommen.
+            register: () => {
+                sequence.push("register");
+            },
+            recordScan: (at) => {
+                sequence.push("scan");
+                recorded.push(at);
+            },
+        });
+
+        assertEquals(success.ok, true);
+        // Vor `register`: der Scan-Delta vergleicht gegen diesen Scan.
+        assertEquals(sequence, ["scan", "register"]);
+        assertEquals(
+            recorded.map((at) => at.toISOString()),
+            [NOW.toISOString()],
+        );
+
+        // Ausfall, HTTP-Fehler, kaputtes Format und Abbruch schreiben
+        // keine Zeile — die Zeitachse behauptet sonst einen Scan, den es
+        // nie gab.
+        const failing: TikFetcher[] = [
+            failingFetch(new TypeError("weg")).fetcher,
+            fakeFetch({}, { status: 500 }).fetcher,
+            fakeFetch({}).fetcher,
+        ];
+        for (const fetcher of failing) {
+            const outcome = await pollOnce({
+                fetcher,
+                now: () => NOW,
+                recordScan: (at) => recorded.push(at),
+            });
+            assertEquals(outcome.ok, false);
+        }
+
+        const controller = new AbortController();
+        controller.abort();
+        const aborted = await pollOnce({
+            fetcher: fakeFetch([]).fetcher,
+            now: () => NOW,
+            signal: controller.signal,
+            recordScan: (at) => recorded.push(at),
+        });
+        assertEquals(aborted.ok, false);
+
+        assertEquals(recorded.length, 1);
+        assertEquals(sequence, ["scan", "register"]);
     });
 });
 

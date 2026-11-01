@@ -1237,6 +1237,60 @@ Deno.test({
 });
 
 Deno.test({
+    name: "E2E: Der MikroTik-Streifen überlebt seinen eigenen Frame (#163)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        await withBrowser(async (browser) => {
+            const teacher = await openPage(browser, TEACHER.email);
+            try {
+                await openAdminForensics(teacher.page);
+
+                // TIK_* ist im E2E-Lauf leer; der Streifen sagt genau das.
+                const requested = teacher.page.waitForResponse((response) =>
+                    new URL(response.url()).pathname === "/admin/tik-panel"
+                );
+                await teacher.page.evaluate(() => {
+                    const htmx = (window as unknown as {
+                        htmx: {
+                            trigger: (elt: Element | null, name: string) => void;
+                        };
+                    }).htmx;
+                    htmx.trigger(
+                        document.getElementById("admin-tik-panel"),
+                        "sse:tik",
+                    );
+                });
+                const response = await requested;
+                await response.finished().catch(() => {});
+
+                // Nur der Browser zeigt den Fehler: das Fragment erbte
+                // `hx-select` vom Panel, der Selektor traf in seiner
+                // eigenen Antwort nichts und der `outerHTML`-Swap löschte
+                // den Streifen. Geprüft wird deshalb das Ergebnis, nicht
+                // der Request.
+                await teacher.page.waitForTimeout(500);
+                const text = await teacher.page.evaluate(() => {
+                    const panel = document.getElementById("admin-tik-panel");
+                    return panel ? panel.textContent?.trim() ?? "" : null;
+                });
+                assert(
+                    text !== null,
+                    "Der MikroTik-Streifen ist nach seinem eigenen Frame verschwunden",
+                );
+                assert(
+                    text!.includes("MikroTik nicht konfiguriert"),
+                    `Streifen-Inhalt erwartet, war: ${JSON.stringify(text)}`,
+                );
+            } finally {
+                await teacher.context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
     name: "E2E: Eine Abgabe tauscht genau ein Kärtchen, nicht das Panel (#163)",
     sanitizeOps: false,
     sanitizeResources: false,

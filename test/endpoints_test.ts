@@ -597,6 +597,10 @@ Deno.test("GET /admin/student-card: ein Kärtchen, 204 ohne Zeile, 400 ohne IP (
     const cardIp = `198.51.100.${Number.parseInt(suffix.slice(0, 2), 16) % 250 + 2}`;
     const cardSlug = cardIp.replaceAll(".", "-");
     const unknownIp = `203.0.113.${Number.parseInt(suffix.slice(2, 4), 16) % 100 + 110}`;
+    // Unbekannt, aber früher gesehen: die letzte Sichtung liegt vor dem
+    // letzten Scan und fehlt darin („nicht anwesend", #163).
+    const staleUnknownIp =
+        `203.0.113.${Number.parseInt(suffix.slice(4, 6), 16) % 100 + 10}`;
     const seenAt = new Date();
     const secondScan = new Date(seenAt.getTime() + 60_000);
     // Fenster explizit: ohne Angabe rastet die Route auf `spg_times` ein.
@@ -622,6 +626,9 @@ Deno.test("GET /admin/student-card: ein Kärtchen, 204 ohne Zeile, 400 ohne IP (
         // Zweiter Scan ohne die IP: `is_stale` wird wahr, `missed_count` 1.
         seedScan(seenAt);
         seedScan(secondScan);
+        // Dieselbe Lage ohne Identität: das Unbekannt-Kärtchen muss
+        // „nicht anwesend" genauso zeigen.
+        ipfactRepo.registerSeen(staleUnknownIp, seenAt);
 
         const cookie = await registerAndGetCookie("grafg@spengergasse.at");
 
@@ -663,6 +670,24 @@ Deno.test("GET /admin/student-card: ein Kärtchen, 204 ohne Zeile, 400 ohne IP (
         // Kein Panel, nur das Kärtchen.
         assertEquals(html.includes('id="admin-report-panel"'), false);
 
+        // Unbekannt und nicht im letzten Scan: „nicht anwesend" auch hier,
+        // aber ohne Fehlzähler — den hatte dieses Kärtchen nie.
+        const staleRes = await fetch(
+            `${BASE_URL}/admin/student-card?${query(staleUnknownIp)}`,
+            { headers: { Cookie: cookie } },
+        );
+        assertEquals(staleRes.status, 200);
+        const staleHtml = await staleRes.text();
+        assertEquals(
+            staleHtml.includes(
+                `id="student-card-${staleUnknownIp.replaceAll(".", "-")}"`,
+            ),
+            true,
+        );
+        assertEquals(staleHtml.includes("nicht anwesend"), true);
+        assertEquals(staleHtml.includes("text-bg-danger"), true);
+        assertEquals(staleHtml.includes("Fehlte"), false);
+
         // Ohne Zeile im Zeitraum: 204, damit kein Fehler-Toast aufgeht.
         const emptyRes = await fetch(
             `${BASE_URL}/admin/student-card?${query(unknownIp)}`,
@@ -683,6 +708,7 @@ Deno.test("GET /admin/student-card: ein Kärtchen, 204 ohne Zeile, 400 ohne IP (
         );
     } finally {
         clearForensicsByIp(cardIp);
+        clearForensicsByIp(staleUnknownIp);
         clearScans(seenAt, secondScan);
         await clearForensicsByUserEmail(userEmail);
     }
@@ -753,6 +779,15 @@ Deno.test("GET /admin/students: Kärtchen tragen Slug, Trigger und hx-disinherit
         // Der MikroTik-Streifen ist ein eigenes Fragment.
         assertEquals(html.includes('id="admin-tik-panel"'), true);
         assertEquals(html.includes('hx-trigger="sse:tik"'), true);
+        // Wirksam ist `hx-disinherit` am Panel: htmx prüft es nur an
+        // Vorfahren. Ohne die Zeile löschte der erste `sse:tik` den
+        // Streifen (geerbtes `hx-select` griff in dessen Antwort ins Leere).
+        assertEquals(
+            html.includes(
+                'hx-disinherit="hx-select hx-swap hx-target hx-include"',
+            ),
+            true,
+        );
     } finally {
         clearForensicsByIp(studentIp);
         clearForensicsByIp(unknownIp);
@@ -772,6 +807,10 @@ Deno.test("GET /admin/tik-panel: nur der Streifen mit eigenem Trigger (#163)", a
     assertEquals(html.includes('id="admin-tik-panel"'), true);
     assertEquals(html.includes('hx-get="/admin/tik-panel"'), true);
     assertEquals(html.includes('hx-trigger="sse:tik"'), true);
+    // Das Fragment dokumentiert die Sperre selbst; wirksam wird sie am
+    // Panel, weil htmx `hx-disinherit` nur an Vorfahren prüft (#163).
+    assertEquals(html.includes("hx-disinherit"), true);
+    assertEquals(html.includes("hx-select"), true);
     // Im Testlauf ist TIK_* leer: der Streifen sagt das auch.
     assertEquals(html.includes("MikroTik nicht konfiguriert"), true);
     // Kein Panel, keine Zeitachse — nur der Streifen.
