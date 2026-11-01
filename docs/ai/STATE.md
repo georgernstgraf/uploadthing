@@ -5,7 +5,7 @@ Current status as of 2026-11-01.
 ## Current Focus
 
 **#163 — Admin-Kärtchen als Push-Komponenten — deployt am 2026-11-01
-(03:28:43), Sichtprüfung offen.**
+(03:28:43), Issue geschlossen, Sichtprüfung offen.**
 Fünf Commits (`ccd3468`, `f04b56f`, `4fd95b0`, `b37ca4d`, `61c5b09`): Scan-Achse
 `tikscan`, Registrierung als Präsenz, Komponenten-Kanal und die
 Client-Verdrahtung über `htmx-ext-sse`. Der Admin-Kanal transportiert

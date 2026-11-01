@@ -1,4 +1,4 @@
-Last updated: 2026-11-01 (#163 umgesetzt und deployt; Sichtprüfung offen).
+Last updated: 2026-11-01 (#163 deployt und geschlossen; Sichtprüfung offen).
 
 ## Sofort weiter mit
 
