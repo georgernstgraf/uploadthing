@@ -1,17 +1,25 @@
 # Project State
 
-Current status as of 2026-10-31.
+Current status as of 2026-11-01.
 
 ## Current Focus
 
-**#163 — Admin-Kärtchen als Push-Komponenten — erledigt am 2026-11-01.**
-Der Admin-Kanal transportiert Komponenten statt Gründen (`cards`,
-`card-<slug>`, `tik`), der Server liefert benannte SSE-Frames plus
-`stand`, und der Browser verbindet ihn über die vendorte
-`htmx-ext-sse@2.2.4`: jedes Kärtchen hängt an seinem eigenen Ereignis, das
-Panel an `sse:cards`, der MikroTik-Streifen an `sse:tik`. Der Freeze hält
-nur noch Panel-Swaps auf. `data-exam-events` liegt am `<main>`, damit ein
-HTMX-Login den Exam-Kanal mitbringt. Offen: Deploy (Neustart der Unit).
+**#163 — Admin-Kärtchen als Push-Komponenten — umgesetzt am 2026-11-01,
+Deploy und Sichtprüfung offen.**
+Vier Commits (`ccd3468`, `f04b56f`, `4fd95b0`, `b37ca4d`): Scan-Achse
+`tikscan`, Registrierung als Präsenz, Komponenten-Kanal und die
+Client-Verdrahtung über `htmx-ext-sse`. Der Admin-Kanal transportiert
+Komponenten statt Gründen (`cards`, `card-<slug>`, `tik`), der Server
+liefert benannte SSE-Frames plus `stand`, und der Browser verbindet ihn
+über die vendorte `htmx-ext-sse@2.2.4`: jedes Kärtchen hängt an seinem
+eigenen Ereignis, das Panel an `sse:cards`, der MikroTik-Streifen an
+`sse:tik`. Der Freeze hält nur noch Panel-Swaps auf. `data-exam-events`
+liegt am `<main>`, damit ein HTMX-Login den Exam-Kanal mitbringt.
+Verifikation: `check`/`lint` grün, 451 Deno-Tests, 21 E2E-Tests.
+**Offen:** Deploy (`systemctl --user restart uploadthing`) und die
+Sichtprüfung aus dem Ticket (Laptop/Handy-Identitätswechsel, stiller
+Dauer-Ping, ein Kärtchen bei Abgabe, „nicht anwesend" nach fehlendem
+Scan, leerer Scan).
 
 **#161 — Server-Push statt Polling (SSE) + Anmelde-Freigabe als Schalter —
 erledigt am 2026-10-31, Issue geschlossen.**
@@ -22,10 +30,12 @@ Der h2-Beweis im Betrieb ist geführt: `/events/exam` liefert über HTTP/2
 sofort den ersten Frame (`event: exam`), die Antwort trägt nur
 `content-type: text/event-stream; charset=utf-8` und `cache-control:
 no-store`, kein `connection`/`transfer-encoding`, CSP bleibt gesetzt;
-ohne Sitzung 401. `/admin/events` ist für Schüler 403, für Lehrpersonen
-`event: activity` plus `: ping` nach 20 s; eine Lehrpersonen-Sitzung
-erzeugt kein `cookie`-Event. Offen bleibt nur die **Sichtprüfung der
-Phase 1** im Panel (Checkliste in `HANDOFF.md`).
+ohne Sitzung 401. `/admin/events` ist für Schüler 403; seit #163 sendet er
+für Lehrpersonen `stand` plus benannte Komponenten-Frames und `: ping` nach
+20 s (im Betrieb noch nicht geprüft, weil der Deploy aussteht). Eine
+Lehrpersonen-Sitzung löst keinen Panel-Render aus (seit #163 strukturell:
+ihre Präsenz verschiebt keine Identität). Offen bleibt nur
+die **Sichtprüfung der Phase 1** im Panel (Checkliste in `HANDOFF.md`).
 
 **#162 — Namenssuche-Robustheit — erledigt am 2026-10-31.**
 Server-Antworten (Result-Code) werden nicht mehr als Netzausfall gemeldet,
@@ -54,13 +64,50 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **Tests**: 451 Deno-Tests plus 21 Playwright-E2E-Tests in
   `deno task e2e` (Chromium, eigene Wegwerf-DB auf Port 8099).
 
+## Erledigt am 2026-11-01 (Komponenten-Push, Scan-Achse, #163)
+
+- **Scan-Achse `tikscan` (`ccd3468`).** Migration `0003_tikscan` legt die
+  Tabelle an und füllt sie aus `DISTINCT ipfact.seen`; der Poller schreibt
+  ab jetzt jeden abgeschlossenen Abruf, auch einen leeren. `is_stale`,
+  `missed_count` und `canResubmit()` lesen die Scan-Achse;
+  `service/ipadmin.for_range` und `for_ip` bauen die Karte über denselben
+  Aggregationskern, `repo.ipfact` liefert `scansInRange`, `latestScan`,
+  `previousScan`, `ipsAt` und `ipsBetween`. `ADMIN_STALE_MINUTES`
+  ist aus `lib/config.ts`, `README.md` und `.env.example` entfernt; die
+  Datenbankbereinigung nimmt `tikscan` mit einem Jahr Cutoff mit.
+- **Registrierung ist Präsenz (`f04b56f`).** `recordPresence()` liefert
+  `{inserted, identityChanged}`; `service/user.register()` schreibt
+  `registrations` und `cookiepresents` mit demselben `at`.
+  `cookiepresents` ist die alleinige Attributionsquelle, die
+  Lehrpersonen-Ausnahme in der Session-Middleware entfällt. Migration
+  `0004_backfill_cookiepresents` zieht den Altbestand nach.
+- **Komponenten-Kanal (`4fd95b0`).** `noteAdminActivity(component)` mit
+  `cards`, `card-<slug>`, `tik`; `scanDelta()` publiziert nur Übergänge
+  zwischen zwei Scans. Neue Fragmente `GET /admin/student-card` (204 ohne
+  Zeile) und `GET /admin/tik-panel`; `parseAdminRange` ist die eine
+  Zeitraum-Wahrheit, Kärtchen-Partials und `ipSlug` in `lib/slug.ts`.
+  Badge „nicht anwesend" (`text-bg-danger`) getrennt von „Fehlte X mal"
+  (`text-bg-warning` ab 1).
+- **Client-Verdrahtung (`b37ca4d`).** `htmx-ext-sse-2.2.4` vendort
+  (`static/htmx-ext-sse.js` → `htmx-ext-sse-2.2.4.js`), `sse-connect` am
+  Admin-Container, `sse:cards`/`sse:card-<slug>`/`sse:tik` als Trigger,
+  `sse-swap="stand"` an `#admin-refresh-stand`. Der Freeze hält nur
+  Panel-Swaps auf. Der Admin-`EventSource` ist aus `static/events.js`
+  entfernt; `data-exam-events` liegt am `<main>`, `connect()` versucht es
+  nach jedem HTMX-Login erneut. E2E 17 → 21.
+- **Abnahme:** `check`/`lint` grün, 451 Deno-Tests, 21 E2E-Tests. Details in
+  `DECISIONS.md` („Der Admin-Kanal transportiert Komponenten"),
+  `CONVENTIONS.md` („Server-Sent Events") und `PITFALLS.md`. **Deploy und
+  Sichtprüfung stehen aus.**
+
 ## Erledigt am 2026-10-31 (Server-Push statt Polling, #161 Phasen 2–6)
 
 - **Cookie-Dedupe (#161).** `service/cookiepresents.recordByEmail()` schreibt
   höchstens eine Zeile pro (IP, User) je 30 s und meldet per Rückgabewert,
   ob es ein echter Insert war; `/static/*` schreibt gar keine Presence mehr
-  (rund acht Asset-Requests pro Seite), und Lehrpersonen erzeugen kein
-  `cookie`-Ereignis. Ohne diese drei Riegel löst der Admin-Render den
+  (rund acht Asset-Requests pro Seite), und Lehrpersonen lösen kein
+  Ereignis aus (seit #163 strukturell: ihre eigene Präsenz verschiebt keine
+  Identität). Ohne diese drei Riegel löst der Admin-Render den
   nächsten aus.
 - **SSE-Grundlage (#161).** `lib/event_hub.ts` (Kanäle, Seq, Listener, kein
   Event-Log), `lib/sse.ts` (eigener `Response` statt `streamSSE`, weil
@@ -80,12 +127,15 @@ Das System läuft so, wie es das Epic beschrieben hat:
   `setInternetActive`-Runden, wenn Watchdog und Admin-Stopp gleichzeitig
   feuern. `ends_at_ms` wird aus der exakten Restzeit gerechnet, nicht mehr
   aus `ceil`.
-- **Admin-Kanal (#161).** `GET /admin/events` (403 für Schüler) ersetzt
-  `every 15s`; `hx-trigger="admin-refresh"` auf `#admin-report-panel`.
-  Offene Details, Accordion oder IP-Modal frieren den Swap ein und zählen
-  in `#admin-refresh-pending` („n neue Ereignisse"); `#admin-refresh-stand`
-  zeigt „Stand HH:MM:SS". `ADMIN_REFRESH_SECONDS` ist aus
-  `lib/config.ts`, `README.md` und `.env.example` entfernt.
+- **Admin-Kanal (#161, Client seit #163 überholt).** `GET /admin/events`
+  (403 für Schüler) ersetzt `every 15s`. Ursprünglich hing das Panel an
+  `hx-trigger="admin-refresh"`; seit #163 hängt es an `sse:cards` und der
+  Admin-Stream gehört der vendorten `htmx-ext-sse`. Offene Details,
+  Accordion oder IP-Modal frieren weiterhin den **Panel-Swap** ein und
+  zählen in `#admin-refresh-pending` („n neue Ereignisse");
+  `#admin-refresh-stand` zeigt „Stand HH:MM:SS" aus dem `stand`-Frame.
+  `ADMIN_REFRESH_SECONDS` ist aus `lib/config.ts`, `README.md` und
+  `.env.example` entfernt.
 - **Abnahme:** 407 Deno-Tests, 17 E2E-Tests, `check`/`lint` grün. Details in
   `DECISIONS.md` („Server-Push statt Polling"), Regeln in `CONVENTIONS.md`
   („Server-Sent Events").
@@ -302,13 +352,27 @@ sind behoben:
 
 ## Pending
 
+- [ ] **#163 Deploy und Sichtprüfung** — erst `systemctl --user restart
+      uploadthing` (die vier Commits sind noch nicht live), dann die
+      Ticket-Abnahme: Identitätswechsel am Laptop und am Handy (Panel
+      rendert genau einmal, das alte Kärtchen verschwindet), ein stiller
+      Dauer-Ping über mehrere Minuten (kein Panel-Refresh, keine
+      weiteren Presence-Zeilen), eine Abgabe tauscht **nur** das eigene
+      Kärtchen
+      (genau ein `/admin/student-card`-Request), „nicht anwesend"
+      (`text-bg-danger`) erscheint nach einem Scan ohne die IP, und ein
+      **leerer** Scan erzeugt einen `tikscan`-Eintrag, lässt die zuletzt
+      anwesenden Kärtchen auf „nicht anwesend" gehen und zählt in
+      `missed_count` mit. Dazu der h2-Beweis für `/admin/events` (Frames
+      `stand` + `cards`/`card-…`/`tik`, `: ping` nach 20 s).
+
 - [ ] **#161 Sichtprüfung** — neuer Schalter und Warnbalken auf
       `/admin/application` einmal mit laufendem Examen prüfen: Karte
       „Anmeldung während des Examens", Schalter an → Warnzeile mit
       „Seit HH:MM", Schalter aus → Balken weg; dazu das neue
       Push-Verhalten (Panel zieht ohne Klick nach, Abgabe-Panel wechselt
       beim Start/Ende von selbst, „Stand HH:MM:SS" und Ereignis-Zähler auf
-      `/admin/students`, offenes Detail friert den Refresh ein).
+      `/admin/students`, offenes Detail friert nur den Panel-Swap ein).
       Der Deploy selbst ist durch (13:08), der h2-Beweis ebenfalls.
 
 - [ ] **Entscheidung: anonyme Namenssuche.** `/ldap` liefert ohne
@@ -368,11 +432,13 @@ None.
 ## Next Session Suggestion
 
 Zuerst der Deploy, den die Tests nicht ersetzen können: `systemctl --user
-restart uploadthing`, Journal ohne `stop-sigterm` prüfen, dann
-`curl -N --http2 https://tst.spengergasse.at/events/exam` mit einem
-Sitzungs-Cookie — erst wenn dort der erste `event: exam`-Frame ankommt,
-ist der SSE-Weg über HTTP/2 bewiesen. Danach die offene Sichtprüfung aus
-Phase 1 (Schalter → roter Balken → zurück). Die betrieblichen Abnahmen
-(Handy-Test der Sperre, Lehrer-Login vom Dell, Zertifikat bis 2027-01-12)
-stehen unverändert an. Wer Code anfassen will, nimmt #150 — aber erst,
-wenn htmx 4 `latest` ist.
+restart uploadthing` für #163, Journal ohne `stop-sigterm` prüfen, dann die
+Ticket-Sichtprüfung — Identitätswechsel am Laptop und am Handy, ein stiller
+Dauer-Ping ohne Panel-Refresh, eine Abgabe, die nur ihr Kärtchen tauscht,
+„nicht anwesend" nach einem Scan ohne die IP und ein leerer Scan.
+Anschließend der h2-Beweis für `/admin/events` (`stand` plus benannte
+Komponenten, `: ping` nach 20 s). Danach die offene Sichtprüfung aus #161
+(Schalter → roter Balken → zurück). Die betrieblichen Abnahmen (Handy-Test
+der Sperre, Lehrer-Login vom Dell, Zertifikat bis 2027-01-12) stehen
+unverändert an. Wer Code anfassen will, nimmt #150 — aber erst, wenn htmx 4
+`latest` ist.

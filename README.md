@@ -29,7 +29,10 @@ The application fails to start if any required variable is missing.
 
 The app polls the MikroTik wireless registration table itself every 60 s
 (`GET /rest/interface/wireless/registration-table` over HTTP Basic,
-read-only) and stores IP and MAC per sighting in `ipfact`. There is no
+read-only) and stores IP and MAC per sighting in `ipfact`. Each completed
+poll is also recorded as a scan in `tikscan`, including a poll without a
+single visible client; that scan axis drives `is_stale`, `missed_count`
+and the resubmission check (#163). There is no
 HTTP endpoint and no IP whitelist for reporting active IPs anymore. The
 admin forensics page shows whether the last poll succeeded, was empty,
 or could not reach the Tik.

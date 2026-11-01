@@ -21,9 +21,9 @@
   wäre doppelte Arbeit. Koaleszierung bleibt sonst unverändert
   (`ADMIN_PUSH_MIN_MS = 1000`, Nachlaufkante, dedupliziert).
 - **Der Scan-Delta publiziert nur Übergänge** (`service/ipadmin.scanDelta`):
-  `bei T, nicht bei P` → `card-<ip>`, dazu `cards`, wenn die IP seit
+  `bei T, nicht bei P` → `card-<slug>`, dazu `cards`, wenn die IP seit
   lokalem Tagesbeginn noch nie gesehen wurde; `bei P, nicht bei T` →
-  `card-<ip>`; bei beiden abwesend → nichts. Ein fehlgeschlagener oder
+  `card-<slug>`; bei beiden abwesend → nichts. Ein fehlgeschlagener oder
   abgebrochener Abruf schreibt keinen Scan und publiziert nichts. Bezug
   ist der vorige Scan aus `tikscan`, nicht das Anzeigefenster der Seite.
 - **Kärtchen ohne Zeile im Zeitraum antworten `204`,** nicht `404`: der
@@ -52,6 +52,52 @@
   Detailansicht zu verlieren. Beim Entfrieren holt `htmx.trigger(panel,
   "sse:cards")` das Panel einmal nach; ein echter Swap setzt den Zähler
   zurück.
+- **Die Scan-Achse ist eine eigene Tabelle, nicht `DISTINCT ipfact.seen`.**
+  Migration `0003` legt `tikscan(at)` mit Unique-Index an und füllt sie aus
+  `DISTINCT ipfact.seen` (faktengleich zum bisherigen Verhalten). Ab jetzt
+  schreibt der Poller **jeden abgeschlossenen Abruf** nach `tikscan`, auch
+  einen leeren; `ipfact` bleibt die Sichtachse (welche IP war in welchem
+  Scan da). `insertScan()` ist über den Unique-Index idempotent.
+  `scansInRange()`/`latestScan()`/`previousScan()` sind die Leseform;
+  `missed_count` zählt fehlende Scans **inklusive leerer**, und `canResubmit()`
+  prüft gegen dieselbe Achse. Vorher war ein Abruf ohne sichtbaren Client
+  als Scan unsichtbar.
+- **`stale` ist scan-basiert; die Wanduhr entfällt.** „Nicht anwesend" heißt
+  jetzt: im Zeitraum vor dem jüngsten Scan gesehen, in genau diesem Scan
+  nicht mehr da, und nicht nach der letzten Abgabe gegangen
+  (`existsAt`/`existsBefore`/`latestScan`). Die frühere Frist
+  `ADMIN_STALE_MINUTES` ist aus `lib/config.ts`, `README.md` und
+  `.env.example` entfernt; eine feste Minutenfrist war weder an das
+  Poll-Intervall noch an den tatsächlich letzten Scan gekoppelt.
+- **Der Ereignisname ist das Delta.** Der Server vergleicht zwei Scans aus
+  `tikscan` und schickt nur die Namen der betroffenen Komponenten; es gibt
+  **keinen** JSON-State-Endpunkt und **keinen** Client-Diff. Die Frames
+  tragen keinen Zustand (`data: null`), `stand` ist der einzige Text-Frame.
+  Ein Zustand im Frame wäre eine zweite Wahrheit neben der Datenbank und
+  müsste bei jedem Reconnect nachgezogen werden.
+- **Scan-Delta nur bei Übergängen.** `scanDelta()` meldet `card-<slug>` für
+  „bei diesem Scan da, beim vorigen nicht" und „beim vorigen da, jetzt
+  nicht"; bei beiden abwesend bleibt es still. Zusätzlich `cards`, wenn die
+  IP seit lokalem Tagesbeginn noch nie gesehen wurde — dann existiert noch
+  kein Kärtchen zum Einzeltausch. Ein fehlgeschlagener oder abgebrochener
+  Abruf schreibt keinen Scan und publiziert nichts. Dauerabwesenheit ist
+  damit **kein** Ereignis; das Kärtchen bleibt einfach auf „nicht
+  anwesend" stehen.
+- **Registrierung ist Präsenz.** `service/user.register()` schreibt
+  `registrations` **und** `cookiepresents` mit demselben `at`; `recordPresence()`
+  liefert `{inserted, identityChanged}`. `cookiepresents` ist damit die
+  alleinige Attributionsquelle für Karte, Gruppe und Sortierung,
+  `registrations` bleibt der Audit-Verlauf. Die frühere Ausnahme für
+  Lehrpersonen in der Session-Middleware entfällt: die eigene Präsenz
+  verschiebt keine neue Identität und löst deshalb keinen Render aus. Der
+  `registrations` → `cookiepresents`-Backfill ist als Migration `0004`
+  mit umgesetzt (Altbestand faktengleich nachgezogen).
+- **`tikscan` wird wie die übrigen Tabellen aufgeräumt.** Die
+  Datenbankbereinigung (`cleanupDatabaseOlderThanOneYear`) löscht
+  `tikscan` mit demselben Ein-Jahres-Cutoff wie `cookiepresents`,
+  `registrations`, `ipfact` und `abgaben`. Eine eigene, kürzere
+  Aufbewahrung wäre eine zweite Frist ohne Not; die Abweichung vom Ticket
+  (dort war keine Aufbewahrung genannt) ist bewusst.
 
 ## 2026-10-31: Server-Push statt Polling (SSE) (#161)
 
@@ -122,8 +168,10 @@ stehen, gelten aber nicht mehr.
   zerstören. Statt das Ereignis zu schlucken, zählt
   `#admin-refresh-pending` („n neue Ereignisse") mit; nach dem Schließen
   wird einmal nachgeholt, ein echter Swap setzt den Zähler zurück.
-  `#admin-refresh-stand` zeigt „Stand HH:MM:SS" aus `server_now_ms` des
-  Frames.
+  `#admin-refresh-stand` zeigt „Stand HH:MM:SS" — damals aus
+  `server_now_ms` des Frames, seit #163 aus dem `stand`-Textframe.
+  Seit #163 friert der Riegel außerdem nur noch den Panel-Swap ein,
+  nicht die Kärtchen.
 - **Der 403-Pfad auf `/upload` bleibt die letzte Verteidigungslinie.** Der
   Push ist Komfort, nicht die Sicherheitsgrenze: Endet das Examen bei
   offenem Formular, antwortet `POST /upload` weiter 403, und
@@ -331,7 +379,8 @@ stehen, gelten aber nicht mehr.
   Feldnamen, die Alpine-Komponente und der `localStorage`-Schlüssel
   bleiben — `admin-report.hbs` hängt per `hx-include` an
   `#admin-time-filter form`, und der Panel-Refresh darf nicht brechen
-  (seit #161 ein `admin-refresh`-Event statt `every 15s`).
+  (seit #161 ein `admin-refresh`-Event statt `every 15s`; seit #163
+  `sse:cards` über die vendorte `htmx-ext-sse`).
 - **Abnahme ist Geometrie, nicht Augenschein:** der neue E2E-Test misst
   die Gruppenkästen — bei 1600 px gleiches `y` und steigendes `x`, bei
   1000 px zwei nebeneinander und die dritte umgebrochen.
@@ -775,8 +824,13 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
 
 ## Archival Instead Of Full Deletion For Registrations
 
-- Exam-start operations archive `registrations` into `forensic_registrations` before clearing the active registration table.
-- This preserves audit history across exams while resetting the live working set.
+- **Überholt (#163):** Die Tabelle `forensic_registrations` existiert nicht
+  mehr im Schema, und kein Laufzeitcode schreibt oder liest sie. `registrations`
+  bleibt der Audit-Verlauf; aufgeräumt wird ausschließlich zeitbasiert über
+  `cleanupDatabaseOlderThanOneYear` (ein Jahr, inklusive `tikscan`).
+- Der frühere Exam-Start archivierte `registrations` nach
+  `forensic_registrations` und leerte die aktive Tabelle. Dieses Verhalten
+  gilt nicht mehr.
 
 ## AI Knowledge Persistence
 

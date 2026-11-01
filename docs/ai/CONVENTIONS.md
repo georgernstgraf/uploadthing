@@ -215,7 +215,16 @@
   vor jedem ausgelieferten Batch. Die Komponenten-Frames tragen keinen
   Payload; der HTMX-Trigger hängt am Ereignisnamen. `id`, Ereignisname
   und `hx-trigger` eines Kärtchens kommen aus `lib/slug.ts` (`ipSlug`),
-  nicht aus drei getrennten Stellen.
+  nicht aus drei getrennten Stellen. `sse-swap` ist nur für Text-Frames
+  gedacht (`stand`); Komponenten-Frames tragen keine Nutzdaten
+  (`data: null`) und werden über `hx-trigger="sse:<name>"` gefeuert.
+- **`hx-disinherit` ist Pflicht am Kärtchen-Wrapper (#163).** Die innere
+  Karte trägt ihr eigenes `hx-get`/`hx-target`/`hx-trigger` für das
+  IP-Detail-Modal; ohne `hx-disinherit="hx-swap hx-target hx-select hx-include"`
+  auf dem umschließenden `<div class="col">` erbt sie `hx-select`,
+  `hx-swap` und `hx-include` des Panels, und das Detail-Modal bleibt leer.
+  Der Wrapper ist zugleich die Fragment-Wurzel, damit `hx-swap="outerHTML"`
+  die Bootstrap-Spalte intakt lässt.
 - **Forensik-Fragmente sind eigene Endpunkte, keine `hx-include`-Tricks:**
   `GET /admin/student-card?ip=…&startdate=…` (ein Kärtchen, `204` wenn es
   im Zeitraum keine Zeile gibt — ein 404 würde den globalen Fehler-Toast

@@ -100,6 +100,13 @@
 - When a writable test or local database is needed, copy `vacuum.db` to the path referenced by `DATABASE_URL` instead.
 - Some endpoint tests and JSON fixtures still reference routes or behaviors that are stale, permissive, or destructive, such as `/admin/logs` and `/admin/wipe-abgaben`.
 - Read tests before changing behavior and do not assume they perfectly describe the current product surface.
+- **`#admin-report-panel .card[hx-get]` traf den MikroTik-Streifen, nicht ein
+  Kärtchen** (#163). Der Streifen `#admin-tik-panel` ist ebenfalls ein
+  `.card[hx-get]` und steht im Panel **vor** den Kärtchen; der Helper
+  `openFirstIpDetail` öffnete deshalb den Streifen statt eines Kärtchens,
+  und der Test prüfte nicht, was sein Name behauptete. Selektoren für
+  Kärtchen grenzen auf `[hx-get^="/admin/ip-detail"]` ein oder nehmen die
+  stabile ID `#student-card-<slug>` (aus `lib/slug.ts`).
 - If shutdown handling changes, remember that closing the SQLite handle alone is not enough; the `Deno.serve` server must also be stopped or the process will keep running after SIGINT.
 - Local developer activity mutates `uploadthing.db`, so forensic endpoint tests that depend on localhost state become flaky unless they explicitly clear and reseed `127.0.0.1` through shared fixtures first.
 
@@ -194,12 +201,34 @@
 ## Cookie Presence Semantics
 
 - Do not treat a valid session cookie hit as a new `registrations` event.
+- **Seit #163 ist die Registrierung selbst eine Präsenzaussage.**
+  `service/user.register()` schreibt `registrations` **und**
+  `cookiepresents` mit demselben `at`. `cookiepresents` ist damit die
+  **alleinige** Attributionsquelle für Karte, Gruppe und Sortierung;
+  `registrations` bleibt der Audit-Verlauf der ausdrücklichen Anmeldung.
+  Wer die Anmeldung nur in `registrations` schreibt, lässt die Karte bis
+  zum nächsten Cookie-Request auf der alten Identität stehen.
+- **Der Login-Request selbst gehört noch dem alten Cookie-Inhaber.** Die
+  Session-Middleware schreibt Presence vor dem Handler, und der Browser
+  sendet beim Anmelde-POST das bisherige Cookie — die Presence-Zeile dieses
+  Requests gilt also dem **alten** Benutzer. Die Präsenz der neuen Identität
+  kommt ausschließlich aus `register()` mit demselben `at`. Wer im
+  Login-Pfad „aufräumt" und die Presence dort der neuen Identität
+  zuschreibt, attributiert den Wechsel doppelt und verliert den alten
+  Stand.
+- **Nur `identityChanged` ist ein Ereignis.** `recordPresence()` liefert
+  `{inserted, identityChanged}`; die 30-s-Dedupe setzt beides auf `false`,
+  ein Insert desselben Users ist `inserted: true` mit
+  `identityChanged: false`. Publiziert wird nur `cards` beim Identitätswechsel.
+  Eine Ausnahme für Lehrpersonen braucht es nicht mehr: deren eigene Präsenz
+  ändert die neueste Identität nicht, die Rückkopplung ist strukturell
+  ausgeschlossen.
 - Current attribution for the admin forensics page comes from `cookiepresents`, while `registrations` remains a history of explicit registration actions.
-- Runtime code should no longer depend on `forensic_registrations`; the current schema uses `cookiepresents` instead.
+- Runtime code should no longer depend on `forensic_registrations`; the table no longer exists in the schema, and `cookiepresents` carries the presence.
 - Do not show known-IP card counts from total `ipfact` rows for an IP; the card count must come from the selected time window, currently `seen_at_desc.length`.
 - Admin forensics timestamps on the IP cards use a fixed 15-hour cutoff via `localAdminIpString`, not the generic `TODAY_HOURS_CUTOFF` value.
 - The admin anomaly panel belongs between the time selector and the known-IP report; if anomalies exist it should default to a collapsed Bootstrap accordion with warning styling in the header, and if none exist it should render the German-only empty state `Es gibt keine Anomalien.`.
-- The Admin page now includes a database cleanup control that deletes rows older than one month from `cookiepresents`, `registrations`, `ipfact`, and `abgaben`; it is intentionally fixed-duration and not runtime-configurable.
+- The Admin page now includes a database cleanup control that deletes rows older than one year from `cookiepresents`, `registrations`, `ipfact`, `tikscan`, and `abgaben`; it is intentionally fixed-duration and not runtime-configurable (`cleanupDatabaseOlderThanOneYear`).
 - The anomaly panel must not be gated only by `anomalies.by_ip.length`; user-only anomalies are valid and the UI should treat `anomalies.by_user.length` as sufficient to render the panel.
 - Registration-only multi-IP anomalies are expected on `/admin/students`; do not restrict anomaly detection to IPs that also have cookie presence in the selected range.
 - The deterministic localhost forensic fixture helpers now live in `test/helpers/forensics_fixture.ts`; prefer named scenario setup there over ad-hoc SQL cleanup embedded directly in each test.
@@ -557,4 +586,16 @@
   nicht: die Extension verbindet nach einem Fehler mit wachsendem Backoff
   selbst neu, deshalb entfernt `static/events.js` zusätzlich `sse-connect`
   vom Container (#163).
+- **Listener getauschter Knoten leben bis zum nächsten Frame derselben
+  Art.** Die Extension registriert `sse-swap`- und `hx-trigger="sse:…"`-Listener
+  auf der **einen** `EventSource` des Containers, nicht am Knoten. Erst
+  wenn der nächste Frame dieses Namens eintrifft, prüft sie
+  `bodyContains(elt)` und entfernt den toten Listener. Beim
+  `hx-trigger`-Zweig feuert sie danach trotzdem noch einmal
+  `htmx.trigger(elt, …)` auf dem abgehängten Knoten. Folge: Ein Kärtchen
+  darf nach einem Swap keinen neuen Serverzustand brauchen und der
+  Ereignisname muss idempotent sein; `sse-connect` gehört deshalb nie auf
+  einen Knoten, der selbst getauscht wird. Wer Listener „sofort"
+  aufräumen will, müsste die Extension patchen — nicht `events.js`
+  danebenstellen.
 

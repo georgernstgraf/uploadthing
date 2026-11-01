@@ -1,6 +1,6 @@
 # Architecture
 
-Living structural map of the system as of 2026-10-31.
+Living structural map of the system as of 2026-11-01.
 Overwritten when structural changes occur during a session.
 
 ## Overview
@@ -12,18 +12,21 @@ auf `192.168.21.2:443` mit eigenem TLS. Die OPNsense-Sense davor ist nur noch
 Firewall/DNS/DHCP; alles, was die Prüfungssituation steuert — Internet-Sperre,
 IP-/MAC-Präsenz, Anmelde-Freigabe — läuft im App-Prozess. Zustandsänderungen
 erreichen den Browser per Server-Sent Events (SSE, Kanäle `exam` und
-`activity`, #161), nicht per Polling. Persistenz ist eine
-SQLite-Datei über `@db/sqlite`; Schemaautorität ist Drizzle (keine
-Prisma-Engines, keine Runtime-Abhängigkeit auf Prisma).
+`activity`, #161), nicht per Polling. Der `exam`-Kanal schickt einen
+vollständigen Snapshot; der `activity`-Kanal transportiert seit #163
+**Komponentennamen** (`cards`, `card-<slug>`, `tik`) plus einen
+Text-Frame `stand`. Persistenz ist eine SQLite-Datei über `@db/sqlite`;
+Schemaautorität ist Drizzle (keine Prisma-Engines, keine
+Runtime-Abhängigkeit auf Prisma).
 
 ## Komponenten
 
 | Ebene | Dateien | Verantwortung |
 |---|---|---|
 | HTTP | `main.ts`, `routes/*.ts` | Hono-App, Routen, HTMX-Panels, SSE-Endpunkte (`routes/events.ts`, `/admin/events`) |
-| Rendering | `routes/render.ts`, `templates/*.hbs`, `lib/handlebars.ts`, `static/events.js` | eine Schülerseite, Admin-Seiten, Partial-Rendering; der Browser-Client für Push, Countdown und Forensik-Refresh |
-| Services | `service/*.ts` | Fachlogik: `exam`, `exam_watchdog`, `events`, `opnsense`, `tik`, `adminmac`, `unterlagen`, `ldapuser`, `admin`, `abgaben`, `cookiepresents` |
-| Push | `lib/event_hub.ts`, `lib/sse.ts`, `service/events.ts` | prozesslokaler Bus (kein Event-Log), SSE-Streams (Header/Heartbeat/Shutdown), Kanäle `exam`/`activity` samt Snapshots |
+| Rendering | `routes/render.ts`, `templates/*.hbs`, `lib/handlebars.ts`, `static/events.js`, `static/htmx-ext-sse.js` | eine Schülerseite, Admin-Seiten, Partial-Rendering; Client für Push, Countdown und Forensik-Refresh |
+| Services | `service/*.ts` | Fachlogik: `exam`, `exam_watchdog`, `events`, `opnsense`, `tik`, `adminmac`, `unterlagen`, `ldapuser`, `admin`, `abgaben`, `cookiepresents`, `ipadmin` |
+| Push | `lib/event_hub.ts`, `lib/sse.ts`, `service/events.ts` | prozesslokaler Bus (kein Event-Log), SSE-Streams (Header/Heartbeat/Shutdown), Kanäle `exam`/`activity`, Exam-Snapshot, Komponenten-Koaleszierung |
 | Repos | `repo/*.ts` | handgeschriebenes SQL mit prepared Statements |
 | Migrationen | `drizzle/schema.ts`, `drizzle/*.sql`, `lib/migrate.ts` | Schema + Start-Migration |
 | Config | `lib/config.ts` | fail-strict Env-Parsing (deutsche Fehler) |
@@ -57,27 +60,38 @@ Prisma-Engines, keine Runtime-Abhängigkeit auf Prisma).
   `GET /events/exam` (`exam`) steht jeder angemeldeten Person offen — 401
   ohne Sitzung, weil Schüler das Panel und Lehrpersonen das Admin-Panel
   daraus ziehen. `GET /admin/events` (`activity`) hängt am
-  `requireAdmin`-Riegel der Admin-Routen, Schüler bekommen 403. Beide
-  senden beim Verbinden einen vollständigen Snapshot und danach einen
-  Frame je Tick; es gibt kein Event-Log und kein `Last-Event-ID`.
+  `requireAdmin`-Riegel der Admin-Routen, Schüler bekommen 403. Der
+  Exam-Kanal sendet beim Verbinden einen vollständigen Snapshot und danach
+  einen Frame je Tick; der Admin-Kanal sendet `stand` (Text) und danach je
+  Batch die Komponentennamen `cards`, `card-<slug>` und `tik`. Es gibt kein
+  Event-Log und kein `Last-Event-ID`.
 - **Wer publiziert**: `service/exam.ts` bei jedem Zustandswechsel
   (`start`, `pause`, `resume`, `stop`, `addExtra`, Abschluss,
   Anmelde-Schalter) und der `exam_watchdog` über denselben Abschluss-Pfad;
   auf dem Activity-Kanal `service/tik.ts` (jeder abgeschlossene Abruf →
-  `tik`, nach Erfolg zusätzlich der Scan-Delta als `cards`/`card-*`),
-  `service/abgaben.recordSubmission` (`card-<ip>`),
+  `tik`, nach Erfolg zusätzlich der Scan-Delta als `cards`/`card-<slug>`),
+  `service/abgaben.recordSubmission` (`card-<slug>`),
   `service/user.register` und `middleware/session.ts` (Cookie-Presence,
   nur beim Identitätswechsel → `cards`) — alle über
   `noteAdminActivity()`, damit die 1-s-Koaleszierung greift.
-- **Wer konsumiert**: `static/events.js` im Browser. Der `exam`-Stream
-  tickt den Countdown (`data-ends-at-ms` plus Serveruhr-Offset aus
-  `server_now_ms`), tauscht `#abgabe-panel` bei `open`-Wechsel und holt das
-  Admin-Panel (`GET /api/exammode`) bei Status- oder
-  Freigabe-Änderungen. Der `activity`-Stream gehört seit #163 der vendorten
-  `htmx-ext-sse`: `sse-connect` am Admin-Container, `hx-trigger="sse:cards"`
-  am Panel, `sse:card-<slug>` am Kärtchen, `sse:tik` am Streifen,
+- **Wer konsumiert**: zwei Client-Besitzer, klar getrennt. `static/events.js`
+  hält nur den `exam`-Stream: Countdown (`data-ends-at-ms` plus
+  Serveruhr-Offset aus `server_now_ms`), Tausch von `#abgabe-panel` bei
+  `open`-Wechsel, Nachziehen des Admin-Panels (`GET /api/exammode`) bei
+  Status- oder Freigabe-Änderungen, Freeze-Zähler und Aufgeben-Policy. Den
+  `activity`-Stream hält seit #163 die vendorte `htmx-ext-sse`:
+  `sse-connect` am Admin-Container, `hx-trigger="sse:cards"` am Panel,
+  `sse:card-<slug>` am Kärtchen, `sse:tik` am Streifen,
   `sse-swap="stand"` an der Statuszeile. `events.js` zählt nur noch den
   Freeze und holt ihn beim Entfrieren nach.
+- **Admin-Fragmente (#163)**: `GET /admin/student-card?ip=…&startdate=…`
+  liefert genau ein Kärtchen (`templates/admin-student-card.hbs`, für IPs
+  ohne Identität `admin-student-card-unknown.hbs`; **204** ohne Zeile im
+  Zeitraum), `GET /admin/tik-panel` nur den MikroTik-Streifen. Beide
+  benutzen `parseAdminRange` — dieselbe Zeitraum-Auflösung wie
+  `/admin/students` und `/admin/ip-detail` (inklusive Einrasten auf
+  `spg_times`). `card_url`, `slug` und `tone` baut `routes/render.ts` aus
+  `lib/slug.ts`.
 - **Der Zustand wird beim Senden aus der DB gebaut.**
   `service/events.snapshotExam()` liest den aktuellen Stand (passiv, ohne
   lazy Abschluss); der Admin-Kanal versendet dagegen die Komponentennamen
@@ -88,12 +102,32 @@ Prisma-Engines, keine Runtime-Abhängigkeit auf Prisma).
   Rendern, bei einer Aktion und beim Push-Refresh gelesen; die App
   publiziert den Anlass, nicht den Firewall-Zustand.
 - **IP-/MAC-Präsenz**: `service/tik.ts` → `http://tik.internal/rest/interface/
-  wireless/registration-table` (Basic-Auth, 60 s + Sofortabruf) → `ipfact`
-  (IP, MAC, `seen`). Grundlage für die MAC-basierte Admin-Freigabe.
+  wireless/registration-table` (Basic-Auth, 60 s + Sofortabruf) → `tikscan`
+  (eine Zeile je abgeschlossenem Abruf, auch leer) und `ipfact`
+  (IP, MAC, `seen`). `tikscan` ist die Scan-Achse für `is_stale`,
+  `missed_count`, `canResubmit()` und den Scan-Delta; `ipfact` bleibt die
+  Sichtachse. Grundlage für die MAC-basierte Admin-Freigabe.
 - **DNS**: Dell → `192.168.21.1` (Unbound auf der Sense; Host Overrides
   `tst` → `.2`, `tik.internal` → `.5`, `sense.internal` → `.1`).
 - **Datenbank**: `~/uploadthing-data/uploadthing.db` (WAL), Migrationen beim
   Start unter `BEGIN EXCLUSIVE`.
+
+## Datenmodell
+
+| Tabelle | Inhalt |
+|---|---|
+| `users` | Identitäten aus LDAP (Name, Klasse, Mail) |
+| `registrations` | ausdrückliche Anmeldungen (Identität → IP), Audit-Verlauf |
+| `cookiepresents` | Präsenz je (IP, Identität); jede Cookie-Anfrage **und** jede Registrierung, 30-s-Dedupe, alleinige Attributionsquelle der Forensik (#163) |
+| `tikscan` | Scan-Zeitachse, eine Zeile je abgeschlossenem Abruf inklusive leerer (#163) |
+| `ipfact` | Sichtungen je Scan (IP, MAC, `seen`) |
+| `abgaben` | Abgabedateien und Metadaten |
+| `examstate` | Singleton des Exam-Zustands (Status, Dauer, Pause, Zusatzzeit) |
+| `adminmac` | freigegebene Geräte für die Lehrpersonen-Anmeldung (#147) |
+
+Migrationen `0003_tikscan` und `0004_backfill_cookiepresents` gehören zu
+#163; die Datenbankbereinigung räumt alle zeitbasierten Tabellen mit einem
+Ein-Jahres-Cutoff auf.
 
 ## Sicherheitsgrenzen
 

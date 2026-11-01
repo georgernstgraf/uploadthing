@@ -7,11 +7,13 @@ This application supports supervised exam workflows where students identify them
 ## Core Entities
 
 - `users`: known identities, synchronized from LDAP and stored locally.
-- `registrations`: current exam mappings of user identity to machine IP.
-- `forensic_registrations`: archived past registration mappings for audit history.
+- `registrations`: explicit registration actions (identity → machine IP); the audit trail of "I logged in here".
+- `cookiepresents`: every identity statement from an IP — a request with a valid session cookie **and** the registration itself (`service/user.register()` writes both rows with the same `at`, #163). At most one row per (IP, user) per 30 s, none for `/static/*`. This is the sole attribution source for the card, role grouping and sorting.
+- `tikscan`: the scan axis (#163): one row per completed MikroTik poll, including polls without a single visible client. `ipfact` holds the sightings per scan.
 - `ipfact`: sightings of active IP addresses and their MAC address during an exam window (polled from the MikroTik; the MAC column is the basis for later MAC-based admin approval).
 - `abgaben`: submitted files and their metadata.
 - `unterlagen`: teacher-provided materials served to authenticated users from the filesystem; maintained by admins through the web UI (`/admin/application`), flat in `UNTERLAGEN_DIR`, no subfolders and no versioning (#134).
+- `forensic_registrations`: legacy table from older databases; not part of the current schema and no runtime code writes or reads it (see `registrations`, `cookiepresents`).
 
 ## Exam Flow
 
@@ -21,15 +23,21 @@ This application supports supervised exam workflows where students identify them
 4. Logging in resolves the person against LDAP (local record as fallback), binds that identity to the current socket IP and creates a session.
 5. While an exam window is open, non-teachers cannot log in — the name on the submission must not change mid-exam. Teachers are exempt and can switch the login permission on for everybody else (a switch, not a time window, #161); the switch resets on exam start and exam end.
 6. The authenticated user can access `unterlagen` and upload an exam file; the form stays in place and the success message appears as a toast.
-7. Teachers use `/admin/students` to correlate sightings, registrations, cookie presence, anomalies, and submissions, and `/admin/application` for runtime administration settings.
-8. Exam state and admin activity reach the browser as server push (SSE, `exam`/`activity` channels, #161): the submission panel, the countdown and the admin panels follow the server without reloading the page. The database stays the truth; the push only says "something changed".
+7. Teachers use `/admin/students` to correlate sightings, scans, cookie presence, anomalies, and submissions, and `/admin/application` for runtime administration settings.
+8. Exam state and admin activity reach the browser as server push (SSE): the submission panel and countdown follow the `exam` channel, the admin page follows the `activity` channel (#161). Since #163 that channel carries **components** (`cards`, `card-<slug>`, `tik`) instead of reasons, plus a plain-text `stand` frame; the browser binds them with the vendored `htmx-ext-sse`. The database stays the truth; the push only says *which component* changed.
+
+## Presence, Scans And The "Nicht anwesend" Badge
+
+- A person is present on an IP when `cookiepresents` has a row for that (IP, person) in the time range. A registration writes that row itself (#163); there is no separate "was present" inference from `registrations`.
+- The card shows two independent signals: `nicht anwesend` (`text-bg-danger`) when `is_stale`, and `Fehlte X mal` (`text-bg-warning` from 1). A student who submitted and then left is not stale: scans after the most recent submission do not count.
+- `is_stale` is a statement about the **newest scan of the range**, not about the wall clock: seen earlier in the range, absent from that scan, and no submission after it. `missed_count` counts the scans (including empty ones from `tikscan`) in which the IP was missing, up to the most recent submission.
 
 ## Network Scan vs Upload Timing
 
 - The IP sightings come from the MikroTik REST polling inside the app process (`service/tik.ts`, every 60 s plus an immediate poll at startup); the upload comes from the student's browser when they submit their exam file.
 - These are independent timelines; poll timestamps and submission timestamps should not be assumed to align.
-- The ipfact table records per-poll IP/MAC sightings; the abgaben table records per-submission metadata.
-- A student's IP must appear in ipfact at every poll timestamp since their last submission for a resubmission to be allowed.
+- The ipfact table records per-poll IP/MAC sightings; `tikscan` records the poll itself, so a poll without a single visible client is still a scan (#163).
+- A student's IP must appear in `ipfact` at every scan of `tikscan` since their last submission for a resubmission to be allowed (`canResubmit()`); an empty scan counts against them.
 - The Tik credentials are read-only and live only in `.env`; there is no HTTP endpoint, no IP whitelist and no write path to the Tik.
 - The admin forensics page distinguishes "Tik not reachable" from "Tik reachable but no clients connected", so a silent polling outage cannot look like an empty WLAN.
 
@@ -51,7 +59,7 @@ This application supports supervised exam workflows where students identify them
 ## Why Admin History Matters
 
 - The admin view is designed to reveal anomalies such as multiple identities from one machine or changes in registration history over time.
-- Archived registrations help reconstruct prior exams even after the live registration table is cleared.
+- `registrations` keeps the explicit login history across exams; `cookiepresents` shows presence per IP and range. There is no archive table anymore — both are pruned by age (one year).
 
 ## File Upload Context
 
