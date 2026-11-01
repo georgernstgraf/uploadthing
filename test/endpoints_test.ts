@@ -745,8 +745,11 @@ Deno.test("GET /admin/students: Kärtchen tragen Slug, Trigger und hx-disinherit
             ),
             true,
         );
-        // Der Panel-Trigger bleibt in dieser Welle `admin-refresh`.
-        assertEquals(html.includes('hx-trigger="admin-refresh"'), true);
+        // Der Panel-Trigger hängt am Serverereignis (#163) — die SSE-
+        // Extension verbindet den Kanal am Container.
+        assertEquals(html.includes('hx-trigger="sse:cards"'), true);
+        assertEquals(html.includes('sse-connect="/admin/events"'), true);
+        assertEquals(html.includes('sse-swap="stand"'), true);
         // Der MikroTik-Streifen ist ein eigenes Fragment.
         assertEquals(html.includes('id="admin-tik-panel"'), true);
         assertEquals(html.includes('hx-trigger="sse:tik"'), true);
@@ -785,6 +788,30 @@ Deno.test("static/toast.js baut den Dialog ohne innerHTML (#152)", async () => {
     // HTML interpretiert werden — Aufbau ausschließlich über DOM-APIs.
     assertEquals(source.includes("innerHTML"), false);
     assertEquals(source.includes("textContent"), true);
+});
+
+Deno.test("static/htmx-ext-sse.js ist vendort und vor events.js geladen (#163)", async () => {
+    const res = await fetch(`${BASE_URL}/static/htmx-ext-sse.js`);
+    assertEquals(res.status, 200);
+    const source = await res.text();
+
+    // Unminifiziert: die Extension wird ausgeschrieben definiert und
+    // verbindet über `sse-connect` am Container.
+    assertEquals(source.includes("htmx.defineExtension('sse'"), true);
+    assertEquals(source.includes("sse-connect"), true);
+
+    const page = await (await fetch(`${BASE_URL}/`)).text();
+    // Reihenfolge: htmx, dann die Extension, dann der Client, der sie
+    // benutzt — `events.js` verlässt sich auf `htmx:sseError`/`sseMessage`.
+    const htmxAt = page.indexOf("/static/htmx.js");
+    const extensionAt = page.indexOf("/static/htmx-ext-sse.js");
+    const eventsAt = page.indexOf("/static/events.js");
+    assert(
+        htmxAt > 0 && extensionAt > htmxAt && eventsAt > extensionAt,
+        `Ladereihenfolge htmx → Extension → events.js erwartet, war ${htmxAt}/${extensionAt}/${eventsAt}`,
+    );
+    // Die Extension wird über `hx-ext` am `<body>` aktiviert.
+    assertEquals(page.includes('hx-ext="sse"'), true);
 });
 
 Deno.test("GET /upload leitet auf die Startseite (#146)", async () => {

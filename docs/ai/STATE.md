@@ -4,6 +4,15 @@ Current status as of 2026-10-31.
 
 ## Current Focus
 
+**#163 — Admin-Kärtchen als Push-Komponenten — erledigt am 2026-11-01.**
+Der Admin-Kanal transportiert Komponenten statt Gründen (`cards`,
+`card-<slug>`, `tik`), der Server liefert benannte SSE-Frames plus
+`stand`, und der Browser verbindet ihn über die vendorte
+`htmx-ext-sse@2.2.4`: jedes Kärtchen hängt an seinem eigenen Ereignis, das
+Panel an `sse:cards`, der MikroTik-Streifen an `sse:tik`. Der Freeze hält
+nur noch Panel-Swaps auf. `data-exam-events` liegt am `<main>`, damit ein
+HTMX-Login den Exam-Kanal mitbringt. Offen: Deploy (Neustart der Unit).
+
 **#161 — Server-Push statt Polling (SSE) + Anmelde-Freigabe als Schalter —
 erledigt am 2026-10-31, Issue geschlossen.**
 Phasen 1–6 sind committet, getestet und live (Phase 1 ab 12:17, Phasen 2–6
@@ -42,7 +51,7 @@ Das System läuft so, wie es das Epic beschrieben hat:
 - **IP-/MAC-Präsenz** per Tik-REST im App-Prozess (`service/tik.ts`);
   MikroTik-Konto `uploadthing`, strikt auf `192.168.21.2/32`, nur
   `monitoring-rest`.
-- **Tests**: 407 Deno-Tests plus 17 Playwright-E2E-Tests in
+- **Tests**: 451 Deno-Tests plus 21 Playwright-E2E-Tests in
   `deno task e2e` (Chromium, eigene Wegwerf-DB auf Port 8099).
 
 ## Erledigt am 2026-10-31 (Server-Push statt Polling, #161 Phasen 2–6)

@@ -24,6 +24,28 @@ export const STUDENT: FixtureUser = {
     klasse: "5AHIT",
 };
 
+/**
+ * Zweiter Schüler, der **nur** im Identitätswechsel-Test auftaucht (#163).
+ *
+ * Die Suite hat eine einzige IP (127.0.0.1), und Präsenz wird pro
+ * (IP, User) 30 s lang dedupliziert. Ein eigener Fixture-User macht den
+ * Wechsel deterministisch: innerhalb eines Laufs hat er keine ältere
+ * Presence-Zeile, sein erster Aufruf verschiebt die Identität der IP also
+ * garantiert.
+ */
+export const STUDENT_ALT: FixtureUser = {
+    email: "e2e.schueler.alt@example.test",
+    name: "Selin Altmann",
+    klasse: "5AHIT",
+};
+
+/** Dritter Schüler — derselbe Trick für den Freeze-Test (#163). */
+export const STUDENT_NEU: FixtureUser = {
+    email: "e2e.schueler.neu@example.test",
+    name: "Milan Neubauer",
+    klasse: "5AHIT",
+};
+
 /** Lehrperson der Fixture-Datenbank — nur diese Klasse bekommt Adminrechte. */
 export const TEACHER: FixtureUser = {
     email: "e2e.lehrer@example.test",

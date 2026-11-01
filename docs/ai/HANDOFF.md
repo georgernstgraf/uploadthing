@@ -1,8 +1,19 @@
-Last updated: 2026-10-31 (#161 Phasen 2–6 deployt, h2-Beweis geführt; Sichtprüfung offen; #161 und #162 geschlossen).
+Last updated: 2026-11-01 (#163 Welle 4 committet — Client-Verdrahtung über `htmx-ext-sse`; Deploy offen).
 
 ## Sofort weiter mit
 
-**Der Deploy ist durch (2026-10-31, 13:08:58).** Phasen 2–6 laufen auf dem
+**#163 Welle 4 ist committet, aber noch nicht deployt** (2026-11-01). Nach
+einem Neustart der Unit im Betrieb prüfen: `/admin/students` verbindet
+`/admin/events` über die vendorte `htmx-ext-sse`, „Stand HH:MM:SS" steht
+in `#admin-refresh-stand`, eine Abgabe tauscht **nur** ihr Kärtchen (ein
+`/admin/student-card`-Request, kein Panel-Render), ein Identitätswechsel
+rendert das Panel genau einmal, und ein offenes IP-Detail hält nur den
+Panel-Swap auf (Kärtchen ziehen weiter nach). `data-exam-events` liegt am
+`<main>`; ein Login über HTMX bringt den Exam-Kanal mit — die
+Sichtprüfung nach der Anmeldung (Countdown läuft) ersetzt den bisherigen
+Reload-Test.
+
+**Der Deploy von #161 ist durch (2026-10-31, 13:08:58).** Phasen 2–6 laufen auf dem
 Dienst; der Neustart brauchte unter 1 s (kein `stop-sigterm`), Journal ohne
 Watchdog- oder Listener-Fehler, `Listening on https://192.168.21.2:443/`.
 Damit ist auch der h2-Beweis geführt, den die Tests nicht führen können:
@@ -12,9 +23,9 @@ Damit ist auch der h2-Beweis geführt, den die Tests nicht führen können:
   `content-type: text/event-stream; charset=utf-8` und
   `cache-control: no-store` (kein `connection`, kein `transfer-encoding`),
   CSP bleibt gesetzt. Ohne Sitzung 401.
-- `/admin/events` → 403 für Schüler, für Lehrpersonen `event: activity`
-  (Snapshot beim Verbinden, danach live der Tik-Poll) plus `: ping` nach
-  20 s. Eine Lehrpersonen-Sitzung erzeugt kein `cookie`-Event.
+- `/admin/events` → 403 für Schüler, für Lehrpersonen `stand` beim
+  Verbinden und danach benannte Komponenten-Frames (`cards`,
+  `card-<slug>`, `tik`) plus `: ping` nach 20 s.
 - **Cookie-Name in dieser Installation: `uploadthing`** (`COOKIE_NAME` in
   `~/.config/uploadthing/uploadthing.env`), nicht `ut_session` (das ist nur
   der App-Default).

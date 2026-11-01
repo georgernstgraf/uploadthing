@@ -9,7 +9,14 @@
  */
 
 import { parseSqliteDatabaseUrl } from "../../lib/dbpath.ts";
-import { ADMIN_MAC, STUDENT, TEACHER, UNTERLAGEN_FILE } from "./fixtures.ts";
+import {
+    ADMIN_MAC,
+    STUDENT,
+    STUDENT_ALT,
+    STUDENT_NEU,
+    TEACHER,
+    UNTERLAGEN_FILE,
+} from "./fixtures.ts";
 
 const VACUUM_DB = new URL("../../vacuum.db", import.meta.url);
 
@@ -47,7 +54,7 @@ db.exec("DELETE FROM cookiepresents");
 db.exec("DELETE FROM ipfact");
 db.exec("DELETE FROM adminmac");
 
-for (const user of [STUDENT, TEACHER]) {
+for (const user of [STUDENT, STUDENT_ALT, STUDENT_NEU, TEACHER]) {
     await usersRepo.upsert(user);
 }
 

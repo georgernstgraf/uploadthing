@@ -160,7 +160,7 @@
 ## External Library Management
 
 - All external JS/CSS libraries must be stored as non-minified, readable source files.
-- Use versioned filenames with symlinks: `static/htmx.js` → `static/htmx-2.0.10.js`, `static/alpine.js` → `static/alpine-3.17.5.js`, `static/bootstrap.css` → `static/bootstrap-5.3.8.css`, `static/bootstrap.bundle.js` → `static/bootstrap-5.3.8.bundle.js`.
+- Use versioned filenames with symlinks: `static/htmx.js` → `static/htmx-2.0.10.js`, `static/alpine.js` → `static/alpine-3.17.5.js`, `static/bootstrap.css` → `static/bootstrap-5.3.8.css`, `static/bootstrap.bundle.js` → `static/bootstrap-5.3.8.bundle.js`, `static/htmx-ext-sse.js` → `static/htmx-ext-sse-2.2.4.js`.
 - When upgrading, download the new versioned file, update the symlink target. Old versioned files remain for rollback.
 - Bootstrap JS (`bootstrap.bundle.js`) must be loaded for modals, tooltips, and `data-bs-*` attributes to work. `bootstrap.css` alone is not enough.
 
@@ -222,9 +222,27 @@
   auslösen) und `GET /admin/tik-panel` (nur der Streifen). Die Karten-URL
   trägt den aufgelösten Zeitraum; das Kärtchen rendert die Wahrheit seines
   eigenen Zeitraums.
-- **Nicht verwerfen, was nicht getauscht werden darf:** Panel-Freeze
-  (offene `<details>`, Accordion, Modal) zählt in ein Badge und holt nach;
-  siehe `static/events.js`.
+- **Der Admin-Kanal gehört der vendorten `htmx-ext-sse` (#163).** `hx-ext="sse"`
+  steht am `<body>`, `sse-connect="/admin/events"` am Admin-Container in
+  `templates/admin.hbs` (er umschließt Zeitfilter, Anomalien, Statuszeile und
+  `#admin-report-panel` und wird nie getauscht). Die Kärtchen hängen an
+  `hx-trigger="sse:card-<slug>"`, der MikroTik-Streifen an `sse:tik`, das
+  Panel an `sse:cards`, die Serverzeit per `sse-swap="stand"` an
+  `#admin-refresh-stand`. Ein neues Kärtchen-Fragment registriert seinen
+  Listener beim Swap über `htmx:afterProcessNode` — dafür muss der
+  `sse-connect`-Besitzer ein Vorfahr sein, der den Swap überlebt.
+- **Nicht verwerfen, was nicht getauscht werden darf:** Panel-Freeze (offene
+  `<details>`, Anomalie-Accordion, IP-Detail-Modal) zählt in
+  `#admin-refresh-pending` und holt beim Entfrieren einmal nach; siehe
+  `static/events.js`. Seit #163 gilt der Riegel **nur für den Panel-Swap**
+  (`event.detail.elt` ist `#admin-report-panel` selbst) — ein Kärtchen
+  ersetzt nur sich selbst und zieht deshalb auch bei offenem Detail nach.
+- **Der Client gibt nach drei Verbindungsfehlern ohne Frame auf.** Für den
+  Exam-Kanal schließt er den `EventSource`; beim Admin-Kanal entfernt er
+  `sse-connect` vom Container und schließt `evt.detail.source`, weil die
+  Extension sonst mit wachsendem Backoff endlos weiterverbindet (403 für
+  Nicht-Lehrpersonen). Ein eigener Reconnect-Timer ist in beiden Fällen
+  falsch — Reconnect ist Sache von `EventSource`/Extension.
 - **SSE-Tests brauchen einen echten Server** (`Deno.serve` auf Port 0) für
   Header und Stream-Ende, und `heartbeatMs` als Testoption statt echter
   20 s. Client-Verhalten wird in `test/e2e/` geprüft, nicht in
@@ -240,6 +258,6 @@
 - `hx-confirm` has the same lookup rule as `hx-disabled-elt`: put it on the element that carries `hx-post`. With `hx-post` on a `<form>`, `hx-confirm` belongs on the form; on a submit button it is never found and the destructive action runs without a prompt.
 - Keine `hx-confirm` an Schaltern, deren Zustand im selben Panel als roter Warnbalken steht (#161): Der Balken ist die Warnung, der Schalter der Rückweg. Bei einem `change`-getriggerten Checkbox-Formular bleibt nach einem abgebrochenen `window.confirm` der Schalter optisch umgelegt, obwohl der Server nichts getan hat — die UI lügt. Rückfragen bleiben für irreversible Datenverluste (Löschen, Ersetzen, Bereinigen).
 - New structural UI elements need a stable `id` if any browser test touches them; `test/e2e` selects exclusively by `id` (plus ARIA roles where an element deliberately has none).
-- Panels whose content depends on a server-side state (e.g. `exam_open`) get a fragment endpoint and are refreshed by a push, not by a timer: `static/events.js` fires the `admin-refresh` custom event (`hx-trigger="admin-refresh"` on `#admin-report-panel`) and calls `htmx.ajax` for `GET /abgabe-panel` (#161). **Kein `hx-trigger="every Ns"` für Zustände, die der Server ohnehin kennt** — ein Timer kostet pro Client Requests pro Minute und zeigt zwischen zwei Läufen weiter einen falschen Stand.
+- Panels whose content depends on a server-side state (e.g. `exam_open`) get a fragment endpoint and are refreshed by a push, not by a timer: `static/events.js` calls `htmx.ajax` for `GET /abgabe-panel` when the exam state changes (#161). Die Admin-Forensik braucht dabei kein eigenes Skript mehr: ihre Fragmente hängen an SSE-Ereignisnamen (`hx-trigger="sse:cards"`, `sse:tik`, `sse:card-<slug>`) und `sse-swap="stand"`. **Kein `hx-trigger="every Ns"` für Zustände, die der Server ohnehin kennt** — ein Timer kostet pro Client Requests pro Minute und zeigt zwischen zwei Läufen weiter einen falschen Stand.
 - Zähler und Status-Badges gehören **außerhalb** des per `hx-select` getauschten Teilbaums (`#admin-refresh-status` steht vor `#admin-report-panel`): ein Badge im Panel würde beim nächsten Swap mit ersetzt und stünde danach auf altem Stand.
 - **Ein Trigger, der sein eigenes Ziel austauscht, braucht `throttle`** — der Swap ersetzt den Knoten unter dem Cursor, Chrome feuert darauf ein neues `mouseenter`, ohne Drossel dreht das eine Request-Schleife. Seit #161 gibt es keinen solchen Trigger mehr; wer einen einführt, drosselt ihn und prüft, ob nicht ein Push das richtige Werkzeug ist.

@@ -47,6 +47,9 @@
         }
     </style>
     <script src="/static/htmx.js"></script>
+    <!-- Die SSE-Extension gehört vor `static/events.js`: sie verbindet den
+         Admin-Kanal, `events.js` zählt nur noch den Freeze-Nachlauf (#163). -->
+    <script src="/static/htmx-ext-sse.js"></script>
     <script src="/static/bootstrap.bundle.js"></script>
     <script src="/static/toast.js"></script>
     <script>
@@ -153,7 +156,7 @@
             defer></script>
 </head>
 
-     <body{{#if remote_user}} data-exam-events{{/if}}>
+     <body hx-ext="sse">
     <header style="backdrop-filter: blur(var(--CTBS-GlassBlur)); -webkit-backdrop-filter: blur(var(--CTBS-GlassBlur));">
         <div class="container position-relative px-2 pt-2">
             <div class="card shadow-sm border-0 rounded-4">
@@ -273,23 +276,30 @@
             });
 
             document.body.addEventListener('htmx:beforeRequest', function (event) {
-                const trigger = event.detail?.elt;
-                if (!trigger || !trigger.closest('#admin-report-panel')) {
+                // Freeze nur für den Panel-Swap (#163): ein Kärtchen hängt
+                // an seinem eigenen Ereignis und ersetzt nur sich selbst —
+                // es darf auch bei offenem Detail nachziehen. Aufgehalten
+                // wird ausschließlich der Request, den `#admin-report-panel`
+                // selbst auslöst.
+                const elt = event.detail?.elt;
+                if (!elt || elt.id !== 'admin-report-panel') {
                     return;
                 }
 
-                const hasOpenDetails = Boolean(document.querySelector('#admin-report-panel details[open]'));
-                const anomalyAccordionOpen = Boolean(document.querySelector('#admin-anomaly-collapse.show'));
-                if (hasOpenDetails || anomalyAccordionOpen) {
-                    if (untrackHtmxRequest(event)) {
-                        activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);
-                        updateGlobalIndicator();
-                    }
-                    event.preventDefault();
-                    // Nicht still schlucken: `static/events.js` zählt den
-                    // Aufschub als „n neue Ereignisse" (#161).
-                    document.dispatchEvent(new CustomEvent('admin-refresh-frozen'));
+                const isFrozen = window.__uploadthingAdminReportFrozen;
+                if (typeof isFrozen !== 'function' || !isFrozen()) {
+                    return;
                 }
+
+                if (untrackHtmxRequest(event)) {
+                    activeHtmxRequests = Math.max(0, activeHtmxRequests - 1);
+                    updateGlobalIndicator();
+                }
+                event.preventDefault();
+                // Nicht still schlucken: `static/events.js` zählt den
+                // Aufschub als „n neue Ereignisse" und holt ihn beim
+                // Entfrieren nach (#161).
+                document.dispatchEvent(new CustomEvent('admin-refresh-frozen'));
             });
         })();
     </script>

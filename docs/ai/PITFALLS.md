@@ -526,8 +526,35 @@
   `ipsBetween` braucht einen temporären B-tree für `DISTINCT`) — geprüft
   mit `EXPLAIN QUERY PLAN` auf `uploadthing.db`. Wer die Abfragen ändert,
   prüft den Plan erneut.
+- **`hx-trigger="sse:…"` ist ohne die Extension ein No-Op.** `static/htmx-ext-sse.js`
+  (Symlink auf `htmx-ext-sse-2.2.4.js`) muss nach `htmx.js` und vor
+  `static/events.js` geladen sein, `hx-ext="sse"` muss am `<body>` stehen.
+  Fehlt eines davon, rendert die Forensik weiter — aber nichts zieht nach,
+  und der Fehler sieht wie ein Serverproblem aus.
+- **Der `sse-connect`-Besitzer muss den Swap überleben.** Die Extension
+  merkt sich die Quelle in den internen Daten des Elements, das
+  `sse-connect` trägt, und findet sie über `getClosestMatch` von den
+  Kindern aus. Läge `sse-connect` auf `#admin-report-panel`, würde jeder
+  Panel-Render die Verbindung schließen (`htmx:beforeCleanupElement`) und
+  neu aufbauen. Es steht deshalb auf dem umschließenden Container in
+  `templates/admin.hbs`. Kind-Listener werden beim Swap über
+  `htmx:afterProcessNode` neu registriert — genau deshalb funktionieren
+  frisch getauschte Kärtchen.
+- **Der Freeze-Riegel entscheidet am anfragenden Element.** `htmx:beforeRequest`
+  prüft `event.detail.elt`: nur `#admin-report-panel` selbst wird
+  aufgehalten, Kärtchen (`sse:card-…`) laufen immer. Wer den Riegel wieder
+  auf `elt.closest('#admin-report-panel')` umstellt, friert auch die
+  Kärtchen ein und nimmt der Seite die Aktualisierung bei offenem Detail.
+- **Die Freeze-Prüfung hat eine Wahrheit.** Die Selektoren (offene
+  `details`, `#admin-anomaly-collapse.show`, `#ip-detail-modal.show`)
+  stehen in `static/events.js`; `index.hbs` fragt sie über
+  `window.__uploadthingAdminReportFrozen` ab. Zwei Kopien wären zwei
+  Wahrheiten — und die eine (Modal) wurde beim ersten Umzug vergessen.
 - **Der Client gibt nach drei Verbindungsfehlern ohne Frame auf.** Ein
   dauerhaftes 401/403 würde sonst alle drei Sekunden neu klopfen; der
   Reconnect selbst ist Sache von `EventSource`, ein eigener Timer dafür
-  wäre ein zweiter Reconnect-Mechanismus.
+  wäre ein zweiter Reconnect-Mechanismus. Beim Admin-Kanal reicht `close()`
+  nicht: die Extension verbindet nach einem Fehler mit wachsendem Backoff
+  selbst neu, deshalb entfernt `static/events.js` zusätzlich `sse-connect`
+  vom Container (#163).
 

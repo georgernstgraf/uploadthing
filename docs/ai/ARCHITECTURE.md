@@ -73,10 +73,11 @@ Prisma-Engines, keine Runtime-Abhängigkeit auf Prisma).
   tickt den Countdown (`data-ends-at-ms` plus Serveruhr-Offset aus
   `server_now_ms`), tauscht `#abgabe-panel` bei `open`-Wechsel und holt das
   Admin-Panel (`GET /api/exammode`) bei Status- oder
-  Freigabe-Änderungen. Der `activity`-Stream transportiert benannte
-  Komponenten (#163) und den Serverstand als `stand`-Frame; die
-  Verdrahtung auf `hx-trigger="sse:…"` folgt in Welle 4, bis dahin bleibt
-  `admin-refresh` am `#admin-report-panel`.
+  Freigabe-Änderungen. Der `activity`-Stream gehört seit #163 der vendorten
+  `htmx-ext-sse`: `sse-connect` am Admin-Container, `hx-trigger="sse:cards"`
+  am Panel, `sse:card-<slug>` am Kärtchen, `sse:tik` am Streifen,
+  `sse-swap="stand"` an der Statuszeile. `events.js` zählt nur noch den
+  Freeze und holt ihn beim Entfrieren nach.
 - **Der Zustand wird beim Senden aus der DB gebaut.**
   `service/events.snapshotExam()` liest den aktuellen Stand (passiv, ohne
   lazy Abschluss); der Admin-Kanal versendet dagegen die Komponentennamen

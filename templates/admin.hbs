@@ -1,5 +1,6 @@
 <div x-data="endTimeToggle()"
-     x-init="init()">
+     x-init="init()"
+     sse-connect="/admin/events">
     <section id="admin-time-filter"
              class="card shadow-sm border-0 mb-2 w-100">
         <h2 class="visually-hidden">Zeitauswahl</h2>
@@ -225,7 +226,8 @@
               class="badge text-bg-info d-none"
               role="status"
               aria-live="polite"></span>
-        <span id="admin-refresh-stand">Stand: –</span>
+        <span id="admin-refresh-stand"
+              sse-swap="stand">Stand: –</span>
     </div>
     {{> admin-report}}
 </div>

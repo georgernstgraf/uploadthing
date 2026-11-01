@@ -7,18 +7,21 @@
  * Browseruhr und rechnet damit aus `data-ends-at-ms`. Alpine bleibt nur
  * für den Dateinamen (Drag & Drop) im Panel.
  *
- * Die drei Aufgaben:
+ * Die vier Aufgaben:
  * 1. Countdown ticken und bei jedem Frame mit der Serverzeit abgleichen
  *    (nach einer Pause/Fortsetzung läuft er so wieder synchron).
  * 2. Das Abgabe-Panel dem Zustand nachziehen — ohne Hover, ohne Klick.
  * 3. Das Admin-Panel bei Status- und Freigabe-Änderungen neu holen.
- * 4. Die Admin-Forensik (`/admin/events`) bei Aktivität neu holen —
- *    außer es sind Details offen, dann zählt ein Badge die Ereignisse.
+ * 4. Den Freeze der Admin-Forensik zählen und nachholen (#163) — die
+ *    Verbindung selbst gehört der SSE-Extension (`sse-connect`), jedes
+ *    Kärtchen hängt an seinem eigenen Ereignis.
  *
- * Verbunden wird nur auf Seiten mit `data-exam-events` am `<body>`, also
+ * Verbunden wird nur auf Seiten mit `data-exam-events` am `<main>`, also
  * nur für angemeldete Personen. Ohne Sitzung antwortet der Endpunkt mit
  * 401; dann wird nach ein paar Fehlversuchen aufgegeben, statt alle drei
- * Sekunden weiterzuklopfen.
+ * Sekunden weiterzuklopfen. Nach einem HTMX-Login (der `#app-main`
+ * tauscht) trägt das neue `<main>` das Attribut — `init` verbindet dann
+ * erneut.
  */
 
 (function () {
@@ -31,10 +34,9 @@
     const MAX_ERRORS_WITHOUT_FRAME = 3;
 
     /**
-     * Ab hier gilt der Admin-Aktivitätsstream als stumm. Beim Sichtbarwerden
-     * des Tabs oder nach `online` wird dann einmal nachgeholt — statt
-     * selbst einen Reconnect-Timer zu bauen (EventSource verbindet
-     * ohnehin selbst neu).
+     * Ab hier gilt der Admin-Kanal als stumm. Beim Sichtbarwerden des Tabs
+     * oder nach `online` wird dann einmal nachgeholt — statt selbst einen
+     * Reconnect-Timer zu bauen (EventSource verbindet ohnehin selbst neu).
      */
     const ADMIN_STALE_MS = 60_000;
 
@@ -69,9 +71,9 @@
 
     let errorCount = 0;
 
-    // Admin-Forensik (#161): eigener Stream, eigener Zähler.
+    // Admin-Forensik (#163): die Verbindung gehört der SSE-Extension.
+    // Hier stehen nur Fehlerzähler, Stumm-Erkennung und der Freeze-Zähler.
     let adminReportErrorCount = 0;
-    let adminReportFrames = 0;
     let adminReportLastFrameAt = 0;
     let adminReportPending = 0;
 
@@ -349,18 +351,28 @@
     });
 
     // ------------------------------------------------------------------
-    // Admin-Forensik (#161)
+    // Admin-Forensik (#163)
     // ------------------------------------------------------------------
+    //
+    // Die Verbindung gehört der SSE-Extension (`sse-connect` am Container in
+    // `templates/admin.hbs`): jedes Kärtchen hängt an `sse:card-<slug>`, der
+    // MikroTik-Streifen an `sse:tik`, das Panel an `sse:cards`, die
+    // Serverzeit an `sse-swap="stand"`. Hier bleibt nur, was htmx nicht
+    // selbst kann: der Freeze-Zähler, der Nachlauf beim Entfrieren, das
+    // Aufgeben nach drei Fehlern und das Nachholen eines stummen Kanals.
 
     function adminReportPanel() {
         return document.getElementById("admin-report-panel");
     }
 
     /**
-     * Solange Details oder das Anomalie-Accordion offen sind, darf das
-     * Panel nicht getauscht werden: der Swap zerstört alles im Panel,
-     * also auch die offene Ansicht. Das IP-Detail-Modal liegt außerhalb,
-     * würde aber über einem still veralteten Panel stehen.
+     * Ist die Forensik eingefroren? Offene Details, das Anomalie-Accordion
+     * oder das IP-Detail-Modal würden bei einem Panel-Swap zerstört — ein
+     * Panel über einer offenen Ansicht stünde still auf altem Stand.
+     *
+     * Einzige Wahrheit für den Riegel in `templates/index.hbs`: der fragt
+     * die Funktion über `window.__uploadthingAdminReportFrozen` ab, statt
+     * die Selektoren ein zweites Mal zu pflegen.
      */
     function adminReportFrozen() {
         const panel = adminReportPanel();
@@ -373,6 +385,8 @@
                 document.querySelector("#ip-detail-modal.show"),
         );
     }
+
+    window.__uploadthingAdminReportFrozen = adminReportFrozen;
 
     function setAdminReportPending(count) {
         adminReportPending = Math.max(0, count);
@@ -395,12 +409,17 @@
         setAdminReportPending(adminReportPending + 1);
     }
 
+    /**
+     * Holt das Panel über seinen eigenen Trigger. `sse:cards` ist der
+     * Ereignisname des Servers und der `hx-trigger` des Panels zugleich —
+     * wiederholbar, weil er keine offene Verbindung braucht.
+     */
     function requestAdminReportRefresh() {
         const panel = adminReportPanel();
         if (!panel || typeof window.htmx === "undefined") {
             return;
         }
-        window.htmx.trigger(panel, "admin-refresh");
+        window.htmx.trigger(panel, "sse:cards");
     }
 
     /** Holt nach, was während des Freeze liegen geblieben ist. */
@@ -411,112 +430,78 @@
         requestAdminReportRefresh();
     }
 
-    /** Auffrischen oder — bei offenen Details — zählen. */
-    function requestAdminReportOnDemand() {
-        if (adminReportFrozen()) {
-            countAdminReportFrame();
-            return;
-        }
-        requestAdminReportRefresh();
+    /** Nachlauf erst nach dem Ereignis, das ihn ausgelöst hat. */
+    function flushAdminReportSoon() {
+        window.setTimeout(flushAdminReport, 0);
     }
 
-    /** „Stand HH:MM:SS" aus der Serverzeit des Frames. */
-    function updateAdminReportStand(frame) {
-        const element = document.getElementById("admin-refresh-stand");
-        if (!element) {
-            return;
-        }
-        const ms = typeof frame.server_now_ms === "number"
-            ? frame.server_now_ms
-            : Date.parse(frame.at);
-        if (!Number.isFinite(ms)) {
-            return;
-        }
-        const date = new Date(ms);
-        const pad = (value) => String(value).padStart(2, "0");
-        element.textContent = `Stand: ${pad(date.getHours())}:${
-            pad(date.getMinutes())
-        }:${pad(date.getSeconds())}`;
+    /**
+     * Der Kanal gilt als stumm, wenn seit `ADMIN_STALE_MS` kein Frame kam.
+     * Neu verbinden ist Sache der Extension; ein eigener Reconnect-Timer
+     * wäre ein zweiter Mechanismus für dieselbe Aufgabe.
+     */
+    function adminReportStreamStale() {
+        return adminReportLastFrameAt === 0 ||
+            Date.now() - adminReportLastFrameAt > ADMIN_STALE_MS;
     }
 
-    function handleAdminActivityFrame(frame) {
-        if (!frame || frame.type !== "activity") {
-            return;
+    /** Einmal nachholen, wenn der Kanal stumm geworden ist. */
+    function catchUpAdminReport() {
+        if (adminReportPanel() && adminReportStreamStale()) {
+            requestAdminReportRefresh();
         }
-        adminReportErrorCount = 0;
-        const first = adminReportFrames === 0;
-        adminReportFrames += 1;
-        adminReportLastFrameAt = Date.now();
-        updateAdminReportStand(frame);
-
-        const hasReasons = Array.isArray(frame.reasons) &&
-            frame.reasons.length > 0;
-        // Der erste Frame bestätigt den ohnehin gerenderten Stand; nur
-        // wenn er bereits Ereignisse trägt, könnte das Rendern älter sein.
-        if (first && !hasReasons) {
-            return;
-        }
-
-        requestAdminReportOnDemand();
-    }
-
-    function connectAdminActivity() {
-        const source = new EventSource("/admin/events");
-        window.__uploadthingAdminEvents = source;
-
-        source.addEventListener("activity", function (event) {
-            let frame = null;
-            try {
-                frame = JSON.parse(event.data);
-            } catch (error) {
-                console.error("Admin-Ereignis ist kein JSON:", error);
-                return;
-            }
-            handleAdminActivityFrame(frame);
-        });
-
-        source.addEventListener("open", function () {
-            adminReportErrorCount = 0;
-        });
-
-        source.addEventListener("error", function () {
-            adminReportErrorCount += 1;
-            // Dauerhaftes 403 (keine Lehrperson): kein Reconnect-Karussell.
-            if (adminReportErrorCount >= MAX_ERRORS_WITHOUT_FRAME) {
-                source.close();
-            }
-        });
     }
 
     // Wer den Tab wieder ansieht oder das Netz zurückkommt, holt einen
-    // verstummten Stream einmal nach. EventSource verbindet selbst neu.
+    // verstummten Kanal einmal nach.
     document.addEventListener("visibilitychange", function () {
-        if (document.visibilityState !== "visible") {
+        if (document.visibilityState === "visible") {
+            catchUpAdminReport();
+        }
+    });
+
+    window.addEventListener("online", catchUpAdminReport);
+
+    // Jeder ausgelieferte Frame beweist, dass der Kanal lebt.
+    document.addEventListener("htmx:sseOpen", function () {
+        adminReportErrorCount = 0;
+    });
+
+    document.addEventListener("htmx:sseMessage", function () {
+        adminReportErrorCount = 0;
+        adminReportLastFrameAt = Date.now();
+    });
+
+    /**
+     * Aufgeben nach drei Verbindungsfehlern ohne Frame (#163).
+     *
+     * Ohne das verbindet die Extension mit wachsendem Backoff endlos
+     * weiter — bei einem 403 (Nicht-Lehrperson) wäre das Dauerlärm.
+     * `sse-connect` zu entfernen beendet ihre Wiederholungen, `close()`
+     * den laufenden Versuch.
+     */
+    document.addEventListener("htmx:sseError", function (event) {
+        if (!adminReportPanel()) {
             return;
         }
-        if (
-            adminReportLastFrameAt === 0 ||
-            Date.now() - adminReportLastFrameAt > ADMIN_STALE_MS
-        ) {
-            requestAdminReportOnDemand();
+        adminReportErrorCount += 1;
+        if (adminReportErrorCount < MAX_ERRORS_WITHOUT_FRAME) {
+            return;
+        }
+        const container = event.detail && event.detail.elt;
+        if (container && container.removeAttribute) {
+            container.removeAttribute("sse-connect");
+        }
+        const source = event.detail && event.detail.source;
+        if (source && typeof source.close === "function") {
+            source.close();
         }
     });
 
-    window.addEventListener("online", function () {
-        if (
-            adminReportLastFrameAt === 0 ||
-            Date.now() - adminReportLastFrameAt > ADMIN_STALE_MS
-        ) {
-            requestAdminReportOnDemand();
-        }
-    });
-
-    // Der htmx-Riegel in `index.hbs` bricht den Request ab, wenn Details
-    // offen sind. Er meldet das als Event, damit der Zähler nicht still
-    // geschluckt wird.
-    document.addEventListener("admin-refresh-frozen", function () {
-        countAdminReportFrame();
-    });
+    // Der htmx-Riegel in `index.hbs` bricht den Panel-Swap ab, solange
+    // Details, Accordion oder Modal offen sind. Er meldet das als Event,
+    // damit der Zähler nicht still geschluckt wird.
+    document.addEventListener("admin-refresh-frozen", countAdminReportFrame);
 
     // Ein echter Swap setzt den Zähler zurück: der Stand ist jetzt frisch.
     document.addEventListener("htmx:afterSwap", function (event) {
@@ -531,21 +516,21 @@
     document.addEventListener("toggle", function (event) {
         const element = event.target;
         if (element && element.tagName === "DETAILS" && !element.open) {
-            window.setTimeout(flushAdminReport, 0);
+            flushAdminReportSoon();
         }
     }, true);
 
     document.addEventListener("hidden.bs.collapse", function (event) {
         const element = event.target;
         if (element && element.id === "admin-anomaly-collapse") {
-            window.setTimeout(flushAdminReport, 0);
+            flushAdminReportSoon();
         }
     });
 
     document.addEventListener("hidden.bs.modal", function (event) {
         const element = event.target;
         if (element && element.id === "ip-detail-modal") {
-            window.setTimeout(flushAdminReport, 0);
+            flushAdminReportSoon();
         }
     });
 
@@ -586,7 +571,24 @@
         }
     }
 
+    /**
+     * Verbindet den Exam-Kanal — aber nur einmal.
+     *
+     * Ohne `[data-exam-events]` im DOM gibt es niemanden zu bedienen
+     * (anonyme Seiten, 401). Ein offener Stream bleibt offen: die Funktion
+     * läuft nach jedem HTMX-Swap erneut. Erst ein geschlossener Stream
+     * (401/403 ohne Sitzung) wird ersetzt — etwa nach einem Login.
+     */
     function connect() {
+        if (!document.querySelector("[data-exam-events]")) {
+            return;
+        }
+        const existing = window.__uploadthingExamEvents;
+        if (existing && existing.readyState !== EventSource.CLOSED) {
+            return;
+        }
+
+        errorCount = 0;
         const source = new EventSource("/events/exam");
         window.__uploadthingExamEvents = source;
 
@@ -643,15 +645,15 @@
             }
         });
 
-        if (document.body.dataset.examEvents !== undefined) {
+        // Angemeldete Personen verbinden den Exam-Kanal. Nach einem
+        // HTMX-Login tauscht der Server `#app-main`; das neue `<main>`
+        // bringt `data-exam-events` erst mit dem Swap ins DOM — deshalb
+        // wird nach jedem Swap erneut versucht. `connect()` ist
+        // idempotent, ein offener Stream bleibt offen.
+        connect();
+        document.addEventListener("htmx:afterSwap", function () {
             connect();
-        }
-
-        // Nur die Forensik-Seite trägt dieses Panel; alle anderen Seiten
-        // verbinden den Admin-Kanal gar nicht erst.
-        if (document.getElementById("admin-report-panel")) {
-            connectAdminActivity();
-        }
+        });
     }
 
     if (document.readyState === "loading") {

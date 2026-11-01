@@ -32,9 +32,26 @@
   die Fragmente; `parseAdminRange` ist die eine Zeitraum-Wahrheit für
   Liste, Detail und Kärtchen (inklusive Einrasten auf `spg_times`, das
   `/admin/ip-detail` vorher nicht hatte).
-- **Nicht in dieser Welle:** Client-Verdrahtung (`static/events.js`,
-  htmx-SSE-Extension) — ohne Extension ist `hx-trigger="sse:…"` ein
-  No-Op, der Panel-Trigger bleibt `admin-refresh` (Welle 4).
+- **Client-Verdrahtung (Welle 4, nachgezogen am 2026-11-01):** Die vendorte
+  `htmx-ext-sse@2.2.4` verbindet den Admin-Kanal (`hx-ext="sse"` am
+  `<body>`, `sse-connect="/admin/events"` am Admin-Container). Jedes
+  Kärtchen hängt an `hx-trigger="sse:card-<slug>"`, der MikroTik-Streifen an
+  `sse:tik`, das Panel an `sse:cards`, die Serverzeit per
+  `sse-swap="stand"`. `static/events.js` gibt seinen eigenen
+  Admin-`EventSource` auf und behält nur Freeze-Zähler, Nachlauf,
+  Aufgeben-Policy und das Nachholen eines stumm gewordenen Kanals — eine
+  Verbindung, zwei Aufgaben, kein zweiter Reconnect-Mechanismus.
+  `data-exam-events` wandert vom `<body>` an `<main>`, damit ein
+  HTMX-Login (Tausch von `#app-main`) den Exam-Kanal mitbringt; `connect()`
+  ist idempotent und versucht es nach jedem Swap erneut.
+- **Der Freeze hält nur Panel-Swaps auf.** `htmx:beforeRequest` fragt
+  `event.detail.elt`: nur wenn `#admin-report-panel` selbst anfragt, wird
+  bei offenen Details, Anomalie-Accordion oder IP-Detail-Modal abgebrochen
+  und gezählt. Kärtchen hängen an ihrem eigenen Ereignis und ziehen auch
+  bei offenem Detail nach — der Nutzer sieht die Abgabe, ohne die
+  Detailansicht zu verlieren. Beim Entfrieren holt `htmx.trigger(panel,
+  "sse:cards")` das Panel einmal nach; ein echter Swap setzt den Zähler
+  zurück.
 
 ## 2026-10-31: Server-Push statt Polling (SSE) (#161)
 

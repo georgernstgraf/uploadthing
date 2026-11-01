@@ -28,6 +28,8 @@ import {
     cookieName,
     sessionCookieValue,
     STUDENT,
+    STUDENT_ALT,
+    STUDENT_NEU,
     TEACHER,
     UNTERLAGEN_FILE,
 } from "./fixtures.ts";
@@ -1027,82 +1029,207 @@ function localIsoDate(date: Date): string {
     }`;
 }
 
-/** Wählt die erste Karte der Forensik und öffnet das Detail-Modal. */
+/**
+ * Wählt die Karte der Forensik (nicht den MikroTik-Streifen — der ist
+ * ebenfalls ein `.card` mit `hx-get`) und öffnet das Detail-Modal.
+ */
 async function openFirstIpDetail(page: Page): Promise<Locator> {
-    const card = page.locator("#admin-report-panel .card[hx-get]").first();
+    const card = page.locator(
+        '#admin-report-panel .card[hx-get^="/admin/ip-detail"]',
+    ).first();
     await card.waitFor({ state: "visible", timeout: 15_000 });
     await card.click();
     await page.waitForSelector("#ip-detail-modal.show");
     return card;
 }
 
+/**
+ * Öffnet die Forensik mit explizitem Zeitraum und wartet, bis der
+ * Admin-Kanal steht (#163).
+ *
+ * Beweis für die Verbindung ist der `stand`-Frame: er kommt nur über
+ * `sse-connect` und wird per `sse-swap` in `#admin-refresh-stand`
+ * eingesetzt. Ohne ihn wäre jeder folgende Test ein Test gegen eine tote
+ * Verbindung.
+ */
+async function openAdminForensics(page: Page): Promise<void> {
+    const today = localIsoDate(new Date());
+    await page.goto(`/admin/students?startdate=${today}&starttime=00:00`);
+    await page.waitForSelector("#admin-report-panel");
+    await page.waitForFunction(() => {
+        const stand = document.getElementById("admin-refresh-stand");
+        return /Stand: \d{2}:\d{2}:\d{2}/.test(stand?.textContent ?? "");
+    }, undefined, { timeout: 15_000 });
+}
+
+/**
+ * Zählt die Forensik-Requests einer Seite (#163).
+ *
+ * Die Suite hat nur eine IP (127.0.0.1) und Identität gilt pro IP —
+ * deshalb wird sequenziell gearbeitet und gezählt statt geraten.
+ */
+function trackForensicsRequests(page: Page) {
+    const counts = { students: 0, cards: 0, tik: 0 };
+    page.on("request", (request) => {
+        if (!request.url().startsWith(BASE_URL)) {
+            return;
+        }
+        const path = new URL(request.url()).pathname;
+        if (path === "/admin/students") {
+            counts.students += 1;
+        } else if (path === "/admin/student-card") {
+            counts.cards += 1;
+        } else if (path === "/admin/tik-panel") {
+            counts.tik += 1;
+        }
+    });
+    return {
+        counts,
+        reset() {
+            counts.students = 0;
+            counts.cards = 0;
+            counts.tik = 0;
+        },
+    };
+}
+
+/**
+ * Lässt den 1-s-Batch des Servers und den daraus folgenden Panel-Request
+ * zur Ruhe kommen. Präsenz desselben Users ist danach 30 s lang
+ * dedupliziert — genau das Fenster, in dem die Zählungen gelten.
+ */
+async function settleAdminPush(page: Page): Promise<void> {
+    await page.waitForTimeout(2500);
+}
+
+/** Das Kärtchen der einzigen Test-IP (127.0.0.1). */
+const TEST_IP_CARD = "#student-card-127-0-0-1";
+
+/**
+ * Markiert einen Panel-Kindknoten. Ein Panel-Render ersetzt den
+ * Kindbaum — die Markierung fehlt danach; ein Kärtchen-Swap lässt sie
+ * stehen.
+ */
+async function markPanelChild(page: Page): Promise<void> {
+    await page.evaluate(() => {
+        const heading = document.querySelector("#admin-report-panel h2");
+        if (heading instanceof HTMLElement) {
+            heading.dataset.e2eMarker = "vorher";
+        }
+    });
+}
+
+async function panelChildMarker(page: Page): Promise<string | null> {
+    return await page.evaluate(() => {
+        const heading = document.querySelector("#admin-report-panel h2");
+        return heading instanceof HTMLElement
+            ? heading.dataset.e2eMarker ?? null
+            : null;
+    });
+}
+
+/** Markiert das Kärtchen selbst: `outerHTML` ersetzt den Knoten. */
+async function markCard(page: Page): Promise<void> {
+    await page.evaluate((selector) => {
+        const card = document.querySelector(selector);
+        if (card instanceof HTMLElement) {
+            card.dataset.e2eMarker = "vorher";
+        }
+    }, TEST_IP_CARD);
+}
+
+async function cardMarker(page: Page): Promise<string | null> {
+    return await page.evaluate((selector) => {
+        const card = document.querySelector(selector);
+        return card instanceof HTMLElement
+            ? card.dataset.e2eMarker ?? null
+            : null;
+    }, TEST_IP_CARD);
+}
+
+/** Wartet, bis das Kärtchen der Test-IP wirklich ausgetauscht wurde. */
+async function waitForCardSwap(page: Page): Promise<void> {
+    await page.waitForFunction((selector) => {
+        const card = document.querySelector(selector);
+        return card !== null &&
+            (card as HTMLElement).dataset.e2eMarker === undefined;
+    }, TEST_IP_CARD, { timeout: 15_000 });
+}
+
+/** Wartet, bis das Kärtchen der Test-IP das Abgabe-Badge trägt. */
+async function waitForSubmissionBadge(page: Page): Promise<void> {
+    await page.waitForFunction((selector) => {
+        const card = document.querySelector(selector);
+        if (!card) return false;
+        return Array.from(card.querySelectorAll(".badge")).some((badge) =>
+            badge.textContent?.trim() === "Abgabe"
+        );
+    }, TEST_IP_CARD, { timeout: 15_000 });
+}
+
+/** Lädt eine gültige Abgabe hoch und quittiert den Erfolgs-Toast. */
+async function submitAbgabe(page: Page): Promise<void> {
+    await page.setInputFiles("#abgabe-file-input", {
+        name: UPLOAD_FILENAME,
+        mimeType: "application/zip",
+        buffer: Buffer.from(ZIP_BYTES),
+    });
+    await page.click("#abgabe-submit");
+    await page.waitForSelector("#toast-dialog");
+    await page.click("#toast-dialog-close");
+}
+
 Deno.test({
-    name: "E2E: Abgabe-Badge erscheint in der Forensik ohne Reload (#161)",
+    name:
+        "E2E: Kärtchen hängen an ihren Ereignissen — Dauer-Ping bleibt still (#163)",
     sanitizeOps: false,
     sanitizeResources: false,
     async fn() {
         await stopExam();
-        const today = localIsoDate(new Date());
         await withBrowser(async (browser) => {
             const teacher = await openPage(browser, TEACHER.email);
+            const tracker = trackForensicsRequests(teacher.page);
+            const student = await openPage(browser, STUDENT.email);
             try {
-                // Expliziter Zeitraum: der Default rastet auf Schulstunden
-                // ein und liegt außerhalb der Schulzeit in der Zukunft.
-                await teacher.page.goto(
-                    `/admin/students?startdate=${today}&starttime=00:00`,
-                );
-                await teacher.page.waitForSelector("#admin-report-panel");
-                await teacher.page.evaluate(() => {
-                    document.body.dataset.e2eMarker = "vorher";
-                });
+                await openAdminForensics(teacher.page);
 
-                await startExam();
-                const student = await openPage(browser, STUDENT.email);
-                try {
-                    await student.page.goto("/");
-                    await student.page.waitForSelector("#abgabe-form");
-                    await student.page.setInputFiles("#abgabe-file-input", {
-                        name: UPLOAD_FILENAME,
-                        mimeType: "application/zip",
-                        buffer: Buffer.from(ZIP_BYTES),
-                    });
-                    await student.page.click("#abgabe-submit");
-                    await student.page.waitForSelector("#toast-dialog");
-                    await student.page.click("#toast-dialog-close");
+                // Der Schüler wird präsent: dieser eine Identitätswechsel
+                // darf das Panel genau einmal holen. Danach ist die
+                // Presence desselben Users 30 s lang dedupliziert.
+                await student.page.goto("/");
+                await student.page.waitForSelector("#abgabe-panel");
+                await settleAdminPush(teacher.page);
 
-                    // Kein Reload, kein Klick: der Push zieht das Panel
-                    // nach, die Abgabe-Badge stammt aus dem neuen Render.
-                    await teacher.page.waitForFunction(() => {
-                        const panel = document.getElementById(
-                            "admin-report-panel",
-                        );
-                        if (!panel) return false;
-                        return Array.from(panel.querySelectorAll(".badge"))
-                            .some((badge) =>
-                                badge.textContent?.trim() === "Abgabe"
-                            );
-                    }, undefined, { timeout: 15_000 });
-
-                    assertEquals(
-                        await teacher.page.evaluate(() =>
-                            document.body.dataset.e2eMarker
-                        ),
-                        "vorher",
-                        "Die Forensik darf sich ohne Reload nachziehen",
-                    );
-                    const stand =
-                        (await teacher.page.textContent(
-                            "#admin-refresh-stand",
-                        )) ?? "";
-                    assert(
-                        /Stand: \d{2}:\d{2}:\d{2}/.test(stand),
-                        `Serverzeit im Kopf erwartet, war: "${stand}"`,
-                    );
-                } finally {
-                    await student.context.close();
+                // Ruhiges Fenster: nur der Schüler lädt neu. Das ist der
+                // Dauer-Ping aus der Zeit vor #163 — er darf nichts kosten.
+                tracker.reset();
+                for (let round = 0; round < 3; round++) {
+                    await student.page.reload();
+                    await teacher.page.waitForTimeout(400);
                 }
+                await teacher.page.waitForTimeout(3500);
+
+                assertEquals(
+                    tracker.counts.students,
+                    0,
+                    "Ein Schüler-Reload darf das Panel nicht neu holen",
+                );
+                assertEquals(
+                    tracker.counts.cards,
+                    0,
+                    "Ein Schüler-Reload darf kein Kärtchen neu holen",
+                );
+                // Der Kanal lebt während des ruhigen Fensters weiter: der
+                // Stand kommt aus dem `stand`-Frame, nicht aus einem Request.
+                const stand =
+                    (await teacher.page.textContent("#admin-refresh-stand")) ??
+                        "";
+                assert(
+                    /Stand: \d{2}:\d{2}:\d{2}/.test(stand),
+                    `Serverzeit im Kopf erwartet, war: "${stand}"`,
+                );
             } finally {
-                await stopExam();
+                await student.context.close();
                 await teacher.context.close();
             }
         });
@@ -1110,98 +1237,323 @@ Deno.test({
 });
 
 Deno.test({
-    name: "E2E: Offenes Detail hält die Forensik an, Zähler holt nach (#161)",
+    name: "E2E: Eine Abgabe tauscht genau ein Kärtchen, nicht das Panel (#163)",
     sanitizeOps: false,
     sanitizeResources: false,
     async fn() {
         await stopExam();
-        const today = localIsoDate(new Date());
         await withBrowser(async (browser) => {
             const teacher = await openPage(browser, TEACHER.email);
+            const tracker = trackForensicsRequests(teacher.page);
+            const student = await openPage(browser, STUDENT.email);
             try {
-                await teacher.page.goto(
-                    `/admin/students?startdate=${today}&starttime=00:00`,
-                );
-                await teacher.page.waitForSelector("#admin-report-panel");
-
+                await openAdminForensics(teacher.page);
                 await startExam();
-                const student = await openPage(browser, STUDENT.email);
-                try {
-                    await student.page.goto("/");
-                    await student.page.waitForSelector("#abgabe-form");
+                await student.page.goto("/");
+                await student.page.waitForSelector("#abgabe-form");
+                await settleAdminPush(teacher.page);
 
-                    // Presence-Ereignis ausklingen lassen, damit die Karte
-                    // beim Klick nicht mitten im Swap verschwindet.
-                    await teacher.page.waitForTimeout(2000);
-                    const card = await openFirstIpDetail(teacher.page);
+                await markPanelChild(teacher.page);
+                await markCard(teacher.page);
+                tracker.reset();
 
-                    // Marker am Kind: ein innerHTML-Swap des Panels würde
-                    // die Karte und damit den Marker ersetzen.
-                    await card.evaluate((element) => {
-                        (element as HTMLElement).dataset.e2eMarker = "vorher";
-                    });
+                await submitAbgabe(student.page);
+                await waitForCardSwap(teacher.page);
+                await waitForSubmissionBadge(teacher.page);
 
-                    await student.page.setInputFiles("#abgabe-file-input", {
-                        name: UPLOAD_FILENAME,
-                        mimeType: "application/zip",
-                        buffer: Buffer.from(ZIP_BYTES),
-                    });
-                    await student.page.click("#abgabe-submit");
-                    await student.page.waitForSelector("#toast-dialog");
-                    await student.page.click("#toast-dialog-close");
-
-                    // Offenes Detail: kein Swap, stattdessen der Zähler.
-                    await teacher.page.waitForSelector(
-                        "#admin-refresh-pending:not(.d-none)",
-                        { timeout: 15_000 },
-                    );
-                    const pending =
-                        (await teacher.page.textContent(
-                            "#admin-refresh-pending",
-                        )) ?? "";
-                    assert(
-                        /\d+ neue[s]? Ereignis/.test(pending),
-                        `Zähler erwartet, war: "${pending}"`,
-                    );
-                    assertEquals(
-                        await card.evaluate((element) =>
-                            (element as HTMLElement).dataset.e2eMarker ??
-                                null
-                        ),
-                        "vorher",
-                        "Bei offenem Detail darf das Panel nicht getauscht werden",
-                    );
-
-                    // Schließen: der Nachlauf zieht das Panel nach, der
-                    // Zähler verschwindet, die Abgabe ist sichtbar.
-                    await teacher.page.click("#ip-detail-modal .btn-close");
-                    await teacher.page.waitForSelector("#ip-detail-modal.show", {
-                        state: "detached",
-                    });
-
-                    await teacher.page.waitForFunction(() => {
-                        const badge = document.getElementById(
-                            "admin-refresh-pending",
-                        );
-                        return badge?.classList.contains("d-none") ?? false;
-                    }, undefined, { timeout: 15_000 });
-
-                    await teacher.page.waitForFunction(() => {
-                        const panel = document.getElementById(
-                            "admin-report-panel",
-                        );
-                        if (!panel) return false;
-                        return Array.from(panel.querySelectorAll(".badge"))
-                            .some((badge) =>
-                                badge.textContent?.trim() === "Abgabe"
-                            );
-                    }, undefined, { timeout: 15_000 });
-                } finally {
-                    await student.context.close();
-                }
+                assertEquals(
+                    tracker.counts.cards,
+                    1,
+                    "Die Abgabe muss genau ein Kärtchen neu holen",
+                );
+                assertEquals(
+                    tracker.counts.students,
+                    0,
+                    "Die Abgabe darf das Panel nicht neu holen",
+                );
+                assertEquals(
+                    await panelChildMarker(teacher.page),
+                    "vorher",
+                    "Das Panel darf bei einer Abgabe stehen bleiben",
+                );
             } finally {
                 await stopExam();
+                await student.context.close();
                 await teacher.context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Identitätswechsel rendert das Panel genau einmal (#163)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        await withBrowser(async (browser) => {
+            const teacher = await openPage(browser, TEACHER.email);
+            const tracker = trackForensicsRequests(teacher.page);
+            try {
+                await openAdminForensics(teacher.page);
+                await settleAdminPush(teacher.page);
+                await markPanelChild(teacher.page);
+                tracker.reset();
+
+                // Ein zweiter Schüler meldet sich auf derselben IP an
+                // (127.0.0.1 — mehr gibt die Suite nicht her).
+                const other = await openPage(browser, STUDENT_ALT.email);
+                try {
+                    await other.page.goto("/");
+                    await teacher.page.waitForFunction((selector) => {
+                        const card = document.querySelector(selector);
+                        return Boolean(
+                            card?.textContent?.includes("Selin Altmann"),
+                        );
+                    }, TEST_IP_CARD, { timeout: 15_000 });
+
+                    // Gruppe und Name des Kärtchens stammen aus dem neuen
+                    // Render, nicht aus einem alten Stand.
+                    assertEquals(
+                        await teacher.page.getAttribute(
+                            TEST_IP_CARD,
+                            "data-tone",
+                        ),
+                        "schueler",
+                    );
+                } finally {
+                    await other.context.close();
+                }
+
+                assertEquals(
+                    tracker.counts.students,
+                    1,
+                    "Ein Identitätswechsel muss das Panel genau einmal holen",
+                );
+                assertEquals(
+                    tracker.counts.cards,
+                    0,
+                    "Ein Identitätswechsel braucht kein Kärtchen-Fragment",
+                );
+                assertEquals(
+                    await panelChildMarker(teacher.page),
+                    null,
+                    "Der Panel-Render muss den Kindbaum ersetzt haben",
+                );
+            } finally {
+                await teacher.context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Klick auf ein Kärtchen öffnet das Detail ohne Karten-Swap (#163)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        await withBrowser(async (browser) => {
+            const teacher = await openPage(browser, TEACHER.email);
+            const tracker = trackForensicsRequests(teacher.page);
+            try {
+                await openAdminForensics(teacher.page);
+                await settleAdminPush(teacher.page);
+                tracker.reset();
+
+                await openFirstIpDetail(teacher.page);
+                // Das Modal zeigt den geladenen Inhalt, nicht den Spinner.
+                await teacher.page.waitForFunction(() => {
+                    const content = document.getElementById(
+                        "ip-detail-modal-content",
+                    );
+                    return Boolean(
+                        content && !content.querySelector(".spinner-border"),
+                    );
+                }, undefined, { timeout: 15_000 });
+                await teacher.page.waitForTimeout(1500);
+
+                assertEquals(
+                    tracker.counts.cards,
+                    0,
+                    "Ein Klick darf kein Kärtchen neu holen",
+                );
+                assertEquals(
+                    tracker.counts.students,
+                    0,
+                    "Ein Klick darf das Panel nicht neu holen",
+                );
+            } finally {
+                await teacher.context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Offenes Detail friert nur das Panel ein, nicht das Kärtchen (#163)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        await withBrowser(async (browser) => {
+            const teacher = await openPage(browser, TEACHER.email);
+            const tracker = trackForensicsRequests(teacher.page);
+            const student = await openPage(browser, STUDENT.email);
+            const other = await openPage(browser, STUDENT_NEU.email);
+            try {
+                await openAdminForensics(teacher.page);
+                await startExam();
+                await student.page.goto("/");
+                await student.page.waitForSelector("#abgabe-form");
+                await settleAdminPush(teacher.page);
+
+                await openFirstIpDetail(teacher.page);
+                await markPanelChild(teacher.page);
+                await markCard(teacher.page);
+                tracker.reset();
+
+                // Panel-Ereignis: der Identitätswechsel darf das Panel
+                // nicht unter dem offenen Detail wegziehen — er zählt.
+                await other.page.goto("/");
+                await teacher.page.waitForSelector(
+                    "#admin-refresh-pending:not(.d-none)",
+                    { timeout: 15_000 },
+                );
+                assertEquals(
+                    await panelChildMarker(teacher.page),
+                    "vorher",
+                    "Bei offenem Detail darf das Panel nicht getauscht werden",
+                );
+                assertEquals(
+                    tracker.counts.students,
+                    0,
+                    "Bei offenem Detail darf kein Panel-Request laufen",
+                );
+
+                // Karten-Ereignis: die Abgabe tauscht trotzdem ihr Kärtchen.
+                await submitAbgabe(student.page);
+                await waitForCardSwap(teacher.page);
+                await waitForSubmissionBadge(teacher.page);
+                assertEquals(
+                    tracker.counts.cards,
+                    1,
+                    "Die Abgabe muss ihr Kärtchen auch bei offenem Detail holen",
+                );
+                assertEquals(
+                    await panelChildMarker(teacher.page),
+                    "vorher",
+                    "Das Panel bleibt bei offenem Detail stehen",
+                );
+
+                // Schließen: der Nachlauf holt das Panel, der Zähler geht.
+                await teacher.page.click("#ip-detail-modal .btn-close");
+                await teacher.page.waitForSelector("#ip-detail-modal.show", {
+                    state: "detached",
+                });
+                await teacher.page.waitForFunction(() => {
+                    const badge = document.getElementById(
+                        "admin-refresh-pending",
+                    );
+                    return badge?.classList.contains("d-none") ?? false;
+                }, undefined, { timeout: 15_000 });
+                assertEquals(
+                    await panelChildMarker(teacher.page),
+                    null,
+                    "Der Nachlauf muss das Panel nach dem Schließen holen",
+                );
+                assertEquals(
+                    await cardMarker(teacher.page),
+                    null,
+                    "Der Panel-Render bringt ein frisches Kärtchen mit",
+                );
+                await waitForSubmissionBadge(teacher.page);
+            } finally {
+                await stopExam();
+                await other.context.close();
+                await student.context.close();
+                await teacher.context.close();
+            }
+        });
+    },
+});
+
+Deno.test({
+    name: "E2E: Exam-Stream verbindet sich nach dem HTMX-Login (#163)",
+    sanitizeOps: false,
+    sanitizeResources: false,
+    async fn() {
+        await stopExam();
+        await withBrowser(async (browser) => {
+            // Ohne Sitzung: kein Abgabe-Panel, kein Exam-Kanal.
+            const context = await browser.newContext({ baseURL: BASE_URL });
+            const page = await context.newPage();
+            try {
+                await page.goto("/");
+                await page.waitForSelector("#login-form");
+                assertEquals(
+                    await page.locator("[data-exam-events]").count(),
+                    0,
+                    "Ohne Sitzung darf kein Kanal-Attribut im DOM stehen",
+                );
+                assertEquals(
+                    await page.evaluate(() =>
+                        typeof (window as unknown as Record<string, unknown>)
+                            .__uploadthingExamEvents
+                    ),
+                    "undefined",
+                    "Ohne Sitzung darf kein Exam-Stream verbunden sein",
+                );
+
+                // Anmeldung wie der Klick auf einen Suchtreffer: POST
+                // /register, htmx tauscht `#app-main`. LDAP ist im
+                // Testlauf nicht erreichbar, der Server fällt auf den
+                // lokalen Fixture-User zurück.
+                await page.evaluate(async (email) => {
+                    const htmx = (window as unknown as {
+                        htmx: {
+                            ajax: (
+                                method: string,
+                                url: string,
+                                options: Record<string, unknown>,
+                            ) => Promise<unknown>;
+                        };
+                    }).htmx;
+                    await htmx.ajax("POST", "/register", {
+                        target: "#app-main",
+                        swap: "outerHTML",
+                        values: { email },
+                    });
+                }, STUDENT.email);
+
+                await page.waitForSelector("[data-exam-events]");
+                await page.waitForFunction(() => {
+                    const source = (window as unknown as {
+                        __uploadthingExamEvents?: EventSource;
+                    }).__uploadthingExamEvents;
+                    return source?.readyState === EventSource.OPEN;
+                }, undefined, { timeout: 15_000 });
+
+                // Der Kanal trägt: der Exam-Start erreicht die Seite ohne
+                // Reload, und der Countdown tickt.
+                await startExam();
+                await page.waitForSelector("#exam-countdown-badge");
+                const first =
+                    (await page.textContent("#exam-countdown-badge")) ?? "";
+                assert(
+                    /Restzeit:\s*\d{1,2}:\d{2}/.test(first),
+                    `Countdown nach dem Login erwartet, war: "${first}"`,
+                );
+                await page.waitForTimeout(1200);
+                const second =
+                    (await page.textContent("#exam-countdown-badge")) ?? "";
+                assert(
+                    second !== first,
+                    `Countdown muss nach dem Login ticken, blieb bei "${first}"`,
+                );
+            } finally {
+                await stopExam();
+                await context.close();
             }
         });
     },
