@@ -1,15 +1,33 @@
-Last updated: 2026-11-01 (#163 in vier Commits umgesetzt — Deploy und Sichtprüfung offen).
+Last updated: 2026-11-01 (#163 umgesetzt und deployt; Sichtprüfung offen).
 
 ## Sofort weiter mit
 
-**#163 ist in vier Commits umgesetzt und gepusht, aber noch nicht deployt**
-(2026-11-01). Vor jeder Sichtprüfung: `systemctl --user restart
-uploadthing`; die Migrationen `0003_tikscan` und `0004_backfill_cookiepresents`
-laufen beim Start mit. Danach `systemctl --user status uploadthing` (kein
-`stop-sigterm`-Timeout) und `journalctl --user -u uploadthing -n 20`
-(keine Migrations- oder Startfehler).
+**#163 ist deployt (2026-11-01, 03:28:43).** Der Neustart brauchte unter 1 s
+(kein `stop-sigterm`), das Journal zeigt keinen Watchdog- oder
+Listener-Fehler und `Listening on https://192.168.21.2:443/`. Die
+Migrationen liefen beim Start:
 
-Danach die **Abnahmeliste des Tickets**:
+- `0003_tikscan` (3 Statements) — Backfill aus `DISTINCT ipfact.seen`,
+  2592 Zeilen (≈ 43 h Polling-Historie).
+- `0004_backfill_cookiepresents` (1 Statement) — Altregistrierungen sind
+  jetzt Präsenzzeilen.
+
+Am laufenden Dienst bereits nachgewiesen (HTTP/2, Lehrpersonen-Cookie):
+
+- `/admin/events` → sofort `event: stand` mit `Stand: 03:29:00`; Header
+  genau `content-type: text/event-stream; charset=utf-8`,
+  `cache-control: no-store`, CSP gesetzt, kein `connection`/
+  `transfer-encoding`.
+- `/admin/tik-panel` → 200 mit
+  `hx-disinherit="hx-select hx-swap hx-target hx-include"`.
+- `/admin/student-card?ip=192.168.21.116&…` → 200 mit
+  `id="student-card-192-168-21-116"` und
+  `hx-trigger="sse:card-192-168-21-116"`; unbekannte IP im Zeitraum → 204.
+- `/admin/students` enthält `sse-connect="/admin/events"` (1×),
+  `hx-trigger="sse:cards"`, `hx-trigger="sse:tik"`, `sse-swap="stand"`.
+
+Offen ist die **Sichtprüfung am Gerät** (die Frames `cards`, `card-<slug>`
+und `tik` sind im Betrieb noch nicht beobachtet worden, nur `stand`):
 
 1. **Identitätswechsel am Laptop und am Handy.** Auf `/admin/students`
    erscheint nach der Anmeldung einer anderen Person an derselben IP das
@@ -51,9 +69,10 @@ führen können:
   `cache-control: no-store` (kein `connection`, kein `transfer-encoding`),
   CSP bleibt gesetzt. Ohne Sitzung 401.
 - `/admin/events` → 403 für Schüler; für Lehrpersonen war beim Deploy
-  `event: activity` plus `: ping` nach 20 s zu sehen. Die seit #163
-  benannten Frames (`stand`, `cards`, `card-<slug>`, `tik`) sind noch
-  **nicht** im Betrieb geprüft — siehe Punkt 7 oben.
+  `event: activity` plus `: ping` nach 20 s zu sehen. Seit dem #163-Deploy
+  ist `event: stand` im Betrieb bestätigt; die ereignisgetriebenen Frames
+  `cards`, `card-<slug>` und `tik` brauchen eine echte Aktivität und sind
+  deshalb noch nicht beobachtet — siehe Punkt 7 oben.
 - **Cookie-Name in dieser Installation: `uploadthing`** (`COOKIE_NAME` in
   `~/.config/uploadthing/uploadthing.env`), nicht `ut_session` (das ist nur
   der App-Default).
@@ -129,10 +148,17 @@ Klick, Badge ohne Reload, offenes Detail friert ein).
   Admin-Container, `sse:cards`/`sse:card-<slug>`/`sse:tik` als Trigger,
   `sse-swap="stand"`, Freeze nur für Panel-Swaps, `data-exam-events` am
   `<main>` samt Reconnect nach HTMX-Login, Admin-`EventSource` aus
-  `static/events.js` entfernt. Verifikation: `check`/`lint` grün, 451
-  Deno-Tests, 21 E2E-Tests (vorher 17). **Deploy und Sichtprüfung offen.**
-  Beschlossene Abweichungen: Scan-Delta nur bei Übergängen, `tikscan` mit
-  einem Jahr Cutoff, Backfill mit umgesetzt.
+  `static/events.js` entfernt. `17cc8ec` Doku. `61c5b09` Review-Fixes:
+  der MikroTik-Streifen erbte `hx-select` des Panels und löschte sich beim
+  ersten `sse:tik`-Frame selbst (wirksame Sperre sitzt am Panel, die Zeile
+  am Streifen dokumentiert sie; E2E mit Negativbeweis), „nicht anwesend"
+  auch am Unbekannt-Kärtchen, `insertScan` sitzt jetzt in `pollOnce` vor
+  `register` (injizierbare `recordScan`-Naht), Inline-Styles in
+  `ui-shell.css`, `TEACHER_CLASS` statt Literal, `ipSlug`-Helper wird
+  wirklich benutzt. Verifikation: `check`/`lint` grün, **452 Deno-Tests,
+  22 E2E-Tests** (vorher 407/17). **Deploy durch (03:28:43), Sichtprüfung
+  offen.** Beschlossene Abweichungen: Scan-Delta nur bei Übergängen,
+  `tikscan` mit einem Jahr Cutoff, Backfill mit umgesetzt.
 - **#161 Phasen 2–6: Server-Push statt Polling (SSE).** Vier Commits
   (`718ffca`, `2a08d97`, `6f04b50`, `2dc12a0`): (1) Presence-Zeilen
   dedupliziert (`COOKIE_PRESENT_MIN_INTERVAL_MS = 30_000`, `recordByEmail`
