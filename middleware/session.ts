@@ -214,21 +214,23 @@ export const remoteIPMiddleware = createMiddleware<
             }
 
             if (!isStaticAsset) {
-                const recorded = await service.cookiepresents.recordByEmail(
+                const presence = await service.cookiepresents.recordByEmail(
                     session.email,
                     remoteip,
                 );
 
-                // Nur ein echter Insert ist ein Ereignis; die
-                // 30-s-Deduplizierung von `recordByEmail` darf die
-                // Forensik nicht fluten.
+                // Nur ein Identitätswechsel ist ein Ereignis (#163): die
+                // Presence-Zeile desselben Users verlängert nur dessen
+                // Anwesenheit, die Karte dieser IP bleibt unverändert.
                 //
-                // Lehrpersonen sind ausgenommen: ihr eigener Admin-Render
-                // ist ein Presence-Schreibvorgang, der sonst den nächsten
-                // Admin-Render auslösen würde — eine Rückkopplung, die
-                // sich selbst am Leben hält.
-                if (recorded && !service.user.isTeacher(user)) {
-                    events.noteAdminActivity("cookie");
+                // Eine Ausnahme für Lehrpersonen braucht es nicht mehr.
+                // Früher löste jeder Presence-Insert eines Admins den
+                // nächsten Admin-Render und damit den nächsten Insert aus;
+                // heute schreibt die eigene Präsenz keine neue Identität
+                // und publiziert deshalb nichts — die Rückkopplung ist
+                // strukturell ausgeschlossen, nicht per Rolle.
+                if (presence.identityChanged) {
+                    events.noteAdminActivity("cards");
                 }
             }
 

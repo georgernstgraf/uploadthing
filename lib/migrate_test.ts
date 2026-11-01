@@ -71,11 +71,12 @@ const EXPECTED_INDEXES = [
 
 Deno.test("migrate - loadMigrations liefert alle Migrationen aus dem Journal", () => {
     const migrations = loadMigrations(MIGRATIONS_DIR);
-    assertEquals(migrations.length, 4);
+    assertEquals(migrations.length, 5);
     assertEquals(migrations[0].tag, "0000_baseline");
     assertEquals(migrations[1].tag, "0001_ipfact_mac");
     assertEquals(migrations[2].tag, "0002_adminmac");
     assertEquals(migrations[3].tag, "0003_tikscan");
+    assertEquals(migrations[4].tag, "0004_backfill_cookiepresents");
     assertEquals(
         migrations[0].hash,
         createHash("sha256")
@@ -94,6 +95,7 @@ Deno.test("migrate - leere Datenbank wird vollständig aufgebaut", async () => {
             "0001_ipfact_mac",
             "0002_adminmac",
             "0003_tikscan",
+            "0004_backfill_cookiepresents",
         ]);
         assertEquals(outcome.marked, []);
         assertEquals(objectNames(db, "table"), EXPECTED_TABLES);
@@ -132,8 +134,9 @@ Deno.test("migrate - zweiter Lauf ist idempotent", async () => {
             "0001_ipfact_mac",
             "0002_adminmac",
             "0003_tikscan",
+            "0004_backfill_cookiepresents",
         ]);
-        assertEquals(appliedRows(db).length, 4);
+        assertEquals(appliedRows(db).length, 5);
     });
 });
 
@@ -156,9 +159,10 @@ Deno.test("migrate - Baseline auf bestehender Datenbank wird markiert, nicht aus
             "0001_ipfact_mac",
             "0002_adminmac",
             "0003_tikscan",
+            "0004_backfill_cookiepresents",
         ]);
         assertEquals(outcome.marked, ["0000_baseline"]);
-        assertEquals(appliedRows(db).length, 4);
+        assertEquals(appliedRows(db).length, 5);
 
         const users = db.prepare("SELECT email FROM users").all() as {
             email: string;
@@ -196,6 +200,58 @@ Deno.test("migrate - Backfill füllt tikscan faktengleich aus ipfact", async () 
     });
 });
 
+Deno.test("migrate - Backfill zieht Registrierungen als Präsenz nach (#163)", async () => {
+    await withTempDb((db) => {
+        runMigrations(db, { log: quiet });
+        const backfill = loadMigrations(MIGRATIONS_DIR)[4];
+        assertEquals(backfill.tag, "0004_backfill_cookiepresents");
+
+        // Stand vor #163: eine Registrierung erzeugte keine
+        // Presence-Zeile, eine faktengleiche Presence blieb allein.
+        db.prepare(`DELETE FROM "${MIGRATIONS_TABLE}" WHERE hash = ?`).run(
+            backfill.hash,
+        );
+        db.exec("DELETE FROM cookiepresents");
+        db.exec(
+            "INSERT INTO users (email, name, updatedat) VALUES ('backfill@example.com', 'Backfill', 1)",
+        );
+        const user = db
+            .prepare("SELECT id FROM users WHERE email = 'backfill@example.com'")
+            .get() as { id: number };
+        const insertRegistration = db.prepare(
+            "INSERT INTO registrations (ip, userId, at) VALUES (?, ?, ?)",
+        );
+        insertRegistration.run("10.0.0.1", user.id, "2026-10-31T10:00:00.000Z");
+        insertRegistration.run("10.0.0.2", user.id, "2026-10-31T10:00:00.000Z");
+        db.prepare(
+            "INSERT INTO cookiepresents (ip, userId, at) VALUES (?, ?, ?)",
+        ).run("10.0.0.2", user.id, "2026-10-31T10:00:00.000Z");
+
+        const outcome = runMigrations(db, { log: quiet });
+        assertEquals(outcome.applied, ["0004_backfill_cookiepresents"]);
+
+        const rows = db
+            .prepare(
+                "SELECT ip, userId, at FROM cookiepresents ORDER BY ip ASC, at ASC",
+            )
+            .all() as { ip: string; userId: number; at: string }[];
+        assertEquals(rows, [
+            { ip: "10.0.0.1", userId: user.id, at: "2026-10-31T10:00:00.000Z" },
+            { ip: "10.0.0.2", userId: user.id, at: "2026-10-31T10:00:00.000Z" },
+        ]);
+
+        // Das SQL selbst ist idempotent: ein zweiter Lauf erzeugt keine
+        // zweite Zeile, auch wenn der Runner die Migration nicht wiederholt.
+        for (const statement of backfill.statements) {
+            db.exec(statement);
+        }
+        const after = db
+            .prepare("SELECT COUNT(*) AS count FROM cookiepresents")
+            .get() as { count: number };
+        assertEquals(after.count, 2);
+    });
+});
+
 Deno.test("migrate - ältere Datenbank wird auf den Ist-Zustand gebracht", async () => {
     await withTempDb((db) => {
         runMigrations(db, { log: quiet });
@@ -215,6 +271,7 @@ Deno.test("migrate - ältere Datenbank wird auf den Ist-Zustand gebracht", async
             "0001_ipfact_mac",
             "0002_adminmac",
             "0003_tikscan",
+            "0004_backfill_cookiepresents",
         ]);
         assertEquals(outcome.marked, []);
         assertEquals(objectNames(db, "index"), EXPECTED_INDEXES);
@@ -224,7 +281,7 @@ Deno.test("migrate - ältere Datenbank wird auf den Ist-Zustand gebracht", async
             name: string;
         }[];
         assertEquals(columns.some((column) => column.name === "mac"), true);
-        assertEquals(appliedRows(db).length, 4);
+        assertEquals(appliedRows(db).length, 5);
     });
 });
 

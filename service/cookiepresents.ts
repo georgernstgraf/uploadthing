@@ -32,22 +32,49 @@ export async function byIPInRange(
     return result;
 }
 
+/**
+ * Ergebnis eines Presence-Schreibversuchs (#163).
+ *
+ * `inserted` sagt, ob eine Zeile entstanden ist; `identityChanged` sagt,
+ * ob dieser Insert die **neueste Identität der IP** verschiebt. Nur der
+ * Identitätswechsel ist ein Ereignis — eine Presence-Zeile desselben
+ * Users verlängert nur die Anwesenheit.
+ */
+export type PresenceResult = { inserted: boolean; identityChanged: boolean };
+
+/**
+ * „Ich bin X" von einer IP ist eine Präsenzaussage.
+ *
+ * Schreibt höchstens eine Zeile pro (IP, User) je
+ * `COOKIE_PRESENT_MIN_INTERVAL_MS` und meldet, ob die Zeile die neueste
+ * Identität dieser IP ändert. Die erste Identität einer IP (`previous ===
+ * null`) ist ebenfalls ein Wechsel.
+ */
+export async function recordPresence(
+    userId: number,
+    ip: string,
+    at: Date = new Date(),
+): Promise<PresenceResult> {
+    const previous = repo.cookiepresents.getLatestUserIdForIP(ip);
+
+    const since = new Date(at.getTime() - COOKIE_PRESENT_MIN_INTERVAL_MS);
+    if (repo.cookiepresents.recentByIPAndUser(ip, userId, since)) {
+        return { inserted: false, identityChanged: false };
+    }
+
+    await repo.cookiepresents.create(ip, userId, at);
+    return { inserted: true, identityChanged: previous !== userId };
+}
+
 export async function recordByEmail(
     email: string,
     ip: string,
     now: () => Date = () => new Date(),
-): Promise<boolean> {
+): Promise<PresenceResult> {
     const user = await repo.users.getByEmail(email.trim().toLowerCase());
-    if (!user) return false;
+    if (!user) return { inserted: false, identityChanged: false };
 
-    const at = now();
-    const since = new Date(at.getTime() - COOKIE_PRESENT_MIN_INTERVAL_MS);
-    if (repo.cookiepresents.recentByIPAndUser(ip, user.id, since)) {
-        return false;
-    }
-
-    await repo.cookiepresents.create(ip, user.id, at);
-    return true;
+    return await recordPresence(user.id, ip, now());
 }
 
 export async function getLatestUserByIp(ip: string): Promise<UserType | null> {

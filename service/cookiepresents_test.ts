@@ -20,7 +20,7 @@ function uniqueIp(): string {
     return `198.18.${a}.${b}`;
 }
 
-Deno.test("recordByEmail schreibt beim ersten Aufruf und meldet true", async () => {
+Deno.test("recordByEmail meldet den ersten Insert als Identitätswechsel", async () => {
     const ip = uniqueIp();
     const email = `presence-first-${crypto.randomUUID().slice(0, 8)}@example.com`;
     const at = new Date("2026-10-31T10:00:00Z");
@@ -28,9 +28,10 @@ Deno.test("recordByEmail schreibt beim ersten Aufruf und meldet true", async () 
     try {
         await upsertFixtureUser({ email, name: "Presence First", klasse: "5AHITM" });
 
-        const written = await recordByEmail(email, ip, () => at);
+        const presence = await recordByEmail(email, ip, () => at);
 
-        assertEquals(written, true);
+        // Die erste Identität einer IP ist ebenfalls ein Wechsel.
+        assertEquals(presence, { inserted: true, identityChanged: true });
         const rows = cookiepresentsRepo.byIPInRange(ip, RANGE_START, RANGE_END);
         assertEquals(rows.length, 1);
         assertEquals(rows[0].at.toISOString(), at.toISOString());
@@ -49,11 +50,45 @@ Deno.test("recordByEmail unterdrückt Wiederholungen innerhalb des Fensters", as
     try {
         await upsertFixtureUser({ email, name: "Presence Window", klasse: "5AHITM" });
 
-        assertEquals(await recordByEmail(email, ip, () => first), true);
-        assertEquals(await recordByEmail(email, ip, () => inside), false);
+        assertEquals(
+            await recordByEmail(email, ip, () => first),
+            { inserted: true, identityChanged: true },
+        );
+        // Dedupe: kein Insert, also auch kein Ereignis.
+        assertEquals(
+            await recordByEmail(email, ip, () => inside),
+            { inserted: false, identityChanged: false },
+        );
 
         const rows = cookiepresentsRepo.byIPInRange(ip, RANGE_START, RANGE_END);
         assertEquals(rows.length, 1);
+    } finally {
+        await clearForensicsByIp(ip);
+        await clearForensicsByUserEmail(email);
+    }
+});
+
+Deno.test("recordByEmail schreibt nach dem Fenster ohne Identitätswechsel", async () => {
+    const ip = uniqueIp();
+    const email = `presence-after-${crypto.randomUUID().slice(0, 8)}@example.com`;
+    const first = new Date("2026-10-31T10:00:00Z");
+    const later = new Date(first.getTime() + COOKIE_PRESENT_MIN_INTERVAL_MS + 1);
+
+    try {
+        await upsertFixtureUser({ email, name: "Presence After", klasse: "5AHITM" });
+
+        assertEquals(
+            await recordByEmail(email, ip, () => first),
+            { inserted: true, identityChanged: true },
+        );
+        // Dieselbe Identität bleibt dieselbe: Anwesenheit, kein Ereignis.
+        assertEquals(
+            await recordByEmail(email, ip, () => later),
+            { inserted: true, identityChanged: false },
+        );
+
+        const rows = cookiepresentsRepo.byIPInRange(ip, RANGE_START, RANGE_END);
+        assertEquals(rows.length, 2);
     } finally {
         await clearForensicsByIp(ip);
         await clearForensicsByUserEmail(email);
@@ -74,15 +109,18 @@ Deno.test("recordByEmail prüft die Fenstergrenze exakt", async () => {
     try {
         await upsertFixtureUser({ email, name: "Presence Boundary", klasse: "5AHITM" });
 
-        assertEquals(await recordByEmail(email, ip, () => first), true);
+        assertEquals(
+            await recordByEmail(email, ip, () => first),
+            { inserted: true, identityChanged: true },
+        );
         // Fenster ist geschlossen: `at >= since` schließt die alte Zeile ein.
         assertEquals(
             await recordByEmail(email, ip, () => exactlyAtBoundary),
-            false,
+            { inserted: false, identityChanged: false },
         );
         assertEquals(
             await recordByEmail(email, ip, () => justAfterBoundary),
-            true,
+            { inserted: true, identityChanged: false },
         );
 
         const rows = cookiepresentsRepo.byIPInRange(ip, RANGE_START, RANGE_END);
@@ -92,6 +130,55 @@ Deno.test("recordByEmail prüft die Fenstergrenze exakt", async () => {
     } finally {
         await clearForensicsByIp(ip);
         await clearForensicsByUserEmail(email);
+    }
+});
+
+Deno.test("recordByEmail meldet einen anderen User auf derselben IP als Wechsel", async () => {
+    const ip = uniqueIp();
+    const emailA = `presence-switch-a-${crypto.randomUUID().slice(0, 8)}@example.com`;
+    const emailB = `presence-switch-b-${crypto.randomUUID().slice(0, 8)}@example.com`;
+    const first = new Date("2026-10-31T10:00:00Z");
+    const second = new Date(first.getTime() + COOKIE_PRESENT_MIN_INTERVAL_MS + 1);
+
+    try {
+        const userA = await upsertFixtureUser({
+            email: emailA,
+            name: "Presence Switch A",
+            klasse: "5AHITM",
+        });
+        const userB = await upsertFixtureUser({
+            email: emailB,
+            name: "Presence Switch B",
+            klasse: "5AHITM",
+        });
+
+        assertEquals(
+            await recordByEmail(emailA, ip, () => first),
+            { inserted: true, identityChanged: true },
+        );
+        assertEquals(
+            await cookiepresentsRepo.getLatestUserIdForIP(ip),
+            userA.id,
+        );
+
+        // Anderer User, dieselbe IP: neue Zeile und neue Identität.
+        assertEquals(
+            await recordByEmail(emailB, ip, () => second),
+            { inserted: true, identityChanged: true },
+        );
+        assertEquals(
+            await cookiepresentsRepo.getLatestUserIdForIP(ip),
+            userB.id,
+        );
+
+        assertEquals(
+            cookiepresentsRepo.byIPInRange(ip, RANGE_START, RANGE_END).length,
+            2,
+        );
+    } finally {
+        await clearForensicsByIp(ip);
+        await clearForensicsByUserEmail(emailA);
+        await clearForensicsByUserEmail(emailB);
     }
 });
 
@@ -106,11 +193,20 @@ Deno.test("recordByEmail trennt nach IP und User", async () => {
         await upsertFixtureUser({ email: emailA, name: "Presence Pair A", klasse: "5AHITM" });
         await upsertFixtureUser({ email: emailB, name: "Presence Pair B", klasse: "5AHITM" });
 
-        // Dieselbe IP, anderer User: eigener Eintrag.
-        assertEquals(await recordByEmail(emailA, ipA, () => at), true);
-        assertEquals(await recordByEmail(emailB, ipA, () => at), true);
-        // Derselbe User, andere IP: eigener Eintrag.
-        assertEquals(await recordByEmail(emailA, ipB, () => at), true);
+        // Dieselbe IP, anderer User: eigener Eintrag und neue Identität.
+        assertEquals(
+            await recordByEmail(emailA, ipA, () => at),
+            { inserted: true, identityChanged: true },
+        );
+        assertEquals(
+            await recordByEmail(emailB, ipA, () => at),
+            { inserted: true, identityChanged: true },
+        );
+        // Derselbe User, andere IP: der erste Eintrag dieser IP.
+        assertEquals(
+            await recordByEmail(emailA, ipB, () => at),
+            { inserted: true, identityChanged: true },
+        );
 
         assertEquals(
             cookiepresentsRepo.byIPInRange(ipA, RANGE_START, RANGE_END).length,
@@ -128,13 +224,16 @@ Deno.test("recordByEmail trennt nach IP und User", async () => {
     }
 });
 
-Deno.test("recordByEmail meldet false für unbekannte User ohne Insert", async () => {
+Deno.test("recordByEmail meldet für unbekannte User nichts und schreibt nicht", async () => {
     const ip = uniqueIp();
     const email = `presence-unknown-${crypto.randomUUID().slice(0, 8)}@example.com`;
     const at = new Date("2026-10-31T10:00:00Z");
 
     try {
-        assertEquals(await recordByEmail(email, ip, () => at), false);
+        assertEquals(
+            await recordByEmail(email, ip, () => at),
+            { inserted: false, identityChanged: false },
+        );
         assertEquals(
             cookiepresentsRepo.byIPInRange(ip, RANGE_START, RANGE_END).length,
             0,

@@ -31,12 +31,28 @@ export async function getRegisteredByIp(ip: string): Promise<UserType | null> {
 
 /**
  * Upsert user data and create a registration entry for an IP.
+ *
+ * Die Registrierung ist seit #163 zugleich eine Präsenzaussage: beide
+ * Zeilen tragen dasselbe `at`, damit Karte, Gruppe und Sortierung den
+ * Anmeldezeitpunkt ohne Rundung treffen. `registrations` bleibt der
+ * Audit-Verlauf der ausdrücklichen Anmeldung.
  */
 export async function register(userData: UserType, ip: string) {
     const userRecord = await usersRepo.upsert(userData);
-    registrationsRepo.create(ip, userRecord.id, new Date());
+    const at = new Date();
+    registrationsRepo.create(ip, userRecord.id, at);
+    const presence = await cookiepresentsService.recordPresence(
+        userRecord.id,
+        ip,
+        at,
+    );
+
     // Neue Registrierung ist eine sichtbare Änderung für die Forensik.
     noteAdminActivity("registration");
+    // Erst der Identitätswechsel verschiebt die Karte dieser IP.
+    if (presence.identityChanged) {
+        noteAdminActivity("cards");
+    }
 }
 
 /**

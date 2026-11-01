@@ -503,10 +503,15 @@
   Event-Log, kein `id:`; nach einem Reconnect kommt derselbe Snapshot,
   nur frisch. Der Bus transportiert nur Ticks.
 - **Admin-Aktivität nur über `noteAdminActivity()`** melden (1-s-Fenster,
-  deduplizierte Gründe) und Presence nur bei echtem Insert
-  (`recordByEmail()` gibt `false` zurück, wenn die 30-s-Dedupe greift);
-  Lehrpersonen erzeugen kein `cookie`-Ereignis, `/static/*` schreibt keine
-  Presence. Ohne diese drei Riegel löst der Admin-Render den nächsten aus.
+  deduplizierte Gründe). Presence schreibt nur, was die neueste Identität
+  einer IP verschiebt: `recordPresence()` liefert
+  `{inserted, identityChanged}`, die 30-s-Dedupe setzt beides auf `false`,
+  und ein Insert desselben Users ist `inserted: true` mit
+  `identityChanged: false`. Nur `identityChanged` publiziert (`cards`,
+  seit #163; vorher `cookie`). Eine Ausnahme für Lehrpersonen braucht es
+  nicht mehr: die eigene Präsenz ändert die neueste Identität nicht, die
+  Rückkopplung ist strukturell ausgeschlossen. `/static/*` schreibt keine
+  Presence. Ohne diese Riegel löst der Admin-Render den nächsten aus.
 - **Der Client gibt nach drei Verbindungsfehlern ohne Frame auf.** Ein
   dauerhaftes 401/403 würde sonst alle drei Sekunden neu klopfen; der
   Reconnect selbst ist Sache von `EventSource`, ein eigener Timer dafür

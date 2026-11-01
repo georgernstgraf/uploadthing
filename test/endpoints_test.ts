@@ -4,6 +4,7 @@ import endpoints from "./endpoints.json" with { type: "json" };
 import config from "../lib/config.ts";
 import * as service from "../service/service.ts";
 import { db } from "../repo/db.ts";
+import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
 import * as ipfactRepo from "../repo/ipfact.ts";
 import * as registrationsRepo from "../repo/registrations.ts";
 import * as usersRepo from "../repo/users.ts";
@@ -156,6 +157,52 @@ Deno.test("POST /register - Register User to own IP", async () => {
     });
     await res.text(); // consume body to avoid resource leak
     assertEquals(res.status, 200);
+});
+
+Deno.test("POST /register schreibt Registrierung und Präsenz (#163)", async () => {
+    clearExamState();
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const email = `register-presence-${suffix}@example.com`;
+    await upsertFixtureUser({
+        email,
+        name: "Register Presence",
+        klasse: "5AHITM",
+    });
+
+    try {
+        const start = new Date(Date.now() - 5_000);
+        const end = new Date(Date.now() + 5_000);
+
+        const res = await fetch(`${BASE_URL}/register`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "HX-Request": "true",
+            },
+            body: `email=${encodeURIComponent(email)}`,
+        });
+        await res.text(); // consume body to avoid resource leak
+        assertEquals(res.status, 200);
+
+        const user = await usersRepo.getByEmail(email);
+        assertExists(user);
+
+        const registrations = registrationsRepo
+            .byRange(start, end)
+            .filter((row) => row.userId === user.id);
+        const presences = cookiepresentsRepo
+            .byRange(start, end)
+            .filter((row) => row.userId === user.id);
+
+        // „Ich bin X" von einer IP ist eine Präsenzaussage: die Anmeldung
+        // erzeugt beide Zeilen, auf derselben IP.
+        assertEquals(registrations.length, 1);
+        assertEquals(presences.length, 1);
+        assertEquals(presences[0].ip, registrations[0].ip);
+    } finally {
+        clearExamState();
+        await clearForensicsByUserEmail(email);
+    }
 });
 
 Deno.test("Startseite: Angaben, Doku und Anmeldung auf einer Seite (#146)", async () => {

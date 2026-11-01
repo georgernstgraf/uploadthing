@@ -6,8 +6,8 @@ import type { Bindings, HonoContextVars } from "../lib/types.ts";
 import * as cookiepresentsRepo from "../repo/cookiepresents.ts";
 import * as events from "../service/events.ts";
 import {
+    clearForensicsByIp,
     clearForensicsByUserEmail,
-    LOCAL_TEST_IP,
     upsertFixtureUser,
 } from "../test/helpers/forensics_fixture.ts";
 import {
@@ -189,13 +189,14 @@ Deno.test("Session class - getData returns same object reference", () => {
 });
 
 // ----------------------------------------------------------------------
-// Presence-Ereignisse der Session-Middleware (#161)
+// Presence-Ereignisse der Session-Middleware (#163)
 // ----------------------------------------------------------------------
 
 /**
- * Nur ein echter Insert einer Schüler-Presence-Zeile darf den
- * Admin-Kanal wecken. Lehrpersonen sind ausgenommen, sonst löst der
- * Admin-Render den nächsten Admin-Render aus.
+ * Nur ein **Identitätswechsel** einer IP darf den Admin-Kanal wecken. Die
+ * Presence-Zeile desselben Users verlängert nur die Anwesenheit; deshalb
+ * braucht es keine Ausnahme für Lehrpersonen mehr — die eigene Präsenz
+ * ändert die neueste Identität nicht und löst strukturell nichts aus.
  */
 
 /** Scheduler-Stub: sammelt Timer und lässt sie von Hand laufen. */
@@ -226,6 +227,14 @@ function fakeScheduler() {
     };
 }
 
+/** Eine eigene Test-IP je Test: 127.0.0.1 teilen sich mehrere Testdateien. */
+function uniqueIp(): string {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const a = Number.parseInt(suffix.slice(0, 2), 16);
+    const b = Number.parseInt(suffix.slice(2, 4), 16);
+    return `198.18.${a}.${b}`;
+}
+
 async function sessionCookie(email: string): Promise<string> {
     const data = { email, createdAt: Date.now() };
     const encoded = encodeSessionData(data);
@@ -245,17 +254,20 @@ function buildApp() {
     return app;
 }
 
-const TEST_ENV = {
-    info: {
-        remoteAddr: { transport: "tcp", hostname: LOCAL_TEST_IP },
-    },
-} as unknown as Bindings;
+function testEnv(ip: string): Bindings {
+    return {
+        info: {
+            remoteAddr: { transport: "tcp", hostname: ip },
+        },
+    } as unknown as Bindings;
+}
 
-Deno.test("Schüler-Cookie meldet nur den echten Presence-Insert (#161)", async () => {
+Deno.test("Schüler-Cookie meldet nur den Identitätswechsel (#163)", async () => {
     hub.resetHub();
     events.resetActivity();
     const suffix = crypto.randomUUID().slice(0, 8);
     const email = `session-cookie-student-${suffix}@example.com`;
+    const ip = uniqueIp();
     const scheduler = fakeScheduler();
     events.setActivityHooks(scheduler.hooks);
 
@@ -276,46 +288,53 @@ Deno.test("Schüler-Cookie meldet nur den echten Presence-Insert (#161)", async 
         const first = await app.request(
             "/probe",
             { headers: { Cookie: cookie } },
-            TEST_ENV,
+            testEnv(ip),
         );
         assertEquals(first.status, 200);
         assertEquals(
             cookiepresentsRepo.recentByIPAndUser(
-                LOCAL_TEST_IP,
+                ip,
                 user.id,
                 new Date(Date.now() - 60_000),
             ),
             true,
             "Die Presence-Zeile muss geschrieben werden",
         );
+        assertEquals(
+            cookiepresentsRepo.getLatestUserIdForIP(ip),
+            user.id,
+            "Der Schüler ist die neueste Identität dieser IP",
+        );
         assertEquals(scheduler.delays.length, 1);
 
         scheduler.flush();
-        assertEquals(batches, [["cookie"]]);
+        assertEquals(batches, [["cards"]]);
 
         // Innerhalb von 30 s dedupliziert `recordByEmail`: kein zweiter
-        // Insert, also kein zweites Ereignis und kein neuer Timer.
+        // Insert, kein Identitätswechsel, also kein zweites Ereignis.
         const second = await app.request(
             "/probe",
             { headers: { Cookie: cookie } },
-            TEST_ENV,
+            testEnv(ip),
         );
         assertEquals(second.status, 200);
         assertEquals(scheduler.delays.length, 1);
-        assertEquals(batches, [["cookie"]]);
+        assertEquals(batches, [["cards"]]);
     } finally {
         unsubscribe();
+        clearForensicsByIp(ip);
         await clearForensicsByUserEmail(email);
         events.resetActivity();
         hub.resetHub();
     }
 });
 
-Deno.test("Lehrpersonen-Cookie schreibt Presence, meldet aber kein Ereignis (#161)", async () => {
+Deno.test("Lehrpersonen-Cookie schreibt Presence, publiziert aber nur den Identitätswechsel (#163)", async () => {
     hub.resetHub();
     events.resetActivity();
     const suffix = crypto.randomUUID().slice(0, 8);
     const email = `session-cookie-teacher-${suffix}@example.com`;
+    const ip = uniqueIp();
     const scheduler = fakeScheduler();
     events.setActivityHooks(scheduler.hooks);
 
@@ -333,28 +352,38 @@ Deno.test("Lehrpersonen-Cookie schreibt Presence, meldet aber kein Ereignis (#16
         const cookie = await sessionCookie(email);
         const app = buildApp();
 
-        const res = await app.request(
+        // Erste Anmeldung dieser IP: neue Identität, ein Ereignis.
+        const first = await app.request(
             "/probe",
             { headers: { Cookie: cookie } },
-            TEST_ENV,
+            testEnv(ip),
         );
-        assertEquals(res.status, 200);
-
-        // Die Zeile entsteht wie bei Schülern — der Unterschied ist nur
-        // die Rückkopplung, nicht die Erfassung.
+        assertEquals(first.status, 200);
         assertEquals(
             cookiepresentsRepo.recentByIPAndUser(
-                LOCAL_TEST_IP,
+                ip,
                 user.id,
                 new Date(Date.now() - 60_000),
             ),
             true,
             "Auch Lehrpersonen werden als Presence erfasst",
         );
-        assertEquals(scheduler.delays, []);
-        assertEquals(batches, []);
+        scheduler.flush();
+        assertEquals(batches, [["cards"]]);
+
+        // Die Rückkopplung ist strukturell ausgeschlossen, nicht per Rolle:
+        // die eigene Präsenz ändert die neueste Identität nicht mehr.
+        const second = await app.request(
+            "/probe",
+            { headers: { Cookie: cookie } },
+            testEnv(ip),
+        );
+        assertEquals(second.status, 200);
+        assertEquals(scheduler.delays.length, 1);
+        assertEquals(batches, [["cards"]]);
     } finally {
         unsubscribe();
+        clearForensicsByIp(ip);
         await clearForensicsByUserEmail(email);
         events.resetActivity();
         hub.resetHub();

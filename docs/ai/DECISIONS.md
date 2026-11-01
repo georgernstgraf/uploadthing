@@ -699,10 +699,11 @@ Prisma-Dependencies, kein generierter Client, kein `prisma/`-Verzeichnis.
 ## Cookie Presence Versus Explicit Registration
 
 - Explicit registration events and ongoing cookie-based presence are distinct concepts.
-- `registrations` records deliberate registration actions.
+- `registrations` records deliberate registration actions; since #163 a registration also writes a presence row with the same `at`, so a registration is immediately visible as presence.
 - `cookiepresents` records presence, not every request: at most one row per
   (IP, user) per `COOKIE_PRESENT_MIN_INTERVAL_MS = 30_000`, and none at all
   for `/static/*` requests (#161, see „Server-Push statt Polling").
+- Since #163 `cookiepresents` is the **only** attribution source for the IP card, the student/teacher grouping and the sorting; `registrations` stays the audit trail. Only a presence insert that moves the newest identity of an IP (`identityChanged`) is an event.
 - The admin forensics view treats cookie presence as the current user attribution for an IP while still showing explicit registration history separately.
 - The student/admin overview IP set is derived from the union of `ipfact`, `cookiepresents`, `registrations`, and submissions so cookie-only IPs are not dropped from the report.
 - The overview's displayed report count now combines in-range `ipfact` hits with in-range `cookiepresents` hits, while the detailed IP history list remains an `ipfact`-only breakdown.
