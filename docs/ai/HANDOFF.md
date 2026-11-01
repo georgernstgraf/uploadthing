@@ -27,11 +27,16 @@ gilt:
   `/events/exam` aktualisiert es nach jedem abgeschlossenen Scan, aber nur
   bei offenem Examen.
 - Verifikation: `check`/`lint` grün, **472 Deno-Tests**. Commit
-  `47b8d92` ist gepusht. **Deploy steht aus, weil am 2026-11-01 um 13:08
-  noch ein Examen lief** (`examstate` `running`, Ende 13:22 Ortszeit) —
-  `systemctl --user restart uploadthing` erst danach, niemals während
-  eines laufenden Examens (ein Restart setzt `examstate` auf `stopped` und
-  löst die Sperre).
+  `47b8d92` ist gepusht. **Deployt am 2026-11-01 um 13:09:11** — allerdings
+  unfreiwillig während des laufenden Examens (ein Automatik-Job hat die
+  `sqlite3`-Kopfzeile als Status fehlinterpretiert). Der Start setzte
+  `examstate` auf `stopped` und löste die Sperre; um 13:11 wurde der
+  Zustand von Hand wiederhergestellt: `examstate` wieder `running` mit
+  unverändertem `started_at` (Ende 13:22:43 Ortszeit) und die Sperrregel
+  über `setInternetActive(false)` wieder aktiviert (`getExamModeStatus`
+  bestätigt „Sperre aktiv"). Zwischen 13:09 und 13:11 war das Internet im
+  Prüfungsnetz offen; **keine Abgabe** fiel in dieses Fenster
+  (`abgaben.at` 13:05–13:15 leer).
 
 Offene Sichtprüfung zu #166 (nur mit echtem Examen):
 1. WLAN am Schüler-Gerät trennen, wieder verbinden, abgeben → Abgabe geht

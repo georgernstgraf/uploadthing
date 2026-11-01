@@ -34,8 +34,9 @@ Abgabe-Panel (Minuten, Dropouts, IP-Wechsel).
   (`outerHTML`), nur bei offenem Examen. Die gewählte Datei im Formular
   bleibt erhalten.
 - Verifikation: `check`/`lint` grün, **472 Deno-Tests** (vorher 462).
-  Deploy und Sichtprüfung stehen noch aus (Deploy blockiert durch ein
-  laufendes Examen bis 13:22 Ortszeit).
+  Deployt am 2026-11-01 um 13:09:11 (unfreiwillig während eines Examens,
+  Zustand und Sperre um 13:11 von Hand wiederhergestellt — siehe
+  `HANDOFF.md`). Sichtprüfung mit echtem Examen steht noch aus.
 
 **#164 — Forensikkarte, WLAN-Sperre, Unterlagen-Push — deployt am
 2026-11-01 (11:40:18), Issue geschlossen, Sichtprüfung offen.**
