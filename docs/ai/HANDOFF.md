@@ -26,10 +26,12 @@ gilt:
   `GET /abgabe-dropouts`); `DROPOUTS_CHANNEL` / `event: dropouts` auf
   `/events/exam` aktualisiert es nach jedem abgeschlossenen Scan, aber nur
   bei offenem Examen.
-- Verifikation: `check`/`lint` grün, **471 Deno-Tests**. Deploy und
-  Sichtprüfung (echtes Examen) stehen aus. **Vor dem Neustart beachten:**
-  ein Restart setzt `examstate` auf `stopped` und löst die Sperre — niemals
-  während eines laufenden Examens.
+- Verifikation: `check`/`lint` grün, **472 Deno-Tests**. Commit
+  `47b8d92` ist gepusht. **Deploy steht aus, weil am 2026-11-01 um 13:08
+  noch ein Examen lief** (`examstate` `running`, Ende 13:22 Ortszeit) —
+  `systemctl --user restart uploadthing` erst danach, niemals während
+  eines laufenden Examens (ein Restart setzt `examstate` auf `stopped` und
+  löst die Sperre).
 
 Offene Sichtprüfung zu #166 (nur mit echtem Examen):
 1. WLAN am Schüler-Gerät trennen, wieder verbinden, abgeben → Abgabe geht
