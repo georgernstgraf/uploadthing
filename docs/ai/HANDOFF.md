@@ -1,32 +1,43 @@
-Last updated: 2026-11-01 (#164 implementiert und grün; Deploy und Sichtprüfung offen).
+Last updated: 2026-11-01 (#164 deployt und geschlossen; Sichtprüfung mit echtem Examen offen).
 
 ## Sofort weiter mit
 
-**#164 ist implementiert, aber noch nicht deployt.** `check`/`lint` grün,
-**462 Deno-Tests, 24 E2E-Tests**. Kein `ADMIN_DEFAULT_WINDOW_MS`, keine
-Lücken-Heuristik: jede neue Schüler-Präsenz publiziert `cards`
-(Lehrpersonen und `POST /upload` ausgenommen), die WLAN-Sperre gilt nur im
-laufenden Examen, und Unterlagen-Änderungen laufen als `event: unterlagen`
-über `/events/exam`. Dazu der Knopf „Seit Exam-Start" im Zeitfilter von
-`/admin/students` (serverseitig mit `started_at`, deaktiviert ohne Examen).
+**#164 ist deployt (2026-11-01, 11:40:18) und geschlossen.** Neustart
+unter 1 s, Journal ohne Watchdog-/Listener-Fehler, `Listening on
+https://192.168.21.2:443/`; der Start hat `examstate` auf `stopped`
+gesetzt und die Sperre gelöst (wie vorgesehen). Live bestätigt:
 
-1. **Deploy außerhalb eines laufenden Examens** (`systemctl --user restart
-   uploadthing`): der Start setzt `examstate` auf `stopped` und die
-   Anmelde-Freigabe zurück. Danach `systemctl --user status uploadthing`
-   und `journalctl --user -u uploadthing -n 20` prüfen (kein
-   `stop-sigterm`).
-2. **Sichtprüfung mit frischem Examen:**
-   - Panel offen lassen, Schülerin ruft ihre Seite erstmals am Tag auf →
-     Kärtchen erscheint mit Namen, ohne Reload.
-   - Abgabe nach einer alten (Mai-)Abgabe → Erfolg + „Abgabe"-Badge ≤ 1 s,
-     **kein** Panel-Vollrender.
-   - Lehrperson lädt eine Unterlage hoch → Angaben-Karte beim Schüler
-     ohne Reload; Löschen tut dasselbe.
-   - Knopf „Seit Exam-Start": während des Examens aktiv, sonst deaktiviert;
-     ein Klick setzt Startzeit und URL (`starttime=…`) und rendert das
-     Panel.
-3. Doku ist nachgezogen (`DECISIONS.md` drei Einträge vom 2026-11-01,
-   `PITFALLS`, `DOMAIN`, `CONVENTIONS`, `ARCHITECTURE`, `STATE`).
+- `GET /angaben-panel` → 200 mit `#angaben-panel` und ohne
+  `#abgabe-panel`; die Startseite trägt `#angaben-panel` und
+  `#angaben-list`.
+- `POST /admin/unterlagen` (temporäre Datei, danach über die Route
+  gelöscht) → `event: unterlagen` auf der offenen `/events/exam`-Verbindung;
+  die Karte trug die Datei danach nicht mehr. Keine Reste in
+  `~/uploadthing-data/unterlagen/`.
+- `/admin/students` für Lehrpersonen 200, anonym 403; `/events/exam` ohne
+  Sitzung 401, mit Sitzung über HTTP/2 `content-type:
+  text/event-stream; charset=utf-8`, `cache-control: no-store`, kein
+  `connection`/`transfer-encoding`, erster Frame `event: exam`.
+- Knopf `#admin-exam-start` ist ohne Examen deaktiviert und ohne
+  Startwerte gerendert; der aktive Zustand samt Startzeit-Übernahme ist
+  im E2E-Test belegt.
+
+**Offen ist nur die Sichtprüfung mit einem echten Examen** (keine
+Schüler online, daher nicht jetzt prüfbar):
+
+1. Panel offen lassen, Schülerin ruft ihre Seite erstmals am Tag auf →
+   Kärtchen erscheint mit Namen, ohne Reload (neue Präsenz = Ereignis).
+2. Abgabe nach einer alten (Mai-)Abgabe → Erfolg + „Abgabe"-Badge ≤ 1 s,
+   **kein** Panel-Vollrender; die Presence-Zeile der Abgabe publiziert
+   nicht.
+3. Knopf „Seit Exam-Start" während des Examens: aktiv, ein Klick setzt
+   Startzeit und URL (`starttime=…`) und rendert das Panel.
+4. Unterlagen-Upload mit offener Schüler-Seite → Angaben-Karte zieht
+   nach (heute serverseitig bewiesen, im Browser noch nicht).
+
+**Merke für den nächsten Deploy:** `systemctl --user restart uploadthing`
+setzt `examstate` auf `stopped` und löst die Sperre — niemals während
+eines laufenden Examens.
 
 ## Aus #163 (weiterhin offen)
 

@@ -4,8 +4,8 @@ Current status as of 2026-11-01.
 
 ## Current Focus
 
-**#164 — Forensikkarte, WLAN-Sperre, Unterlagen-Push — implementiert am
-2026-11-01, Issue offen (Deploy + Sichtprüfung ausstehend).**
+**#164 — Forensikkarte, WLAN-Sperre, Unterlagen-Push — deployt am
+2026-11-01 (11:40:18), Issue geschlossen, Sichtprüfung offen.**
 Vier Fehlerbilder aus dem laufenden Examen, alle datengetrieben statt per
 Zeit-Heuristik gelöst:
 
@@ -29,11 +29,22 @@ Zeit-Heuristik gelöst:
   pausiertes Examen. Das Einrasten auf `spg_times` bleibt unverändert —
   es gibt weder `ADMIN_DEFAULT_WINDOW_MS` noch eine Lücken-Heuristik.
 - Verifikation: `check`/`lint` grün, **462 Deno-Tests, 24 E2E-Tests**.
-- **Offen:** Deploy (nur außerhalb eines laufenden Examens — der Start
-  setzt `examstate` auf `stopped` und die Anmelde-Freigabe zurück) und die
-  Live-Sichtprüfung: Kärtchen mit Namen nach dem ersten Schüleraufruf,
-  Abgabe nach einer alten Abgabe, Unterlage hochladen → Angaben beim
-  Schüler ohne Reload.
+- **Deploy durch (11:40:18)**, Neustart unter 1 s, Journal ohne
+  Watchdog-/Listener-Fehler, `Listening on https://192.168.21.2:443/`.
+  Live bestätigt: `GET /angaben-panel` = 200 mit `#angaben-panel` (ohne
+  Abgabe-Panel), Startseite trägt beide Angaben-Ids, `/admin/students`
+  für Lehrpersonen 200, für Anonyme 403, `/events/exam` 401 ohne Sitzung,
+  über HTTP/2 `content-type: text/event-stream; charset=utf-8`,
+  `cache-control: no-store`, kein `connection`/`transfer-encoding`,
+  erster Frame `event: exam`; Unterlagen-Upload über
+  `POST /admin/unterlagen` → `event: unterlagen` auf derselben
+  Verbindung, Löschen räumt die Karte wieder (temporäre Datei entfernt).
+  Der Knopf „Seit Exam-Start" ist ohne Examen deaktiviert; der aktive
+  Zustand ist im E2E-Test belegt.
+- **Offen (nur mit echtem Examen prüfbar):** Panel offen lassen und eine
+  Schülerin erstmals am Tag aufrufen lassen (Kärtchen mit Namen),
+  Abgabe nach einer alten Abgabe (200 + Badge ≤ 1 s, kein Vollrender).
+  Checkliste in `HANDOFF.md`.
 
 **#163 — Admin-Kärtchen als Push-Komponenten — deployt am 2026-11-01
 (03:28:43), Issue geschlossen, Sichtprüfung offen.**
